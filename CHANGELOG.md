@@ -1,5 +1,13 @@
 All notable changes to this project should be documented both here and in the main Readme files.
 
+#### [0.1.2] - 2025-04-18
+#### Added
+- STARTER-PROMPT.md with comprehensive guide for customizing the template
+- Additional AI workflow files for better development guidance
+
+#### Changed
+- Updated documentation files with improved instructions
+
 #### [0.1.1] - 2025-04-18
 #### Changed
 - Updated LICENSE file with correct GPL-2.0 text
