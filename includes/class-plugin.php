@@ -7,6 +7,8 @@
 
 namespace WPALLSTARS\PluginStarterTemplate;
 
+use WPALLSTARS\PluginStarterTemplate\Admin\Admin;
+
 /**
  * Plugin class
  */
@@ -18,6 +20,13 @@ class Plugin {
 	 * @var Core
 	 */
 	private $core;
+
+	/**
+	 * Admin instance
+	 *
+	 * @var Admin
+	 */
+	private $admin;
 
 	/**
 	 * Plugin file
@@ -43,6 +52,7 @@ class Plugin {
 		$this->plugin_file = $plugin_file;
 		$this->version     = $version;
 		$this->core        = new Core();
+		$this->admin       = new Admin( $this->core );
 	}
 
 	/**
