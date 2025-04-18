@@ -1,6 +1,6 @@
 {
   "name": "wp-plugin-starter-template-for-ai-coding",
-  "version": "0.1.6",
+  "version": "0.1.7",
   "description": "A comprehensive starter template for WordPress plugins with best practices for AI-assisted development.",
   "main": "index.js",
   "scripts": {
