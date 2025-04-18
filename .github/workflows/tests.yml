@@ -17,7 +17,7 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Setup PHP
         uses: shivammathur/setup-php@v2
@@ -25,6 +25,9 @@ jobs:
           php-version: ${{ matrix.php-versions }}
           extensions: mbstring, intl, zip
           tools: composer:v2
+
+      - name: Clear Composer Cache
+        run: composer clear-cache
 
       - name: Install dependencies
         run: composer install --prefer-dist --no-progress
@@ -38,7 +41,7 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Setup PHP
         uses: shivammathur/setup-php@v2
@@ -46,6 +49,9 @@ jobs:
           php-version: '7.4'
           extensions: mbstring, intl, zip
           tools: composer:v2, phpcs
+
+      - name: Clear Composer Cache
+        run: composer clear-cache
 
       - name: Install dependencies
         run: composer install --prefer-dist --no-progress
