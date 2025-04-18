@@ -125,14 +125,23 @@ class AdminTest extends \WP_Mock\Tools\TestCase {
                 'args'  => [
                     $script_handle,
                     'wpst_admin_params',
-                    \Mockery::type( 'array' ), // We don't need to assert the exact array content here
+                    \Mockery::on(
+                        function ( $data ) use ( $expected_data ) {
+                            return is_array( $data )
+                                && isset( $data['ajax_url'] )
+                                && $data['ajax_url'] === $expected_data['ajax_url']
+                                && isset( $data['nonce'] )
+                                && is_string( $data['nonce'] ); // Check nonce exists and is a string
+                        }
+                    ),
                 ],
             ]
         );
 
         // Call the method under test.
-        $this->admin->enqueue_admin_assets( 'test-hook' );
+        $this->admin->enqueue_admin_assets( 'any_hook_suffix' );
 
         // Assertions are implicitly handled by WP_Mock's expectation checks on tearDown.
+        $this->assertTrue( true ); // Add a basic assertion to prevent risky test warning
     }
 }

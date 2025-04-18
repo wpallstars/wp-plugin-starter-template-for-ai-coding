@@ -41,7 +41,6 @@ class Admin {
 	/**
 	 * Enqueues admin scripts and styles.
 	 *
-	
 	 * @phpcs:ignore WordPress.CodeAnalysis.UnusedFunctionParameter.Found
 	 * @param string $hook_suffix The current admin page.
 	 */
