@@ -57,7 +57,7 @@ class AdminTest extends \WP_Mock\Tools\TestCase {
     public function test_constructor() {
         // Verify that the constructor initializes hooks
         $this->assertInstanceOf(Admin::class, $this->admin);
-        $this->assertTrue(WP_Mock::onActionAdded('admin_enqueue_scripts'));
+        WP_Mock::assertActionAdded('admin_enqueue_scripts', [$this->admin, 'enqueue_admin_assets']);
 
     }
 

@@ -46,7 +46,29 @@ class Admin {
 	 * @param string $hook_suffix The current admin page.
 	 */
 	public function enqueue_admin_assets( $hook_suffix ) {
-		// Admin assets enqueue logic will go here.
-		// The test mocks wp_enqueue_style, wp_enqueue_script, etc.
+		// Enqueue admin styles
+		\wp_enqueue_style(
+			'wpst-admin-style',
+			'path/to/admin/css/admin-styles.css'
+		);
+
+		// Enqueue admin scripts
+		\wp_enqueue_script(
+			'wpst-admin-script',
+			'path/to/admin/js/admin-scripts.js',
+			array( 'jquery' ),
+			null,
+			true
+		);
+
+		// Localize script
+		\wp_localize_script(
+			'wpst-admin-script',
+			'wpst_admin_params',
+			array(
+				'ajax_url' => \admin_url( 'admin-ajax.php' ),
+				'nonce'    => \wp_create_nonce( 'wpst-admin-nonce' ),
+			)
+		);
 	}
 }
