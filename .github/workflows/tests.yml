@@ -12,7 +12,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        php-versions: ['7.0', '7.4', '8.0']
+        php-versions: ['7.4', '8.0']
       fail-fast: false
 
     steps:
@@ -27,18 +27,7 @@ jobs:
           tools: composer:v2
 
       - name: Install dependencies
-        run: |
-          # Install base dependencies from lock file
-          composer install --prefer-dist --no-progress
-
-          # Update specific dependencies for higher PHP versions if needed
-          if [[ "${{ matrix.php-versions }}" == "7.4" || "${{ matrix.php-versions }}" == "8.0" ]]; then
-            echo "Updating dependencies for PHP ${{ matrix.php-versions }}..."
-            composer require --dev phpunit/phpunit:"^9.5" 10up/wp_mock:"^1.0" --no-update --no-plugins --no-scripts
-          elif [[ "${{ matrix.php-versions }}" == "7.0" ]]; then
-            # Force PHPUnit 6.5 for PHP 7.0
-            composer require --dev phpunit/phpunit:"^6.5" --update-with-dependencies
-          fi
+        run: composer install --prefer-dist --no-progress
 
       - name: Run tests
         run: ./vendor/bin/phpunit

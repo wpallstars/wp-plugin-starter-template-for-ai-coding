@@ -16,7 +16,7 @@
  * Release Branch: main
  * Release Asset: true
  * Requires at least: 5.0
- * Requires PHP: 7.0
+ * Requires PHP: 7.4
  * Update URI: https://github.com/wpallstars/wp-plugin-starter-template-for-ai-coding
  *
  * Gitea Plugin URI: https://gitea.wpallstars.com/wpallstars/wp-plugin-starter-template-for-ai-coding
