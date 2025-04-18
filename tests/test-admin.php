@@ -109,6 +109,15 @@ class AdminTest extends \WP_Mock\Tools\TestCase {
                 'return' => $expected_data['ajax_url'],
             ]
         );
+        // We need to mock wp_create_nonce as it's called directly in the method
+        \WP_Mock::userFunction(
+            'wp_create_nonce',
+            [
+                'times'  => 1,
+                'args'   => [ 'wpst_admin_nonce' ], // Match the action string used in class-admin.php
+                'return' => $expected_data['nonce'],
+            ]
+        );
         \WP_Mock::userFunction(
             'wp_localize_script',
             [

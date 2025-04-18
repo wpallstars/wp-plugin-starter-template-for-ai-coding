@@ -41,11 +41,11 @@ class Admin {
 	/**
 	 * Enqueues admin-specific scripts and styles.
 	 *
-	 * 
 	 * @phpcs:ignore WordPress.NamingConventions.ValidFunctionName.MethodNameInvalid
 	 * @param string $hook_suffix The current admin page.
 	 */
 	public function enqueue_admin_assets( $hook_suffix ) {
+
 		// Enqueue admin styles.
 		\wp_enqueue_style(
 			'wpst-admin-style',
