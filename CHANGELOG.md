@@ -1,5 +1,12 @@
 All notable changes to this project should be documented both here and in the main Readme files.
 
+#### [0.1.7] - 2025-04-19
+#### Fixed
+- GitHub Actions tests workflow with proper file paths and dependencies
+
+#### Improved
+- Workflow names for better clarity in GitHub Actions UI
+
 #### [0.1.6] - 2025-04-19
 #### Fixed
 - GitHub Actions workflows permissions for releases and wiki sync
