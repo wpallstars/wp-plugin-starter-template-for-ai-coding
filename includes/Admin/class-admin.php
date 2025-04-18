@@ -41,10 +41,13 @@ class Admin {
 	/**
 	 * Enqueues admin-specific scripts and styles.
 	 *
-	 * @phpcs:ignore WordPress.NamingConventions.ValidFunctionName.MethodNameInvalid
-	 * @param string $hook_suffix The current admin page.
+	 * This method is hooked into 'admin_enqueue_scripts'. It checks if the current
+	 * screen is relevant to the plugin before enqueueing assets.
+	 *
+	 * @phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.Found
+	 * @param string $hook_suffix The hook suffix of the current admin page.
 	 */
-	public function enqueue_admin_assets( $hook_suffix ) {
+	public function enqueue_admin_assets( string $hook_suffix ): void {
 
 		// Enqueue admin styles.
 		\wp_enqueue_style(
