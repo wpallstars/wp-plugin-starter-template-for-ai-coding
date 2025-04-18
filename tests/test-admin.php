@@ -155,3 +155,89 @@ class AdminTest extends \WP_Mock\Tools\TestCase {
     }
     */
 }
+
+/*
+/**
+ * Test the enqueue_admin_assets method.
+ *
+ * @covers ::enqueue_admin_assets
+ * @runInSeparateProcess
+ * @preserveGlobalState disabled
+ */
+public function test_enqueue_admin_assets(): void {
+    // Define the hook suffix for the specific admin page.
+    $hook_suffix = 'toplevel_page_wp_plugin_starter_template_settings';
+    $_GET['page'] = 'wp_plugin_starter_template_settings'; // Simulate being on the correct page.
+
+    // Define expected values.
+    $style_handle  = 'wpst-admin-styles';
+    $style_src     = plugin_dir_url( dirname( __DIR__ ) ) . 'admin/css/admin-styles.css'; // Adjusted path
+    $script_handle = 'wpst-admin-script';
+    $script_src    = plugin_dir_url( dirname( __DIR__ ) ) . 'admin/js/admin-scripts.js'; // Adjusted path
+    $version       = '1.0.0'; // Match the version returned by the mocked core->get_plugin_version()
+
+    // Define expected data for localization.
+    $expected_data = [
+        'ajax_url' => 'http://example.org/wp-admin/admin-ajax.php',
+        'nonce'    => 'test_nonce',
+    ];
+
+    // Expect admin_url to be called.
+    \WP_Mock::userFunction(
+        'admin_url',
+        [
+            'times'  => 1,
+            'args'   => [ 'admin-ajax.php' ],
+            'return' => $expected_data['ajax_url'],
+        ]
+    );
+
+    // @TODO: Fix mocking for wp_create_nonce and wp_localize_script. Issue #1
+    // We need to mock wp_create_nonce as it's called directly in the method
+    /*
+    \WP_Mock::userFunction(
+        'wp_create_nonce',
+        [
+            'times' => 1,
+            'args'  => [ 'wpst_admin_ajax_nonce' ],
+            'return' => $expected_data['nonce'],
+        ]
+    );
+    */
+
+    // Expect wp_enqueue_style to be called.
+    \WP_Mock::userFunction(
+        'wp_enqueue_style',
+        [
+            'times' => 1,
+            'args'  => [ $style_handle, $style_src, [], $version ],
+        ]
+    );
+
+    // Expect wp_enqueue_script to be called.
+    \WP_Mock::userFunction(
+        'wp_enqueue_script',
+        [
+            'times' => 1,
+            'args'  => [ $script_handle, $script_src, [ 'jquery' ], $version, true ],
+        ]
+    );
+
+    // Expect wp_localize_script to be called.
+    /*
+    \WP_Mock::userFunction(
+        'wp_localize_script',
+        [
+            'times' => 1,
+            'args'  => [ $script_handle, 'wpst_admin_data', $expected_data ],
+        ]
+    );
+    */
+
+    // Call the method to test.
+    $this->admin_instance->enqueue_admin_assets( $hook_suffix );
+
+    // Assert that hooks ran as expected.
+    $this->assertHooksAdded();
+}
+*/
