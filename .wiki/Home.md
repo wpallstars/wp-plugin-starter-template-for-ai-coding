@@ -4,6 +4,11 @@ Welcome to the documentation wiki for the WordPress Plugin Starter Template.
 
 This template provides a solid foundation for developing WordPress plugins with best practices for AI-assisted development.
 
+## Latest Updates
+
+- Version 0.1.6: Fixed GitHub Actions workflows permissions for releases and wiki sync
+- Version 0.1.5: Added testing setup with wp-env and Cypress, multisite compatibility
+
 ## Quick Links
 
 - [Starter Prompt](Starter-Prompt)
