@@ -11,6 +11,8 @@ jobs:
   sync-wiki:
     name: Sync Wiki to GitHub
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
       - name: Checkout source code
         uses: actions/checkout@v3
@@ -23,29 +25,29 @@ jobs:
       - name: Clone wiki repository
         run: |
           git clone https://github.com/${{ github.repository }}.wiki.git wiki
-          
+
       - name: Sync wiki content
         run: |
           # Remove all files from wiki repository except .git
           find wiki -mindepth 1 -maxdepth 1 -not -name '.git' -exec rm -rf {} \;
-          
+
           # Copy .wiki content to wiki repository
           cp -r .wiki/* wiki/
-          
+
           # Go to wiki repository
           cd wiki
-          
+
           # Add all changes
           git add .
-          
+
           # Check if there are changes to commit
           if git diff --staged --quiet; then
             echo "No changes to commit"
             exit 0
           fi
-          
+
           # Commit changes
           git commit -m "Sync wiki from source repository"
-          
+
           # Push changes
           git push https://${{ github.actor }}:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.wiki.git

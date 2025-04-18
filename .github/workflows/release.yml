@@ -10,6 +10,8 @@ jobs:
   build:
     name: Build and Release
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
@@ -60,7 +62,7 @@ jobs:
           prerelease: false
           body: |
             Release of version ${{ env.VERSION }}
-            
+
             See [CHANGELOG.md](https://github.com/wpallstars/wp-plugin-starter-template-for-ai-coding/blob/main/CHANGELOG.md) for details.
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
