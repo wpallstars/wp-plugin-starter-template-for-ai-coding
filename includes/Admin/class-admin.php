@@ -27,6 +27,7 @@ class Admin {
 	 * @param Core $core Core instance.
 	 */
 	public function __construct( Core $core ) {
+		error_log('Admin::__construct called');
 		$this->core = $core;
 		$this->initialize_hooks();
 	}
@@ -35,6 +36,7 @@ class Admin {
 	 * Initializes WordPress hooks.
 	 */
 	private function initialize_hooks() {
+		error_log('Admin::initialize_hooks called');
 		\add_action( 'admin_enqueue_scripts', array( $this, 'enqueue_admin_assets' ) );
 	}
 
