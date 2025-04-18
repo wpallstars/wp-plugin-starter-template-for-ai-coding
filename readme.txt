@@ -1,4 +1,4 @@
-=== WordPress Plugin Starter Template ===
+=== WordPress Plugin Starter Template for AI Coding ===
 Contributors: wpallstars
 Donate link: https://www.wpallstars.com/
 Tags: starter, template, boilerplate, plugin development, ai coding
@@ -31,15 +31,15 @@ This template is based on the experience gained from developing the "Fix 'Plugin
 = How to Use This Template =
 
 1. Clone or download this repository
-2. **Important**: Begin by reading the STARTER-PROMPT.md file for detailed instructions
+2. **Important**: Begin by reading the Starter Prompt file in the wiki for detailed instructions
 3. Add the .ai-assistant.md file and .ai-workflows/ directory to your AI IDE chat context (pin them if possible)
-4. Use the prompt in STARTER-PROMPT.md to guide the AI in customizing the template for your plugin
+4. Use the prompt in the Starter Prompt file to guide the AI in customizing the template for your plugin
 5. Rename files and update namespaces to match your plugin
 6. Customize the functionality for your specific needs
 7. Update documentation to reflect your plugin's features
 8. Build and test your plugin
 
-For detailed instructions, see the [STARTER-PROMPT.md](https://github.com/wpallstars/wp-plugin-starter-template-for-ai-coding/blob/main/STARTER-PROMPT.md) file.
+For detailed instructions, see the [Starter Prompt](https://github.com/wpallstars/wp-plugin-starter-template-for-ai-coding/wiki/Starter-Prompt) file in the wiki.
 
 = AI-Assisted Development =
 
@@ -47,7 +47,7 @@ This template includes comprehensive documentation for AI-assisted development:
 
 * **.ai-assistant.md**: Guide for AI assistants to understand the project structure
 * **.ai-workflows/**: Detailed workflow documentation for common development tasks
-* **STARTER-PROMPT.md**: Comprehensive prompt for AI tools to help customize the template
+* **Starter Prompt**: Comprehensive prompt for AI tools to help customize the template (available in the wiki)
 
 **Important**: For the best AI assistance, add the .ai-assistant.md file and .ai-workflows/ directory to your AI IDE chat context. In most AI IDEs, you can pin these files to ensure they're considered in each message.
 
@@ -71,21 +71,21 @@ Contributions are welcome! Please feel free to submit a Pull Request.
 == Installation ==
 
 1. Clone or download this repository
-2. Read the STARTER-PROMPT.md file for detailed instructions
+2. Read the Starter Prompt file in the wiki for detailed instructions
 3. Add the .ai-assistant.md file and .ai-workflows/ directory to your AI IDE chat context
-4. Use the prompt in STARTER-PROMPT.md to guide the AI in customizing the template
+4. Use the prompt in the Starter Prompt file to guide the AI in customizing the template
 5. Rename files and update namespaces to match your plugin
 6. Customize the functionality for your specific needs
 7. Update documentation to reflect your plugin's features
 8. Build and test your plugin
 
-For detailed instructions, see the [STARTER-PROMPT.md](https://github.com/wpallstars/wp-plugin-starter-template-for-ai-coding/blob/main/STARTER-PROMPT.md) file.
+For detailed instructions, see the [Starter Prompt](https://github.com/wpallstars/wp-plugin-starter-template-for-ai-coding/wiki/Starter-Prompt) file in the wiki.
 
 == Frequently Asked Questions ==
 
 = How do I customize this template for my plugin? =
 
-See the [STARTER-PROMPT.md](https://github.com/wpallstars/wp-plugin-starter-template-for-ai-coding/blob/main/STARTER-PROMPT.md) file for detailed instructions on customizing this template for your specific plugin needs. Make sure to add the .ai-assistant.md file and .ai-workflows/ directory to your AI IDE chat context for the best results.
+See the [Starter Prompt](https://github.com/wpallstars/wp-plugin-starter-template-for-ai-coding/wiki/Starter-Prompt) file in the wiki for detailed instructions on customizing this template for your specific plugin needs. Make sure to add the .ai-assistant.md file and .ai-workflows/ directory to your AI IDE chat context for the best results.
 
 = What files do I need to update with my plugin information? =
 
@@ -133,7 +133,8 @@ You'll need to update all text domain references from 'wp-plugin-starter-templat
 
 = 0.1.3 =
 * Added: Improved AI IDE context recommendations in documentation
-* Enhanced: STARTER-PROMPT.md with guidance on pinning .ai-assistant.md and .ai-workflows/
+* Enhanced: Starter Prompt with guidance on pinning .ai-assistant.md and .ai-workflows/
+* Moved: Starter Prompt to the wiki for better organization
 * Updated: README.md and readme.txt with AI IDE context recommendations
 * Improved: Documentation for AI-assisted development
 
@@ -158,7 +159,7 @@ You'll need to update all text domain references from 'wp-plugin-starter-templat
 == Upgrade Notice ==
 
 = 0.1.3 =
-Added improved AI IDE context recommendations and enhanced STARTER-PROMPT.md with guidance on pinning .ai-assistant.md and .ai-workflows/ files.
+Added improved AI IDE context recommendations and moved Starter Prompt to the wiki with guidance on pinning .ai-assistant.md and .ai-workflows/ files.
 
 = 0.1.1 =
 Updated LICENSE file with correct GPL-2.0 text.

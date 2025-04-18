@@ -3,11 +3,12 @@ All notable changes to this project should be documented both here and in the ma
 #### [0.1.3] - 2025-04-19
 #### Added
 - Improved AI IDE context recommendations in documentation
-- Enhanced STARTER-PROMPT.md with guidance on pinning .ai-assistant.md and .ai-workflows/
+- Enhanced Starter Prompt with guidance on pinning .ai-assistant.md and .ai-workflows/
 
 #### Changed
 - Updated README.md and readme.txt with AI IDE context recommendations
 - Improved documentation for AI-assisted development
+- Moved Starter Prompt to the wiki for better organization
 
 #### [0.1.2] - 2025-04-18
 #### Added
