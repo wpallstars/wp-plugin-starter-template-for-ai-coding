@@ -5,7 +5,7 @@ Tags: starter, template, boilerplate, plugin development, ai coding
 Requires at least: 5.0
 Tested up to: 6.4
 Requires PHP: 7.0
-Stable tag: 0.1.7
+Stable tag: 0.1.8
 License: GPL-2.0+
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -205,6 +205,9 @@ npm run multisite
 
 == Changelog ==
 
+= 0.1.8 =
+* Added: More informative badges to README.md (Build Status, Requirements, WP.org placeholders, Release, Issues, Contributors, Wiki).
+
 = 0.1.7 =
 * Fixed: GitHub Actions tests workflow with proper file paths and dependencies
 * Improved: Workflow names for better clarity in GitHub Actions UI
@@ -244,6 +247,9 @@ npm run multisite
 * Added: Wiki documentation templates
 
 == Upgrade Notice ==
+
+= 0.1.8 =
+Added more informative badges to the plugin's README file.
 
 = 0.1.7 =
 Fixed GitHub Actions tests workflow and improved workflow names for better clarity.

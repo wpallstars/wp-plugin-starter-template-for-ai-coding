@@ -1,5 +1,9 @@
 All notable changes to this project should be documented both here and in the main Readme files.
 
+#### [0.1.8] - 2025-04-19
+#### Added
+- More informative badges to README.md (Build Status, Requirements, WP.org placeholders, Release, Issues, Contributors, Wiki).
+
 #### [0.1.7] - 2025-04-19
 #### Fixed
 - GitHub Actions tests workflow with proper file paths and dependencies
