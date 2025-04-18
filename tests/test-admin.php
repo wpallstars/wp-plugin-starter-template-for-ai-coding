@@ -109,7 +109,7 @@ class AdminTest extends \WP_Mock\Tools\TestCase {
                 'return' => $expected_data['ajax_url'],
             ]
         );
-        // @TODO: Fix mocking for wp_create_nonce and wp_localize_script. Issue #<ISSUE_NUMBER>
+        // @TODO: Fix mocking for wp_create_nonce and wp_localize_script. Issue #1
         // We need to mock wp_create_nonce as it's called directly in the method
         /*
         \WP_Mock::userFunction(

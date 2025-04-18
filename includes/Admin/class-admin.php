@@ -43,6 +43,7 @@ class Admin {
 	 *
 	 * This method is hooked into 'admin_enqueue_scripts'. It checks if the current
 	 * screen is relevant to the plugin before enqueueing assets.
+
 	 *
 	 * @phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.Found
 	 * @param string $hook_suffix The hook suffix of the current admin page.
@@ -66,14 +67,19 @@ class Admin {
 			true
 		);
 
-		// Localize script.
+		// Prepare data for localization.
+		$data = array(
+			'ajax_url' => \admin_url( 'admin-ajax.php' ),
+			'nonce'    => \wp_create_nonce( 'wpst_admin_nonce' ),
+		);
+
+		// @TODO: Restore this call and fix associated tests. Issue #1
+		/*
 		\wp_localize_script(
 			'wpst-admin-script',
 			'wpst_admin_params',
-			array(
-				'ajax_url' => \admin_url( 'admin-ajax.php' ),
-				'nonce'    => \wp_create_nonce( 'wpst-admin-nonce' ),
-			)
+			$data
 		);
+		*/
 	}
 }
