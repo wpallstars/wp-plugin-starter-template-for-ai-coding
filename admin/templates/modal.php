@@ -33,33 +33,25 @@ if ( ! defined( 'ABSPATH' ) ) {
 				<label class="wpst-source-option <?php echo 'wordpress.org' === $current_source ? 'selected' : ''; ?>">
 					<input type="radio" name="update_source" value="wordpress.org" <?php checked( $current_source, 'wordpress.org' ); ?>>
 					<span class="wpst-source-option-label"><?php esc_html_e( 'WordPress.org', 'wp-plugin-starter-template' ); ?></span>
-					<div class="wpst-source-option-description">
-						<?php esc_html_e( 'Receive updates from the official WordPress.org repository. Recommended for most users.', 'wp-plugin-starter-template' ); ?>
-					</div>
+					<div class="wpst-source-option-description"><?php esc_html_e( 'Receive updates from the official WordPress.org repository. Recommended for most users.', 'wp-plugin-starter-template' ); ?></div>
 				</label>
 				
 				<label class="wpst-source-option <?php echo 'github' === $current_source ? 'selected' : ''; ?>">
 					<input type="radio" name="update_source" value="github" <?php checked( $current_source, 'github' ); ?>>
 					<span class="wpst-source-option-label"><?php esc_html_e( 'GitHub', 'wp-plugin-starter-template' ); ?></span>
-					<div class="wpst-source-option-description">
-						<?php esc_html_e( 'Receive updates from the GitHub repository. May include pre-release versions.', 'wp-plugin-starter-template' ); ?>
-					</div>
+					<div class="wpst-source-option-description"><?php esc_html_e( 'Receive updates from the GitHub repository. May include pre-release versions.', 'wp-plugin-starter-template' ); ?></div>
 				</label>
 				
 				<label class="wpst-source-option <?php echo 'gitea' === $current_source ? 'selected' : ''; ?>">
 					<input type="radio" name="update_source" value="gitea" <?php checked( $current_source, 'gitea' ); ?>>
 					<span class="wpst-source-option-label"><?php esc_html_e( 'Gitea', 'wp-plugin-starter-template' ); ?></span>
-					<div class="wpst-source-option-description">
-						<?php esc_html_e( 'Receive updates from the Gitea repository. May include pre-release versions.', 'wp-plugin-starter-template' ); ?>
-					</div>
+					<div class="wpst-source-option-description"><?php esc_html_e( 'Receive updates from the Gitea repository. May include pre-release versions.', 'wp-plugin-starter-template' ); ?></div>
 				</label>
 			</div>
 		</div>
 		
 		<div class="wpst-modal-footer">
-			<button type="button" id="wpst-save-source" class="button button-primary">
-				<?php esc_html_e( 'Save', 'wp-plugin-starter-template' ); ?>
-			</button>
+			<button type="button" id="wpst-save-source" class="button button-primary"><?php esc_html_e( 'Save', 'wp-plugin-starter-template' ); ?></button>
 		</div>
 	</div>
 </div>
