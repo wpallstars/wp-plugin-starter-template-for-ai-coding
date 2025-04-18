@@ -1,0 +1,107 @@
+# Copyright (C) 2025 WPALLSTARS
+# This file is distributed under the GPL-2.0+.
+msgid ""
+msgstr ""
+"Project-Id-Version: WordPress Plugin Starter Template 0.1.0\n"
+"Report-Msgid-Bugs-To: https://wordpress.org/support/plugin/wp-plugin-starter-template\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"POT-Creation-Date: 2025-04-17T00:00:00+00:00\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"X-Generator: WP-CLI 2.9.0\n"
+"X-Domain: wp-plugin-starter-template\n"
+
+#. Plugin Name of the plugin
+msgid "WordPress Plugin Starter Template"
+msgstr ""
+
+#. Plugin URI of the plugin
+msgid "https://www.wpallstars.com"
+msgstr ""
+
+#. Description of the plugin
+msgid "A comprehensive starter template for WordPress plugins with best practices for AI-assisted development."
+msgstr ""
+
+#. Author of the plugin
+msgid "WPALLSTARS"
+msgstr ""
+
+#. Author URI of the plugin
+msgid "https://www.wpallstars.com"
+msgstr ""
+
+#: admin/lib/admin.php:74
+msgid "Save Changes"
+msgstr ""
+
+#: admin/lib/admin.php:75
+msgid "Cancel"
+msgstr ""
+
+#: admin/lib/modal.php:67
+msgid "Close"
+msgstr ""
+
+#: admin/lib/modal.php:68
+msgid "Confirm"
+msgstr ""
+
+#: admin/templates/modal.php:16
+msgid "Select Update Source"
+msgstr ""
+
+#: admin/templates/modal.php:21
+msgid "Choose your preferred source for plugin updates:"
+msgstr ""
+
+#: admin/templates/modal.php:31
+msgid "WordPress.org"
+msgstr ""
+
+#: admin/templates/modal.php:33
+msgid "Receive updates from the official WordPress.org repository. Recommended for most users."
+msgstr ""
+
+#: admin/templates/modal.php:38
+msgid "GitHub"
+msgstr ""
+
+#: admin/templates/modal.php:40
+msgid "Receive updates from the GitHub repository. May include pre-release versions."
+msgstr ""
+
+#: admin/templates/modal.php:45
+msgid "Gitea"
+msgstr ""
+
+#: admin/templates/modal.php:47
+msgid "Receive updates from the Gitea repository. May include pre-release versions."
+msgstr ""
+
+#: admin/templates/modal.php:55
+msgid "Save"
+msgstr ""
+
+#: includes/updater.php:71
+msgid "Update Source"
+msgstr ""
+
+#: includes/updater.php:84
+msgid "Security check failed."
+msgstr ""
+
+#: includes/updater.php:89
+msgid "You do not have permission to perform this action."
+msgstr ""
+
+#: includes/updater.php:98
+msgid "Invalid update source."
+msgstr ""
+
+#: includes/updater.php:107
+msgid "Update source set to %s."
+msgstr ""

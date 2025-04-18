@@ -1,0 +1,66 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+      - 'v*-stable'
+
+jobs:
+  build:
+    name: Build and Release
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '7.4'
+          extensions: mbstring, intl, zip
+          tools: composer:v2
+
+      - name: Get tag name
+        id: get_tag
+        run: echo "TAG=${GITHUB_REF#refs/tags/}" >> $GITHUB_ENV
+
+      - name: Extract version from tag
+        id: get_version
+        run: |
+          VERSION=$(echo ${{ env.TAG }} | sed 's/^v//' | sed 's/-stable$//')
+          echo "VERSION=$VERSION" >> $GITHUB_ENV
+
+      - name: Install dependencies
+        run: composer install --no-dev --optimize-autoloader
+
+      - name: Create build directory
+        run: |
+          mkdir -p build/wp-plugin-starter-template
+          cp -R *.php README.md LICENSE CHANGELOG.md readme.txt composer.json build/wp-plugin-starter-template/
+          cp -R admin includes languages vendor build/wp-plugin-starter-template/
+          mkdir -p build/wp-plugin-starter-template/assets/banner build/wp-plugin-starter-template/assets/icon build/wp-plugin-starter-template/assets/screenshots
+          if [ -d "assets/banner" ]; then cp -R assets/banner/* build/wp-plugin-starter-template/assets/banner/; fi
+          if [ -d "assets/icon" ]; then cp -R assets/icon/* build/wp-plugin-starter-template/assets/icon/; fi
+          if [ -d "assets/screenshots" ]; then cp -R assets/screenshots/* build/wp-plugin-starter-template/assets/screenshots/; fi
+
+      - name: Create ZIP file
+        run: |
+          cd build
+          zip -r ../wp-plugin-starter-template-${{ env.VERSION }}.zip wp-plugin-starter-template -x "*.DS_Store" -x "*.git*"
+          cd ..
+
+      - name: Create Release
+        id: create_release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: wp-plugin-starter-template-${{ env.VERSION }}.zip
+          name: Version ${{ env.VERSION }}
+          draft: false
+          prerelease: false
+          body: |
+            Release of version ${{ env.VERSION }}
+            
+            See [CHANGELOG.md](https://github.com/wpallstars/wp-plugin-starter-template-for-ai-coding/blob/main/CHANGELOG.md) for details.
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

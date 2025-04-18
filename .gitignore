@@ -1,0 +1,64 @@
+# Operating System Files
+.DS_Store
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+
+# IDE Files
+.idea/
+.vscode/
+*.sublime-project
+*.sublime-workspace
+*.komodoproject
+.komodotools/
+*.code-workspace
+
+# Dependency Directories
+node_modules/
+vendor/
+bower_components/
+
+# Build Files
+build/
+dist/
+*.zip
+*.tar.gz
+*.tgz
+
+# Composer
+composer.phar
+
+# WordPress
+wp-config.php
+wp-content/advanced-cache.php
+wp-content/backup-db/
+wp-content/backups/
+wp-content/blogs.dir/
+wp-content/cache/
+wp-content/upgrade/
+wp-content/uploads/
+wp-content/wp-cache-config.php
+wp-content/plugins/hello.php
+
+# Log Files
+*.log
+logs/
+error_log
+
+# Environment Files
+.env
+.env.*
+!.env.example
+
+# Temporary Files
+tmp/
+temp/
+*.tmp
+*.bak
+*.swp
+*~
+
+# Test Coverage
+coverage/
+.phpunit.result.cache
