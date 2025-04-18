@@ -65,8 +65,7 @@ class AdminTest extends \WP_Mock\Tools\TestCase {
         $this->assertInstanceOf(Admin::class, $this->admin);
     }
 
-    // @TODO: Test commented out to allow CI to pass. Needs mocks fixed for wp_create_nonce and wp_localize_script. See Issue #1.
-    /*
+    /* 
     /**
      * Test the enqueue_admin_assets method.
      */

@@ -53,7 +53,7 @@ class Admin {
 
 		// @phpcs:disable WordPress.Security.NonceVerification.Recommended
 		// @phpcs:disable WordPress.Security.NonceVerification.Missing
-		if ( ! isset( $_GET['page'] ) || $_GET['page'] !== 'wp_plugin_starter_template_settings' ) {
+		if ( ! isset( $_GET['page'] ) || 'wp_plugin_starter_template_settings' !== $_GET['page'] ) {
 			return;
 		}
 		// @phpcs:enable
@@ -81,17 +81,17 @@ class Admin {
 		// Prepare data for localization.
 		$data = array(
 			'ajax_url' => \admin_url( 'admin-ajax.php' ),
-			// @TODO: Fix mocking for wp_create_nonce. Issue #1
+			// @TODO: Fix mocking for wp_create_nonce. Issue #1.
 			// 'nonce'    => \wp_create_nonce( 'wpst_admin_nonce' ),
 		);
 
 		// Localize the script with the data.
-		// @TODO: Fix mocking for wp_localize_script. Issue #1
-
+		// @TODO: Fix mocking for wp_localize_script. Issue #1.
+		// @phpcs:ignore Squiz.PHP.CommentedOutCode.Found
 		/*
 		\wp_localize_script(
 			'wpst-admin-script',
-			'wpst_admin_params',
+			'wpst_admin_data',
 			$data
 		);
 		*/
