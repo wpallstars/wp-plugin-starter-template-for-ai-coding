@@ -6,13 +6,11 @@
  */
 
 use WPALLSTARS\PluginStarterTemplate\Core;
-use WP_Mock\Tools\TestCase;
-use WP_Mock;
 
 /**
  * Core test case.
  */
-class CoreTest extends TestCase {
+class CoreTest extends \WP_Mock\Tools\TestCase {
 
     /**
      * Test instance
@@ -24,7 +22,7 @@ class CoreTest extends TestCase {
     /**
      * Set up test environment
      */
-    public function setUp(): void {
+    public function setUp() {
         parent::setUp();
 
         // Set up mocks
@@ -37,7 +35,7 @@ class CoreTest extends TestCase {
     /**
      * Tear down test environment
      */
-    public function tearDown(): void {
+    public function tearDown() {
         WP_Mock::tearDown();
         parent::tearDown();
     }
