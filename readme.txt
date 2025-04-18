@@ -5,7 +5,7 @@ Tags: starter, template, boilerplate, plugin development, ai coding
 Requires at least: 5.0
 Tested up to: 6.4
 Requires PHP: 7.0
-Stable tag: 0.1.0
+Stable tag: 0.1.1
 License: GPL-2.0+
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -75,6 +75,9 @@ Contributions are welcome! Please feel free to submit a pull request or open an 
 1. This is a placeholder for your plugin's screenshots. Replace with actual screenshots of your plugin in action.
 
 == Changelog ==
+
+= 0.1.1 =
+* Updated LICENSE file with correct GPL-2.0 text
 
 = 0.1.0 =
 * Initial release with basic template structure

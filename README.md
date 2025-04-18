@@ -134,6 +134,9 @@ This project is licensed under the GPL-2.0+ License - see the [LICENSE](LICENSE)
 
 ## Changelog
 
+### 0.1.1
+- Updated LICENSE file with correct GPL-2.0 text
+
 ### 0.1.0
 - Initial release with basic template structure
 - Added core plugin architecture
