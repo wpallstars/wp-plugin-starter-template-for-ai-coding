@@ -1,4 +1,4 @@
-name: Tests
+name: Tests - Run PHP compatibility and unit tests
 
 on:
   push:
@@ -27,7 +27,15 @@ jobs:
           tools: composer:v2
 
       - name: Install dependencies
-        run: composer install --prefer-dist --no-progress
+        run: |
+          if [[ "${{ matrix.php-versions }}" == "7.0" ]]; then
+            composer require --dev phpunit/phpunit:"^6.5" --update-with-dependencies
+            composer require --dev 10up/wp_mock:"^0.4.2" --update-with-dependencies
+            composer require --dev antecedent/patchwork:"^2.1.21" --update-with-dependencies
+          else
+            composer install --prefer-dist --no-progress
+            composer require --dev 10up/wp_mock:"^0.4.2" --update-with-dependencies
+          fi
 
       - name: Run tests
         run: ./vendor/bin/phpunit
@@ -51,4 +59,4 @@ jobs:
         run: composer install --prefer-dist --no-progress
 
       - name: Run PHPCS
-        run: ./vendor/bin/phpcs --standard=WordPress --runtime-set installed_paths vendor/wp-coding-standards/wpcs
+        run: ./vendor/bin/phpcs --standard=WordPress --runtime-set installed_paths vendor/wp-coding-standards/wpcs ./includes ./admin ./wp-plugin-starter-template.php
