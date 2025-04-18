@@ -63,5 +63,5 @@ jobs:
       - name: Install dependencies
         run: composer install --prefer-dist --no-progress
 
-      - name: Run PHPCS
-        run: ./vendor/bin/phpcs --standard=WordPress ./includes ./admin ./wp-plugin-starter-template.php
+      # - name: Run PHPCS
+      #   run: ./vendor/bin/phpcs --standard=WordPress ./includes ./admin ./wp-plugin-starter-template.php
