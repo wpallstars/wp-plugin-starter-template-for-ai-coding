@@ -78,7 +78,7 @@ class AdminTest extends \WP_Mock\Tools\TestCase {
         $version       = '1.0.0'; // Match the version returned by the mocked core->get_plugin_version()
 
         // Expect wp_enqueue_style to be called
-        \WP_Mock::expectFunction(
+        \WP_Mock::userFunction(
             'wp_enqueue_style',
             [
                 'times' => 1,
@@ -87,7 +87,7 @@ class AdminTest extends \WP_Mock\Tools\TestCase {
         );
 
         // Expect wp_enqueue_script to be called
-        \WP_Mock::expectFunction(
+        \WP_Mock::userFunction(
             'wp_enqueue_script',
             [
                 'times' => 1,
