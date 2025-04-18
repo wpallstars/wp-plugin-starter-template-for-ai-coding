@@ -24,6 +24,6 @@ define('WPST_VERSION', '0.1.0');
  * Now we include any plugin files that we need to be able to run the tests.
  * This should be files that define the functions and classes you're going to test.
  */
-require_once WPST_PLUGIN_DIR . 'includes/core.php';
-require_once WPST_PLUGIN_DIR . 'includes/plugin.php';
+require_once WPST_PLUGIN_DIR . 'includes/class-core.php';
+require_once WPST_PLUGIN_DIR . 'includes/class-plugin.php';
 require_once WPST_PLUGIN_DIR . 'admin/lib/admin.php';

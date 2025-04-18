@@ -26,7 +26,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 			
 			<div class="wpst-source-options">
 				<?php
-				// Get current update source
+				// Get current update source.
 				$current_source = get_option( 'wpst_update_source', 'wordpress.org' );
 				?>
 				

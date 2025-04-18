@@ -15,10 +15,10 @@
 		 * Initialize
 		 */
 		init: function () {
-			// Initialize components
+			// Initialize components.
 			this.initComponents();
 
-			// Bind events
+			// Bind events.
 			this.bindEvents();
 		},
 
@@ -26,17 +26,17 @@
 		 * Initialize components
 		 */
 		initComponents: function () {
-			// Initialize any components here
+			// Initialize any components here.
 		},
 
 		/**
 		 * Bind events
 		 */
 		bindEvents: function () {
-			// Example: Toggle sections
+			// Example: Toggle sections.
 			$( '.wpst-toggle-section' ).on( 'click', this.toggleSection );
 
-			// Example: Form submission
+			// Example: Form submission.
 			$( '#wpst-settings-form' ).on( 'submit', this.handleFormSubmit );
 		},
 
@@ -67,10 +67,10 @@
 			const $submitButton = $form.find( 'input[type="submit"]' );
 			const formData      = $form.serialize();
 
-			// Disable submit button and show loading state
+			// Disable submit button and show loading state.
 			$submitButton.prop( 'disabled', true ).addClass( 'loading' );
 
-			// Send AJAX request
+			// Send AJAX request.
 			$.ajax(
 				{
 					url: wpstData.ajaxUrl,
@@ -91,7 +91,7 @@
 						WPSTAdmin.showNotice( 'error', 'An error occurred. Please try again.' );
 					},
 					complete: function () {
-						// Re-enable submit button and remove loading state
+						// Re-enable submit button and remove loading state.
 						$submitButton.prop( 'disabled', false ).removeClass( 'loading' );
 					}
 				}
@@ -107,10 +107,10 @@
 		showNotice: function (type, message) {
 			const $notice = $( '<div class="wpst-notice ' + type + '"><p>' + message + '</p></div>' );
 
-			// Add notice to the page
+			// Add notice to the page.
 			$( '.wpst-notices' ).html( $notice );
 
-			// Automatically remove notice after 5 seconds
+			// Automatically remove notice after 5 seconds.
 			setTimeout(
 				function () {
 					$notice.fadeOut(
@@ -125,7 +125,7 @@
 		}
 	};
 
-	// Initialize when document is ready
+	// Initialize when document is ready.
 	$( document ).ready(
 		function () {
 			WPSTAdmin.init();

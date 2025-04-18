@@ -25,10 +25,10 @@
 		 * Initialize
 		 */
 		init: function () {
-			// Cache DOM elements
+			// Cache DOM elements.
 			this.$modal = $( '#wpst-update-source-modal' );
 
-			// Bind events
+			// Bind events.
 			this.bindEvents();
 		},
 
@@ -36,10 +36,10 @@
 		 * Bind events
 		 */
 		bindEvents: function () {
-			// Open modal when clicking on the update source link
+			// Open modal when clicking on the update source link.
 			$( document ).on( 'click', '.wpst-update-source-selector', this.openModal.bind( this ) );
 
-			// Close modal when clicking on the close button or outside the modal
+			// Close modal when clicking on the close button or outside the modal.
 			this.$modal.on( 'click', '.wpst-modal-close', this.closeModal.bind( this ) );
 			$( document ).on(
 				'click',
@@ -51,10 +51,10 @@
 				}
 			);
 
-			// Select source option
+			// Select source option.
 			this.$modal.on( 'click', '.wpst-source-option', this.selectSource.bind( this ) );
 
-			// Save source selection
+			// Save source selection.
 			this.$modal.on( 'click', '#wpst-save-source', this.saveSource.bind( this ) );
 		},
 
@@ -83,14 +83,14 @@
 		selectSource: function (e) {
 			const $option = $( e.currentTarget );
 
-			// Update selected state
+			// Update selected state.
 			this.$modal.find( '.wpst-source-option' ).removeClass( 'selected' );
 			$option.addClass( 'selected' );
 
-			// Update radio button
+			// Update radio button.
 			$option.find( 'input[type="radio"]' ).prop( 'checked', true );
 
-			// Store selected source
+			// Store selected source.
 			this.selectedSource = $option.find( 'input[type="radio"]' ).val();
 		},
 
@@ -98,31 +98,31 @@
 		 * Save the selected source
 		 */
 		saveSource: function () {
-			// Validate selection
+			// Validate selection.
 			if ( ! this.selectedSource) {
 				this.showMessage( 'error', 'Please select an update source.' );
 				return;
 			}
 
-			// Show loading state
+			// Show loading state.
 			const $saveButton = $( '#wpst-save-source' );
 			$saveButton.prop( 'disabled', true ).html( '<span class="wpst-loading"></span> Saving...' );
 
-			// Send AJAX request
+			// Send AJAX request.
 			$.ajax(
 				{
-					url: wpstModalData.ajaxUrl,
+					url: wpstModalData.ajaxUrl, // WordPress AJAX URL.
 					type: 'POST',
 					data: {
-						action: 'wpst_set_update_source',
-						nonce: wpstModalData.nonce,
+						action: 'wpst_set_update_source', // AJAX action hook.
+						nonce: wpstModalData.nonce, // Security nonce.
 						source: this.selectedSource
 					},
 					success: function (response) {
 						if (response.success) {
 							WPSTUpdateSourceSelector.showMessage( 'success', response.data.message );
 
-							// Close modal after a short delay
+							// Close modal after a short delay.
 							setTimeout(
 								function () {
 									WPSTUpdateSourceSelector.closeModal();
@@ -137,7 +137,7 @@
 						WPSTUpdateSourceSelector.showMessage( 'error', 'An error occurred. Please try again.' );
 					},
 					complete: function () {
-						// Reset button state
+						// Reset button state.
 						$saveButton.prop( 'disabled', false ).text( wpstModalData.i18n.confirm );
 					}
 				}
@@ -153,10 +153,10 @@
 		showMessage: function (type, message) {
 			const $message = this.$modal.find( '.wpst-modal-message' );
 
-			// Set message content and type
+			// Set message content and type.
 			$message.html( message ).removeClass( 'success error' ).addClass( type ).show();
 
-			// Hide message after a delay for success messages
+			// Hide message after a delay for success messages.
 			if (type === 'success') {
 				setTimeout(
 					function () {
@@ -168,7 +168,7 @@
 		}
 	};
 
-	// Initialize when document is ready
+	// Initialize when document is ready.
 	$( document ).ready(
 		function () {
 			WPSTUpdateSourceSelector.init();
