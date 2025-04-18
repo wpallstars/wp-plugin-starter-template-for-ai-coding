@@ -1,5 +1,6 @@
 ## User Documentation
 * [Home](Home)
+* [Starter Prompt](Starter-Prompt)
 * [Installation Guide](Installation-Guide)
 * [Usage Instructions](Usage-Instructions)
 * [Frequently Asked Questions](Frequently-Asked-Questions)

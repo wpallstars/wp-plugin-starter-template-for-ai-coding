@@ -150,7 +150,15 @@ If the plugin is hosted on WordPress.org:
 
 After releasing a new version:
 
-1. Update the wiki documentation if needed
-2. Announce the release in relevant channels
-3. Monitor for any issues or feedback
-4. Start planning the next release
+1. Update the wiki documentation:
+   - Update the Changelog.md file in the .wiki directory to match the main CHANGELOG.md
+   - Add the new version information to the Home.md file in the Latest Updates section
+   - Ensure all wiki pages are up-to-date with the new features or changes
+   - Verify that the _Sidebar.md file has the correct navigation structure
+2. Verify that GitHub Actions workflows are running correctly:
+   - Check that the release workflow created the release with the correct assets
+   - Check that the sync-wiki workflow synced the wiki changes
+   - Fix any permissions issues in the workflow files if needed
+3. Announce the release in relevant channels
+4. Monitor for any issues or feedback
+5. Start planning the next release

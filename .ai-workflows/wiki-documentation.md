@@ -8,6 +8,7 @@ The wiki documentation is organized into the following sections:
 
 1. **User Documentation**:
    - Home
+   - Starter Prompt (must be listed before Installation Guide)
    - Installation Guide
    - Usage Instructions
    - Frequently Asked Questions
@@ -88,8 +89,10 @@ Documentation should be updated:
 
 1. Identify the relevant wiki file(s) in the `.wiki/` directory
 2. Make the necessary changes
-3. Commit and push the changes to the `main` branch
-4. The GitHub Actions workflow will automatically sync the changes with the GitHub wiki
+3. **Always ensure the Changelog.md in the wiki is updated to match the main CHANGELOG.md file**
+4. **Always ensure the _Sidebar.md file has the correct navigation structure with Starter Prompt listed before Installation Guide**
+5. Commit and push the changes to the `main` branch
+6. The GitHub Actions workflow will automatically sync the changes with the GitHub wiki
 
 ### Creating New Pages
 

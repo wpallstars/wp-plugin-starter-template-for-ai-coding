@@ -13,7 +13,8 @@ jobs:
     strategy:
       matrix:
         php-versions: ['7.0', '7.4', '8.0']
-    
+      fail-fast: false
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
@@ -34,7 +35,7 @@ jobs:
   code-style:
     name: Code Style
     runs-on: ubuntu-latest
-    
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
@@ -50,4 +51,4 @@ jobs:
         run: composer install --prefer-dist --no-progress
 
       - name: Run PHPCS
-        run: ./vendor/bin/phpcs --standard=WordPress
+        run: ./vendor/bin/phpcs --standard=WordPress --runtime-set installed_paths vendor/wp-coding-standards/wpcs
