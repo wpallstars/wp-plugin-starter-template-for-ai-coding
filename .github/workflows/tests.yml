@@ -29,8 +29,13 @@ jobs:
       - name: Install dependencies
         run: |
           if [[ "${{ matrix.php-versions }}" == "7.0" ]]; then
+            # Force PHPUnit 6.5 for PHP 7.0
             composer require --dev phpunit/phpunit:"^6.5" --update-with-dependencies
+          elif [[ "${{ matrix.php-versions }}" == "8.0" ]]; then
+            # Update PHPUnit and WP_Mock for PHP 8.0
+            composer require --dev phpunit/phpunit:"^9.5" 10up/wp_mock:"^1.0" --no-update
           fi
+          # Update all dependencies based on composer.json/composer.lock and any modifications above
           composer update --prefer-dist --no-progress
 
       - name: Run tests
@@ -55,4 +60,4 @@ jobs:
         run: composer update --prefer-dist --no-progress
 
       - name: Run PHPCS
-        run: ./vendor/bin/phpcs --standard=WordPress --runtime-set installed_paths vendor/wp-coding-standards/wpcs ./includes ./admin ./wp-plugin-starter-template.php
+        run: ./vendor/bin/phpcs --standard=WordPress ./includes ./admin ./wp-plugin-starter-template.php
