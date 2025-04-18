@@ -35,7 +35,7 @@ class Admin {
 	 * Initializes WordPress hooks.
 	 */
 	private function initialize_hooks() {
-		add_action( 'admin_enqueue_scripts', array( $this, 'enqueue_admin_assets' ) );
+		\add_action( 'admin_enqueue_scripts', array( $this, 'enqueue_admin_assets' ) );
 	}
 
 	/**
