@@ -30,14 +30,14 @@
             "includes/Admin/class-admin.php"
         ]
     },
-    "scripts": {
-        "phpcs": "phpcs --standard=WordPress",
-        "phpcbf": "phpcbf --standard=WordPress",
-        "test": "phpunit"
-    },
     "config": {
         "allow-plugins": {
             "dealerdirect/phpcodesniffer-composer-installer": true
         }
+    },
+    "scripts": {
+        "phpcs": "phpcs --standard=WordPress",
+        "phpcbf": "phpcbf --standard=WordPress",
+        "test": "phpunit"
     }
 }
