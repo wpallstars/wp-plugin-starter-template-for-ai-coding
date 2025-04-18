@@ -27,7 +27,6 @@ class Admin {
 	 * @param Core $core Core instance.
 	 */
 	public function __construct( Core $core ) {
-		error_log('Admin::__construct called');
 		$this->core = $core;
 		$this->initialize_hooks();
 	}
@@ -36,32 +35,34 @@ class Admin {
 	 * Initializes WordPress hooks.
 	 */
 	private function initialize_hooks() {
-		error_log('Admin::initialize_hooks called');
 		\add_action( 'admin_enqueue_scripts', array( $this, 'enqueue_admin_assets' ) );
 	}
 
 	/**
-	 * Enqueues admin-specific assets.
+	 * Enqueues admin scripts and styles.
 	 *
 	 * @param string $hook_suffix The current admin page.
+	 * @phpcs:ignore WordPress.CodeAnalysis.UnusedFunctionParameter.Found
 	 */
 	public function enqueue_admin_assets( $hook_suffix ) {
-		// Enqueue admin styles
+		// Enqueue admin styles.
 		\wp_enqueue_style(
 			'wpst-admin-style',
-			'path/to/admin/css/admin-styles.css'
+			'path/to/admin/css/admin-styles.css',
+			array(), // Dependencies
+			$this->core->get_plugin_version() // Version
 		);
 
-		// Enqueue admin scripts
+		// Enqueue admin scripts.
 		\wp_enqueue_script(
 			'wpst-admin-script',
 			'path/to/admin/js/admin-scripts.js',
 			array( 'jquery' ),
-			null,
+			$this->core->get_plugin_version(), // Version
 			true
 		);
 
-		// Localize script
+		// Localize script.
 		\wp_localize_script(
 			'wpst-admin-script',
 			'wpst_admin_params',
