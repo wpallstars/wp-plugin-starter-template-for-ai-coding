@@ -92,15 +92,31 @@ The `-stable` tag is used by Git Updater to identify the stable version.
 Push the version branch and tags to remote repositories:
 
 ```bash
+# List remote tags (replace 'github' and 'gitea' if your remotes have different names)
+git ls-remote --tags github
+git ls-remote --tags gitea
+```
+
+If the tags (e.g., `v{MAJOR}.{MINOR}.{PATCH}` and `v{MAJOR}.{MINOR}.{PATCH}-stable`) already exist remotely but point to the wrong commit, delete them from the remote first:
+
+```bash
+# Delete incorrect remote tags (replace 'github', 'gitea', and tag names)
+git push github --delete v{MAJOR}.{MINOR}.{PATCH}
+git push github --delete v{MAJOR}.{MINOR}.{PATCH}-stable
+git push gitea --delete v{MAJOR}.{MINOR}.{PATCH}
+git push gitea --delete v{MAJOR}.{MINOR}.{PATCH}-stable
+```
+
+Once you've confirmed the tags don't exist remotely or have deleted incorrect ones, push the new local tags:
+
+```bash
 # Push to GitHub
 git push github refs/heads/v{MAJOR}.{MINOR}.{PATCH}:refs/heads/v{MAJOR}.{MINOR}.{PATCH}
-git push github refs/tags/v{MAJOR}.{MINOR}.{PATCH}:refs/tags/v{MAJOR}.{MINOR}.{PATCH}
-git push github refs/tags/v{MAJOR}.{MINOR}.{PATCH}-stable:refs/tags/v{MAJOR}.{MINOR}.{PATCH}-stable
+git push github --tags
 
 # Push to Gitea
 git push gitea refs/heads/v{MAJOR}.{MINOR}.{PATCH}:refs/heads/v{MAJOR}.{MINOR}.{PATCH}
-git push gitea refs/tags/v{MAJOR}.{MINOR}.{PATCH}:refs/tags/v{MAJOR}.{MINOR}.{PATCH}
-git push gitea refs/tags/v{MAJOR}.{MINOR}.{PATCH}-stable:refs/tags/v{MAJOR}.{MINOR}.{PATCH}-stable
+git push gitea --tags
 ```
 
 ### 7. Merge into Main Branch
