@@ -1,35 +1,41 @@
 # WordPress Plugin Starter Template
 
-Welcome to the WordPress Plugin Starter Template wiki! This documentation provides comprehensive information about using, customizing, and extending the template for your WordPress plugin development.
+Welcome to the documentation wiki for the WordPress Plugin Starter Template.
 
-## Overview
+This template provides a solid foundation for developing WordPress plugins with best practices for AI-assisted development.
 
-The WordPress Plugin Starter Template provides a solid foundation for developing WordPress plugins with AI assistance. It includes a well-structured codebase, documentation templates, and best practices to help you create high-quality WordPress plugins efficiently.
+## Quick Links
 
-## For Users
+- [Starter Prompt](Starter-Prompt)
+- [Installation Guide](Installation-Guide)
+- [Usage Instructions](Usage-Instructions)
+- [Frequently Asked Questions](Frequently-Asked-Questions)
+- [Contributing](Contributing)
+- [Changelog](Changelog)
 
-- [Installation Guide](Installation-Guide): How to install and set up the plugin
-- [Usage Instructions](Usage-Instructions): How to use the plugin's features
-- [Frequently Asked Questions](Frequently-Asked-Questions): Common questions and answers
-- [Troubleshooting](Troubleshooting): Solutions to common issues
+## About This Template
 
-## For Developers
+The WordPress Plugin Starter Template is designed to help developers quickly create new WordPress plugins with a solid foundation of best practices. It incorporates modern coding standards, comprehensive documentation, and AI-assisted development workflows.
 
-- [Architecture Overview](Architecture-Overview): Understanding the plugin's structure
-- [Customization Guide](Customization-Guide): How to customize the template for your needs
-- [Extending the Plugin](Extending-the-Plugin): Adding new features and functionality
-- [Coding Standards](Coding-Standards): Coding standards and best practices
-- [Release Process](Release-Process): How to create and publish releases
+This template is based on the experience gained from developing the "Fix 'Plugin file does not exist' Notices" plugin and other successful WordPress plugins.
 
-## For AI Assistants
+## Key Features
 
-- [AI Workflow Documentation](AI-Workflow-Documentation): Guidelines for AI-assisted development
+- **Object-Oriented Architecture**: Well-structured, maintainable code using OOP principles
+- **Namespace Support**: Modern PHP namespacing for better organization and avoiding conflicts
+- **Comprehensive Documentation**: Detailed documentation for both users and developers
+- **Testing Framework**: PHPUnit setup for unit testing
+- **Internationalization Ready**: Full support for translation and localization
+- **Update Source Selection**: Choose between WordPress.org, GitHub, or Gitea for plugin updates
+- **AI Workflow Documentation**: Detailed guides for AI-assisted development
+- **Wiki Documentation**: Ready-to-use wiki structure for comprehensive documentation
 
-## Additional Resources
+## Getting Started
 
-- [Changelog](Changelog): History of changes and updates
-- [Contributing](Contributing): How to contribute to the project
+To get started with this template, check out the [Starter Prompt](Starter-Prompt) for a comprehensive guide on customizing the template for your specific plugin needs.
 
-## Credits
+**Important**: For the best AI assistance, add the .ai-assistant.md file and .ai-workflows/ directory to your AI IDE chat context. In most AI IDEs, you can pin these files to ensure they're considered in each message.
 
-This template is maintained by [WPALLSTARS](https://www.wpallstars.com) and is based on the experience and best practices developed while creating the [Fix 'Plugin file does not exist' Notices](https://github.com/wpallstars/wp-fix-plugin-does-not-exist-notices) plugin.
+## Support
+
+If you encounter any issues or have questions about the template, please check the [Frequently Asked Questions](Frequently-Asked-Questions) section. If you still need help, you can [open an issue](https://github.com/wpallstars/wp-plugin-starter-template-for-ai-coding/issues) on GitHub.
