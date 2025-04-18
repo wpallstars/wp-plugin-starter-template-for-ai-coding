@@ -95,6 +95,19 @@ class AdminTest extends \WP_Mock\Tools\TestCase {
             ]
         );
 
+        // Expect wp_localize_script to be called
+        \WP_Mock::userFunction(
+            'wp_localize_script',
+            [
+                'times' => 1,
+                'args'  => [
+                    $script_handle,
+                    'wpst_admin_params',
+                    \Mockery::type( 'array' ), // We don't need to assert the exact array content here
+                ],
+            ]
+        );
+
         // Call the method under test.
         $this->admin->enqueue_admin_assets( 'test-hook' );
 
