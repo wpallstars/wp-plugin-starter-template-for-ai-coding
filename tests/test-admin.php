@@ -96,6 +96,19 @@ class AdminTest extends \WP_Mock\Tools\TestCase {
         );
 
         // Expect wp_localize_script to be called
+        $expected_data = [
+            'ajax_url' => 'mock_ajax_url',
+            'nonce'    => 'mock_nonce',
+        ];
+        // Mock admin_url() before wp_localize_script uses it
+        \WP_Mock::userFunction(
+            'admin_url',
+            [
+                'times'  => 1,
+                'args'   => [ 'admin-ajax.php' ],
+                'return' => $expected_data['ajax_url'],
+            ]
+        );
         \WP_Mock::userFunction(
             'wp_localize_script',
             [
