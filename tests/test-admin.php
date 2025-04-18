@@ -30,7 +30,7 @@ class AdminTest extends \WP_Mock\Tools\TestCase {
     /**
      * Set up test environment
      */
-    public function setUp() {
+    public function setUp(): void {
         parent::setUp();
 
         // Set up mocks

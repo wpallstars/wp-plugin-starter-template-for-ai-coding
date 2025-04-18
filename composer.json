@@ -18,7 +18,7 @@
         "squizlabs/php_codesniffer": "^3.5",
         "wp-coding-standards/wpcs": "^2.3",
         "dealerdirect/phpcodesniffer-composer-installer": "^0.7.0",
-        "10up/wp_mock": "^1.0",
+        "10up/wp_mock": "^0.4.2",
         "antecedent/patchwork": "^2.1.21"
     },
     "autoload": {
