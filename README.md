@@ -188,6 +188,12 @@ For more information on Git Updater integration, see the [Git Updater Required H
 
 ## Changelog
 
+### 0.1.3
+* Added: Improved AI IDE context recommendations in documentation
+* Enhanced: STARTER-PROMPT.md with guidance on pinning .ai-assistant.md and .ai-workflows/
+* Updated: README.md and readme.txt with AI IDE context recommendations
+* Improved: Documentation for AI-assisted development
+
 ### 0.1.2
 * Added: STARTER-PROMPT.md with comprehensive guide for customizing the template
 * Updated: Documentation files with improved instructions
