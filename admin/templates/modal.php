@@ -2,11 +2,11 @@
 /**
  * Modal Template
  *
- * @package WPALLSTARS\PluginStarterTemplate
+ * @package WPALLSTARS\PluginStarterTemplate\Admin\Templates
  */
 
-// If this file is called directly, abort.
-if ( ! defined( 'WPINC' ) ) {
+// Ensure this file is loaded within WordPress.
+if ( ! defined( 'ABSPATH' ) ) {
 	die;
 }
 ?>
@@ -30,7 +30,7 @@ if ( ! defined( 'WPINC' ) ) {
 				$current_source = get_option( 'wpst_update_source', 'wordpress.org' );
 				?>
 				
-				<label class="wpst-source-option <?php echo $current_source === 'wordpress.org' ? 'selected' : ''; ?>">
+				<label class="wpst-source-option <?php echo 'wordpress.org' === $current_source ? 'selected' : ''; ?>">
 					<input type="radio" name="update_source" value="wordpress.org" <?php checked( $current_source, 'wordpress.org' ); ?>>
 					<span class="wpst-source-option-label"><?php esc_html_e( 'WordPress.org', 'wp-plugin-starter-template' ); ?></span>
 					<div class="wpst-source-option-description">
@@ -38,7 +38,7 @@ if ( ! defined( 'WPINC' ) ) {
 					</div>
 				</label>
 				
-				<label class="wpst-source-option <?php echo $current_source === 'github' ? 'selected' : ''; ?>">
+				<label class="wpst-source-option <?php echo 'github' === $current_source ? 'selected' : ''; ?>">
 					<input type="radio" name="update_source" value="github" <?php checked( $current_source, 'github' ); ?>>
 					<span class="wpst-source-option-label"><?php esc_html_e( 'GitHub', 'wp-plugin-starter-template' ); ?></span>
 					<div class="wpst-source-option-description">
@@ -46,7 +46,7 @@ if ( ! defined( 'WPINC' ) ) {
 					</div>
 				</label>
 				
-				<label class="wpst-source-option <?php echo $current_source === 'gitea' ? 'selected' : ''; ?>">
+				<label class="wpst-source-option <?php echo 'gitea' === $current_source ? 'selected' : ''; ?>">
 					<input type="radio" name="update_source" value="gitea" <?php checked( $current_source, 'gitea' ); ?>>
 					<span class="wpst-source-option-label"><?php esc_html_e( 'Gitea', 'wp-plugin-starter-template' ); ?></span>
 					<div class="wpst-source-option-description">

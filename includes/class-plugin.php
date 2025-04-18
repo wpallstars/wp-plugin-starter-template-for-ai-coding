@@ -49,6 +49,6 @@ class Plugin {
 	 * Initialize the plugin
 	 */
 	public function init() {
-		// Initialize plugin
+		// Initialization logic goes here
 	}
 }
