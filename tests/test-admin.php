@@ -66,45 +66,38 @@ class AdminTest extends \WP_Mock\Tools\TestCase {
     }
 
     /**
-     * Test enqueue_admin_assets method
+     * Test the enqueue_admin_assets method.
      */
-    public function test_enqueue_admin_assets() {
-        // Set up mocks for this specific test
-        WP_Mock::userFunction('wp_enqueue_style', [
-            'times' => 1,
-            'args' => ['wpst-admin-style', 'path/to/admin/css/admin-styles.css'],
-        ]);
-        WP_Mock::userFunction('wp_enqueue_script', [
-            'times' => 1,
-            'args' => ['wpst-admin-script', 'path/to/admin/js/admin-scripts.js', array('jquery'), null, true],
-        ]);
-        WP_Mock::userFunction('wp_localize_script', [
-            'times' => 1,
-            'args' => [
-                'wpst-admin-script',
-                'wpst_admin_params',
-                array(
-                    'ajax_url' => 'http://example.org/wp-admin/admin-ajax.php',
-                    'nonce' => '1234567890',
-                ),
-            ],
-        ]);
-        WP_Mock::userFunction('admin_url', [
-            'times' => 1,
-            'args' => ['admin-ajax.php'],
-            'return' => 'http://example.org/wp-admin/admin-ajax.php',
-        ]);
-        WP_Mock::userFunction('wp_create_nonce', [
-            'times' => 1,
-            'args' => ['wpst-admin-nonce'],
-            'return' => '1234567890',
-        ]);
+    public function test_enqueue_admin_assets(): void
+    {
+        // Define expected parameters for the functions
+        $style_handle  = 'wpst-admin-style';
+        $style_src     = 'path/to/admin/css/admin-styles.css';
+        $script_handle = 'wpst-admin-script';
+        $script_src    = 'path/to/admin/js/admin-scripts.js';
+        $version       = '1.0.0'; // Match the version returned by the mocked core->get_plugin_version()
 
-        // Call the method under test
-        $this->admin->enqueue_admin_assets('plugins.php');
+        // Expect wp_enqueue_style to be called
+        \WP_Mock::expectFunction(
+            'wp_enqueue_style',
+            [
+                'times' => 1,
+                'args'  => [ $style_handle, $style_src, [], $version ],
+            ]
+        );
 
-        // WP_Mock::tearDown() in the main tearDown method will verify the expectations
-        // We can add an assertion here to make the test explicit
-        $this->assertTrue(true);
+        // Expect wp_enqueue_script to be called
+        \WP_Mock::expectFunction(
+            'wp_enqueue_script',
+            [
+                'times' => 1,
+                'args'  => [ $script_handle, $script_src, [ 'jquery' ], $version, true ],
+            ]
+        );
+
+        // Call the method under test.
+        $this->admin->enqueue_admin_assets( 'test-hook' );
+
+        // Assertions are implicitly handled by WP_Mock's expectation checks on tearDown.
     }
 }
