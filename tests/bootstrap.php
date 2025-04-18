@@ -8,9 +8,7 @@
 // First, we need to load the composer autoloader so we can use WP Mock.
 require_once dirname(__DIR__) . '/vendor/autoload.php';
 
-// Import WP_Mock class
-use WP_Mock\Tools\TestCase;
-use WP_Mock;
+// No need to import WP_Mock classes here
 
 // Now call the bootstrap method of WP Mock.
 WP_Mock::bootstrap();

@@ -7,13 +7,11 @@
 
 use WPALLSTARS\PluginStarterTemplate\Admin\Admin;
 use WPALLSTARS\PluginStarterTemplate\Core;
-use WP_Mock\Tools\TestCase;
-use WP_Mock;
 
 /**
  * Admin test case.
  */
-class AdminTest extends TestCase {
+class AdminTest extends \WP_Mock\Tools\TestCase {
 
     /**
      * Test instance
@@ -32,7 +30,7 @@ class AdminTest extends TestCase {
     /**
      * Set up test environment
      */
-    public function setUp(): void {
+    public function setUp() {
         parent::setUp();
 
         // Set up mocks
@@ -54,7 +52,7 @@ class AdminTest extends TestCase {
     /**
      * Tear down test environment
      */
-    public function tearDown(): void {
+    public function tearDown() {
         WP_Mock::tearDown();
         parent::tearDown();
     }
