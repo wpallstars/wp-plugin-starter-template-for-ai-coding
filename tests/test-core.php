@@ -6,11 +6,13 @@
  */
 
 use WPALLSTARS\PluginStarterTemplate\Core;
+use WP_Mock\Tools\TestCase;
+use WP_Mock;
 
 /**
  * Core test case.
  */
-class CoreTest extends WP_Mock\Tools\TestCase {
+class CoreTest extends TestCase {
 
     /**
      * Test instance
@@ -24,10 +26,10 @@ class CoreTest extends WP_Mock\Tools\TestCase {
      */
     public function setUp(): void {
         parent::setUp();
-        
+
         // Set up mocks
         WP_Mock::setUp();
-        
+
         // Create instance of Core class
         $this->core = new Core();
     }
@@ -53,7 +55,7 @@ class CoreTest extends WP_Mock\Tools\TestCase {
      */
     public function test_filter_content() {
         $content = 'Test content';
-        
+
         // Test that filter_content returns the content
         $this->assertEquals($content, $this->core->filter_content($content));
     }

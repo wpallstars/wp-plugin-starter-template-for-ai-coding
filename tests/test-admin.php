@@ -7,11 +7,13 @@
 
 use WPALLSTARS\PluginStarterTemplate\Admin\Admin;
 use WPALLSTARS\PluginStarterTemplate\Core;
+use WP_Mock\Tools\TestCase;
+use WP_Mock;
 
 /**
  * Admin test case.
  */
-class AdminTest extends WP_Mock\Tools\TestCase {
+class AdminTest extends TestCase {
 
     /**
      * Test instance
@@ -32,19 +34,19 @@ class AdminTest extends WP_Mock\Tools\TestCase {
      */
     public function setUp(): void {
         parent::setUp();
-        
+
         // Set up mocks
         WP_Mock::setUp();
-        
+
         // Mock Core class
         $this->core = $this->createMock(Core::class);
-        
+
         // Set up WordPress function mocks
         WP_Mock::userFunction('add_action', [
             'times' => 1,
             'args' => ['admin_enqueue_scripts', \WP_Mock\Functions::type('array')],
         ]);
-        
+
         // Create instance of Admin class
         $this->admin = new Admin($this->core);
     }
@@ -74,38 +76,38 @@ class AdminTest extends WP_Mock\Tools\TestCase {
             'times' => 1,
             'args' => ['wpst-admin-styles', \WP_Mock\Functions::type('string'), [], \WP_Mock\Functions::type('string')],
         ]);
-        
+
         WP_Mock::userFunction('wp_enqueue_script', [
             'times' => 1,
             'args' => ['wpst-admin-scripts', \WP_Mock\Functions::type('string'), ['jquery'], \WP_Mock\Functions::type('string'), true],
         ]);
-        
+
         WP_Mock::userFunction('wp_localize_script', [
             'times' => 1,
             'args' => ['wpst-admin-scripts', 'wpstData', \WP_Mock\Functions::type('array')],
         ]);
-        
+
         WP_Mock::userFunction('esc_html__', [
             'times' => 2,
             'args' => [\WP_Mock\Functions::type('string'), 'wp-plugin-starter-template'],
             'return' => 'Translated string',
         ]);
-        
+
         WP_Mock::userFunction('admin_url', [
             'times' => 1,
             'args' => ['admin-ajax.php'],
             'return' => 'http://example.org/wp-admin/admin-ajax.php',
         ]);
-        
+
         WP_Mock::userFunction('wp_create_nonce', [
             'times' => 1,
             'args' => ['wpst-admin-nonce'],
             'return' => '1234567890',
         ]);
-        
+
         // Call the method
         $this->admin->enqueue_admin_assets('plugins.php');
-        
+
         // If we get here, the test passed
         $this->assertTrue(true);
     }
