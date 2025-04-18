@@ -39,12 +39,6 @@ class AdminTest extends \WP_Mock\Tools\TestCase {
         // Mock Core class
         $this->core = $this->createMock(Core::class);
 
-        // Set up WordPress function mocks BEFORE instantiating Admin
-        WP_Mock::userFunction('add_action', [
-            'times' => 1,
-            'args' => ['admin_enqueue_scripts', \Mockery::type('callable')]
-        ]);
-
         // Instantiate the class under test
         $this->admin = new Admin($this->core);
     }
@@ -63,6 +57,8 @@ class AdminTest extends \WP_Mock\Tools\TestCase {
     public function test_constructor() {
         // Verify that the constructor initializes hooks
         $this->assertInstanceOf(Admin::class, $this->admin);
+        $this->assertTrue(WP_Mock::onActionAdded('admin_enqueue_scripts'));
+
     }
 
     /**
