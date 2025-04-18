@@ -1,5 +1,9 @@
 All notable changes to this project should be documented both here and in the main Readme files.
 
+#### [0.1.9] - 2025-04-18
+#### Changed
+- Alphabetized AI IDE list in README.md
+
 #### [0.1.8] - 2025-04-19
 #### Added
 - More informative badges to README.md (Build Status, Requirements, WP.org placeholders, Release, Issues, Contributors, Wiki).

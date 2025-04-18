@@ -3,10 +3,10 @@ Contributors: wpallstars
 Donate link: https://www.wpallstars.com/
 Tags: starter, template, boilerplate, plugin development, ai coding
 Requires at least: 5.0
-Tested up to: 6.4
-Requires PHP: 7.0
-Stable tag: 0.1.8
-License: GPL-2.0+
+Tested up to: 6.5
+Requires PHP: 7.4
+Stable tag: 0.1.9
+License: GPL-2.0-or-later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
 A comprehensive starter template for WordPress plugins with best practices for AI-assisted development.
@@ -205,6 +205,9 @@ npm run multisite
 
 == Changelog ==
 
+= 0.1.9 =
+* Changed: Alphabetized AI IDE list in README.md
+
 = 0.1.8 =
 * Added: More informative badges to README.md (Build Status, Requirements, WP.org placeholders, Release, Issues, Contributors, Wiki).
 
@@ -248,8 +251,11 @@ npm run multisite
 
 == Upgrade Notice ==
 
+= 0.1.9 =
+Alphabetized the list of recommended AI IDEs in README.md for better readability.
+
 = 0.1.8 =
-Added more informative badges to the plugin's README file.
+Added several informative badges to README.md for better project visibility (Build Status, Requirements, WP.org placeholders, Release, Issues, Contributors, Wiki link).
 
 = 0.1.7 =
 Fixed GitHub Actions tests workflow and improved workflow names for better clarity.

@@ -241,15 +241,15 @@ Contributions are welcome! Please feel free to submit a Pull Request.
 This repository is configured to work with various AI-powered development tools. You can use any of the following AI IDEs to contribute to this project:
 
 - [Augment Code](https://www.augmentcode.com/) - AI-powered coding assistant
-- [Cursor](https://cursor.com/) - AI-first code editor
-- [v0](https://v0.dev/) - AI-powered design and development tool
-- [Windsurf](https://www.windsurf.com/) - AI coding assistant
-- [Cline](https://cline.bot/) - AI terminal assistant
-- [Roo Code](https://roocode.com/) - AI pair programmer
-- [Loveable](https://lovable.dev/) - AI development environment
 - [Bolt](https://www.bolt.new/) - AI-powered code editor
+- [Cline](https://cline.bot/) - AI terminal assistant
 - [Cody](https://sourcegraph.com/cody) - Sourcegraph's AI coding assistant
 - [Continue](https://continue.dev/) - Open-source AI coding assistant
+- [Cursor](https://cursor.com/) - AI-first code editor
+- [Loveable](https://lovable.dev/) - AI development environment
+- [Roo Code](https://roocode.com/) - AI pair programmer
+- [v0](https://v0.dev/) - AI-powered design and development tool
+- [Windsurf](https://www.windsurf.com/) - AI coding assistant
 
 The repository includes configuration files for all these tools to ensure a consistent development experience.
 
@@ -277,6 +277,9 @@ This template is designed to work seamlessly with the Git Updater plugin for upd
 For more information on Git Updater integration, see the [Git Updater Required Headers documentation](https://git-updater.com/knowledge-base/required-headers/).
 
 ## Changelog
+
+### 0.1.9
+* Changed: Alphabetized AI IDE list.
 
 ### 0.1.8
 * Added: More informative badges (Build Status, Requirements, WP.org placeholders, Release, Issues, Contributors, Wiki).

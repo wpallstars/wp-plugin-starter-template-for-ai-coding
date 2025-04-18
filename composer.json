@@ -1,8 +1,8 @@
 {
     "name": "wpallstars/wp-plugin-starter-template-for-ai-coding",
-    "description": "A comprehensive starter template for WordPress plugins with best practices for AI-assisted development.",
+    "description": "A starter template for WordPress plugins with AI development workflows.",
     "type": "wordpress-plugin",
-    "version": "0.1.8",
+    "version": "0.1.9",
     "license": "GPL-2.0-or-later",
     "authors": [
         {
