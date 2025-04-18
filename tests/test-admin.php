@@ -40,7 +40,6 @@ class AdminTest extends \WP_Mock\Tools\TestCase {
         $this->core = $this->createMock(Core::class);
 
         // Set up WordPress function mocks
-        WP_Mock::userFunction('is_admin', ['times' => 1, 'return' => true]);
         WP_Mock::expectActionAdded('admin_enqueue_scripts', [$this->admin, 'enqueue_admin_assets']);
 
         // Instantiate the class under test *after* setting up mocks
