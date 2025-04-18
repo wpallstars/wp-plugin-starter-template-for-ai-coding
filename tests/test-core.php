@@ -20,9 +20,10 @@ class CoreTest extends \WP_Mock\Tools\TestCase {
     private $core;
 
     /**
-     * Set up test environment
+     * Set up the test environment.
      */
-    public function setUp() {
+    public function setUp(): void
+    {
         parent::setUp();
 
         // Set up mocks
@@ -33,9 +34,10 @@ class CoreTest extends \WP_Mock\Tools\TestCase {
     }
 
     /**
-     * Tear down test environment
+     * Tear down the test environment.
      */
-    public function tearDown() {
+    public function tearDown(): void
+    {
         WP_Mock::tearDown();
         parent::tearDown();
     }

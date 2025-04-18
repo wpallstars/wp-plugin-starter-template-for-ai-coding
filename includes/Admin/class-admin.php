@@ -43,14 +43,15 @@ class Admin {
 	 *
 	 * @param string $hook_suffix The current admin page.
 	 * @phpcs:ignore WordPress.CodeAnalysis.UnusedFunctionParameter.Found
+	 *
 	 */
 	public function enqueue_admin_assets( $hook_suffix ) {
 		// Enqueue admin styles.
 		\wp_enqueue_style(
 			'wpst-admin-style',
 			'path/to/admin/css/admin-styles.css',
-			array(), // Dependencies
-			$this->core->get_plugin_version() // Version
+			array(), // Dependencies.
+			$this->core->get_plugin_version() // Version.
 		);
 
 		// Enqueue admin scripts.
@@ -58,7 +59,7 @@ class Admin {
 			'wpst-admin-script',
 			'path/to/admin/js/admin-scripts.js',
 			array( 'jquery' ),
-			$this->core->get_plugin_version(), // Version
+			$this->core->get_plugin_version(), // Version.
 			true
 		);
 
