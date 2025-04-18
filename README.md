@@ -15,11 +15,12 @@ This template is based on the experience gained from developing the "Fix 'Plugin
 * **Object-Oriented Architecture**: Well-structured, maintainable code using OOP principles
 * **Namespace Support**: Modern PHP namespacing for better organization and avoiding conflicts
 * **Comprehensive Documentation**: Detailed documentation for both users and developers
-* **Testing Framework**: PHPUnit setup for unit testing
+* **Testing Framework**: PHPUnit setup for unit testing and Cypress for e2e testing
 * **Internationalization Ready**: Full support for translation and localization
 * **Update Source Selection**: Choose between WordPress.org, GitHub, or Gitea for plugin updates
 * **AI Workflow Documentation**: Detailed guides for AI-assisted development
 * **Wiki Documentation**: Ready-to-use wiki structure for comprehensive documentation
+* **Multisite Compatible**: Fully tested and compatible with WordPress multisite installations
 
 ### How to Use This Template
 
@@ -70,6 +71,86 @@ To get started with this template, follow these steps:
 
 4. Use an AI assistant like GitHub Copilot, Claude, or ChatGPT to help you customize the template by providing the prompt from the Starter Prompt file.
 
+### Development Environment
+
+This template includes configuration for WordPress Environment (wp-env) to make local development easier:
+
+1. Install Node.js dependencies:
+   ```bash
+   npm install
+   ```
+
+2. Start the WordPress environment:
+   ```bash
+   npm run start
+   ```
+
+3. For multisite testing:
+   ```bash
+   npm run multisite
+   ```
+
+4. Access your local WordPress site at http://localhost:8888 (admin credentials: admin/password)
+
+### Testing
+
+The template includes both PHP unit tests and end-to-end tests:
+
+#### PHP Unit Tests
+
+1. Install Composer dependencies:
+   ```bash
+   composer install
+   ```
+
+2. Run PHP unit tests:
+   ```bash
+   npm run test:php
+   ```
+
+3. Check PHP coding standards:
+   ```bash
+   npm run lint:php
+   ```
+
+4. Fix PHP coding standards issues:
+   ```bash
+   npm run fix:php
+   ```
+
+#### End-to-End Tests
+
+1. Start the WordPress environment:
+   ```bash
+   npm run start
+   ```
+
+2. Run Cypress tests in interactive mode:
+   ```bash
+   npm run test:e2e
+   ```
+
+3. Run Cypress tests in headless mode:
+   ```bash
+   npm run test:e2e:headless
+   ```
+
+### Building for Production
+
+Use the included build script to create a deployable version of your plugin:
+
+```bash
+npm run build
+```
+
+Or directly:
+
+```bash
+./build.sh {VERSION}
+```
+
+This will create a ZIP file that you can install in WordPress.
+
 ### Using with Git Updater
 
 If you've installed this plugin from GitHub or Gitea, you'll need Git Updater to receive updates:
@@ -105,13 +186,14 @@ The main files you need to update include:
 3. readme.txt
 4. CHANGELOG.md
 5. composer.json
-6. languages/pot file
-7. .github/workflows/
-8. .wiki/
-9. .ai-assistant.md
-10. includes/plugin.php
-11. includes/core.php
-12. admin/lib/admin.php
+6. package.json
+7. languages/pot file
+8. .github/workflows/
+9. .wiki/
+10. .ai-assistant.md
+11. includes/plugin.php
+12. includes/core.php
+13. admin/lib/admin.php
 
 ### How do I build and test my plugin?
 
@@ -126,6 +208,14 @@ This will create a ZIP file that you can install in WordPress.
 ### How do I add custom functionality to my plugin?
 
 Customize the includes/core.php file to implement your core functionality and the admin/lib/admin.php file for admin-specific functionality.
+
+### Is this template compatible with WordPress multisite?
+
+Yes, this template is fully compatible with WordPress multisite installations. You can test multisite compatibility by running:
+
+```bash
+npm run multisite
+```
 
 ## Support & Feedback
 
@@ -187,6 +277,12 @@ This template is designed to work seamlessly with the Git Updater plugin for upd
 For more information on Git Updater integration, see the [Git Updater Required Headers documentation](https://git-updater.com/knowledge-base/required-headers/).
 
 ## Changelog
+
+### 0.1.5
+* Fixed: Release workflow to use correct plugin directory name
+* Added: Testing setup with wp-env and Cypress
+* Added: Multisite compatibility
+* Added: npm scripts for development and testing
 
 ### 0.1.3
 * Added: Improved AI IDE context recommendations in documentation

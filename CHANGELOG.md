@@ -1,5 +1,14 @@
 All notable changes to this project should be documented both here and in the main Readme files.
 
+#### [0.1.5] - 2025-04-19
+#### Fixed
+- Release workflow to use correct plugin directory name
+
+#### Added
+- Testing setup with wp-env and Cypress
+- Multisite compatibility
+- npm scripts for development and testing
+
 #### [0.1.3] - 2025-04-19
 #### Added
 - Improved AI IDE context recommendations in documentation

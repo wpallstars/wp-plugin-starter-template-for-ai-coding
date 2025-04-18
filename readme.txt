@@ -5,7 +5,7 @@ Tags: starter, template, boilerplate, plugin development, ai coding
 Requires at least: 5.0
 Tested up to: 6.4
 Requires PHP: 7.0
-Stable tag: 0.1.3
+Stable tag: 0.1.5
 License: GPL-2.0+
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -22,11 +22,12 @@ This template is based on the experience gained from developing the "Fix 'Plugin
 * **Object-Oriented Architecture**: Well-structured, maintainable code using OOP principles
 * **Namespace Support**: Modern PHP namespacing for better organization and avoiding conflicts
 * **Comprehensive Documentation**: Detailed documentation for both users and developers
-* **Testing Framework**: PHPUnit setup for unit testing
+* **Testing Framework**: PHPUnit setup for unit testing and Cypress for e2e testing
 * **Internationalization Ready**: Full support for translation and localization
 * **Update Source Selection**: Choose between WordPress.org, GitHub, or Gitea for plugin updates
 * **AI Workflow Documentation**: Detailed guides for AI-assisted development
 * **Wiki Documentation**: Ready-to-use wiki structure for comprehensive documentation
+* **Multisite Compatible**: Fully tested and compatible with WordPress multisite installations
 
 = How to Use This Template =
 
@@ -50,6 +51,70 @@ This template includes comprehensive documentation for AI-assisted development:
 * **Starter Prompt**: Comprehensive prompt for AI tools to help customize the template (available in the wiki)
 
 **Important**: For the best AI assistance, add the .ai-assistant.md file and .ai-workflows/ directory to your AI IDE chat context. In most AI IDEs, you can pin these files to ensure they're considered in each message.
+
+= Development Environment =
+
+This template includes configuration for WordPress Environment (wp-env) to make local development easier:
+
+1. Install Node.js dependencies:
+   ```bash
+   npm install
+   ```
+
+2. Start the WordPress environment:
+   ```bash
+   npm run start
+   ```
+
+3. For multisite testing:
+   ```bash
+   npm run multisite
+   ```
+
+4. Access your local WordPress site at http://localhost:8888 (admin credentials: admin/password)
+
+= Testing =
+
+The template includes both PHP unit tests and end-to-end tests:
+
+**PHP Unit Tests**
+
+1. Install Composer dependencies:
+   ```bash
+   composer install
+   ```
+
+2. Run PHP unit tests:
+   ```bash
+   npm run test:php
+   ```
+
+3. Check PHP coding standards:
+   ```bash
+   npm run lint:php
+   ```
+
+4. Fix PHP coding standards issues:
+   ```bash
+   npm run fix:php
+   ```
+
+**End-to-End Tests**
+
+1. Start the WordPress environment:
+   ```bash
+   npm run start
+   ```
+
+2. Run Cypress tests in interactive mode:
+   ```bash
+   npm run test:e2e
+   ```
+
+3. Run Cypress tests in headless mode:
+   ```bash
+   npm run test:e2e:headless
+   ```
 
 = Support & Feedback =
 
@@ -95,13 +160,14 @@ The main files you need to update include:
 3. readme.txt
 4. CHANGELOG.md
 5. composer.json
-6. languages/pot file
-7. .github/workflows/
-8. .wiki/
-9. .ai-assistant.md
-10. includes/plugin.php
-11. includes/core.php
-12. admin/lib/admin.php
+6. package.json
+7. languages/pot file
+8. .github/workflows/
+9. .wiki/
+10. .ai-assistant.md
+11. includes/plugin.php
+12. includes/core.php
+13. admin/lib/admin.php
 
 = How do I build and test my plugin? =
 
@@ -125,11 +191,25 @@ You'll need to update all namespace references from WPALLSTARS\PluginStarterTemp
 
 You'll need to update all text domain references from 'wp-plugin-starter-template' to your own text domain throughout the codebase.
 
+= Is this template compatible with WordPress multisite? =
+
+Yes, this template is fully compatible with WordPress multisite installations. You can test multisite compatibility by running:
+
+```bash
+npm run multisite
+```
+
 == Screenshots ==
 
 1. This is a placeholder for your plugin's screenshots. Replace with actual screenshots of your plugin in action.
 
 == Changelog ==
+
+= 0.1.5 =
+* Fixed: Release workflow to use correct plugin directory name
+* Added: Testing setup with wp-env and Cypress
+* Added: Multisite compatibility
+* Added: npm scripts for development and testing
 
 = 0.1.3 =
 * Added: Improved AI IDE context recommendations in documentation
@@ -157,6 +237,9 @@ You'll need to update all text domain references from 'wp-plugin-starter-templat
 * Added: Wiki documentation templates
 
 == Upgrade Notice ==
+
+= 0.1.5 =
+Fixed release workflow and added testing setup with wp-env and Cypress, multisite compatibility, and npm scripts for development and testing.
 
 = 0.1.3 =
 Added improved AI IDE context recommendations and moved Starter Prompt to the wiki with guidance on pinning .ai-assistant.md and .ai-workflows/ files.
