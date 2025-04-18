@@ -1,0 +1,21 @@
+/**
+ * Admin styles for the plugin
+ */
+
+.wpst-admin-container {
+    padding: 20px;
+    background: #fff;
+    border: 1px solid #ccd0d4;
+    box-shadow: 0 1px 1px rgba(0, 0, 0, 0.04);
+    margin-top: 20px;
+}
+
+.wpst-admin-header {
+    margin-bottom: 20px;
+    border-bottom: 1px solid #eee;
+    padding-bottom: 20px;
+}
+
+.wpst-admin-header h1 {
+    margin-top: 0;
+}
