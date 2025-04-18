@@ -278,6 +278,9 @@ For more information on Git Updater integration, see the [Git Updater Required H
 
 ## Changelog
 
+### 0.1.6
+* Fixed: GitHub Actions workflows permissions for releases and wiki sync
+
 ### 0.1.5
 * Fixed: Release workflow to use correct plugin directory name
 * Added: Testing setup with wp-env and Cypress

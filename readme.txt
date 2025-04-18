@@ -5,7 +5,7 @@ Tags: starter, template, boilerplate, plugin development, ai coding
 Requires at least: 5.0
 Tested up to: 6.4
 Requires PHP: 7.0
-Stable tag: 0.1.5
+Stable tag: 0.1.6
 License: GPL-2.0+
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -205,6 +205,9 @@ npm run multisite
 
 == Changelog ==
 
+= 0.1.6 =
+* Fixed: GitHub Actions workflows permissions for releases and wiki sync
+
 = 0.1.5 =
 * Fixed: Release workflow to use correct plugin directory name
 * Added: Testing setup with wp-env and Cypress
@@ -237,6 +240,9 @@ npm run multisite
 * Added: Wiki documentation templates
 
 == Upgrade Notice ==
+
+= 0.1.6 =
+Fixed GitHub Actions workflows permissions for releases and wiki sync.
 
 = 0.1.5 =
 Fixed release workflow and added testing setup with wp-env and Cypress, multisite compatibility, and npm scripts for development and testing.

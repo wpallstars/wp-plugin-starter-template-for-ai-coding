@@ -1,0 +1,39 @@
+{
+  "name": "wp-plugin-starter-template-for-ai-coding",
+  "version": "0.1.6",
+  "description": "A comprehensive starter template for WordPress plugins with best practices for AI-assisted development.",
+  "main": "index.js",
+  "scripts": {
+    "start": "wp-env start",
+    "stop": "wp-env stop",
+    "wp-env": "wp-env",
+    "multisite": "wp-env start --config=.wp-env.multisite.json",
+    "test:e2e": "cypress open --config-file tests/e2e/cypress.json",
+    "test:e2e:headless": "cypress run --config-file tests/e2e/cypress.json",
+    "build": "./build.sh",
+    "lint:php": "composer run-script phpcs",
+    "fix:php": "composer run-script phpcbf",
+    "test:php": "composer run-script test"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/wpallstars/wp-plugin-starter-template-for-ai-coding.git"
+  },
+  "keywords": [
+    "wordpress",
+    "plugin",
+    "template",
+    "ai",
+    "coding"
+  ],
+  "author": "WPALLSTARS",
+  "license": "GPL-2.0-or-later",
+  "bugs": {
+    "url": "https://github.com/wpallstars/wp-plugin-starter-template-for-ai-coding/issues"
+  },
+  "homepage": "https://github.com/wpallstars/wp-plugin-starter-template-for-ai-coding#readme",
+  "devDependencies": {
+    "@wordpress/env": "^5.0.0",
+    "cypress": "^9.7.0"
+  }
+}
