@@ -32,7 +32,7 @@ if (!defined('WPINC')) {
 }
 
 // Load the main plugin class
-require_once plugin_dir_path(__FILE__) . 'includes/plugin.php';
+require_once plugin_dir_path( __FILE__ ) . 'includes/class-plugin.php';
 
 // Initialize the plugin
 new WPALLSTARS\PluginStarterTemplate\Plugin(__FILE__, '0.1.7');
