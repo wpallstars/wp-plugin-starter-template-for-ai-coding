@@ -39,6 +39,7 @@ This document provides guidance for AI assistants to help with incremental devel
 ### Marking Stable Versions
 
 When the user confirms that changes are working correctly:
+
 1. Create a version branch and update version numbers
 2. Tag the version branch as stable
    ```bash
@@ -62,6 +63,7 @@ git checkout -b fix/plugin-activation-error
 ### 2. Make Changes Without Updating Version Numbers
 
 During the development and testing phase:
+
 - Implement the necessary changes
 - **Don't update version numbers** in any files yet
 - Focus on the functionality
@@ -79,6 +81,7 @@ CURRENT_VERSION=$(grep -o "Version: [0-9.]*" wp-fix-plugin-does-not-exist-notice
 ```
 
 This will:
+
 1. Create a build directory
 2. Copy required files to the build directory
 3. Deploy the plugin to your local WordPress testing environment
@@ -88,6 +91,7 @@ This will:
 ### 4. Test and Evaluate
 
 Test the changes thoroughly in the local environment:
+
 - Verify that the specific issue is fixed or feature works as expected
 - Check for any regressions or new issues
 - Document the results

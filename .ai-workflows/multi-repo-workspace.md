@@ -36,6 +36,7 @@ Suggesting changes or improvements based on other repositories, leading to scope
 ### 1. Repository Verification
 
 **ALWAYS** verify which repository you're currently working in before:
+
 - Making code suggestions
 - Creating or updating documentation
 - Discussing features or functionality
@@ -44,6 +45,7 @@ Suggesting changes or improvements based on other repositories, leading to scope
 ### 2. Explicit Code Search Scoping
 
 When searching for code or functionality:
+
 - Explicitly limit searches to the current repository
 - Use repository-specific paths in search queries
 - Verify search results are from the current repository before using them

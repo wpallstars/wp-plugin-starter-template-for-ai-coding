@@ -9,6 +9,7 @@ This guide provides solutions to common issues you might encounter when using or
 **Problem**: The plugin fails to install in WordPress.
 
 **Solutions**:
+
 1. Verify that your WordPress version meets the minimum requirement (5.0+)
 2. Check that your PHP version meets the minimum requirement (7.0+)
 3. Ensure the ZIP file is properly formatted and contains all required files
@@ -19,6 +20,7 @@ This guide provides solutions to common issues you might encounter when using or
 **Problem**: You receive an error when activating the plugin.
 
 **Solutions**:
+
 1. Check the error message for specific details
 2. Verify that all plugin dependencies are installed and activated
 3. Check your server's error logs for more information
@@ -31,6 +33,7 @@ This guide provides solutions to common issues you might encounter when using or
 **Problem**: Composer fails to install dependencies.
 
 **Solutions**:
+
 1. Verify that you have Composer installed and up to date
 2. Check that your PHP version meets the requirements for all dependencies
 3. Try clearing Composer's cache: `composer clear-cache`
@@ -41,6 +44,7 @@ This guide provides solutions to common issues you might encounter when using or
 **Problem**: NPM fails to install dependencies.
 
 **Solutions**:
+
 1. Verify that you have Node.js and NPM installed and up to date
 2. Try clearing NPM's cache: `npm cache clean --force`
 3. Delete the `node_modules` directory and run `npm install` again
@@ -51,6 +55,7 @@ This guide provides solutions to common issues you might encounter when using or
 **Problem**: The WordPress environment fails to start.
 
 **Solutions**:
+
 1. Verify that Docker is installed and running
 2. Check that the Docker daemon has enough resources allocated
 3. Try stopping and removing existing containers: `npm run wp-env stop && npm run wp-env clean`
@@ -61,6 +66,7 @@ This guide provides solutions to common issues you might encounter when using or
 **Problem**: Unit tests are failing.
 
 **Solutions**:
+
 1. Verify that you have PHPUnit installed and configured correctly
 2. Check that all dependencies are installed: `composer install`
 3. Run tests with verbose output: `./vendor/bin/phpunit --verbose`
@@ -71,6 +77,7 @@ This guide provides solutions to common issues you might encounter when using or
 **Problem**: End-to-end tests are failing.
 
 **Solutions**:
+
 1. Verify that the WordPress environment is running: `npm run start`
 2. Check that Cypress is installed correctly: `npx cypress verify`
 3. Run tests in interactive mode to debug: `npm run test:e2e`
@@ -83,6 +90,7 @@ This guide provides solutions to common issues you might encounter when using or
 **Problem**: Changes to plugin settings are not being saved.
 
 **Solutions**:
+
 1. Check for JavaScript errors in the browser console
 2. Verify that the settings form is submitting correctly
 3. Check that the WordPress nonce is being verified correctly
@@ -93,6 +101,7 @@ This guide provides solutions to common issues you might encounter when using or
 **Problem**: The plugin conflicts with other plugins.
 
 **Solutions**:
+
 1. Deactivate other plugins one by one to identify the conflict
 2. Check for JavaScript errors in the browser console
 3. Check for PHP errors in the server logs
@@ -103,6 +112,7 @@ This guide provides solutions to common issues you might encounter when using or
 **Problem**: The plugin is causing performance issues.
 
 **Solutions**:
+
 1. Check if the plugin is making excessive database queries
 2. Verify that assets (CSS/JS) are being properly enqueued and minified
 3. Consider implementing caching for resource-intensive operations
@@ -115,6 +125,7 @@ This guide provides solutions to common issues you might encounter when using or
 **Problem**: The plugin fails to update.
 
 **Solutions**:
+
 1. Verify that your WordPress version meets the requirements for the new version
 2. Check that your PHP version meets the requirements for the new version
 3. Try updating manually by downloading the new version and replacing the old files
@@ -125,6 +136,7 @@ This guide provides solutions to common issues you might encounter when using or
 **Problem**: Plugin settings are lost after updating.
 
 **Solutions**:
+
 1. Check if the plugin includes a data migration process for updates
 2. Verify that the settings are being stored in the database correctly
 3. Restore settings from a backup if available
@@ -137,6 +149,7 @@ This guide provides solutions to common issues you might encounter when using or
 **Problem**: The plugin doesn't work correctly on a multisite installation.
 
 **Solutions**:
+
 1. Verify that the plugin is network activated if required
 2. Check that the plugin is compatible with multisite (it should be!)
 3. Ensure that the plugin has the necessary permissions on each site
@@ -162,6 +175,7 @@ If you've identified a bug in the plugin:
 5. Submit the issue
 
 Please include:
+
 - A clear description of the bug
 - Steps to reproduce the issue
 - Your environment details (WordPress version, PHP version, etc.)

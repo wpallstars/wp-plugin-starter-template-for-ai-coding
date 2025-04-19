@@ -1,4 +1,5 @@
 ## User Documentation
+
 * [Home](Home)
 * [Starter Prompt](Starter-Prompt)
 * [Installation Guide](Installation-Guide)
@@ -7,6 +8,7 @@
 * [Troubleshooting](Troubleshooting)
 
 ## Developer Documentation
+
 * [Architecture Overview](Architecture-Overview)
 * [Customization Guide](Customization-Guide)
 * [Extending the Plugin](Extending-the-Plugin)
@@ -14,8 +16,10 @@
 * [Release Process](Release-Process)
 
 ## AI Documentation
+
 * [AI Workflow Documentation](AI-Workflow-Documentation)
 
 ## Additional Resources
+
 * [Changelog](Changelog)
 * [Contributing](Contributing)
