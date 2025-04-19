@@ -57,11 +57,13 @@ Build the plugin with the new version:
 ```
 
 This will:
+
 - Create a clean build in the `build/` directory
 - Generate a ZIP file for distribution
 - Deploy to a local WordPress installation if configured
 
 Test the plugin thoroughly:
+
 - Test with the latest WordPress version
 - Test with the minimum supported WordPress version (5.0)
 - Test with PHP 7.0+ (minimum supported version)
@@ -139,6 +141,7 @@ Follow semantic versioning (MAJOR.MINOR.PATCH):
 - **PATCH**: Backward-compatible bug fixes
 
 Examples:
+
 - Bug fix: 1.0.0 → 1.0.1
 - New feature: 1.0.0 → 1.1.0
 - Breaking change: 1.0.0 → 2.0.0

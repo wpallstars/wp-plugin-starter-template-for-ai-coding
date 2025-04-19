@@ -62,6 +62,7 @@ When reviewing code, check for the following:
 ### 1. Understand the Context
 
 Before reviewing code, understand:
+
 - What problem is the code trying to solve?
 - What are the requirements?
 - What are the constraints?
@@ -73,6 +74,7 @@ Review the code with the checklist above in mind.
 ### 3. Provide Feedback
 
 When providing feedback:
+
 - Be specific and clear
 - Explain why a change is needed
 - Provide examples or suggestions when possible
@@ -82,6 +84,7 @@ When providing feedback:
 ### 4. Follow Up
 
 After the code has been updated:
+
 - Review the changes
 - Verify that issues have been addressed
 - Provide additional feedback if necessary
@@ -128,7 +131,7 @@ After the code has been updated:
 ```
 In function `handle_remove_reference()`:
 
-1. The nonce check is missing, which could lead to CSRF vulnerabilities. 
+1. The nonce check is missing, which could lead to CSRF vulnerabilities.
    Consider adding:
    ```php
    if (!isset($_GET['_wpnonce']) || !wp_verify_nonce($_GET['_wpnonce'], 'fpden_remove_reference')) {
@@ -150,7 +153,7 @@ In function `handle_remove_reference()`:
    ```php
    // Change this:
    add_settings_error('fpden', 'fpden_removed', 'Plugin reference removed successfully.', 'updated');
-   
+
    // To this:
    add_settings_error('fpden', 'fpden_removed', __('Plugin reference removed successfully.', 'fix-plugin-does-not-exist-notices'), 'updated');
    ```

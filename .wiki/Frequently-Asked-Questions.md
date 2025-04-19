@@ -11,6 +11,7 @@ The WordPress Plugin Starter Template is a comprehensive starting point for deve
 ### Who is this template for?
 
 This template is designed for:
+
 - WordPress plugin developers looking for a solid foundation
 - Developers who want to leverage AI assistance in their development workflow
 - Anyone who wants to create a WordPress plugin following best practices
