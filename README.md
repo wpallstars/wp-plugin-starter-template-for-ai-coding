@@ -1,6 +1,6 @@
 # WordPress Plugin Starter Template for AI Coding
 
-[![License](https://img.shields.io/badge/license-GPL--2.0%2B-blue.svg)](https://www.gnu.org/licenses/gpl-2.0.html) [![Build Status](https://github.com/wpallstars/wp-plugin-starter-template-for-ai-coding/actions/workflows/tests.yml/badge.svg)](https://github.com/wpallstars/wp-plugin-starter-template-for-ai-coding/actions/workflows/tests.yml) [![Requires PHP](https://img.shields.io/badge/php-%3E%3D%207.4-blue.svg)](https://wordpress.org/about/requirements/) [![Requires WordPress](https://img.shields.io/badge/WordPress-%3E%3D%205.0-blue.svg)](https://wordpress.org/about/requirements/) [![Tested up to](https://img.shields.io/wordpress/plugin/tested/your-plugin-slug.svg)](https://wordpress.org/plugins/your-plugin-slug/) [![WordPress rating](https://img.shields.io/wordpress/plugin/r/your-plugin-slug.svg)](https://wordpress.org/plugins/your-plugin-slug/reviews/) [![WordPress downloads](https://img.shields.io/wordpress/plugin/dt/your-plugin-slug.svg)](https://wordpress.org/plugins/your-plugin-slug/) [![Latest Release](https://img.shields.io/github/v/release/wpallstars/wp-plugin-starter-template-for-ai-coding)](https://github.com/wpallstars/wp-plugin-starter-template-for-ai-coding/releases) [![GitHub issues](https://img.shields.io/github/issues/wpallstars/wp-plugin-starter-template-for-ai-coding)](https://github.com/wpallstars/wp-plugin-starter-template-for-ai-coding/issues) [![GitHub contributors](https://img.shields.io/github/contributors/wpallstars/wp-plugin-starter-template-for-ai-coding)](https://github.com/wpallstars/wp-plugin-starter-template-for-ai-coding/graphs/contributors) [![Wiki](https://img.shields.io/badge/documentation-wiki-blue.svg)](https://github.com/wpallstars/wp-plugin-starter-template-for-ai-coding/wiki)
+[![License](https://img.shields.io/badge/license-GPL--2.0%2B-blue.svg)](https://www.gnu.org/licenses/gpl-2.0.html) [![Build Status](https://github.com/wpallstars/wp-plugin-starter-template-for-ai-coding/actions/workflows/tests.yml/badge.svg)](https://github.com/wpallstars/wp-plugin-starter-template-for-ai-coding/actions/workflows/tests.yml) [![Requires PHP](https://img.shields.io/badge/php-%3E%3D%207.4-blue.svg)](https://wordpress.org/about/requirements/) [![Requires WordPress](https://img.shields.io/badge/WordPress-%3E%3D%205.0-blue.svg)](https://wordpress.org/about/requirements/) [![Tested up to](https://img.shields.io/wordpress/plugin/tested/your-plugin-slug.svg)](https://wordpress.org/plugins/your-plugin-slug/) [![WordPress rating](https://img.shields.io/wordpress/plugin/r/your-plugin-slug.svg)](https://wordpress.org/plugins/your-plugin-slug/reviews/) [![WordPress downloads](https://img.shields.io/wordpress/plugin/dt/your-plugin-slug.svg)](https://wordpress.org/plugins/your-plugin-slug/) [![Latest Release](https://img.shields.io/github/v/release/wpallstars/wp-plugin-starter-template-for-ai-coding)](https://github.com/wpallstars/wp-plugin-starter-template-for-ai-coding/releases) [![GitHub issues](https://img.shields.io/github/issues/wpallstars/wp-plugin-starter-template-for-ai-coding)](https://github.com/wpallstars/wp-plugin-starter-template-for-ai-coding/issues) [![GitHub contributors](https://img.shields.io/github/contributors/wpallstars/wp-plugin-starter-template-for-ai-coding)](https://github.com/wpallstars/wp-plugin-starter-template-for-ai-coding/graphs/contributors) [![Wiki](https://img.shields.io/badge/documentation-wiki-blue.svg)](https://github.com/wpallstars/wp-plugin-starter-template-for-ai-coding/wiki) ![CodeRabbit Pull Request Reviews](https://img.shields.io/coderabbit/prs/github/wpallstars/wp-plugin-starter-template-for-ai-coding?utm_source=oss&utm_medium=github&utm_campaign=wpallstars%2Fwp-plugin-starter-template-for-ai-coding&labelColor=171717&color=FF570A&link=https%3A%2F%2Fcoderabbit.ai&label=CodeRabbit+Reviews) [![CodeFactor](https://www.codefactor.io/repository/github/wpallstars/wp-plugin-starter-template-for-ai-coding/badge)](https://www.codefactor.io/repository/github/wpallstars/wp-plugin-starter-template-for-ai-coding) [![SonarQube Cloud](https://sonarcloud.io/images/project_badges/sonarcloud-highlight.svg)](https://sonarcloud.io/summary/new_code?id=wpallstars_wp-plugin-starter-template-for-ai-coding) [![Codacy Badge](https://app.codacy.com/project/badge/Grade/905754fd010b481490b496fb800e6144)](https://app.codacy.com/gh/wpallstars/wp-plugin-starter-template-for-ai-coding/dashboard?utm_source=gh&utm_medium=referral&utm_content=&utm_campaign=Badge_grade)
 
 A comprehensive starter template for WordPress plugins with best practices for AI-assisted development.
 
@@ -90,7 +90,7 @@ This template includes configuration for WordPress Environment (wp-env) to make 
    npm run multisite
    ```
 
-4. Access your local WordPress site at http://localhost:8888 (admin credentials: admin/password)
+4. Access your local WordPress site at <http://localhost:8888> (admin credentials: admin/password)
 
 ### Testing
 
@@ -167,9 +167,9 @@ This template includes functionality that allows users to choose where they want
 1. In the Plugins list, find your plugin
 2. Click the "Update Source" link next to the plugin
 3. Select your preferred update source:
-   - **WordPress.org**: Updates from the official WordPress.org repository
-   - **GitHub**: Updates directly from the GitHub repo
-   - **Gitea**: Updates directly from the Gitea repo
+   * **WordPress.org**: Updates from the official WordPress.org repository
+   * **GitHub**: Updates directly from the GitHub repo
+   * **Gitea**: Updates directly from the Gitea repo
 4. Click "Save" to apply your preference
 
 ## Frequently Asked Questions
@@ -181,6 +181,7 @@ See the [Starter Prompt](.wiki/Starter-Prompt.md) file for detailed instructions
 ### What files do I need to update with my plugin information?
 
 The main files you need to update include:
+
 1. Main plugin file (rename and update header)
 2. README.md
 3. readme.txt
@@ -240,16 +241,16 @@ Contributions are welcome! Please feel free to submit a Pull Request.
 
 This repository is configured to work with various AI-powered development tools. You can use any of the following AI IDEs to contribute to this project:
 
-- [Augment Code](https://www.augmentcode.com/) - AI-powered coding assistant
-- [Bolt](https://www.bolt.new/) - AI-powered code editor
-- [Cline](https://cline.bot/) - AI terminal assistant
-- [Cody](https://sourcegraph.com/cody) - Sourcegraph's AI coding assistant
-- [Continue](https://continue.dev/) - Open-source AI coding assistant
-- [Cursor](https://cursor.com/) - AI-first code editor
-- [Loveable](https://lovable.dev/) - AI development environment
-- [Roo Code](https://roocode.com/) - AI pair programmer
-- [v0](https://v0.dev/) - AI-powered design and development tool
-- [Windsurf](https://www.windsurf.com/) - AI coding assistant
+* [Augment Code](https://www.augmentcode.com/) - AI-powered coding assistant
+* [Bolt](https://www.bolt.new/) - AI-powered code editor
+* [Cline](https://cline.bot/) - AI terminal assistant
+* [Cody](https://sourcegraph.com/cody) - Sourcegraph's AI coding assistant
+* [Continue](https://continue.dev/) - Open-source AI coding assistant
+* [Cursor](https://cursor.com/) - AI-first code editor
+* [Loveable](https://lovable.dev/) - AI development environment
+* [Roo Code](https://roocode.com/) - AI pair programmer
+* [v0](https://v0.dev/) - AI-powered design and development tool
+* [Windsurf](https://www.windsurf.com/) - AI coding assistant
 
 The repository includes configuration files for all these tools to ensure a consistent development experience.
 
@@ -278,25 +279,37 @@ For more information on Git Updater integration, see the [Git Updater Required H
 
 ## Changelog
 
+### 0.1.10
+
+* Fixed: Formatting issues in markdown files for better code quality
+* Fixed: Improved URL formatting with angle brackets
+* Fixed: Standardized list formatting across documentation files
+
 ### 0.1.9
+
 * Changed: Alphabetized AI IDE list.
 
 ### 0.1.8
+
 * Added: More informative badges (Build Status, Requirements, WP.org placeholders, Release, Issues, Contributors, Wiki).
 
 ### 0.1.7
+
 * Fixed: GitHub Actions tests workflow with proper file paths and dependencies
 
 ### 0.1.6
+
 * Fixed: GitHub Actions workflows permissions for releases and wiki sync
 
 ### 0.1.5
+
 * Fixed: Release workflow to use correct plugin directory name
 * Added: Testing setup with wp-env and Cypress
 * Added: Multisite compatibility
 * Added: npm scripts for development and testing
 
 ### 0.1.3
+
 * Added: Improved AI IDE context recommendations in documentation
 * Enhanced: Starter Prompt with guidance on pinning .ai-assistant.md and .ai-workflows/
 * Moved: Starter Prompt to the wiki for better organization
@@ -304,14 +317,17 @@ For more information on Git Updater integration, see the [Git Updater Required H
 * Improved: Documentation for AI-assisted development
 
 ### 0.1.2
+
 * Added: STARTER-PROMPT.md with comprehensive guide for customizing the template
 * Updated: Documentation files with improved instructions
 * Added: Additional AI workflow files for better development guidance
 
 ### 0.1.1
+
 * Updated: LICENSE file with correct GPL-2.0 text
 
 ### 0.1.0
+
 * Initial release with basic template structure
 * Added: Core plugin architecture with OOP approach
 * Added: Admin interface components and styling

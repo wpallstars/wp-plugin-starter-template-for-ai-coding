@@ -2,7 +2,7 @@
     "name": "wpallstars/wp-plugin-starter-template-for-ai-coding",
     "description": "A starter template for WordPress plugins with AI development workflows.",
     "type": "wordpress-plugin",
-    "version": "0.1.9",
+    "version": "0.1.10",
     "license": "GPL-2.0-or-later",
     "authors": [
         {

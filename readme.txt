@@ -5,7 +5,7 @@ Tags: starter, template, boilerplate, plugin development, ai coding
 Requires at least: 5.0
 Tested up to: 6.5
 Requires PHP: 7.4
-Stable tag: 0.1.9
+Stable tag: 0.1.10
 License: GPL-2.0-or-later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -205,6 +205,11 @@ npm run multisite
 
 == Changelog ==
 
+= 0.1.10 =
+* Fixed: Formatting issues in markdown files for better code quality
+* Fixed: Improved URL formatting with angle brackets
+* Fixed: Standardized list formatting across documentation files
+
 = 0.1.9 =
 * Changed: Alphabetized AI IDE list in README.md
 
@@ -250,6 +255,9 @@ npm run multisite
 * Added: Wiki documentation templates
 
 == Upgrade Notice ==
+
+= 0.1.10 =
+Improved code quality with better formatting in documentation files, standardized list formatting, and proper URL formatting.
 
 = 0.1.9 =
 Alphabetized the list of recommended AI IDEs in README.md for better readability.
