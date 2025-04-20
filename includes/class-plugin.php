@@ -51,7 +51,7 @@ class Plugin {
 	public function __construct( $plugin_file, $version ) {
 		$this->plugin_file = $plugin_file;
 		$this->version     = $version;
-		$this->core        = new Core();
+		$this->core        = new Core( $version );
 		$this->admin       = new Admin( $this->core );
 	}
 
