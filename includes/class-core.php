@@ -13,10 +13,20 @@ namespace WPALLSTARS\PluginStarterTemplate;
 class Core {
 
 	/**
-	 * Constructor
+	 * Plugin version
+	 *
+	 * @var string
 	 */
-	public function __construct() {
+	private $version;
+
+	/**
+	 * Constructor
+	 *
+	 * @param string $version Plugin version.
+	 */
+	public function __construct( $version = '' ) {
 		// Initialize hooks.
+		$this->version = $version;
 	}
 
 	/**
@@ -27,5 +37,14 @@ class Core {
 	 */
 	public function filter_content( $content ) {
 		return $content;
+	}
+
+	/**
+	 * Get the plugin version
+	 *
+	 * @return string The plugin version.
+	 */
+	public function get_plugin_version() {
+		return $this->version;
 	}
 }
