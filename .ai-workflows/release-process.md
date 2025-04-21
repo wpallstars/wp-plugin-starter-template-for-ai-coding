@@ -6,11 +6,12 @@ This document outlines the process for preparing and publishing new releases of 
 
 1. Create a version branch
 2. Update version numbers in all required files
-3. Build and test the plugin
-4. Commit version changes
-5. Create version tags
-6. Push to remote repositories
-7. Merge into main branch
+3. Run code quality checks
+4. Build and test the plugin
+5. Commit version changes
+6. Create version tags
+7. Push to remote repositories
+8. Merge into main branch
 
 ## Detailed Steps
 
@@ -48,7 +49,30 @@ Update version numbers in all required files:
 5. **languages/wp-plugin-starter-template.pot**:
    - Update the `Project-Id-Version` header
 
-### 3. Build and Test the Plugin
+### 3. Run Code Quality Checks
+
+Before building the plugin, run code quality checks to ensure the code meets standards:
+
+```bash
+# Run unit tests
+composer test
+
+# Run PHP CodeSniffer
+composer phpcs
+
+# Run PHP Code Beautifier and Fixer if needed
+composer phpcbf
+
+# Run PHPStan
+composer phpstan
+
+# Run PHP Mess Detector
+composer phpmd
+```
+
+Fix any issues found by these tools before proceeding. See the [Code Quality Checks Workflow](./code-quality-checks.md) for more details.
+
+### 4. Build and Test the Plugin
 
 Build the plugin with the new version:
 
@@ -69,7 +93,7 @@ Test the plugin thoroughly:
 - Test with PHP 7.0+ (minimum supported version)
 - Test all features and functionality
 
-### 4. Commit Version Changes
+### 5. Commit Version Changes
 
 Commit all version changes:
 
@@ -78,7 +102,7 @@ git add wp-plugin-starter-template.php readme.txt README.md CHANGELOG.md languag
 git commit -m "Version {MAJOR}.{MINOR}.{PATCH} - [brief description]"
 ```
 
-### 5. Create Version Tags
+### 6. Create Version Tags
 
 Create version tags:
 
@@ -89,7 +113,7 @@ git tag -a v{MAJOR}.{MINOR}.{PATCH}-stable -m "Stable version {MAJOR}.{MINOR}.{P
 
 The `-stable` tag is used by Git Updater to identify the stable version.
 
-### 6. Push to Remote Repositories
+### 7. Push to Remote Repositories
 
 Push the version branch and tags to remote repositories:
 
@@ -121,7 +145,7 @@ git push gitea refs/heads/v{MAJOR}.{MINOR}.{PATCH}:refs/heads/v{MAJOR}.{MINOR}.{
 git push gitea --tags
 ```
 
-### 7. Merge into Main Branch
+### 8. Merge into Main Branch
 
 Merge the version branch into the main branch:
 

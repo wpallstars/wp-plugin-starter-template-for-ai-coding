@@ -61,6 +61,8 @@ When reviewing code, check for the following:
 
 This project uses several automated code review tools to maintain high code quality standards. These tools are free to use for public repositories and should be integrated into any new repositories based on this template.
 
+**Important**: Before pushing your code, run the local code quality checks as described in the [Code Quality Checks Workflow](./code-quality-checks.md) to catch issues early.
+
 ### 1. CodeRabbit
 
 [CodeRabbit](https://www.coderabbit.ai/) is an AI-powered code review tool that provides automated feedback on pull requests.
