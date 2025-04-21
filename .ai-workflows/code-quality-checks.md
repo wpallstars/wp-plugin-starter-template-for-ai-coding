@@ -7,33 +7,43 @@ This document outlines the process for ensuring code quality before pushing chan
 Before pushing your changes to the repository, run through the following checks:
 
 1. **Run Unit Tests**
+
    ```bash
    composer test
    ```
+
    Ensure all tests pass. If any tests fail, fix the issues before proceeding.
 
 2. **Run PHP CodeSniffer**
+
    ```bash
    composer phpcs
    ```
+
    This will check your code against WordPress coding standards. Fix any issues before proceeding.
 
 3. **Run PHP Code Beautifier and Fixer**
+
    ```bash
    composer phpcbf
    ```
+
    This will automatically fix many coding standard issues.
 
 4. **Run PHPStan**
+
    ```bash
    composer phpstan
    ```
+
    This will perform static analysis on your code to find potential bugs and issues.
 
 5. **Run PHP Mess Detector**
+
    ```bash
    composer phpmd
    ```
+
    This will check for potential problems like unused variables, empty catch blocks, etc.
 
 ## Common Issues and How to Fix Them
@@ -103,9 +113,9 @@ function_name( $param1, $param2 );
 
 Follow WordPress naming conventions:
 
-- Functions and variables: snake_case
-- Classes: CamelCase
-- Constants: UPPERCASE_WITH_UNDERSCORES
+* Functions and variables: snake_case
+* Classes: CamelCase
+* Constants: UPPERCASE_WITH_UNDERSCORES
 
 ## Automated Checks in CI/CD
 
@@ -128,7 +138,8 @@ You can use AI assistants to help improve code quality:
 4. Run the checks again to verify the issues are resolved
 
 Example prompt:
-```
+
+```text
 I ran PHPCS and got the following errors. Can you help me fix them?
 
 [Paste error output here]
