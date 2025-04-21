@@ -1,5 +1,17 @@
 All notable changes to this project should be documented both here and in the main Readme files.
 
+#### [0.1.11] - 2023-04-21
+
+#### Improved
+
+- Improved code quality with comprehensive fixes
+- Fixed indentation issues in PHP files
+- Updated CSS formatting with modern notation
+- Fixed JavaScript issues with proper global variables
+- Improved security by using filter_input() instead of direct superglobal access
+- Standardized naming conventions across the codebase
+- Fixed documentation and comments for better clarity
+
 #### [0.1.10] - 2025-04-20
 
 #### Fixed

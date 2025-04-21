@@ -5,7 +5,7 @@ Tags: starter, template, boilerplate, plugin development, ai coding
 Requires at least: 5.0
 Tested up to: 6.5
 Requires PHP: 7.4
-Stable tag: 0.1.10
+Stable tag: 0.1.11
 License: GPL-2.0-or-later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -228,6 +228,15 @@ npm run multisite
 
 == Changelog ==
 
+= 0.1.11 =
+* Improved: Code quality with comprehensive fixes
+* Fixed: Indentation issues in PHP files
+* Updated: CSS formatting with modern notation
+* Fixed: JavaScript issues with proper global variables
+* Improved: Security by using filter_input() instead of direct superglobal access
+* Standardized: Naming conventions across the codebase
+* Fixed: Documentation and comments for better clarity
+
 = 0.1.10 =
 * Fixed: Formatting issues in markdown files for better code quality
 * Fixed: Improved URL formatting with angle brackets
@@ -278,6 +287,9 @@ npm run multisite
 * Added: Wiki documentation templates
 
 == Upgrade Notice ==
+
+= 0.1.11 =
+Improved code quality with comprehensive fixes, better security, and standardized naming conventions across the codebase.
 
 = 0.1.10 =
 Improved code quality with better formatting in documentation files, standardized list formatting, and proper URL formatting.
