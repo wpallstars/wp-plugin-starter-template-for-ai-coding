@@ -10,7 +10,7 @@ WordPress Multisite allows you to run multiple WordPress sites from a single Wor
 
 The plugin includes a dedicated directory for multisite-specific functionality:
 
-```
+```text
 includes/
 └── Multisite/
     ├── class-multisite.php    # Base class for multisite functionality
@@ -23,8 +23,8 @@ includes/
 
 The `Multisite` class in `includes/Multisite/class-multisite.php` provides a foundation for multisite-specific functionality. It includes:
 
-- A constructor for initialization
-- Example methods for multisite functionality
+* A constructor for initialization
+* Example methods for multisite functionality
 
 ### 2. Load Multisite Classes
 
@@ -34,7 +34,7 @@ To use multisite-specific functionality, you need to load and initialize the cla
 // Load multisite support classes if in multisite environment
 if ( is_multisite() ) {
     require_once WP_PLUGIN_STARTER_TEMPLATE_PATH . 'includes/Multisite/class-multisite.php';
-    
+
     // Initialize multisite support
     $multisite = new WPALLSTARS\PluginStarterTemplate\Multisite\Multisite();
 }
@@ -49,14 +49,14 @@ You can extend the base `Multisite` class or create additional classes in the `M
 namespace WPALLSTARS\PluginStarterTemplate\Multisite;
 
 class Domain_Mapping extends Multisite {
-    
+
     public function __construct() {
         parent::__construct();
-        
+
         // Add hooks for domain mapping functionality
         add_action( 'init', array( $this, 'register_domain_mapping' ) );
     }
-    
+
     public function register_domain_mapping() {
         // Implement domain mapping functionality
     }
@@ -96,13 +96,13 @@ add_action( 'wp_initialize_site', array( $this, 'on_site_creation' ), 10, 2 );
 public function on_site_creation( $new_site, $args ) {
     // Get the blog ID
     $blog_id = $new_site->blog_id;
-    
+
     // Switch to the new blog
     switch_to_blog( $blog_id );
-    
+
     // Perform site-specific setup
     update_option( 'your_plugin_option', 'default_value' );
-    
+
     // Restore the current blog
     restore_current_blog();
 }
@@ -119,10 +119,10 @@ add_action( 'network_admin_edit_your_plugin_action', array( $this, 'save_network
 public function save_network_settings() {
     // Check nonce
     check_admin_referer( 'your_plugin_nonce' );
-    
+
     // Save settings
     update_site_option( 'your_plugin_network_option', sanitize_text_field( $_POST['your_option'] ) );
-    
+
     // Redirect back to settings page
     wp_redirect( add_query_arg( array(
         'page' => 'your-plugin-slug',

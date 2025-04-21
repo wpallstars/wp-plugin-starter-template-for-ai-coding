@@ -4,13 +4,13 @@ This PR adds a comprehensive testing framework for our WordPress plugin template
 
 ## Changes
 
-- Added wp-env configuration for both single site and multisite environments
-- Created Cypress e2e tests for both environments
-- Added GitHub Actions workflow to run tests automatically on PRs
-- Created a unified setup script for test environments
-- Added detailed documentation in the wiki
-- Updated README.md to reference the new testing approach
-- Added placeholder files for multisite functionality
+* Added wp-env configuration for both single site and multisite environments
+* Created Cypress e2e tests for both environments
+* Added GitHub Actions workflow to run tests automatically on PRs
+* Created a unified setup script for test environments
+* Added detailed documentation in the wiki
+* Updated README.md to reference the new testing approach
+* Added placeholder files for multisite functionality
 
 ## Testing
 

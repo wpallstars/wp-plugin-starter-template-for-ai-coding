@@ -19,6 +19,7 @@ We use `@wordpress/env` and Cypress for testing our plugin.
 ### Installation
 
 1. Clone the repository:
+
    ```bash
    git clone https://github.com/wpallstars/wp-plugin-starter-template-for-ai-coding.git
    cd wp-plugin-starter-template-for-ai-coding
@@ -37,8 +38,8 @@ We use `@wordpress/env` and Cypress for testing our plugin.
    ```
 
    This will:
-   - Start a WordPress environment using wp-env
-   - Activate our plugin
+   * Start a WordPress environment using wp-env
+   * Activate our plugin
 
 2. Run Cypress tests for single site:
    ```bash
@@ -51,8 +52,8 @@ We use `@wordpress/env` and Cypress for testing our plugin.
    ```
 
 3. Access the site manually:
-   - Site: http://localhost:8888
-   - Admin login: admin / password
+   * Site: <http://localhost:8888>
+   * Admin login: admin / password
 
 ## Testing in WordPress Multisite
 
@@ -62,10 +63,10 @@ We use `@wordpress/env` and Cypress for testing our plugin.
    ```
 
    This will:
-   - Start a WordPress environment using wp-env
-   - Configure it as a multisite installation
-   - Create a test subsite
-   - Network activate our plugin
+   * Start a WordPress environment using wp-env
+   * Configure it as a multisite installation
+   * Create a test subsite
+   * Network activate our plugin
 
 2. Run Cypress tests for multisite:
    ```bash
@@ -78,9 +79,9 @@ We use `@wordpress/env` and Cypress for testing our plugin.
    ```
 
 3. Access the sites manually:
-   - Main site: http://localhost:8888
-   - Test subsite: http://localhost:8888/testsite
-   - Admin login: admin / password
+   * Main site: <http://localhost:8888>
+   * Test subsite: <http://localhost:8888/testsite>
+   * Admin login: admin / password
 
 ## Continuous Integration
 
@@ -111,7 +112,7 @@ Add new multisite tests to `cypress/e2e/multisite.cy.js`.
    ```bash
    # For single site
    wp-env run cli wp plugin activate wp-plugin-starter-template-for-ai-coding
-   
+
    # For multisite
    wp-env run cli wp plugin activate wp-plugin-starter-template-for-ai-coding --network
    ```
@@ -119,7 +120,8 @@ Add new multisite tests to `cypress/e2e/multisite.cy.js`.
 ### Getting Help
 
 If you encounter any issues, please open an issue on our GitHub repository with:
-- A description of the problem
-- Steps to reproduce
-- Any error messages
-- Your environment details (OS, Node.js version, etc.)
+
+* A description of the problem
+* Steps to reproduce
+* Any error messages
+* Your environment details (OS, Node.js version, etc.)
