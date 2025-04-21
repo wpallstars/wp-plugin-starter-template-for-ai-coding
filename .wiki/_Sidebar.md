@@ -14,6 +14,7 @@
 * [Extending the Plugin](Extending-the-Plugin)
 * [Coding Standards](Coding-Standards)
 * [Testing Framework](Testing-Framework)
+* [Multisite Development](Multisite-Development)
 * [Release Process](Release-Process)
 
 ## AI Documentation
