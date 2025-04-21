@@ -41,32 +41,34 @@ define( 'WP_PLUGIN_STARTER_TEMPLATE_VERSION', '0.1.13' );
 use WPALLSTARS\PluginStarterTemplate\Plugin;
 
 // Register autoloader for plugin classes.
-spl_autoload_register( function ( $class ) {
-    // Plugin namespace prefix
-    $prefix = 'WPALLSTARS\\PluginStarterTemplate\\';
+spl_autoload_register(
+    function ( $className ) {
+        // Plugin namespace prefix.
+        $prefix = 'WPALLSTARS\\PluginStarterTemplate\\';
 
-    // Check if the class uses our namespace
-    $len = strlen( $prefix );
-    if ( strncmp( $prefix, $class, $len ) !== 0 ) {
-        return;
+        // Check if the class uses our namespace.
+        $len = strlen( $prefix );
+        if ( strncmp( $prefix, $className, $len ) !== 0 ) {
+            return;
+        }
+
+        // Get the relative class name.
+        $relative_class = substr( $className, $len );
+
+        // Convert namespace to path.
+        $file = WP_PLUGIN_STARTER_TEMPLATE_PATH . 'includes/' . str_replace( '\\', '/', $relative_class ) . '.php';
+
+        // Convert class name format to file name format.
+        $file = str_replace( 'class-', '', $file );
+        $file = preg_replace( '/([a-z])([A-Z])/', '$1-$2', $file );
+        $file = strtolower( $file );
+
+        // If the file exists, require it.
+        if ( file_exists( $file ) ) {
+            require_once $file;
+        }
     }
-
-    // Get the relative class name
-    $relative_class = substr( $class, $len );
-
-    // Convert namespace to path
-    $file = WP_PLUGIN_STARTER_TEMPLATE_PATH . 'includes/' . str_replace( '\\', '/', $relative_class ) . '.php';
-
-    // Convert class name format to file name format
-    $file = str_replace( 'class-', '', $file );
-    $file = preg_replace( '/([a-z])([A-Z])/', '$1-$2', $file );
-    $file = strtolower( $file );
-
-    // If the file exists, require it
-    if ( file_exists( $file ) ) {
-        require_once $file;
-    }
-} );
+);
 
 // Plugin is multisite compatible - see .wiki/Testing-Framework.md for testing instructions.
 // For multisite-specific functionality, see the includes/Multisite directory.

@@ -73,10 +73,10 @@ jobs:
           MYSQL_USER: wordpress
           MYSQL_PASSWORD: wordpress
         options: >
-          --health-cmd="mysqladmin ping"
-          --health-interval=10s
-          --health-timeout=5s
-          --health-retries=3
+          --health-cmd "mysqladmin ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 3
 
     steps:
     - uses: actions/checkout@v4
