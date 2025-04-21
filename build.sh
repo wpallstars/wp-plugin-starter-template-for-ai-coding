@@ -20,6 +20,19 @@ echo "Creating build directory..."
 rm -rf "$BUILD_DIR"
 mkdir -p "$BUILD_DIR"
 
+# Run code quality checks
+echo "Running code quality checks..."
+if command -v composer &> /dev/null; then
+    echo "Running PHPCS..."
+    composer run phpcs || { echo "⚠️ PHPCS found issues. Consider running 'composer run phpcbf' to fix them."; }
+
+    # Uncomment the following line to automatically fix coding standards issues
+    # echo "Running PHPCBF..."
+    # composer run phpcbf
+else
+    echo "⚠️ Composer not found, skipping code quality checks"
+fi
+
 # Install composer dependencies
 echo "Installing composer dependencies..."
 composer install --no-dev --optimize-autoloader
@@ -67,19 +80,19 @@ cd ..
 if [ -f "$ZIP_FILE" ]; then
     echo "✅ Build successful: $ZIP_FILE created"
     echo "File path: $(pwd)/$ZIP_FILE"
-    
+
     # Deploy to local WordPress installation if environment variable is set
     if [ -n "$WP_LOCAL_PLUGIN_DIR" ]; then
         echo "\nDeploying to local WordPress installation..."
         echo "Deploying to local WordPress installation..."
-        
+
         # Remove existing plugin directory
         rm -rf "$WP_LOCAL_PLUGIN_DIR/$PLUGIN_SLUG"
-        
+
         # Copy files to local WordPress installation
         rsync -av --exclude=".git" --exclude=".github" --exclude=".DS_Store" \
             "$BUILD_DIR/" "$WP_LOCAL_PLUGIN_DIR/$PLUGIN_SLUG"
-        
+
         # Clear WordPress transients if WP-CLI is available
         if command -v wp &> /dev/null; then
             echo "Clearing WordPress transients..."
@@ -87,7 +100,7 @@ if [ -f "$ZIP_FILE" ]; then
         else
             echo "⚠️ WP-CLI not found, skipping transient clearing"
         fi
-        
+
         echo "✅ Local deployment successful!"
         echo "Plugin deployed to: $WP_LOCAL_PLUGIN_DIR/$PLUGIN_SLUG"
     fi
