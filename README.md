@@ -272,6 +272,24 @@ This project uses several automated code quality tools to ensure high standards.
      4. Generate a token in SonarCloud (Account > Security > Tokens)
      5. Add the token as a secret named `SONAR_TOKEN` in your GitHub repository or organization settings (see "GitHub Secrets Management" section below)
 
+5. **PHP_CodeSniffer (PHPCS)**: PHP code style checker
+   * Enforces WordPress Coding Standards
+   * Automatically runs in GitHub Actions workflow
+   * Run locally with `composer phpcs`
+
+6. **PHP Code Beautifier and Fixer (PHPCBF)**: Automatically fixes coding standard violations
+   * Run locally with `composer phpcbf`
+
+7. **PHPStan**: PHP static analysis tool
+   * Detects bugs and errors without running the code
+   * Run locally with `composer phpstan`
+
+8. **PHP Mess Detector (PHPMD)**: Analyzes code for potential problems
+   * Identifies complex code, unused parameters, etc.
+   * Run locally with `composer phpmd`
+
+For detailed setup instructions, see the [Code Quality Setup Guide](docs/code-quality-setup.md).
+
 ### Using AI Assistants with Code Quality Tools
 
 When you receive feedback from these code quality tools, you can use AI assistants to help address the issues:
@@ -314,7 +332,37 @@ For code quality tools like SonarCloud, organization secrets are recommended if 
 
 To run code quality tools locally before committing to GitHub:
 
-1. **Set up environment variables**:
+1. **Install dependencies**:
+   ```bash
+   composer install
+   ```
+
+2. **Run PHP CodeSniffer**:
+   ```bash
+   composer phpcs
+   ```
+
+3. **Fix coding standards automatically**:
+   ```bash
+   composer phpcbf
+   ```
+
+4. **Run PHPStan static analysis**:
+   ```bash
+   composer phpstan
+   ```
+
+5. **Run PHP Mess Detector**:
+   ```bash
+   composer phpmd
+   ```
+
+6. **Run all linters at once**:
+   ```bash
+   composer lint
+   ```
+
+7. **Set up environment variables for SonarCloud and Codacy**:
 
    * **For macOS/Linux**:
      ```bash
@@ -334,7 +382,7 @@ To run code quality tools locally before committing to GitHub:
      $env:CODACY_PROJECT_TOKEN="your_codacy_token"
      ```
 
-2. **Create a .env file** (alternative approach):
+8. **Create a .env file** (alternative approach):
    ```
    # .env (already included in .gitignore to prevent committing secrets)
    SONAR_TOKEN=your_sonar_token
@@ -347,7 +395,7 @@ To run code quality tools locally before committing to GitHub:
    source .env
    ```
 
-3. **Run SonarCloud locally**:
+9. **Run SonarCloud locally**:
    ```bash
    # Install SonarScanner
    npm install -g sonarqube-scanner
@@ -361,14 +409,16 @@ To run code quality tools locally before committing to GitHub:
      -Dsonar.login=$SONAR_TOKEN
    ```
 
-4. **Run Codacy locally**:
-   ```bash
-   # Install Codacy CLI
-   npm install -g codacy-coverage
+10. **Run Codacy locally**:
+    ```bash
+    # Install Codacy CLI
+    npm install -g codacy-coverage
 
-   # Run analysis
-   codacy-analysis-cli analyze --directory . --project-token $CODACY_PROJECT_TOKEN
-   ```
+    # Run analysis
+    codacy-analysis-cli analyze --directory . --project-token $CODACY_PROJECT_TOKEN
+    ```
+
+For more detailed instructions, see the [Code Quality Setup Guide](docs/code-quality-setup.md).
 
 By running these tools locally, you can identify and fix issues before pushing your code to GitHub, ensuring smoother CI/CD workflows.
 

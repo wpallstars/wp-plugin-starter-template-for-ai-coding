@@ -21,19 +21,24 @@ jobs:
         with:
           php-version: '8.1'
           extensions: mbstring, intl, zip
-          tools: composer:v2, phpcs
+          tools: composer:v2
 
       - name: Install dependencies
         run: composer install --prefer-dist --no-progress
 
+      - name: Install WordPress Coding Standards
+        run: |
+          composer require --dev wp-coding-standards/wpcs dealerdirect/phpcodesniffer-composer-installer
+          vendor/bin/phpcs --config-set installed_paths vendor/wp-coding-standards/wpcs
+
       - name: Run PHPCS
-        run: phpcs --standard=./phpcs.xml .
+        run: composer phpcs
         continue-on-error: true
 
       - name: Run PHPCBF (report only)
         run: |
           echo "Running PHPCBF in dry-run mode to show what would be fixed"
-          phpcbf --standard=./phpcs.xml -n
+          composer phpcbf -- --dry-run
         continue-on-error: true
 
   phpstan:
@@ -53,8 +58,11 @@ jobs:
       - name: Install dependencies
         run: composer install --prefer-dist --no-progress
 
+      - name: Install PHPStan WordPress stubs
+        run: composer require --dev szepeviktor/phpstan-wordpress
+
       - name: Run PHPStan
-        run: phpstan analyse --level=5 .
+        run: composer phpstan
         continue-on-error: true
 
   phpmd:
@@ -75,7 +83,7 @@ jobs:
         run: composer install --prefer-dist --no-progress
 
       - name: Run PHPMD
-        run: phpmd . text cleancode,codesize,controversial,design,naming,unusedcode --exclude vendor,node_modules,tests,bin,build,dist
+        run: composer phpmd
         continue-on-error: true
 
   sonarcloud:
@@ -101,7 +109,7 @@ jobs:
           restore-keys: ${{ runner.os }}-sonar
 
       - name: SonarCloud Scan
-        uses: SonarSource/sonarcloud-github-action@v2.0.2
+        uses: SonarSource/sonarqube-scan-action@master
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
@@ -133,7 +141,6 @@ jobs:
           # Limit the number of issues to prevent GitHub Code Scanning rejection
           gh-code-scanning-compat: true
           max-allowed-issues: 20
-          max-allowed-security-issues: 20
           # Limit tools to prevent timeouts and stay under GitHub's 20 runs limit
           tool: phpcs,phpmd,markdownlint
         continue-on-error: true
