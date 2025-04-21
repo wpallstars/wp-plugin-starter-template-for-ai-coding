@@ -5,13 +5,13 @@ parameters:
         - admin
         - wp-plugin-starter-template.php
     excludePaths:
-        analyseAndScan:
+        paths:
             - vendor
-            - node_modules (?)
+            - node_modules
             - tests
-            - bin (?)
-            - build (?)
-            - dist (?)
+            - bin
+            - build
+            - dist
     ignoreErrors:
         - '#Function apply_filters invoked with [0-9]+ parameters, 2 required.#'
         - '#Function [a-zA-Z0-9_]+ not found.#'

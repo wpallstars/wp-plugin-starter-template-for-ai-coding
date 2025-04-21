@@ -371,19 +371,22 @@ To run code quality tools locally before committing to GitHub:
      ```
 
    * **For Windows (Command Prompt)**:
+
      ```cmd
      set SONAR_TOKEN=your_sonar_token
      set CODACY_PROJECT_TOKEN=your_codacy_token
      ```
 
    * **For Windows (PowerShell)**:
+
      ```powershell
      $env:SONAR_TOKEN="your_sonar_token"
      $env:CODACY_PROJECT_TOKEN="your_codacy_token"
      ```
 
 8. **Create a .env file** (alternative approach):
-   ```
+
+   ```bash
    # .env (already included in .gitignore to prevent committing secrets)
    SONAR_TOKEN=your_sonar_token
    CODACY_PROJECT_TOKEN=your_codacy_token
