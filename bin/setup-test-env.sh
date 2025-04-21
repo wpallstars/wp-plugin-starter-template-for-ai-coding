@@ -26,9 +26,10 @@ install_wp_env() {
 
 # Function to install wp-playground if needed
 install_wp_playground() {
-    if ! command_exists wp-playground; then
-        echo "wp-playground is not installed. Installing..."
-        npm install -g @wordpress/playground-tools
+    # Check if we have a local installation
+    if [ ! -d "node_modules/@wp-playground" ]; then
+        echo "WordPress Playground is not installed locally. Installing..."
+        npm install --save-dev @wp-playground/client @wp-playground/blueprints
     fi
 }
 
@@ -149,7 +150,7 @@ EOF
 
     # Start WordPress Playground
     echo "Starting WordPress Playground..."
-    wp-playground start --blueprint playground/blueprint.json --port 8888 &
+    npx @wp-playground/client start --blueprint playground/blueprint.json --port 8888 &
 
     # Wait for WordPress Playground to be ready
     echo "Waiting for WordPress Playground to be ready..."
@@ -242,7 +243,7 @@ EOF
 
     # Start WordPress Playground
     echo "Starting WordPress Playground..."
-    wp-playground start --blueprint playground/multisite-blueprint.json --port 8888 &
+    npx @wp-playground/client start --blueprint playground/multisite-blueprint.json --port 8888 &
 
     # Wait for WordPress Playground to be ready
     echo "Waiting for WordPress Playground to be ready..."
