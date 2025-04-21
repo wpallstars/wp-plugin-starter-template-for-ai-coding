@@ -1,15 +1,15 @@
 {
-  "landingPage": "/wp-admin/",
+  "landingPage": "/wp-admin/network/",
   "login": true,
   "preferredVersions": {
     "php": "8.0",
     "wp": "latest"
   },
-  "options": {
-    "multisite": true,
-    "networking": true
-  },
   "steps": [
+    {
+      "step": "enableMultisite",
+      "subdomain": false
+    },
     {
       "step": "installPlugin",
       "pluginData": {
