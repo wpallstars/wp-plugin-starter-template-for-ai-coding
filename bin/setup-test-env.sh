@@ -150,7 +150,21 @@ EOF
 
     # Start WordPress Playground
     echo "Starting WordPress Playground..."
-    npx @wp-playground/client start --blueprint playground/blueprint.json --port 8888 &
+    if command_exists python3; then
+        python3 -m http.server 8888 --directory playground &
+        echo "Opening WordPress Playground in your browser..."
+        if command_exists open; then
+            open http://localhost:8888/index.html
+        elif command_exists xdg-open; then
+            xdg-open http://localhost:8888/index.html
+        elif command_exists start; then
+            start http://localhost:8888/index.html
+        else
+            echo "Please open http://localhost:8888/index.html in your browser"
+        fi
+    else
+        echo "Python3 is not installed. Please open playground/index.html in your browser."
+    fi
 
     # Wait for WordPress Playground to be ready
     echo "Waiting for WordPress Playground to be ready..."
@@ -243,7 +257,21 @@ EOF
 
     # Start WordPress Playground
     echo "Starting WordPress Playground..."
-    npx @wp-playground/client start --blueprint playground/multisite-blueprint.json --port 8888 &
+    if command_exists python3; then
+        python3 -m http.server 8888 --directory playground &
+        echo "Opening WordPress Playground in your browser..."
+        if command_exists open; then
+            open http://localhost:8888/multisite.html
+        elif command_exists xdg-open; then
+            xdg-open http://localhost:8888/multisite.html
+        elif command_exists start; then
+            start http://localhost:8888/multisite.html
+        else
+            echo "Please open http://localhost:8888/multisite.html in your browser"
+        fi
+    else
+        echo "Python3 is not installed. Please open playground/multisite.html in your browser."
+    fi
 
     # Wait for WordPress Playground to be ready
     echo "Waiting for WordPress Playground to be ready..."
