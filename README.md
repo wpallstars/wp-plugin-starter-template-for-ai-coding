@@ -478,6 +478,15 @@ For more information on Git Updater integration, see the [Git Updater Required H
 
 ## Changelog
 
+### 0.1.13
+
+* Improved: Code quality with proper type declarations
+* Fixed: Inconsistent variable naming (camelCase to snake_case)
+* Improved: Path handling in admin class
+* Added: Textdomain loading functionality
+* Removed: Unused phpcs:ignore comment
+* Implemented: Proper return type declarations
+
 ### 0.1.12
 
 * Fixed: WordPress mocking in unit tests

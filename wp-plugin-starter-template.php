@@ -3,7 +3,7 @@
  * Plugin Name: WordPress Plugin Starter Template
  * Plugin URI: https://www.wpallstars.com
  * Description: A comprehensive starter template for WordPress plugins with best practices for AI-assisted development.
- * Version: 0.1.12
+ * Version: 0.1.13
  * Author: Your Name & The WPALLSTARS Team
  * Author URI: https://www.wpallstars.com
  * License: GPL-2.0+
@@ -35,7 +35,7 @@ if ( ! defined( 'WPINC' ) ) {
 require_once plugin_dir_path( __FILE__ ) . 'includes/class-plugin.php';
 
 // Initialize the plugin and store the instance in a global variable.
-$wpst_plugin = new WPALLSTARS\PluginStarterTemplate\Plugin( __FILE__, '0.1.12' );
+$wpst_plugin = new WPALLSTARS\PluginStarterTemplate\Plugin( __FILE__, '0.1.13' );
 
 // Initialize the plugin.
 $wpst_plugin->init();

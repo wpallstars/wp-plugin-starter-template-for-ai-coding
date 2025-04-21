@@ -1,5 +1,16 @@
 All notable changes to this project should be documented both here and in the main Readme files.
 
+#### [0.1.13] - 2023-04-23
+
+#### Improved
+
+- Improved code quality with proper type declarations
+- Fixed inconsistent variable naming (camelCase to snake_case)
+- Improved path handling in admin class
+- Added textdomain loading functionality
+- Removed unused phpcs:ignore comment
+- Implemented proper return type declarations
+
 #### [0.1.12] - 2023-04-22
 
 #### Fixed
