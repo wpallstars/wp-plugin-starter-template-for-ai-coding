@@ -63,5 +63,12 @@ jobs:
       - name: Install dependencies
         run: composer install --prefer-dist --no-progress
 
-      # - name: Run PHPCS
-      #   run: ./vendor/bin/phpcs --standard=WordPress ./includes ./admin ./wp-plugin-starter-template.php
+      - name: Run PHPCS
+        run: composer run phpcs
+        continue-on-error: true
+
+      - name: Run PHPCBF (report only)
+        run: |
+          echo "Running PHPCBF in dry-run mode to show what would be fixed"
+          composer run phpcbf -- --dry-run
+        continue-on-error: true

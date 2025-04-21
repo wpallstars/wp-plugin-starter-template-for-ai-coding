@@ -12,8 +12,13 @@
     "test:e2e:headless": "cypress run --config-file tests/e2e/cypress.json",
     "build": "./build.sh",
     "lint:php": "composer run-script phpcs",
+    "lint:php:simple": "composer run-script phpcs:simple",
     "fix:php": "composer run-script phpcbf",
-    "test:php": "composer run-script test"
+    "fix:php:simple": "composer run-script phpcbf:simple",
+    "test:php": "composer run-script test",
+    "lint": "npm run lint:php",
+    "fix": "npm run fix:php",
+    "quality": "npm run lint && npm run test:php"
   },
   "repository": {
     "type": "git",

@@ -37,8 +37,12 @@
         }
     },
     "scripts": {
-        "phpcs": "phpcs --standard=WordPress",
-        "phpcbf": "phpcbf --standard=WordPress",
-        "test": "phpunit"
+        "phpcs": "phpcs --standard=phpcs.xml",
+        "phpcs:simple": "phpcs --standard=phpcs-simple.xml",
+        "phpcbf": "phpcbf --standard=phpcs.xml",
+        "phpcbf:simple": "phpcbf --standard=phpcs-simple.xml",
+        "test": "phpunit",
+        "lint": ["@phpcs"],
+        "fix": ["@phpcbf"]
     }
 }
