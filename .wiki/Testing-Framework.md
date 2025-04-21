@@ -26,6 +26,7 @@ We use `@wordpress/env` and Cypress for testing our plugin.
    ```
 
 2. Install dependencies:
+
    ```bash
    npm install
    ```

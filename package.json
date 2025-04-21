@@ -1,6 +1,6 @@
 {
   "name": "wp-plugin-starter-template-for-ai-coding",
-  "version": "0.1.10",
+  "version": "0.1.13",
   "description": "A comprehensive starter template for WordPress plugins with best practices for AI-assisted development.",
   "main": "index.js",
   "scripts": {
@@ -43,7 +43,7 @@
   },
   "homepage": "https://github.com/wpallstars/wp-plugin-starter-template-for-ai-coding#readme",
   "devDependencies": {
-    "@wordpress/env": "^5.0.0",
-    "cypress": "^9.7.0"
+    "@wordpress/env": "^8.12.0",
+    "cypress": "^13.6.4"
   }
 }
