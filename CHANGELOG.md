@@ -1,5 +1,18 @@
 All notable changes to this project should be documented both here and in the main Readme files.
 
+#### [0.1.12] - 2023-04-22
+
+#### Fixed
+
+- Fixed WordPress mocking in unit tests
+- Added proper mocking for WordPress functions in tests
+- Improved code quality tool configurations
+
+#### Added
+
+- Detailed code quality checks workflow documentation
+- Updated documentation for better workflow efficiency
+
 #### [0.1.11] - 2023-04-21
 
 #### Improved

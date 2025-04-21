@@ -5,7 +5,7 @@ Tags: starter, template, boilerplate, plugin development, ai coding
 Requires at least: 5.0
 Tested up to: 6.5
 Requires PHP: 7.4
-Stable tag: 0.1.11
+Stable tag: 0.1.12
 License: GPL-2.0-or-later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -228,6 +228,13 @@ npm run multisite
 
 == Changelog ==
 
+= 0.1.12 =
+* Fixed: WordPress mocking in unit tests
+* Added: Proper mocking for WordPress functions in tests
+* Improved: Code quality tool configurations
+* Added: Detailed code quality checks workflow documentation
+* Updated: Documentation for better workflow efficiency
+
 = 0.1.11 =
 * Improved: Code quality with comprehensive fixes
 * Fixed: Indentation issues in PHP files
@@ -287,6 +294,9 @@ npm run multisite
 * Added: Wiki documentation templates
 
 == Upgrade Notice ==
+
+= 0.1.12 =
+Fixed WordPress mocking in unit tests, improved code quality tool configurations, and added detailed workflow documentation.
 
 = 0.1.11 =
 Improved code quality with comprehensive fixes, better security, and standardized naming conventions across the codebase.
