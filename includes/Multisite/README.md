@@ -21,4 +21,4 @@ if ( is_multisite() ) {
 
 ## Testing
 
-For information on testing your plugin in a multisite environment, see the [Testing Framework](.wiki/Testing-Framework.md) documentation.
+For information on testing your plugin in a multisite environment, see the [Testing Framework](../../.wiki/Testing-Framework.md) documentation.

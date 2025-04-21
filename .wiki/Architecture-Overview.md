@@ -35,6 +35,8 @@ wp-plugin-starter-template/
 ├── cypress.config.js       # Cypress configuration
 ├── .ai-workflows/          # AI workflow documentation
 ├── .wiki/                  # Wiki documentation
+│   ├── Testing-Framework.md  # Testing framework documentation
+│   └── Multisite-Development.md # Multisite development guide
 └── wp-plugin-starter-template.php  # Main plugin file
 ```
 
@@ -129,3 +131,5 @@ The plugin includes a comprehensive testing framework:
 ## Conclusion
 
 This architecture provides a solid foundation for WordPress plugin development, following best practices and modern coding standards. It's designed to be maintainable, extensible, and easy to understand.
+
+For more details on using the testing framework, see [Testing Framework](Testing-Framework.md). For multisite development guidelines, refer to [Multisite Development](Multisite-Development.md).

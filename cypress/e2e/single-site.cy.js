@@ -5,22 +5,26 @@ describe('WordPress Single Site Tests', () => {
   });
 
   it('Can login to the admin area', () => {
-    cy.visit('/wp-admin');
-    cy.get('#user_login').type('admin');
-    cy.get('#user_pass').type('password');
-    cy.get('#wp-submit').click();
-    cy.get('body.wp-admin').should('exist');
+    cy.loginAsAdmin();
+    cy.get('#wpadminbar').should('exist');
+    cy.get('#dashboard-widgets').should('exist');
   });
 
   it('Plugin is activated', () => {
-    // Login first
-    cy.visit('/wp-admin');
-    cy.get('#user_login').type('admin');
-    cy.get('#user_pass').type('password');
-    cy.get('#wp-submit').click();
-    
+    cy.loginAsAdmin();
+
     // Check plugins page
     cy.visit('/wp-admin/plugins.php');
     cy.contains('tr', 'WP Plugin Starter Template').should('contain', 'Deactivate');
+  });
+
+  it('Plugin settings page loads correctly', () => {
+    cy.loginAsAdmin();
+
+    // Navigate to the plugin settings page (if it exists)
+    cy.visit('/wp-admin/options-general.php?page=wp-plugin-starter-template');
+
+    // This is a basic check - adjust based on your actual plugin's settings page
+    cy.get('h1').should('contain', 'WP Plugin Starter Template');
   });
 });

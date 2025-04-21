@@ -86,6 +86,7 @@ This template includes configuration for WordPress Environment (wp-env) to make 
    ```
 
 3. For testing in different WordPress environments:
+
    ```bash
    # For single site testing
    npm run setup:single
