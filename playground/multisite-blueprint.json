@@ -46,20 +46,28 @@
       "password": "password"
     },
     {
-      "step": "installPlugin",
-      "pluginZipFile": {
-        "resource": "url",
-        "url": "https://github.com/wpallstars/wp-plugin-starter-template-for-ai-coding/archive/refs/heads/feature/testing-framework.zip"
-      }
+      "step": "writeFile",
+      "path": "/wordpress/wp-content/plugins/wp-plugin-starter-template/wp-plugin-starter-template.php",
+      "data": "<?php\n/**\n * Plugin Name: WP Plugin Starter Template\n * Description: A starter template for WordPress plugins.\n * Version: 0.1.0\n * Author: WP All Stars\n * License: GPL v2 or later\n */\n\nif (!defined('ABSPATH')) {\n    exit;\n}\n\nclass WP_Plugin_Starter_Template {\n    public function __construct() {\n        add_action('admin_menu', array($this, 'add_admin_menu'));\n        add_action('network_admin_menu', array($this, 'add_network_admin_menu'));\n    }\n    \n    public function add_admin_menu() {\n        add_options_page(\n            'WP Plugin Starter Template',\n            'WP Plugin Starter Template',\n            'manage_options',\n            'wp-plugin-starter-template',\n            array($this, 'display_settings_page')\n        );\n    }\n    \n    public function add_network_admin_menu() {\n        add_submenu_page(\n            'settings.php',\n            'WP Plugin Starter Template',\n            'WP Plugin Starter Template',\n            'manage_network_options',\n            'wp-plugin-starter-template',\n            array($this, 'display_network_settings_page')\n        );\n    }\n    \n    public function display_settings_page() {\n        echo '<div class=\"wrap\">';\n        echo '<h1>WP Plugin Starter Template</h1>';\n        echo '<p>This is a starter template for WordPress plugins.</p>';\n        echo '</div>';\n    }\n    \n    public function display_network_settings_page() {\n        echo '<div class=\"wrap\">';\n        echo '<h1>WP Plugin Starter Template - Network Settings</h1>';\n        echo '<p>This is a starter template for WordPress plugins with multisite support.</p>';\n        echo '</div>';\n    }\n}\n\n$plugin = new WP_Plugin_Starter_Template();\n"
+    },
+    {
+      "step": "writeFile",
+      "path": "/wordpress/wp-content/plugins/wp-plugin-starter-template/admin/index.php",
+      "data": "<?php // Silence is golden"
+    },
+    {
+      "step": "writeFile",
+      "path": "/wordpress/wp-content/plugins/wp-plugin-starter-template/includes/index.php",
+      "data": "<?php // Silence is golden"
     },
     {
       "step": "activatePlugin",
-      "pluginSlug": "wp-plugin-starter-template-for-ai-coding-feature-testing-framework",
+      "pluginSlug": "wp-plugin-starter-template",
       "networkWide": true
     },
     {
       "step": "runPHP",
-      "code": "<?php\n// Create a test subsite\n$domain = 'localhost';\n$path = '/testsite/';\n$title = 'Test Subsite';\n$user_id = 1;\n\nif (!get_site_by_path($domain, $path)) {\n    $blog_id = wpmu_create_blog($domain, $path, $title, $user_id);\n    if (is_wp_error($blog_id)) {\n        echo 'Error creating subsite: ' . $blog_id->get_error_message();\n    } else {\n        echo 'Created subsite with ID: ' . $blog_id;\n    }\n} else {\n    echo 'Subsite already exists';\n}\n"
+      "code": "<?php\n// Create a test subsite\n$domain = 'localhost';\n$path = '/testsite/';\n$title = 'Test Subsite';\n$user_id = 1;\n\nrequire_once('/wordpress/wp-load.php');\n\nif (!function_exists('get_site_by_path')) {\n    require_once('/wordpress/wp-includes/ms-blogs.php');\n}\n\nif (!get_site_by_path($domain, $path)) {\n    $blog_id = wpmu_create_blog($domain, $path, $title, $user_id);\n    if (is_wp_error($blog_id)) {\n        echo 'Error creating subsite: ' . $blog_id->get_error_message();\n    } else {\n        echo 'Created subsite with ID: ' . $blog_id;\n    }\n} else {\n    echo 'Subsite already exists';\n}\n"
     }
   ]
 }

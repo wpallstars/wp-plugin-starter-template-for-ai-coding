@@ -11,15 +11,23 @@
       "password": "password"
     },
     {
-      "step": "installPlugin",
-      "pluginZipFile": {
-        "resource": "url",
-        "url": "https://github.com/wpallstars/wp-plugin-starter-template-for-ai-coding/archive/refs/heads/feature/testing-framework.zip"
-      }
+      "step": "writeFile",
+      "path": "/wordpress/wp-content/plugins/wp-plugin-starter-template/wp-plugin-starter-template.php",
+      "data": "<?php\n/**\n * Plugin Name: WP Plugin Starter Template\n * Description: A starter template for WordPress plugins.\n * Version: 0.1.0\n * Author: WP All Stars\n * License: GPL v2 or later\n */\n\nif (!defined('ABSPATH')) {\n    exit;\n}\n\nclass WP_Plugin_Starter_Template {\n    public function __construct() {\n        add_action('admin_menu', array($this, 'add_admin_menu'));\n    }\n    \n    public function add_admin_menu() {\n        add_options_page(\n            'WP Plugin Starter Template',\n            'WP Plugin Starter Template',\n            'manage_options',\n            'wp-plugin-starter-template',\n            array($this, 'display_settings_page')\n        );\n    }\n    \n    public function display_settings_page() {\n        echo '<div class=\"wrap\">';\n        echo '<h1>WP Plugin Starter Template</h1>';\n        echo '<p>This is a starter template for WordPress plugins.</p>';\n        echo '</div>';\n    }\n}\n\n$plugin = new WP_Plugin_Starter_Template();\n"
+    },
+    {
+      "step": "writeFile",
+      "path": "/wordpress/wp-content/plugins/wp-plugin-starter-template/admin/index.php",
+      "data": "<?php // Silence is golden"
+    },
+    {
+      "step": "writeFile",
+      "path": "/wordpress/wp-content/plugins/wp-plugin-starter-template/includes/index.php",
+      "data": "<?php // Silence is golden"
     },
     {
       "step": "activatePlugin",
-      "pluginSlug": "wp-plugin-starter-template-for-ai-coding-feature-testing-framework"
+      "pluginSlug": "wp-plugin-starter-template"
     }
   ]
 }
