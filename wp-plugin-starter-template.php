@@ -41,6 +41,7 @@ define( 'WP_PLUGIN_STARTER_TEMPLATE_VERSION', '0.1.13' );
 require_once WP_PLUGIN_STARTER_TEMPLATE_PATH . 'includes/class-plugin.php';
 
 // Plugin is multisite compatible - see .wiki/Testing-Framework.md for testing instructions
+// For multisite-specific functionality, see the includes/Multisite directory
 
 // Initialize the plugin and store the instance in a global variable.
 $wpst_plugin = new WPALLSTARS\PluginStarterTemplate\Plugin( __FILE__, WP_PLUGIN_STARTER_TEMPLATE_VERSION );
