@@ -1,11 +1,52 @@
 {
-  "landingPage": "/wp-admin/",
+  "landingPage": "/wp-admin/network/",
   "login": true,
   "preferredVersions": {
     "php": "8.0",
     "wp": "latest"
   },
-  "features": {
-    "networking": true
-  }
+  "steps": [
+    {
+      "step": "defineWpConfig",
+      "name": "WP_ALLOW_MULTISITE",
+      "value": true
+    },
+    {
+      "step": "defineWpConfig",
+      "name": "MULTISITE",
+      "value": true
+    },
+    {
+      "step": "defineWpConfig",
+      "name": "SUBDOMAIN_INSTALL",
+      "value": false
+    },
+    {
+      "step": "defineWpConfig",
+      "name": "DOMAIN_CURRENT_SITE",
+      "value": "localhost"
+    },
+    {
+      "step": "defineWpConfig",
+      "name": "PATH_CURRENT_SITE",
+      "value": "/"
+    },
+    {
+      "step": "defineWpConfig",
+      "name": "SITE_ID_CURRENT_SITE",
+      "value": 1
+    },
+    {
+      "step": "defineWpConfig",
+      "name": "BLOG_ID_CURRENT_SITE",
+      "value": 1
+    },
+    {
+      "step": "installPlugin",
+      "pluginData": {
+        "resource": "wordpress.org/plugins",
+        "slug": "coblocks"
+      }
+    }
+  ]
 }
