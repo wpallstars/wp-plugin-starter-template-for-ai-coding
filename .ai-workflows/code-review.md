@@ -99,8 +99,8 @@ When you receive feedback from these code review tools, you can use AI assistant
 
 1. Copy the output from the code review tool
 2. Paste it into your AI assistant chat
-3. Ask the AI to help you understand and fix the issues
-4. Implement the suggested fixes
+3. Ask the AI to help you understand and resolve the issues
+4. Apply the suggested fixes
 5. Commit the changes and verify that the issues are resolved
 
 ### Markdown Formatting Standards
@@ -115,8 +115,8 @@ When writing or updating Markdown files in this project, follow these standards:
 
 Example prompt for AI assistants:
 
-```
-I received the following feedback from [Tool Name]. Please help me understand these issues and suggest fixes:
+```text
+I received the following feedback from [Tool Name]. Please help me understand and resolve these issues:
 
 [Paste the tool output here]
 ```
@@ -192,7 +192,7 @@ After the code has been updated:
 
 ### Good Feedback Example
 
-```
+```markdown
 In function `handle_remove_reference()`:
 
 1. The nonce check is missing, which could lead to CSRF vulnerabilities.
@@ -225,6 +225,6 @@ In function `handle_remove_reference()`:
 
 ### Poor Feedback Example
 
-```
+```text
 This code has security issues and doesn't follow best practices. Fix it.
 ```

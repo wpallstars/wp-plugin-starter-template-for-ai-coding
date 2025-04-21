@@ -139,10 +139,10 @@ For more detailed information, see the [Contributing Guide](https://github.com/w
 
 This project uses several automated code quality tools to ensure high standards. These tools are free for public repositories and should be integrated into any new repositories based on this template:
 
-1. **CodeRabbit**: AI-powered code review tool that provides automated feedback on pull requests
-2. **CodeFactor**: Continuous code quality monitoring that provides a grade for your codebase
-3. **Codacy**: Code quality and static analysis that identifies issues related to code style, security, and performance
-4. **SonarCloud**: Code quality and security analysis that provides detailed analysis of code quality and security
+1. **[CodeRabbit](https://www.coderabbit.ai/)**: AI-powered code review tool that provides automated feedback on pull requests
+2. **[CodeFactor](https://www.codefactor.io/)**: Continuous code quality monitoring that provides a grade for your codebase
+3. **[Codacy](https://www.codacy.com/)**: Code quality and static analysis that identifies issues related to code style, security, and performance
+4. **[SonarCloud](https://sonarcloud.io/)**: Code quality and security analysis that provides detailed analysis of code quality and security
 
 = Using AI Assistants with Code Quality Tools =
 
@@ -150,8 +150,8 @@ When you receive feedback from these code quality tools, you can use AI assistan
 
 1. Copy the output from the code quality tool
 2. Paste it into your AI assistant chat
-3. Ask the AI to help you understand and fix the issues
-4. Implement the suggested fixes
+3. Ask the AI to help you understand and resolve the issues
+4. Apply the suggested fixes
 5. Commit the changes and verify that the issues are resolved
 
 For more information on coding standards and how to pass code quality checks, see the [Coding Standards Guide](https://github.com/wpallstars/wp-plugin-starter-template-for-ai-coding/wiki/Coding-Standards) in the wiki.

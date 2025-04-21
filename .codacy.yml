@@ -1,0 +1,13 @@
+---
+engines:
+  markdownlint:
+    enabled: true
+    config_file: .markdownlint.json
+exclude_paths:
+  - "vendor/**"
+  - "node_modules/**"
+  - "build/**"
+  - "dist/**"
+  - "bin/**"
+  - ".github/**"
+  - "tests/**"

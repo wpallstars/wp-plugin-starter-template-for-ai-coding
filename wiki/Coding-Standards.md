@@ -271,8 +271,14 @@ To ensure your code passes the quality checks from these tools, follow these gui
 3. **Using AI Assistants with Code Quality Tools**
    * When you receive feedback from code quality tools, you can use AI assistants to help address the issues
    * Copy the output from the code quality tool and paste it into your AI assistant chat
-   * Ask the AI to help you understand and fix the issues
-   * Example prompt: "I received the following feedback from [Tool Name]. Please help me understand these issues and suggest fixes: [Paste the tool output here]"
+   * Ask the AI to help you understand and resolve the issues
+   * Example prompt:
+
+     ```text
+     I received the following feedback from [Tool Name]. Please help me understand and resolve these issues:
+
+     [Paste the tool output here]
+     ```
 
 4. **Iterative Improvement**
    * Address issues one at a time, starting with the most critical
