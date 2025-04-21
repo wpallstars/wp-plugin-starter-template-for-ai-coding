@@ -5,6 +5,8 @@
  * Version: 1.0.0
  * Author: WPALLSTARS
  * License: GPL-2.0-or-later
+ *
+ * @package WPPluginStarterTemplate
  */
 
 // Exit if accessed directly.

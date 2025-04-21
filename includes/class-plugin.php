@@ -60,7 +60,7 @@ class Plugin {
      */
     public function init(): void {
         // Register hooks and filters.
-        add_action('plugins_loaded', array($this, 'load_textdomain'));
+        add_action( 'plugins_loaded', array( $this, 'load_textdomain' ) );
 
         // Initialize any other plugin functionality.
     }
@@ -74,7 +74,25 @@ class Plugin {
         load_plugin_textdomain(
             'wp-plugin-starter-template',
             false,
-            dirname(plugin_basename($this->pluginFile)) . '/languages/'
+            dirname( plugin_basename( $this->pluginFile ) ) . '/languages/'
         );
+    }
+
+    /**
+     * Get the plugin version.
+     *
+     * @return string The plugin version.
+     */
+    public function get_version(): string {
+        return $this->version;
+    }
+
+    /**
+     * Get the admin instance.
+     *
+     * @return Admin The admin instance.
+     */
+    public function get_admin(): Admin {
+        return $this->admin;
     }
 }

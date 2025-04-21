@@ -31,7 +31,7 @@ if ( ! defined( 'WPINC' ) ) {
     die;
 }
 
-// Define plugin constants
+// Define plugin constants.
 define( 'WP_PLUGIN_STARTER_TEMPLATE_FILE', __FILE__ );
 define( 'WP_PLUGIN_STARTER_TEMPLATE_PATH', plugin_dir_path( __FILE__ ) );
 define( 'WP_PLUGIN_STARTER_TEMPLATE_URL', plugin_dir_url( __FILE__ ) );
@@ -40,8 +40,8 @@ define( 'WP_PLUGIN_STARTER_TEMPLATE_VERSION', '0.1.13' );
 // Load the main plugin class.
 require_once WP_PLUGIN_STARTER_TEMPLATE_PATH . 'includes/class-plugin.php';
 
-// Plugin is multisite compatible - see .wiki/Testing-Framework.md for testing instructions
-// For multisite-specific functionality, see the includes/Multisite directory
+// Plugin is multisite compatible - see .wiki/Testing-Framework.md for testing instructions.
+// For multisite-specific functionality, see the includes/Multisite directory.
 
 // Initialize the plugin and store the instance in a global variable.
 $wpst_plugin = new WPALLSTARS\PluginStarterTemplate\Plugin( __FILE__, WP_PLUGIN_STARTER_TEMPLATE_VERSION );
