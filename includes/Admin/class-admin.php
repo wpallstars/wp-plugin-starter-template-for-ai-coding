@@ -47,10 +47,8 @@ class Admin {
 
      *
 	 * @phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.Found
-     *
-     * @param string $hook_suffix The hook suffix of the current admin page.
      */
-    public function enqueue_admin_assets( string $hook_suffix ): void {
+    public function enqueue_admin_assets(): void {
 
 		// @phpcs:disable WordPress.Security.NonceVerification.Recommended
 		// @phpcs:disable WordPress.Security.NonceVerification.Missing
@@ -89,6 +87,7 @@ class Admin {
         // Localize the script with the data.
         // @TODO: Fix mocking for wp_localize_script. Issue #1.
 		// @phpcs:ignore Squiz.PHP.CommentedOutCode.Found
+
         /*
         \wp_localize_script(
             'wpst-admin-script',
