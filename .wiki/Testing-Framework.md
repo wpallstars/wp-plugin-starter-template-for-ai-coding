@@ -34,6 +34,7 @@ We use `@wordpress/env` and Cypress for testing our plugin.
 ## Testing in Single Site WordPress
 
 1. Set up the single site environment:
+
    ```bash
    npm run setup:single
    ```

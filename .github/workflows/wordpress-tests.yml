@@ -23,8 +23,11 @@ jobs:
     - name: Install dependencies
       run: npm ci
 
-    - name: Install wp-env
-      run: npm install -g @wordpress/env
+    - name: Install wp-env and docker-compose
+      run: |
+        npm install -g @wordpress/env
+        sudo apt-get update
+        sudo apt-get install -y docker-compose
 
     - name: Setup WordPress Single Site
       run: |
@@ -53,8 +56,11 @@ jobs:
     - name: Install dependencies
       run: npm ci
 
-    - name: Install wp-env
-      run: npm install -g @wordpress/env
+    - name: Install wp-env and docker-compose
+      run: |
+        npm install -g @wordpress/env
+        sudo apt-get update
+        sudo apt-get install -y docker-compose
 
     - name: Setup WordPress Multisite
       run: |
