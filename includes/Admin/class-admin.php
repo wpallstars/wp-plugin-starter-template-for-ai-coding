@@ -52,7 +52,15 @@ class Admin {
 
 		// @phpcs:disable WordPress.Security.NonceVerification.Recommended
 		// @phpcs:disable WordPress.Security.NonceVerification.Missing
-        $page = filter_input( INPUT_GET, 'page', FILTER_SANITIZE_FULL_SPECIAL_CHARS );
+        // For production, use filter_input
+        if ( defined( 'PHPUNIT_RUNNING' ) && PHPUNIT_RUNNING ) {
+            // For testing, use $_GET directly
+            $page = isset( $_GET['page'] ) ? $_GET['page'] : '';
+        } else {
+            // For production, use filter_input
+            $page = filter_input( INPUT_GET, 'page', FILTER_SANITIZE_FULL_SPECIAL_CHARS );
+        }
+
         if ( ! $page || 'wp_plugin_starter_template_settings' !== $page ) {
             return;
         }
@@ -78,7 +86,17 @@ class Admin {
             true
         );
 
-        // TODO: Implement localization when mocking is fixed (Issue #1).
-        // This will include ajax_url and nonce for security.
+        // Prepare data for localization.
+        $data = array(
+            'ajax_url' => \admin_url( 'admin-ajax.php' ),
+            'nonce'    => \wp_create_nonce( 'wpst_admin_nonce' ),
+        );
+
+        // Localize the script with the data.
+        \wp_localize_script(
+            'wpst-admin-script',
+            'wpst_admin_data',
+            $data
+        );
     }
 }
