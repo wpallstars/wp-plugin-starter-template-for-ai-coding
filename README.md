@@ -478,6 +478,24 @@ For more information on Git Updater integration, see the [Git Updater Required H
 
 ## Changelog
 
+### 0.1.12
+
+* Fixed: WordPress mocking in unit tests
+* Added: Proper mocking for WordPress functions in tests
+* Improved: Code quality tool configurations
+* Added: Detailed code quality checks workflow documentation
+* Updated: Documentation for better workflow efficiency
+
+### 0.1.11
+
+* Improved: Code quality with comprehensive fixes
+* Fixed: Indentation issues in PHP files
+* Updated: CSS formatting with modern notation
+* Fixed: JavaScript issues with proper global variables
+* Improved: Security by using filter_input() instead of direct superglobal access
+* Standardized: Naming conventions across the codebase
+* Fixed: Documentation and comments for better clarity
+
 ### 0.1.10
 
 * Fixed: Formatting issues in markdown files for better code quality
