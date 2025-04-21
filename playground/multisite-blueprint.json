@@ -7,8 +7,43 @@
   },
   "steps": [
     {
-      "step": "enableMultisite",
-      "subdomain": false
+      "step": "defineWpConfig",
+      "name": "WP_ALLOW_MULTISITE",
+      "value": true
+    },
+    {
+      "step": "defineWpConfig",
+      "name": "MULTISITE",
+      "value": true
+    },
+    {
+      "step": "defineWpConfig",
+      "name": "SUBDOMAIN_INSTALL",
+      "value": false
+    },
+    {
+      "step": "defineWpConfig",
+      "name": "DOMAIN_CURRENT_SITE",
+      "value": "localhost"
+    },
+    {
+      "step": "defineWpConfig",
+      "name": "PATH_CURRENT_SITE",
+      "value": "/"
+    },
+    {
+      "step": "defineWpConfig",
+      "name": "SITE_ID_CURRENT_SITE",
+      "value": 1
+    },
+    {
+      "step": "defineWpConfig",
+      "name": "BLOG_ID_CURRENT_SITE",
+      "value": 1
+    },
+    {
+      "step": "runPHP",
+      "code": "<?php\nrequire_once('/wordpress/wp-load.php');\nrequire_once('/wordpress/wp-admin/includes/upgrade.php');\n\n// Install multisite network\nglobal $wpdb;\nif (!is_multisite()) {\n    $network_id = install_network();\n    if (is_wp_error($network_id)) {\n        error_log('Network install error: ' . $network_id->get_error_message());\n        die('Network installation failed');\n    }\n    // Populate network tables\n    populate_network(1, 'localhost', '/', get_option('admin_email'), 'WordPress Multisite', '', false);\n}\n\n// Create a test subsite\n$domain = 'localhost';\n$path = '/testsite/';\n$title = 'Test Subsite';\n$user_id = 1;\n\nif (!function_exists('get_site_by_path')) {\n    require_once('/wordpress/wp-includes/ms-blogs.php');\n}\n\nif (!get_site_by_path($domain, $path)) {\n    $blog_id = wpmu_create_blog($domain, $path, $title, $user_id);\n    if (is_wp_error($blog_id)) {\n        error_log('Subsite creation error: ' . $blog_id->get_error_message());\n        die('Subsite creation failed');\n    } else {\n        error_log('Created subsite with ID: ' . $blog_id);\n    }\n} else {\n    error_log('Subsite already exists');\n}\n"
     },
     {
       "step": "installPlugin",
