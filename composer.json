@@ -19,7 +19,9 @@
         "10up/wp_mock": "^1.0",
         "dealerdirect/phpcodesniffer-composer-installer": "^1.0",
         "wp-coding-standards/wpcs": "^3.0",
-        "phpcompatibility/phpcompatibility-wp": "^2.1"
+        "phpcompatibility/phpcompatibility-wp": "^2.1",
+        "phpstan/phpstan": "^1.10",
+        "phpmd/phpmd": "^2.13"
     },
     "autoload": {
         "psr-4": {
@@ -41,8 +43,10 @@
         "phpcs:simple": "phpcs --standard=phpcs-simple.xml",
         "phpcbf": "phpcbf --standard=phpcs.xml",
         "phpcbf:simple": "phpcbf --standard=phpcs-simple.xml",
+        "phpstan": "phpstan analyse --level=5 .",
+        "phpmd": "phpmd . text cleancode,codesize,controversial,design,naming,unusedcode --exclude vendor,node_modules,tests,bin,build,dist",
         "test": "phpunit",
-        "lint": ["@phpcs"],
+        "lint": ["@phpcs", "@phpstan", "@phpmd"],
         "fix": ["@phpcbf"]
     }
 }

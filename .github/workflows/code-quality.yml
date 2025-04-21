@@ -1,4 +1,4 @@
-name: Code Quality - Run automated code quality checks
+name: Code Quality
 
 on:
   push:
@@ -36,8 +36,44 @@ jobs:
           composer run phpcbf -- --dry-run
         continue-on-error: true
 
-  # SonarCloud job temporarily removed due to Java version compatibility issues
-  # Will be re-added in a future PR with proper configuration
+  phpstan:
+    name: PHPStan Static Analysis
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-  # Codacy job temporarily removed due to GitHub Actions compatibility issues
-  # Will be re-added in a future PR with proper configuration
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '7.4'
+          extensions: mbstring, intl, zip
+          tools: composer:v2, phpstan
+
+      - name: Install dependencies
+        run: composer install --prefer-dist --no-progress
+
+      - name: Run PHPStan
+        run: phpstan analyse --level=5 .
+        continue-on-error: true
+
+  phpmd:
+    name: PHP Mess Detector
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '7.4'
+          extensions: mbstring, intl, zip
+          tools: composer:v2, phpmd
+
+      - name: Install dependencies
+        run: composer install --prefer-dist --no-progress
+
+      - name: Run PHPMD
+        run: phpmd . text cleancode,codesize,controversial,design,naming,unusedcode --exclude vendor,node_modules,tests,bin,build,dist
+        continue-on-error: true

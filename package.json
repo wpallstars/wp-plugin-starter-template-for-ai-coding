@@ -13,11 +13,13 @@
     "build": "./build.sh",
     "lint:php": "composer run-script phpcs",
     "lint:php:simple": "composer run-script phpcs:simple",
+    "lint:phpstan": "composer run-script phpstan",
+    "lint:phpmd": "composer run-script phpmd",
     "fix:php": "composer run-script phpcbf",
     "fix:php:simple": "composer run-script phpcbf:simple",
     "test:php": "composer run-script test",
-    "lint": "npm run lint:php",
-    "fix": "npm run fix:php",
+    "lint": "composer run-script lint",
+    "fix": "composer run-script fix",
     "quality": "npm run lint && npm run test:php"
   },
   "repository": {
