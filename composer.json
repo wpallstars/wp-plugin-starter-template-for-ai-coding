@@ -15,11 +15,20 @@
         "php": ">=7.4"
     },
     "require-dev": {
-        "phpunit/phpunit": "^9.5",
+        "phpunit/phpunit": "^9.5.0",
         "10up/wp_mock": "^1.0",
         "dealerdirect/phpcodesniffer-composer-installer": "^1.0",
         "wp-coding-standards/wpcs": "^3.0",
-        "phpcompatibility/phpcompatibility-wp": "^2.1"
+        "phpcompatibility/phpcompatibility-wp": "^2.1",
+        "phpstan/phpstan": "^1.10.0",
+        "szepeviktor/phpstan-wordpress": "^1.3",
+        "phpmd/phpmd": "^2.13.0",
+        "symfony/dependency-injection": "^5.4",
+        "symfony/config": "^5.4",
+        "symfony/filesystem": "^5.4",
+        "symfony/deprecation-contracts": "^2.5",
+        "doctrine/instantiator": "^1.5.0",
+        "psr/log": "^1.1"
     },
     "autoload": {
         "psr-4": {
@@ -37,12 +46,14 @@
         }
     },
     "scripts": {
-        "phpcs": "phpcs --standard=phpcs.xml",
-        "phpcs:simple": "phpcs --standard=phpcs-simple.xml",
-        "phpcbf": "phpcbf --standard=phpcs.xml",
-        "phpcbf:simple": "phpcbf --standard=phpcs-simple.xml",
-        "test": "phpunit",
-        "lint": ["@phpcs"],
+        "phpcs": "vendor/bin/phpcs --standard=phpcs.xml",
+        "phpcs:simple": "vendor/bin/phpcs --standard=phpcs-simple.xml",
+        "phpcbf": "vendor/bin/phpcbf --standard=phpcs.xml",
+        "phpcbf:simple": "vendor/bin/phpcbf --standard=phpcs-simple.xml",
+        "phpstan": "vendor/bin/phpstan analyse --level=5 .",
+        "phpmd": "vendor/bin/phpmd . text cleancode,codesize,controversial,design,naming,unusedcode --exclude vendor,node_modules,tests,bin,build,dist",
+        "test": "vendor/bin/phpunit",
+        "lint": ["@phpcs", "@phpstan", "@phpmd"],
         "fix": ["@phpcbf"]
     }
 }

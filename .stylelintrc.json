@@ -1,0 +1,16 @@
+{
+  "extends": "stylelint-config-standard",
+  "rules": {
+    "alpha-value-notation": "percentage",
+    "color-function-notation": "modern",
+    "font-weight-notation": "numeric",
+    "media-feature-range-notation": "context"
+  },
+  "ignoreFiles": [
+    "vendor/**",
+    "node_modules/**",
+    "build/**",
+    "dist/**",
+    "bin/**"
+  ]
+}

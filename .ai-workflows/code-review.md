@@ -85,13 +85,21 @@ This project uses several automated code review tools to maintain high code qual
 * **Benefits**: Provides a grade for your codebase, identifies issues, and tracks code quality over time
 * **Usage**: Codacy automatically analyzes your codebase and provides feedback on pull requests
 
-### 4. SonarCloud
+### 4. PHPStan
 
-[SonarCloud](https://sonarcloud.io/) is a cloud-based code quality and security service that performs static code analysis to detect bugs, vulnerabilities, and code smells.
+[PHPStan](https://phpstan.org/) is a static analysis tool that finds errors in your code without running it.
 
-* **Integration**: Add the SonarCloud GitHub App to your repository
-* **Benefits**: Provides detailed analysis of code quality, security vulnerabilities, and technical debt
-* **Usage**: SonarCloud automatically analyzes your codebase and provides feedback on pull requests
+* **Integration**: Included in the project's composer.json and GitHub Actions workflow
+* **Benefits**: Detects undefined variables, methods, and properties; type-related issues; and logical errors
+* **Usage**: Run `composer phpstan` or `npm run lint:phpstan` locally, or let GitHub Actions run it automatically
+
+### 5. PHP Mess Detector
+
+[PHP Mess Detector](https://phpmd.org/) is a tool that looks for potential problems in your code such as possible bugs, suboptimal code, overcomplicated expressions, and unused parameters, variables, and methods.
+
+* **Integration**: Included in the project's composer.json and GitHub Actions workflow
+* **Benefits**: Identifies code smells, complexity issues, unused code, naming problems, and more
+* **Usage**: Run `composer phpmd` or `npm run lint:phpmd` locally, or let GitHub Actions run it automatically
 
 ### Using AI Assistants with Code Review Tools
 

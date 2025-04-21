@@ -252,10 +252,43 @@ This project uses several automated code quality tools to ensure high standards.
 3. **Codacy**: Code quality and static analysis
    * [Website](https://www.codacy.com/)
    * Identifies issues related to code style, security, and performance
+   * Requires a `CODACY_PROJECT_TOKEN` secret in your GitHub repository settings
+   * To set up Codacy:
+     1. Go to [Codacy](https://www.codacy.com/) and sign in with your GitHub account
+     2. Add your repository to Codacy
+     3. Go to your project settings > Integrations > Project API
+     4. Generate a project API token
+     5. Add the token as a secret named `CODACY_PROJECT_TOKEN` in your GitHub repository settings
+     6. Note: Codacy tokens are project-specific, so they need to be added at the repository level. However, you can use GitHub Actions to securely pass these tokens between repositories if needed.
 
 4. **SonarCloud**: Code quality and security analysis
    * [Website](https://sonarcloud.io/)
    * Provides detailed analysis of code quality and security
+   * Requires a `SONAR_TOKEN` secret in your GitHub repository settings
+   * To set up SonarCloud:
+     1. Go to [SonarCloud](https://sonarcloud.io/) and sign in with your GitHub account
+     2. Create a new organization or use an existing one
+     3. Add your repository to SonarCloud
+     4. Generate a token in SonarCloud (Account > Security > Tokens)
+     5. Add the token as a secret named `SONAR_TOKEN` in your GitHub repository or organization settings (see "GitHub Secrets Management" section below)
+
+5. **PHP_CodeSniffer (PHPCS)**: PHP code style checker
+   * Enforces WordPress Coding Standards
+   * Automatically runs in GitHub Actions workflow
+   * Run locally with `composer phpcs`
+
+6. **PHP Code Beautifier and Fixer (PHPCBF)**: Automatically fixes coding standard violations
+   * Run locally with `composer phpcbf`
+
+7. **PHPStan**: PHP static analysis tool
+   * Detects bugs and errors without running the code
+   * Run locally with `composer phpstan`
+
+8. **PHP Mess Detector (PHPMD)**: Analyzes code for potential problems
+   * Identifies complex code, unused parameters, etc.
+   * Run locally with `composer phpmd`
+
+For detailed setup instructions, see the [Code Quality Setup Guide](docs/code-quality-setup.md).
 
 ### Using AI Assistants with Code Quality Tools
 
@@ -268,6 +301,138 @@ When you receive feedback from these code quality tools, you can use AI assistan
 5. Commit the changes and verify that the issues are resolved
 
 For more information on coding standards and how to pass code quality checks, see the [Coding Standards Guide](.wiki/Coding-Standards.md).
+
+### GitHub Secrets Management
+
+GitHub offers three levels of secrets management, each with different scopes and use cases:
+
+1. **Organization Secrets** (recommended for teams and organizations):
+   * Available at: GitHub Organization > Settings > Secrets and variables > Actions
+   * Scope: Can be shared across multiple repositories within the organization
+   * Benefits: Centralized management, reduced duplication, easier rotation
+   * Recommended for: `SONAR_TOKEN` and other tokens that apply to multiple repositories
+   * Note: You can restrict which repositories can access organization secrets
+   * Note: Codacy tokens (`CODACY_PROJECT_TOKEN`) are project-specific and should be set at the repository level
+
+2. **Repository Secrets**:
+   * Available at: Repository > Settings > Secrets and variables > Actions
+   * Scope: Limited to a single repository
+   * Benefits: Repository-specific, higher isolation
+   * Recommended for: `CODACY_PROJECT_TOKEN` and other repository-specific credentials or tokens that shouldn't be shared
+
+3. **Environment Secrets**:
+   * Available at: Repository > Settings > Environments > (select environment) > Environment secrets
+   * Scope: Limited to specific deployment environments (e.g., production, staging)
+   * Benefits: Environment-specific, can have approval requirements
+   * Recommended for: Deployment credentials that vary between environments
+
+For code quality tools like SonarCloud, organization secrets are recommended if you have multiple repositories that use these tools. This approach reduces management overhead and ensures consistent configuration across projects. For Codacy, since tokens are project-specific, they should be set at the repository level.
+
+### Local Environment Setup for Code Quality Tools
+
+To run code quality tools locally before committing to GitHub:
+
+1. **Install dependencies**:
+
+   ```bash
+   composer install
+   ```
+
+2. **Run PHP CodeSniffer**:
+
+   ```bash
+   composer phpcs
+   ```
+
+3. **Fix coding standards automatically**:
+
+   ```bash
+   composer phpcbf
+   ```
+
+4. **Run PHPStan static analysis**:
+
+   ```bash
+   composer phpstan
+   ```
+
+5. **Run PHP Mess Detector**:
+
+   ```bash
+   composer phpmd
+   ```
+
+6. **Run all linters at once**:
+
+   ```bash
+   composer lint
+   ```
+
+7. **Set up environment variables for SonarCloud and Codacy**:
+
+   * **For macOS/Linux**:
+     ```bash
+     export SONAR_TOKEN=your_sonar_token
+     export CODACY_PROJECT_TOKEN=your_codacy_token
+     ```
+
+   * **For Windows (Command Prompt)**:
+
+     ```cmd
+     set SONAR_TOKEN=your_sonar_token
+     set CODACY_PROJECT_TOKEN=your_codacy_token
+     ```
+
+   * **For Windows (PowerShell)**:
+
+     ```powershell
+     $env:SONAR_TOKEN="your_sonar_token"
+     $env:CODACY_PROJECT_TOKEN="your_codacy_token"
+     ```
+
+8. **Create a .env file** (alternative approach):
+
+   ```env
+   # .env (already included in .gitignore to prevent committing secrets)
+   SONAR_TOKEN=your_sonar_token
+   CODACY_PROJECT_TOKEN=your_codacy_token
+   ```
+
+   Then load these variables:
+
+   ```bash
+   # Using a tool like dotenv
+   source .env
+   ```
+
+9. **Run SonarCloud locally**:
+
+   ```bash
+   # Install SonarScanner
+   npm install -g sonarqube-scanner
+
+   # Run analysis
+   sonar-scanner \
+     -Dsonar.projectKey=your_project_key \
+     -Dsonar.organization=your_organization \
+     -Dsonar.sources=. \
+     -Dsonar.host.url=https://sonarcloud.io \
+     -Dsonar.login=$SONAR_TOKEN
+   ```
+
+10. **Run Codacy locally**:
+
+    ```bash
+    # Install Codacy CLI
+    npm install -g codacy-coverage
+
+    # Run analysis
+    codacy-analysis-cli analyze --directory . --project-token $CODACY_PROJECT_TOKEN
+    ```
+
+For more detailed instructions, see the [Code Quality Setup Guide](docs/code-quality-setup.md).
+
+By running these tools locally, you can identify and fix issues before pushing your code to GitHub, ensuring smoother CI/CD workflows.
 
 ## Developers
 
