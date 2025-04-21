@@ -28,14 +28,14 @@ class Admin {
      */
     public function __construct( Core $core ) {
         $this->core = $core;
-        $this->initialize_hooks();
+        $this->initializeHooks();
     }
 
     /**
      * Initializes WordPress hooks.
      */
-    private function initialize_hooks() {
-        \add_action( 'admin_enqueue_scripts', array( $this, 'enqueue_admin_assets' ) );
+    private function initializeHooks(): void {
+        \add_action( 'admin_enqueue_scripts', array( $this, 'enqueueAdminAssets' ) );
     }
 
     /**
@@ -48,24 +48,25 @@ class Admin {
      *
 	 * @phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.Found
      */
-    public function enqueue_admin_assets(): void {
+    public function enqueueAdminAssets(): void {
 
 		// @phpcs:disable WordPress.Security.NonceVerification.Recommended
 		// @phpcs:disable WordPress.Security.NonceVerification.Missing
-        if ( ! isset( $_GET['page'] ) || 'wp_plugin_starter_template_settings' !== $_GET['page'] ) {
+        $page = filter_input(INPUT_GET, 'page', FILTER_SANITIZE_FULL_SPECIAL_CHARS);
+        if ( ! $page || 'wp_plugin_starter_template_settings' !== $page ) {
             return;
         }
 		// @phpcs:enable
 
         // Get the plugin version.
-        $plugin_version = $this->core->get_plugin_version();
+        $pluginVersion = $this->core->get_plugin_version();
 
         // Enqueue styles.
         \wp_enqueue_style(
             'wpst-admin-styles',
             \plugin_dir_url( __FILE__ ) . '../../admin/css/admin-styles.css',
             array(), // Dependencies.
-            $plugin_version // Version.
+            $pluginVersion // Version.
         );
 
         // Enqueue admin scripts.
@@ -73,19 +74,11 @@ class Admin {
             'wpst-admin-script',
             \plugin_dir_url( __FILE__ ) . '../../admin/js/admin-scripts.js',
             array( 'jquery' ),
-            $plugin_version, // Version.
+            $pluginVersion, // Version.
             true
         );
 
-        // Prepare data for localization.
-        $data = array(
-            'ajax_url' => \admin_url( 'admin-ajax.php' ),
-            // @TODO: Fix mocking for wp_create_nonce. Issue #1.
-            // 'nonce'    => \wp_create_nonce( 'wpst_admin_nonce' ),
-        );
-
-        // Localize the script with the data.
-        // @TODO: Fix mocking for wp_localize_script. Issue #1.
-        // Will need to implement wp_localize_script for 'wpst-admin-script' with 'wpst_admin_data' and the data array.
+        // TODO: Implement localization when mocking is fixed (Issue #1)
+        // This will include ajax_url and nonce for security
     }
 }

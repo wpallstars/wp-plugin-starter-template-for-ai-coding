@@ -29,11 +29,11 @@ class Plugin {
     private $admin;
 
     /**
-     * Plugin file
+     * Plugin file path
      *
      * @var string
      */
-    private $plugin_file;
+    private string $pluginFile;
 
     /**
      * Plugin version
@@ -48,8 +48,8 @@ class Plugin {
      * @param string $plugin_file Main plugin file path.
      * @param string $version Plugin version.
      */
-    public function __construct( $plugin_file, $version ) {
-        $this->plugin_file = $plugin_file;
+    public function __construct( string $pluginFile, string $version ) {
+        $this->pluginFile = $pluginFile;
         $this->version = $version;
         $this->core = new Core( $version );
         $this->admin = new Admin( $this->core );
