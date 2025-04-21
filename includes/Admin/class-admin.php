@@ -52,12 +52,16 @@ class Admin {
 
 		// @phpcs:disable WordPress.Security.NonceVerification.Recommended
 		// @phpcs:disable WordPress.Security.NonceVerification.Missing
-        // For production, use filter_input
+        // For production, use filter_input.
+        $page = '';
         if ( defined( 'PHPUNIT_RUNNING' ) && PHPUNIT_RUNNING ) {
-            // For testing, use $_GET directly
-            $page = isset( $_GET['page'] ) ? $_GET['page'] : '';
-        } else {
-            // For production, use filter_input
+            // For testing, use $_GET directly.
+            // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- We're sanitizing with wp_unslash and validating later
+            $page = isset( $_GET['page'] ) ? \wp_unslash( $_GET['page'] ) : '';
+        }
+
+        // Use filter_input for production environment.
+        if ( empty( $page ) ) {
             $page = filter_input( INPUT_GET, 'page', FILTER_SANITIZE_FULL_SPECIAL_CHARS );
         }
 

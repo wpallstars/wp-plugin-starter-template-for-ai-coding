@@ -78,6 +78,12 @@ class AdminTest extends \WP_Mock\Tools\TestCase {
         // Set up the superglobal for the test
         $_GET['page'] = 'wp_plugin_starter_template_settings';
 
+        // Mock wp_unslash function
+        WP_Mock::userFunction('wp_unslash', [
+            'args' => ['wp_plugin_starter_template_settings'],
+            'return' => 'wp_plugin_starter_template_settings',
+        ]);
+
         // Mock WordPress functions used in the method
         WP_Mock::userFunction('plugin_dir_url', [
             'return' => 'http://example.com/wp-content/plugins/wp-plugin-starter-template/includes/Admin/',
