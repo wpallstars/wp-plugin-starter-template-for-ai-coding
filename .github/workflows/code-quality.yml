@@ -27,13 +27,13 @@ jobs:
         run: composer install --prefer-dist --no-progress
 
       - name: Run PHPCS
-        run: composer run phpcs
+        run: phpcs --standard=./phpcs.xml .
         continue-on-error: true
 
       - name: Run PHPCBF (report only)
         run: |
           echo "Running PHPCBF in dry-run mode to show what would be fixed"
-          composer run phpcbf -- --dry-run
+          phpcbf --standard=./phpcs.xml -n
         continue-on-error: true
 
   phpstan:
@@ -130,13 +130,16 @@ jobs:
           verbose: true
           output: results.sarif
           format: sarif
-          # Adjust the below patterns based on your project structure
+          # Limit the number of issues to prevent GitHub Code Scanning rejection
           gh-code-scanning-compat: true
-          max-allowed-issues: 2147483647
+          max-allowed-issues: 20
+          max-allowed-security-issues: 20
+          # Limit tools to prevent timeouts and stay under GitHub's 20 runs limit
+          tool: phpcs,phpmd,markdownlint
         continue-on-error: true
 
       - name: Upload SARIF results file
-        uses: github/codeql-action/upload-sarif@v2
+        uses: github/codeql-action/upload-sarif@v3
         with:
           sarif_file: results.sarif
         continue-on-error: true

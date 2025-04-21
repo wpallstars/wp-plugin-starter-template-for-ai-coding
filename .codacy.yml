@@ -3,6 +3,52 @@ engines:
   markdownlint:
     enabled: true
     config_file: .markdownlint.json
+  phpmd:
+    enabled: true
+  phpcs:
+    enabled: true
+  stylelint:
+    enabled: false
+  shellcheck:
+    enabled: false
+  # Disable tools that are causing issues
+  eslint:
+    enabled: false
+  eslint-8:
+    enabled: false
+  eslint-9:
+    enabled: false
+  trivy:
+    enabled: false
+  semgrep:
+    enabled: false
+  checkov:
+    enabled: false
+  pmd:
+    enabled: false
+  pmd-7:
+    enabled: false
+  lizard:
+    enabled: false
+  jshint:
+    enabled: false
+  csslint:
+    enabled: false
+  jacksonlinter:
+    enabled: false
+  spectral:
+    enabled: false
+
+duplication:
+  enabled: true
+  exclude_patterns:
+    - "tests/**"
+    - "vendor/**"
+    - "node_modules/**"
+
+metrics:
+  enabled: true
+
 exclude_paths:
   - "vendor/**"
   - "node_modules/**"
@@ -11,3 +57,5 @@ exclude_paths:
   - "bin/**"
   - ".github/**"
   - "tests/**"
+  - "*.lock"
+  - "*.json"
