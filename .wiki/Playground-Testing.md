@@ -11,21 +11,15 @@ This document explains how to use WordPress Playground for testing our plugin.
 * Isolated testing environment
 * Works well with CI/CD pipelines
 
-## Setting Up WordPress Playground Locally
+## Using WordPress Playground Online
 
-1. Install the WordPress Playground CLI:
+The easiest way to test our plugin with WordPress Playground is to use the online version:
 
-```bash
-npm install -g @wordpress/playground-tools
-```
+1. Single site testing: [Open in WordPress Playground](https://playground.wordpress.net/?blueprint-url=https://raw.githubusercontent.com/wpallstars/wp-plugin-starter-template-for-ai-coding/feature/testing-framework/playground/blueprint.json)
 
-2. Start WordPress Playground with our blueprint:
+2. Multisite testing: [Open in WordPress Playground](https://playground.wordpress.net/?blueprint-url=https://raw.githubusercontent.com/wpallstars/wp-plugin-starter-template-for-ai-coding/feature/testing-framework/playground/multisite-blueprint.json)
 
-```bash
-wp-playground start --blueprint playground/blueprint.json --port 8888
-```
-
-3. Open your browser and navigate to http://localhost:8888
+These links will automatically set up WordPress with our plugin installed and activated.
 
 ## Running Tests with WordPress Playground
 
@@ -36,24 +30,26 @@ We have two blueprints for testing:
 
 To run tests with WordPress Playground:
 
-1. Start WordPress Playground with the appropriate blueprint:
+1. Open the appropriate WordPress Playground link:
+   - [Single site](https://playground.wordpress.net/?blueprint-url=https://raw.githubusercontent.com/wpallstars/wp-plugin-starter-template-for-ai-coding/feature/testing-framework/playground/blueprint.json)
+   - [Multisite](https://playground.wordpress.net/?blueprint-url=https://raw.githubusercontent.com/wpallstars/wp-plugin-starter-template-for-ai-coding/feature/testing-framework/playground/multisite-blueprint.json)
+
+2. Test the plugin manually in the browser
+
+## Local Testing with HTML Files
+
+We've also included HTML files that embed WordPress Playground:
+
+1. Open `playground/index.html` in your browser for single site testing
+2. Open `playground/multisite.html` in your browser for multisite testing
+
+You can serve these files locally with a simple HTTP server:
 
 ```bash
-# For single site testing
-wp-playground start --blueprint playground/blueprint.json --port 8888
+# Using Python
+python -m http.server 8888 --directory playground
 
-# For multisite testing
-wp-playground start --blueprint playground/multisite-blueprint.json --port 8888
-```
-
-2. Run Cypress tests against WordPress Playground:
-
-```bash
-# For single site testing
-npm run test:single:headless
-
-# For multisite testing
-npm run test:multisite:headless
+# Then open http://localhost:8888/index.html in your browser
 ```
 
 ## Customizing Blueprints
