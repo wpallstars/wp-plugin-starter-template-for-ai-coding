@@ -17,14 +17,14 @@ class Core {
      *
      * @var string
      */
-    private $version;
+    private string $version;
 
     /**
      * Constructor
      *
      * @param string $version Plugin version.
      */
-    public function __construct( $version = '' ) {
+    public function __construct( string $version = '' ) {
         // Initialize hooks.
         $this->version = $version;
     }
@@ -35,7 +35,7 @@ class Core {
      * @param string $content The content to filter.
      * @return string The filtered content.
      */
-    public function filter_content( $content ) {
+    public function filter_content( string $content ): string {
         return $content;
     }
 
@@ -44,7 +44,7 @@ class Core {
      *
      * @return string The plugin version.
      */
-    public function get_plugin_version() {
+    public function get_plugin_version(): string {
         return $this->version;
     }
 }

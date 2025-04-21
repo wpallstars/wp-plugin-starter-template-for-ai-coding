@@ -19,14 +19,14 @@ class Plugin {
      *
      * @var Core
      */
-    private $core;
+    private Core $core;
 
     /**
      * Admin instance
      *
      * @var Admin
      */
-    private $admin;
+    private Admin $admin;
 
     /**
      * Plugin file path
@@ -40,7 +40,7 @@ class Plugin {
      *
      * @var string
      */
-    private $version;
+    private string $version;
 
     /**
      * Constructor
@@ -58,7 +58,23 @@ class Plugin {
     /**
      * Initialize the plugin
      */
-    public function init() {
-        // Initialization logic goes here.
+    public function init(): void {
+        // Register hooks and filters.
+        add_action('plugins_loaded', array($this, 'load_textdomain'));
+
+        // Initialize any other plugin functionality.
+    }
+
+    /**
+     * Load plugin textdomain.
+     *
+     * @return void
+     */
+    public function load_textdomain(): void {
+        load_plugin_textdomain(
+            'wp-plugin-starter-template',
+            false,
+            dirname(plugin_basename($this->pluginFile)) . '/languages/'
+        );
     }
 }

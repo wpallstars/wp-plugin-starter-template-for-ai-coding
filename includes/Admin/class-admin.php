@@ -19,7 +19,7 @@ class Admin {
      *
      * @var Core
      */
-    private $core;
+    private Core $core;
 
     /**
      * Constructor.
@@ -46,7 +46,6 @@ class Admin {
 
 
      *
-	 * @phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.Found
      */
     public function enqueue_admin_assets(): void {
 
@@ -71,22 +70,22 @@ class Admin {
 		// @phpcs:enable
 
         // Get the plugin version.
-        $pluginVersion = $this->core->get_plugin_version();
+        $plugin_version = $this->core->get_plugin_version();
 
         // Enqueue styles.
         \wp_enqueue_style(
             'wpst-admin-styles',
-            \plugin_dir_url( __FILE__ ) . '../../admin/css/admin-styles.css',
+            plugin_dir_url( dirname( __DIR__ ) ) . 'admin/css/admin-styles.css',
             array(), // Dependencies.
-            $pluginVersion // Version.
+            $plugin_version // Version.
         );
 
         // Enqueue admin scripts.
         \wp_enqueue_script(
             'wpst-admin-script',
-            \plugin_dir_url( __FILE__ ) . '../../admin/js/admin-scripts.js',
+            plugin_dir_url( dirname( __DIR__ ) ) . 'admin/js/admin-scripts.js',
             array( 'jquery' ),
-            $pluginVersion, // Version.
+            $plugin_version, // Version.
             true
         );
 
