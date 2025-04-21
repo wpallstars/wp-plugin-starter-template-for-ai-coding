@@ -77,3 +77,66 @@ jobs:
       - name: Run PHPMD
         run: phpmd . text cleancode,codesize,controversial,design,naming,unusedcode --exclude vendor,node_modules,tests,bin,build,dist
         continue-on-error: true
+
+  sonarcloud:
+    name: SonarCloud Analysis
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v3
+        with:
+          java-version: 17
+          distribution: 'temurin'
+
+      - name: Cache SonarCloud packages
+        uses: actions/cache@v3
+        with:
+          path: ~/.sonar/cache
+          key: ${{ runner.os }}-sonar
+          restore-keys: ${{ runner.os }}-sonar
+
+      - name: SonarCloud Scan
+        uses: SonarSource/sonarcloud-github-action@v2.0.2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        with:
+          args: >
+            -Dsonar.projectKey=wpallstars_wp-plugin-starter-template-for-ai-coding
+            -Dsonar.organization=wpallstars
+            -Dsonar.sources=.
+            -Dsonar.exclusions=vendor/**,node_modules/**,tests/**,bin/**,build/**,dist/**
+            -Dsonar.sourceEncoding=UTF-8
+        continue-on-error: true
+
+  codacy:
+    name: Codacy Analysis
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Run Codacy Analysis CLI
+        uses: codacy/codacy-analysis-cli-action@v4.3.0
+        with:
+          project-token: ${{ secrets.CODACY_PROJECT_TOKEN }}
+          verbose: true
+          output: results.sarif
+          format: sarif
+          # Adjust the below patterns based on your project structure
+          gh-code-scanning-compat: true
+          max-allowed-issues: 2147483647
+        continue-on-error: true
+
+      - name: Upload SARIF results file
+        uses: github/codeql-action/upload-sarif@v2
+        with:
+          sarif_file: results.sarif
+        continue-on-error: true
