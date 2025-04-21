@@ -1,5 +1,5 @@
 {
-  "landingPage": "/wp-admin/network/",
+  "landingPage": "/wp-admin/",
   "login": true,
   "preferredVersions": {
     "php": "8.0",
@@ -8,8 +8,31 @@
   "steps": [
     {
       "step": "defineWpConfig",
+      "name": "WP_DEBUG",
+      "value": true
+    },
+    {
+      "step": "defineWpConfig",
+      "name": "WP_DEBUG_LOG",
+      "value": true
+    },
+    {
+      "step": "defineWpConfig",
+      "name": "WP_DEBUG_DISPLAY",
+      "value": false
+    },
+    {
+      "step": "runPHP",
+      "code": "<?php\nerror_log('Starting WordPress installation check...');\nrequire_once('/wordpress/wp-admin/install.php');\nif (!is_blog_installed()) {\n    error_log('WordPress not installed, installing now...');\n    wp_install('WordPress Multisite', 'admin', 'admin@example.com', true);\n    error_log('WordPress installation completed');\n} else {\n    error_log('WordPress already installed');\n}\n"
+    },
+    {
+      "step": "defineWpConfig",
       "name": "WP_ALLOW_MULTISITE",
       "value": true
+    },
+    {
+      "step": "runPHP",
+      "code": "<?php\nerror_log('Setting up multisite network...');\nrequire_once('/wordpress/wp-load.php');\nrequire_once('/wordpress/wp-admin/includes/upgrade.php');\nrequire_once('/wordpress/wp-admin/includes/admin.php');\nrequire_once('/wordpress/wp-admin/includes/schema.php');\n\n// Simulate network setup\n$network_data = [\n    'site_name' => 'WordPress Multisite',\n    'subdomain_install' => false,\n    'domain' => 'localhost',\n    'path' => '/',\n    'email' => 'admin@example.com'\n];\n\nupdate_option('admin_email', $network_data['email']);\n\ntry {\n    error_log('Running wp_install_network()...');\n    wp_install_network($network_data);\n    error_log('Network setup completed successfully');\n} catch (Exception $e) {\n    error_log('Network setup error: ' . $e->getMessage());\n}\n"
     },
     {
       "step": "defineWpConfig",
@@ -43,7 +66,7 @@
     },
     {
       "step": "runPHP",
-      "code": "<?php\nrequire_once('/wordpress/wp-load.php');\nrequire_once('/wordpress/wp-admin/includes/upgrade.php');\n\n// Install multisite network\nglobal $wpdb;\nif (!is_multisite()) {\n    $network_id = install_network();\n    if (is_wp_error($network_id)) {\n        error_log('Network install error: ' . $network_id->get_error_message());\n        die('Network installation failed');\n    }\n    // Populate network tables\n    populate_network(1, 'localhost', '/', get_option('admin_email'), 'WordPress Multisite', '', false);\n}\n\n// Create a test subsite\n$domain = 'localhost';\n$path = '/testsite/';\n$title = 'Test Subsite';\n$user_id = 1;\n\nif (!function_exists('get_site_by_path')) {\n    require_once('/wordpress/wp-includes/ms-blogs.php');\n}\n\nif (!get_site_by_path($domain, $path)) {\n    $blog_id = wpmu_create_blog($domain, $path, $title, $user_id);\n    if (is_wp_error($blog_id)) {\n        error_log('Subsite creation error: ' . $blog_id->get_error_message());\n        die('Subsite creation failed');\n    } else {\n        error_log('Created subsite with ID: ' . $blog_id);\n    }\n} else {\n    error_log('Subsite already exists');\n}\n"
+      "code": "<?php\nerror_log('Verifying multisite setup...');\nrequire_once('/wordpress/wp-load.php');\nerror_log('Is multisite: ' . (is_multisite() ? 'Yes' : 'No'));\n\nglobal $wpdb;\n$tables = $wpdb->get_results('SHOW TABLES LIKE \\'' . $wpdb->prefix . 'site\\';');\nerror_log('Multisite tables found: ' . count($tables));\n\nif (is_multisite()) {\n    error_log('Creating test subsite...');\n    $domain = 'localhost';\n    $path = '/testsite/';\n    $title = 'Test Subsite';\n    $user_id = 1;\n\n    if (!function_exists('get_site_by_path')) {\n        require_once('/wordpress/wp-includes/ms-blogs.php');\n    }\n\n    if (!get_site_by_path($domain, $path)) {\n        $blog_id = wpmu_create_blog($domain, $path, $title, $user_id);\n        if (is_wp_error($blog_id)) {\n            error_log('Subsite creation error: ' . $blog_id->get_error_message());\n        } else {\n            error_log('Created subsite with ID: ' . $blog_id);\n        }\n    } else {\n        error_log('Subsite already exists');\n    }\n}\n"
     },
     {
       "step": "installPlugin",
@@ -51,6 +74,10 @@
         "resource": "wordpress.org/plugins",
         "slug": "coblocks"
       }
+    },
+    {
+      "step": "runPHP",
+      "code": "<?php\nerror_log('Setup complete, displaying debug log...');\nif (file_exists('/wordpress/wp-content/debug.log')) {\n    $log = file_get_contents('/wordpress/wp-content/debug.log');\n    error_log('Debug log contents: ' . $log);\n} else {\n    error_log('Debug log file not found');\n}\n"
     }
   ]
 }
