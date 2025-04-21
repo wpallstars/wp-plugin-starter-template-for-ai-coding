@@ -273,6 +273,7 @@ To ensure your code passes the quality checks from these tools, follow these gui
    * Copy the output from the code quality tool and paste it into your AI assistant chat
    * Ask the AI to help you understand and resolve the issues
    * Example prompt:
+
      ```text
      I received the following feedback from [Tool Name]. Please help me understand and resolve these issues:
 
