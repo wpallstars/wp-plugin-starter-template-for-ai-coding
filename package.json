@@ -15,8 +15,8 @@
     "test:multisite:headless": "cypress run --config specPattern=cypress/e2e/multisite.cy.js",
     "setup:playground:single": "bash bin/setup-test-env.sh playground-single",
     "setup:playground:multisite": "bash bin/setup-test-env.sh playground-multisite",
-    "test:playground:single": "npm run setup:playground:single && sleep 10 && npm run test:single:headless",
-    "test:playground:multisite": "npm run setup:playground:multisite && sleep 10 && npm run test:multisite:headless",
+    "test:playground:single": "npm run setup:playground:single && sleep 10 && cypress run --config specPattern=cypress/e2e/playground-single-site.cy.js",
+    "test:playground:multisite": "npm run setup:playground:multisite && sleep 10 && cypress run --config specPattern=cypress/e2e/playground-multisite.cy.js",
     "build": "./build.sh",
     "lint:php": "composer run-script phpcs",
     "lint:php:simple": "composer run-script phpcs:simple",
@@ -48,6 +48,8 @@
   "homepage": "https://github.com/wpallstars/wp-plugin-starter-template-for-ai-coding#readme",
   "devDependencies": {
     "@wordpress/env": "^8.12.0",
+    "@wp-playground/blueprints": "^1.0.28",
+    "@wp-playground/client": "^1.0.28",
     "cypress": "^13.6.4"
   }
 }

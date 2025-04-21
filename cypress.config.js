@@ -8,6 +8,9 @@ module.exports = defineConfig({
     setupNodeEvents() {
       // This function can be used to register custom Cypress plugins or event listeners.
       // Currently not in use, but left for future extensibility.
-    }
+    },
+    // Add configuration for WordPress Playground
+    experimentalWebKitSupport: true,
+    chromeWebSecurity: false
   }
 });
