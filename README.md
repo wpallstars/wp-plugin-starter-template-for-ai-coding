@@ -21,6 +21,7 @@ This template is based on the experience gained from developing the "Fix 'Plugin
 * **AI Workflow Documentation**: Detailed guides for AI-assisted development
 * **Wiki Documentation**: Ready-to-use wiki structure for comprehensive documentation
 * **Multisite Compatible**: Fully tested and compatible with WordPress multisite installations
+* **Domain Mapping Support**: Built-in support for domain mapping in multisite environments
 
 ### How to Use This Template
 
@@ -85,10 +86,16 @@ This template includes configuration for WordPress Environment (wp-env) to make 
    npm run start
    ```
 
-3. For multisite testing:
+3. For testing in different WordPress environments:
    ```bash
-   npm run multisite
+   # For single site testing
+   npm run setup:single
+
+   # For multisite testing
+   npm run setup:multisite
    ```
+
+   See [TESTING.md](TESTING.md) for more details on our testing approach.
 
 4. Access your local WordPress site at <http://localhost:8888> (admin credentials: admin/password)
 
@@ -212,11 +219,15 @@ Customize the includes/core.php file to implement your core functionality and th
 
 ### Is this template compatible with WordPress multisite?
 
-Yes, this template is fully compatible with WordPress multisite installations. You can test multisite compatibility by running:
+Yes, this template is fully compatible with WordPress multisite installations. We have a comprehensive testing framework that allows you to verify functionality in both single site and multisite environments.
+
+You can test multisite compatibility by running:
 
 ```bash
-npm run multisite
+npm run setup:multisite
 ```
+
+For more details on our testing approach, see the [TESTING.md](TESTING.md) file.
 
 ## Support & Feedback
 
@@ -477,6 +488,14 @@ This template is designed to work seamlessly with the Git Updater plugin for upd
 For more information on Git Updater integration, see the [Git Updater Required Headers documentation](https://git-updater.com/knowledge-base/required-headers/).
 
 ## Changelog
+
+### 0.1.14
+
+* Added: WordPress Multisite support with domain mapping
+* Added: Network admin settings for multisite configuration
+* Added: Multisite testing environment with wp-env and Cypress
+* Added: Comprehensive documentation for multisite testing
+* Added: GitHub Actions workflow for multisite testing
 
 ### 0.1.13
 

@@ -1,0 +1,22 @@
+{
+  "core": null,
+  "plugins": [
+    "."
+  ],
+  "themes": [],
+  "config": {
+    "WP_DEBUG": true,
+    "WP_DEBUG_LOG": true,
+    "WP_DEBUG_DISPLAY": false,
+    "WP_ALLOW_MULTISITE": true,
+    "MULTISITE": true,
+    "SUBDOMAIN_INSTALL": false,
+    "PATH_CURRENT_SITE": "/",
+    "SITE_ID_CURRENT_SITE": 1,
+    "BLOG_ID_CURRENT_SITE": 1
+  },
+  "mappings": {
+    "wp-content/mu-plugins": "./mu-plugins",
+    "wp-content/plugins/wp-plugin-starter-template-for-ai-coding": "."
+  }
+}
