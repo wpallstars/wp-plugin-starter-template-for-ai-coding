@@ -1,6 +1,6 @@
 # Code Review Guide for AI Assistants
 
-This document provides guidance for AI assistants to help with code review for th plugin.
+This document provides guidance for AI assistants to help with code review for this project.
 
 ## Code Review Checklist
 
@@ -8,54 +8,54 @@ When reviewing code, check for the following:
 
 ### Functionality
 
-- [ ] Does the code work as expected?
-- [ ] Does it handle edge cases appropriately?
-- [ ] Are there any logical errors?
-- [ ] Is error handling implemented properly?
+* [ ] Does the code work as expected?
+* [ ] Does it handle edge cases appropriately?
+* [ ] Are there any logical errors?
+* [ ] Is error handling implemented properly?
 
 ### Code Quality
 
-- [ ] Does the code follow WordPress coding standards?
-- [ ] Is the code well-organized and easy to understand?
-- [ ] Are there any code smells (duplicate code, overly complex functions, etc.)?
-- [ ] Are functions and variables named appropriately?
-- [ ] Are there appropriate comments and documentation?
+* [ ] Does the code follow WordPress coding standards?
+* [ ] Is the code well-organized and easy to understand?
+* [ ] Are there any code smells (duplicate code, overly complex functions, etc.)?
+* [ ] Are functions and variables named appropriately?
+* [ ] Are there appropriate comments and documentation?
 
 ### Security
 
-- [ ] Is user input properly validated and sanitized?
-- [ ] Is output properly escaped?
-- [ ] Are capability checks used for user actions?
-- [ ] Are nonces used for form submissions?
-- [ ] Are there any potential SQL injection vulnerabilities?
-- [ ] Are there any potential XSS vulnerabilities?
+* [ ] Is user input properly validated and sanitized?
+* [ ] Is output properly escaped?
+* [ ] Are capability checks used for user actions?
+* [ ] Are nonces used for form submissions?
+* [ ] Are there any potential SQL injection vulnerabilities?
+* [ ] Are there any potential XSS vulnerabilities?
 
 ### Performance
 
-- [ ] Are there any performance bottlenecks?
-- [ ] Are database queries optimized?
-- [ ] Is caching used appropriately?
-- [ ] Are assets (CSS, JS) properly enqueued?
+* [ ] Are there any performance bottlenecks?
+* [ ] Are database queries optimized?
+* [ ] Is caching used appropriately?
+* [ ] Are assets (CSS, JS) properly enqueued?
 
 ### Compatibility
 
-- [ ] Is the code compatible with the minimum supported WordPress version (5.0)?
-- [ ] Is the code compatible with the minimum supported PHP version (7.0)?
-- [ ] Are there any browser compatibility issues?
-- [ ] Are there any conflicts with other plugins?
+* [ ] Is the code compatible with the minimum supported WordPress version (5.0)?
+* [ ] Is the code compatible with the minimum supported PHP version (7.0)?
+* [ ] Are there any browser compatibility issues?
+* [ ] Are there any conflicts with other plugins?
 
 ### Internationalization
 
-- [ ] Are all user-facing strings translatable?
-- [ ] Is the correct text domain used?
-- [ ] Are translation functions used correctly?
+* [ ] Are all user-facing strings translatable?
+* [ ] Is the correct text domain used?
+* [ ] Are translation functions used correctly?
 
 ### Accessibility
 
-- [ ] Does the code follow accessibility best practices?
-- [ ] Are ARIA attributes used appropriately?
-- [ ] Is keyboard navigation supported?
-- [ ] Is screen reader support implemented?
+* [ ] Does the code follow accessibility best practices?
+* [ ] Are ARIA attributes used appropriately?
+* [ ] Is keyboard navigation supported?
+* [ ] Is screen reader support implemented?
 
 ## Automated Code Review Tools
 
@@ -65,33 +65,33 @@ This project uses several automated code review tools to maintain high code qual
 
 [CodeRabbit](https://www.coderabbit.ai/) is an AI-powered code review tool that provides automated feedback on pull requests.
 
-- **Integration**: Add the CodeRabbit GitHub App to your repository
-- **Benefits**: Provides AI-powered code reviews, identifies potential issues, and suggests improvements
-- **Usage**: CodeRabbit automatically reviews pull requests when they are created or updated
+* **Integration**: Add the CodeRabbit GitHub App to your repository
+* **Benefits**: Provides AI-powered code reviews, identifies potential issues, and suggests improvements
+* **Usage**: CodeRabbit automatically reviews pull requests when they are created or updated
 
 ### 2. CodeFactor
 
 [CodeFactor](https://www.codefactor.io/) continuously monitors code quality and provides feedback on code style, complexity, and potential issues.
 
-- **Integration**: Add the CodeFactor GitHub App to your repository
-- **Benefits**: Provides a grade for your codebase, identifies issues, and tracks code quality over time
-- **Usage**: CodeFactor automatically analyzes your codebase and provides feedback on pull requests
+* **Integration**: Add the CodeFactor GitHub App to your repository
+* **Benefits**: Provides a grade for your codebase, identifies issues, and tracks code quality over time
+* **Usage**: CodeFactor automatically analyzes your codebase and provides feedback on pull requests
 
 ### 3. Codacy
 
 [Codacy](https://www.codacy.com/) is a code quality tool that provides static analysis, code coverage, and code duplication detection.
 
-- **Integration**: Add the Codacy GitHub App to your repository
-- **Benefits**: Provides a grade for your codebase, identifies issues, and tracks code quality over time
-- **Usage**: Codacy automatically analyzes your codebase and provides feedback on pull requests
+* **Integration**: Add the Codacy GitHub App to your repository
+* **Benefits**: Provides a grade for your codebase, identifies issues, and tracks code quality over time
+* **Usage**: Codacy automatically analyzes your codebase and provides feedback on pull requests
 
 ### 4. SonarCloud
 
 [SonarCloud](https://sonarcloud.io/) is a cloud-based code quality and security service that performs static code analysis to detect bugs, vulnerabilities, and code smells.
 
-- **Integration**: Add the SonarCloud GitHub App to your repository
-- **Benefits**: Provides detailed analysis of code quality, security vulnerabilities, and technical debt
-- **Usage**: SonarCloud automatically analyzes your codebase and provides feedback on pull requests
+* **Integration**: Add the SonarCloud GitHub App to your repository
+* **Benefits**: Provides detailed analysis of code quality, security vulnerabilities, and technical debt
+* **Usage**: SonarCloud automatically analyzes your codebase and provides feedback on pull requests
 
 ### Using AI Assistants with Code Review Tools
 
@@ -102,6 +102,16 @@ When you receive feedback from these code review tools, you can use AI assistant
 3. Ask the AI to help you understand and fix the issues
 4. Implement the suggested fixes
 5. Commit the changes and verify that the issues are resolved
+
+### Markdown Formatting Standards
+
+When writing or updating Markdown files in this project, follow these standards:
+
+* Always use asterisks (*) for bullet points, not hyphens (-)
+* Use proper heading hierarchy (# for main title, ## for sections, etc.)
+* Use code blocks with language specification for code examples
+* Use relative links for internal documentation
+* Include alt text for images
 
 Example prompt for AI assistants:
 
@@ -117,9 +127,9 @@ I received the following feedback from [Tool Name]. Please help me understand th
 
 Before reviewing code, understand:
 
-- What problem is the code trying to solve?
-- What are the requirements?
-- What are the constraints?
+* What problem is the code trying to solve?
+* What are the requirements?
+* What are the constraints?
 
 ### 2. Review the Code
 
@@ -129,54 +139,54 @@ Review the code with the checklist above in mind.
 
 When providing feedback:
 
-- Be specific and clear
-- Explain why a change is needed
-- Provide examples or suggestions when possible
-- Prioritize feedback (critical issues vs. minor improvements)
-- Be constructive and respectful
+* Be specific and clear
+* Explain why a change is needed
+* Provide examples or suggestions when possible
+* Prioritize feedback (critical issues vs. minor improvements)
+* Be constructive and respectful
 
 ### 4. Follow Up
 
 After the code has been updated:
 
-- Review the changes
-- Verify that issues have been addressed
-- Provide additional feedback if necessary
+* Review the changes
+* Verify that issues have been addressed
+* Provide additional feedback if necessary
 
 ## Common Issues to Look For
 
 ### PHP Issues
 
-- Undefined variables or functions
-- Incorrect function parameters
-- Missing return statements
-- Improper error handling
-- Inefficient loops or conditionals
-- Hardcoded values that should be configurable
+* Undefined variables or functions
+* Incorrect function parameters
+* Missing return statements
+* Improper error handling
+* Inefficient loops or conditionals
+* Hardcoded values that should be configurable
 
 ### WordPress-Specific Issues
 
-- Incorrect hook usage
-- Missing or incorrect nonces
-- Missing capability checks
-- Direct database queries instead of using WordPress functions
-- Improper enqueuing of scripts and styles
-- Not using WordPress functions for common tasks
+* Incorrect hook usage
+* Missing or incorrect nonces
+* Missing capability checks
+* Direct database queries instead of using WordPress functions
+* Improper enqueuing of scripts and styles
+* Not using WordPress functions for common tasks
 
 ### JavaScript Issues
 
-- Undefined variables or functions
-- Event listener memory leaks
-- jQuery conflicts
-- Browser compatibility issues
-- Missing error handling
+* Undefined variables or functions
+* Event listener memory leaks
+* jQuery conflicts
+* Browser compatibility issues
+* Missing error handling
 
 ### CSS Issues
 
-- Browser compatibility issues
-- Specificity issues
-- Unused styles
-- Overriding WordPress admin styles inappropriately
+* Browser compatibility issues
+* Specificity issues
+* Unused styles
+* Overriding WordPress admin styles inappropriately
 
 ## Example Feedback
 
