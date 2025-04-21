@@ -1,6 +1,6 @@
 <?php
 /**
- * Multisite Example Class
+ * Multisite Class
  *
  * This is a placeholder file for multisite-specific functionality.
  * Extend this file or create additional classes in this directory
@@ -17,11 +17,11 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 /**
- * Class Multisite_Example
+ * Class Multisite
  *
- * Example class for multisite-specific functionality.
+ * Base class for multisite-specific functionality.
  */
-class Multisite_Example {
+class Multisite {
 
 	/**
 	 * Constructor.

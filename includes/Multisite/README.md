@@ -12,10 +12,10 @@ To implement multisite-specific functionality:
 ```php
 // Load multisite support classes if in multisite environment
 if ( is_multisite() ) {
-    require_once WP_PLUGIN_STARTER_TEMPLATE_PATH . 'includes/Multisite/class-your-multisite-class.php';
-    
+    require_once WP_PLUGIN_STARTER_TEMPLATE_PATH . 'includes/Multisite/class-multisite.php';
+
     // Initialize multisite support
-    $your_multisite_class = new WPALLSTARS\PluginStarterTemplate\Multisite\Your_Multisite_Class();
+    $multisite = new WPALLSTARS\PluginStarterTemplate\Multisite\Multisite();
 }
 ```
 
