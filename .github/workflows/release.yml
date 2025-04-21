@@ -52,17 +52,27 @@ jobs:
           zip -r ../wp-plugin-starter-template-for-ai-coding-${{ env.VERSION }}.zip wp-plugin-starter-template-for-ai-coding -x "*.DS_Store" -x "*.git*"
           cd ..
 
+      - name: Extract changelog
+        id: extract_changelog
+        run: |
+          CHANGELOG=$(grep -A 20 "#### \[${{ env.VERSION }}\]" CHANGELOG.md | sed -n '/####/,/####/p' | sed '$d')
+          echo "CHANGELOG<<EOF" >> $GITHUB_ENV
+          echo "$CHANGELOG" >> $GITHUB_ENV
+          echo "EOF" >> $GITHUB_ENV
+
       - name: Create Release
         id: create_release
         uses: softprops/action-gh-release@v1
         with:
           files: wp-plugin-starter-template-for-ai-coding-${{ env.VERSION }}.zip
-          name: Version ${{ env.VERSION }}
+          name: v${{ env.VERSION }} - WordPress Plugin Starter Template
           draft: false
           prerelease: false
           body: |
-            Release of version ${{ env.VERSION }}
+            # WordPress Plugin Starter Template v${{ env.VERSION }}
 
-            See [CHANGELOG.md](https://github.com/wpallstars/wp-plugin-starter-template-for-ai-coding/blob/main/CHANGELOG.md) for details.
+            ${{ env.CHANGELOG }}
+
+            [View full changelog](https://github.com/wpallstars/wp-plugin-starter-template-for-ai-coding/blob/main/CHANGELOG.md)
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
