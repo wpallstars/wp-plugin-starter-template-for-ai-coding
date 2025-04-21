@@ -1,0 +1,25 @@
+{
+  "landingPage": "/wp-admin/",
+  "preferredVersions": {
+    "php": "8.0",
+    "wp": "latest"
+  },
+  "steps": [
+    {
+      "step": "login",
+      "username": "admin",
+      "password": "password"
+    },
+    {
+      "step": "installPlugin",
+      "pluginZipFile": {
+        "resource": "wordpress.org/plugins",
+        "slug": "wp-plugin-starter-template-for-ai-coding"
+      }
+    },
+    {
+      "step": "activatePlugin",
+      "pluginSlug": "wp-plugin-starter-template-for-ai-coding"
+    }
+  ]
+}
