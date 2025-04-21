@@ -106,14 +106,14 @@ When you receive feedback from these code quality tools, you can use AI assistan
 
 1. Copy the output from the code quality tool
 2. Paste it into your AI assistant chat
-3. Ask the AI to help you understand and fix the issues
-4. Implement the suggested fixes
+3. Ask the AI to help you understand and resolve the issues
+4. Apply the suggested fixes
 5. Commit the changes and verify that the issues are resolved
 
 Example prompt for AI assistants:
 
-```
-I received the following feedback from [Tool Name]. Please help me understand these issues and suggest fixes:
+```text
+I received the following feedback from [Tool Name]. Please help me understand and resolve these issues:
 
 [Paste the tool output here]
 ```
@@ -130,18 +130,18 @@ To set up your development environment:
 
 Before submitting a pull request, make sure to run the tests:
 
-- PHP Unit Tests: `npm run test:php`
-- End-to-End Tests: `npm run test:e2e`
-- Coding Standards: `npm run lint:php`
+* PHP Unit Tests: `npm run test:php`
+* End-to-End Tests: `npm run test:e2e`
+* Coding Standards: `npm run lint:php`
 
 #### Code Quality Checks
 
 To ensure your code meets the quality standards, run these commands before submitting a pull request:
 
-- Check coding standards: `composer run phpcs`
-- Fix coding standards automatically: `composer run phpcbf`
-- Check JavaScript coding standards: `npm run lint:js`
-- Check CSS coding standards: `npm run lint:css`
+* Check coding standards: `composer run phpcs`
+* Fix coding standards automatically: `composer run phpcbf`
+* Check JavaScript coding standards: `npm run lint:js`
+* Check CSS coding standards: `npm run lint:css`
 
 These checks will help identify and fix issues before they are caught by the automated code quality tools in the pull request process.
 
@@ -149,25 +149,25 @@ These checks will help identify and fix issues before they are caught by the aut
 
 If you're adding a new feature or changing existing functionality, please update the documentation:
 
-- Update the README.md file if necessary
-- Update the readme.txt file if necessary
-- Update or create wiki pages as needed
-- Update code comments
+* Update the README.md file if necessary
+* Update the readme.txt file if necessary
+* Update or create wiki pages as needed
+* Update code comments
 
 ## Community
 
 Join our community to discuss the project:
 
-- [GitHub Discussions](https://github.com/wpallstars/wp-plugin-starter-template-for-ai-coding/discussions)
-- [Gitea Issues](https://gitea.wpallstars.com/wpallstars/wp-plugin-starter-template-for-ai-coding/issues)
+* [GitHub Discussions](https://github.com/wpallstars/wp-plugin-starter-template-for-ai-coding/discussions)
+* [Gitea Issues](https://gitea.wpallstars.com/wpallstars/wp-plugin-starter-template-for-ai-coding/issues)
 
 ## Recognition
 
 Contributors will be recognized in the following ways:
 
-- Added to the contributors list in readme.txt
-- Mentioned in release notes for significant contributions
-- Thanked in the Changelog for specific contributions
+* Added to the contributors list in readme.txt
+* Mentioned in release notes for significant contributions
+* Thanked in the Changelog for specific contributions
 
 ## License
 
