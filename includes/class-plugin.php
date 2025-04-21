@@ -45,7 +45,7 @@ class Plugin {
     /**
      * Constructor
      *
-     * @param string $plugin_file Main plugin file path.
+     * @param string $pluginFile Main plugin file path.
      * @param string $version Plugin version.
      */
     public function __construct( string $pluginFile, string $version ) {

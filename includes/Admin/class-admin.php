@@ -28,14 +28,14 @@ class Admin {
      */
     public function __construct( Core $core ) {
         $this->core = $core;
-        $this->initializeHooks();
+        $this->initialize_hooks();
     }
 
     /**
      * Initializes WordPress hooks.
      */
-    private function initializeHooks(): void {
-        \add_action( 'admin_enqueue_scripts', array( $this, 'enqueueAdminAssets' ) );
+    private function initialize_hooks(): void {
+        \add_action( 'admin_enqueue_scripts', array( $this, 'enqueue_admin_assets' ) );
     }
 
     /**
@@ -48,11 +48,11 @@ class Admin {
      *
 	 * @phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.Found
      */
-    public function enqueueAdminAssets(): void {
+    public function enqueue_admin_assets(): void {
 
 		// @phpcs:disable WordPress.Security.NonceVerification.Recommended
 		// @phpcs:disable WordPress.Security.NonceVerification.Missing
-        $page = filter_input(INPUT_GET, 'page', FILTER_SANITIZE_FULL_SPECIAL_CHARS);
+        $page = filter_input( INPUT_GET, 'page', FILTER_SANITIZE_FULL_SPECIAL_CHARS );
         if ( ! $page || 'wp_plugin_starter_template_settings' !== $page ) {
             return;
         }
@@ -78,7 +78,7 @@ class Admin {
             true
         );
 
-        // TODO: Implement localization when mocking is fixed (Issue #1)
-        // This will include ajax_url and nonce for security
+        // TODO: Implement localization when mocking is fixed (Issue #1).
+        // This will include ajax_url and nonce for security.
     }
 }
