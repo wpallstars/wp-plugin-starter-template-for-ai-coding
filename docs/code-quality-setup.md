@@ -10,12 +10,14 @@ This document explains how to set up and use the code quality tools for this pro
 ## Installation
 
 1. Clone the repository:
+
    ```bash
    git clone https://github.com/wpallstars/wp-plugin-starter-template-for-ai-coding.git
    cd wp-plugin-starter-template-for-ai-coding
    ```
 
 2. Install dependencies:
+
    ```bash
    composer install
    ```

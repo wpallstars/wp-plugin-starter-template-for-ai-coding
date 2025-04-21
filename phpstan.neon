@@ -16,10 +16,10 @@ parameters:
         - '#Function apply_filters invoked with [0-9]+ parameters, 2 required.#'
         - '#Function [a-zA-Z0-9_]+ not found.#'
         - '#Call to static method [a-zA-Z0-9_:()]+ on an unknown class [a-zA-Z0-9_]+.#'
-
-includes:
-    - vendor/szepeviktor/phpstan-wordpress/extension.neon
         - '#Function do_action invoked with [0-9]+ parameters, 1 required.#'
         - '#Function add_action invoked with [0-9]+ parameters, 2 required.#'
         - '#Function add_filter invoked with [0-9]+ parameters, 2 required.#'
     reportUnmatchedIgnoredErrors: false
+
+includes:
+    - vendor/szepeviktor/phpstan-wordpress/extension.neon

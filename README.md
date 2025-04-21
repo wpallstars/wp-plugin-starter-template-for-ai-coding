@@ -333,31 +333,37 @@ For code quality tools like SonarCloud, organization secrets are recommended if 
 To run code quality tools locally before committing to GitHub:
 
 1. **Install dependencies**:
+
    ```bash
    composer install
    ```
 
 2. **Run PHP CodeSniffer**:
+
    ```bash
    composer phpcs
    ```
 
 3. **Fix coding standards automatically**:
+
    ```bash
    composer phpcbf
    ```
 
 4. **Run PHPStan static analysis**:
+
    ```bash
    composer phpstan
    ```
 
 5. **Run PHP Mess Detector**:
+
    ```bash
    composer phpmd
    ```
 
 6. **Run all linters at once**:
+
    ```bash
    composer lint
    ```
@@ -386,19 +392,21 @@ To run code quality tools locally before committing to GitHub:
 
 8. **Create a .env file** (alternative approach):
 
-   ```bash
+   ```env
    # .env (already included in .gitignore to prevent committing secrets)
    SONAR_TOKEN=your_sonar_token
    CODACY_PROJECT_TOKEN=your_codacy_token
    ```
 
    Then load these variables:
+
    ```bash
    # Using a tool like dotenv
    source .env
    ```
 
 9. **Run SonarCloud locally**:
+
    ```bash
    # Install SonarScanner
    npm install -g sonarqube-scanner
@@ -413,6 +421,7 @@ To run code quality tools locally before committing to GitHub:
    ```
 
 10. **Run Codacy locally**:
+
     ```bash
     # Install Codacy CLI
     npm install -g codacy-coverage
