@@ -106,7 +106,7 @@ The easiest way to test our plugin with WordPress Playground is to use the onlin
 
 1. Single site testing: [Open in WordPress Playground](https://playground.wordpress.net/?blueprint-url=https://raw.githubusercontent.com/wpallstars/wp-plugin-starter-template-for-ai-coding/feature/testing-framework/playground/blueprint.json&_t=4)
 
-2. Multisite testing: [Open in WordPress Playground](https://playground.wordpress.net/?blueprint-url=https://raw.githubusercontent.com/wpallstars/wp-plugin-starter-template-for-ai-coding/feature/testing-framework/playground/multisite-blueprint.json&_t=8)
+2. Multisite testing: [Open in WordPress Playground](https://playground.wordpress.net/?php=8.0&multisite=true&networking=true&_t=9)
 
 These links will automatically set up WordPress with a sample plugin installed and activated.
 
