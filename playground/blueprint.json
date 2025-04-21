@@ -13,13 +13,13 @@
     {
       "step": "installPlugin",
       "pluginZipFile": {
-        "resource": "wordpress.org/plugins",
-        "slug": "wp-plugin-starter-template-for-ai-coding"
+        "resource": "url",
+        "url": "https://github.com/wpallstars/wp-plugin-starter-template-for-ai-coding/archive/refs/heads/feature/testing-framework.zip"
       }
     },
     {
       "step": "activatePlugin",
-      "pluginSlug": "wp-plugin-starter-template-for-ai-coding"
+      "pluginSlug": "wp-plugin-starter-template-for-ai-coding-feature-testing-framework"
     }
   ]
 }
