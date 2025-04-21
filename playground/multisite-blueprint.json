@@ -1,16 +1,52 @@
 {
-  "landingPage": "/wp-admin/",
+  "landingPage": "/wp-admin/network/",
   "login": true,
-  "features": {
-    "networking": true
-  },
   "steps": [
+    {
+      "step": "defineWpConfig",
+      "name": "WP_ALLOW_MULTISITE",
+      "value": true
+    },
+    {
+      "step": "defineWpConfig",
+      "name": "MULTISITE",
+      "value": true
+    },
+    {
+      "step": "defineWpConfig",
+      "name": "SUBDOMAIN_INSTALL",
+      "value": false
+    },
+    {
+      "step": "defineWpConfig",
+      "name": "DOMAIN_CURRENT_SITE",
+      "value": "localhost"
+    },
+    {
+      "step": "defineWpConfig",
+      "name": "PATH_CURRENT_SITE",
+      "value": "/"
+    },
+    {
+      "step": "defineWpConfig",
+      "name": "SITE_ID_CURRENT_SITE",
+      "value": 1
+    },
+    {
+      "step": "defineWpConfig",
+      "name": "BLOG_ID_CURRENT_SITE",
+      "value": 1
+    },
     {
       "step": "installPlugin",
       "pluginData": {
         "resource": "wordpress.org/plugins",
         "slug": "coblocks"
       }
+    },
+    {
+      "step": "runPHP",
+      "code": "<?php\n// Create a test subsite\n$domain = 'localhost';\n$path = '/testsite/';\n$title = 'Test Subsite';\n$user_id = 1;\n\nrequire_once('/wordpress/wp-load.php');\n\nif (!function_exists('get_site_by_path')) {\n    require_once('/wordpress/wp-includes/ms-blogs.php');\n}\n\nif (!get_site_by_path($domain, $path)) {\n    $blog_id = wpmu_create_blog($domain, $path, $title, $user_id);\n    if (is_wp_error($blog_id)) {\n        echo 'Error creating subsite: ' . $blog_id->get_error_message();\n    } else {\n        echo 'Created subsite with ID: ' . $blog_id;\n    }\n} else {\n    echo 'Subsite already exists';\n}\n"
     }
   ]
 }
