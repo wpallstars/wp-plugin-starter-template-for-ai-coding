@@ -36,45 +36,8 @@ jobs:
           composer run phpcbf -- --dry-run
         continue-on-error: true
 
-  sonarcloud:
-    name: SonarCloud Analysis
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
+  # SonarCloud job temporarily removed due to Java version compatibility issues
+  # Will be re-added in a future PR with proper configuration
 
-      - name: SonarCloud Scan
-        uses: SonarSource/sonarqube-scan-action@v1.2.0
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-          SONAR_HOST_URL: https://sonarcloud.io
-
-  codacy:
-    name: Codacy Analysis
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
-      - name: Run Codacy Analysis CLI
-        uses: codacy/codacy-analysis-cli-action@v4.3.0
-        with:
-          project-token: ${{ secrets.CODACY_PROJECT_TOKEN }}
-          verbose: true
-          output: results.sarif
-          format: sarif
-          # Adjust the below patterns based on your project structure
-          gh-code-scanning-compat: true
-          max-allowed-issues: 2147483647
-        continue-on-error: true
-
-      - name: Upload SARIF results file
-        uses: github/codeql-action/upload-sarif@v2
-        with:
-          sarif_file: results.sarif
-        continue-on-error: true
+  # Codacy job temporarily removed due to GitHub Actions compatibility issues
+  # Will be re-added in a future PR with proper configuration
