@@ -3,22 +3,40 @@
 # Make this script executable
 chmod +x "$0"
 
-# Check if wp-env is installed
-if ! command -v wp-env &> /dev/null; then
-    echo "wp-env is not installed. Installing..."
-    npm install -g @wordpress/env
-fi
-
 # Check if environment type is provided
 if [ -z "$1" ]; then
-    echo "Usage: $0 [single|multisite]"
+    echo "Usage: $0 [single|multisite|playground-single|playground-multisite]"
     exit 1
 fi
 
 ENV_TYPE=$1
 
+# Function to check if a command exists
+command_exists() {
+    command -v "$1" &> /dev/null
+}
+
+# Function to install wp-env if needed
+install_wp_env() {
+    if ! command_exists wp-env; then
+        echo "wp-env is not installed. Installing..."
+        npm install -g @wordpress/env
+    fi
+}
+
+# Function to install wp-playground if needed
+install_wp_playground() {
+    if ! command_exists wp-playground; then
+        echo "wp-playground is not installed. Installing..."
+        npm install -g @wordpress/playground-tools
+    fi
+}
+
 if [ "$ENV_TYPE" == "single" ]; then
     echo "Setting up single site environment..."
+
+    # Install wp-env if needed
+    install_wp_env
 
     # Start the environment
     wp-env start
@@ -50,6 +68,9 @@ if [ "$ENV_TYPE" == "single" ]; then
 
 elif [ "$ENV_TYPE" == "multisite" ]; then
     echo "Setting up multisite environment..."
+
+    # Install wp-env if needed
+    install_wp_env
 
     # Start the environment with multisite configuration
     wp-env start --config=.wp-env.multisite.json
@@ -86,7 +107,154 @@ elif [ "$ENV_TYPE" == "multisite" ]; then
     echo "Test site: http://localhost:8888/testsite"
     echo "Admin login: admin / password"
 
+elif [ "$ENV_TYPE" == "playground-single" ]; then
+    echo "Setting up WordPress Playground single site environment..."
+
+    # Install wp-playground if needed
+    install_wp_playground
+
+    # Create plugin zip
+    echo "Creating plugin zip..."
+    mkdir -p dist
+    zip -r dist/plugin.zip . -x "node_modules/*" "dist/*" ".git/*"
+
+    # Update blueprint to use local plugin
+    cat > playground/blueprint.json << EOF
+{
+  "landingPage": "/wp-admin/",
+  "preferredVersions": {
+    "php": "8.0",
+    "wp": "latest"
+  },
+  "steps": [
+    {
+      "step": "login",
+      "username": "admin",
+      "password": "password"
+    },
+    {
+      "step": "installPlugin",
+      "pluginZipFile": {
+        "resource": "local",
+        "path": "dist/plugin.zip"
+      }
+    },
+    {
+      "step": "activatePlugin",
+      "pluginSlug": "wp-plugin-starter-template-for-ai-coding"
+    }
+  ]
+}
+EOF
+
+    # Start WordPress Playground
+    echo "Starting WordPress Playground..."
+    wp-playground start --blueprint playground/blueprint.json --port 8888 &
+
+    # Wait for WordPress Playground to be ready
+    echo "Waiting for WordPress Playground to be ready..."
+    sleep 5
+
+    echo "WordPress Playground Single Site environment is ready!"
+    echo "Site: http://localhost:8888"
+    echo "Admin login: admin / password"
+    echo "Press Ctrl+C to stop the server when done."
+
+elif [ "$ENV_TYPE" == "playground-multisite" ]; then
+    echo "Setting up WordPress Playground multisite environment..."
+
+    # Install wp-playground if needed
+    install_wp_playground
+
+    # Create plugin zip
+    echo "Creating plugin zip..."
+    mkdir -p dist
+    zip -r dist/plugin.zip . -x "node_modules/*" "dist/*" ".git/*"
+
+    # Update blueprint to use local plugin
+    cat > playground/multisite-blueprint.json << EOF
+{
+  "landingPage": "/wp-admin/network/",
+  "preferredVersions": {
+    "php": "8.0",
+    "wp": "latest"
+  },
+  "steps": [
+    {
+      "step": "defineWpConfig",
+      "name": "WP_ALLOW_MULTISITE",
+      "value": true
+    },
+    {
+      "step": "defineWpConfig",
+      "name": "MULTISITE",
+      "value": true
+    },
+    {
+      "step": "defineWpConfig",
+      "name": "SUBDOMAIN_INSTALL",
+      "value": false
+    },
+    {
+      "step": "defineWpConfig",
+      "name": "DOMAIN_CURRENT_SITE",
+      "value": "localhost"
+    },
+    {
+      "step": "defineWpConfig",
+      "name": "PATH_CURRENT_SITE",
+      "value": "/"
+    },
+    {
+      "step": "defineWpConfig",
+      "name": "SITE_ID_CURRENT_SITE",
+      "value": 1
+    },
+    {
+      "step": "defineWpConfig",
+      "name": "BLOG_ID_CURRENT_SITE",
+      "value": 1
+    },
+    {
+      "step": "login",
+      "username": "admin",
+      "password": "password"
+    },
+    {
+      "step": "installPlugin",
+      "pluginZipFile": {
+        "resource": "local",
+        "path": "dist/plugin.zip"
+      }
+    },
+    {
+      "step": "activatePlugin",
+      "pluginSlug": "wp-plugin-starter-template-for-ai-coding",
+      "networkWide": true
+    },
+    {
+      "step": "runPHP",
+      "code": "<?php\n// Create a test subsite\n$domain = 'localhost';\n$path = '/testsite/';\n$title = 'Test Subsite';\n$user_id = 1;\n\nif (!get_site_by_path($domain, $path)) {\n    $blog_id = wpmu_create_blog($domain, $path, $title, $user_id);\n    if (is_wp_error($blog_id)) {\n        echo 'Error creating subsite: ' . $blog_id->get_error_message();\n    } else {\n        echo 'Created subsite with ID: ' . $blog_id;\n    }\n} else {\n    echo 'Subsite already exists';\n}\n"
+    }
+  ]
+}
+EOF
+
+    # Start WordPress Playground
+    echo "Starting WordPress Playground..."
+    wp-playground start --blueprint playground/multisite-blueprint.json --port 8888 &
+
+    # Wait for WordPress Playground to be ready
+    echo "Waiting for WordPress Playground to be ready..."
+    sleep 5
+
+    echo "WordPress Playground Multisite environment is ready!"
+    echo "Main site: http://localhost:8888"
+    echo "Test site: http://localhost:8888/testsite"
+    echo "Admin login: admin / password"
+    echo "Press Ctrl+C to stop the server when done."
+
 else
-    echo "Invalid environment type. Use 'single' or 'multisite'."
+    echo "Invalid environment type. Use 'single', 'multisite', 'playground-single', or 'playground-multisite'."
     exit 1
 fi

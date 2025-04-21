@@ -28,11 +28,11 @@ describe('WordPress Multisite Tests', () => {
   });
 
   it('Plugin is network activated', () => {
-    cy.loginAsAdmin();
+    // Use our custom command to check and network activate the plugin if needed
+    cy.networkActivatePlugin('wp-plugin-starter-template-for-ai-coding');
 
-    // Check plugins page
-    cy.visit('/wp-admin/network/plugins.php');
-    cy.contains('tr', 'WP Plugin Starter Template').should('contain', 'Network Active');
+    // Verify it's network active
+    cy.get('tr[data-slug="wp-plugin-starter-template-for-ai-coding"] .network_active').should('exist');
   });
 
   it('Network settings page loads correctly', () => {

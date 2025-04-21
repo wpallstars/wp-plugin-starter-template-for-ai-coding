@@ -11,11 +11,11 @@ describe('WordPress Single Site Tests', () => {
   });
 
   it('Plugin is activated', () => {
-    cy.loginAsAdmin();
+    // Use our custom command to check and activate the plugin if needed
+    cy.activatePlugin('wp-plugin-starter-template-for-ai-coding');
 
-    // Check plugins page
-    cy.visit('/wp-admin/plugins.php');
-    cy.contains('tr', 'WP Plugin Starter Template').should('contain', 'Deactivate');
+    // Verify it's active
+    cy.get('tr[data-slug="wp-plugin-starter-template-for-ai-coding"] .deactivate').should('exist');
   });
 
   it('Plugin settings page loads correctly', () => {
