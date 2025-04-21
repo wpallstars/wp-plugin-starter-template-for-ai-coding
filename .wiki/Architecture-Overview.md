@@ -18,13 +18,21 @@ wp-plugin-starter-template/
 │   └── images/             # Images used by the plugin
 ├── includes/               # Core plugin functionality
 │   ├── core.php            # Core functionality class
-│   └── plugin.php          # Main plugin class
+│   ├── plugin.php          # Main plugin class
+│   └── Multisite/          # Multisite-specific functionality
 ├── languages/              # Translation files
 ├── tests/                  # Test files
 │   ├── e2e/                # End-to-end tests
 │   └── unit/               # Unit tests
+├── cypress/                # Cypress testing files
+│   └── e2e/                # End-to-end test specifications
+├── bin/                    # Utility scripts
+│   └── setup-test-env.sh   # Test environment setup script
 ├── .github/                # GitHub-specific files
 │   └── workflows/          # GitHub Actions workflows
+├── .wp-env.json            # WordPress environment config
+├── .wp-env.multisite.json  # Multisite environment config
+├── cypress.config.js       # Cypress configuration
 ├── .ai-workflows/          # AI workflow documentation
 ├── .wiki/                  # Wiki documentation
 └── wp-plugin-starter-template.php  # Main plugin file
@@ -38,8 +46,9 @@ The `wp-plugin-starter-template.php` file serves as the entry point for WordPres
 
 1. Defines plugin metadata
 2. Prevents direct access
-3. Loads the main plugin class
-4. Initializes the plugin
+3. Defines plugin constants
+4. Loads the main plugin class
+5. Initializes the plugin
 
 ### Plugin Class
 
@@ -66,6 +75,14 @@ The `Admin` class in `admin/lib/admin.php` handles all admin-specific functional
 2. Registers settings
 3. Enqueues admin assets
 4. Processes admin form submissions
+
+### Multisite Support
+
+The `Multisite` class in `includes/Multisite/class-multisite.php` provides a foundation for multisite-specific functionality. It:
+
+1. Serves as a placeholder for multisite features
+2. Can be extended for custom multisite functionality
+3. Provides examples of multisite-specific methods
 
 ## Object-Oriented Approach
 
@@ -105,6 +122,9 @@ The plugin includes a comprehensive testing framework:
 
 1. **Unit Tests**: For testing individual components
 2. **End-to-End Tests**: For testing the plugin as a whole
+3. **WordPress Environment**: Using wp-env for local testing
+4. **Multisite Testing**: Support for testing in multisite environments
+5. **Continuous Integration**: Automated tests via GitHub Actions
 
 ## Conclusion
 
