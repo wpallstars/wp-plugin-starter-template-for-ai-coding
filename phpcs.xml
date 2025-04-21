@@ -12,7 +12,6 @@
     <exclude-pattern>*/tests/*</exclude-pattern>
     <exclude-pattern>libs/</exclude-pattern>
 
-    <arg value="-sp" />
     <arg name="extensions" value="php" />
     <arg name="basepath" value="." />
     <arg name="parallel" value="8" />
