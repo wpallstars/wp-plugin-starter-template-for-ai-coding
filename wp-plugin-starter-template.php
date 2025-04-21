@@ -37,14 +37,42 @@ define( 'WP_PLUGIN_STARTER_TEMPLATE_PATH', plugin_dir_path( __FILE__ ) );
 define( 'WP_PLUGIN_STARTER_TEMPLATE_URL', plugin_dir_url( __FILE__ ) );
 define( 'WP_PLUGIN_STARTER_TEMPLATE_VERSION', '0.1.13' );
 
-// Load the main plugin class.
-require_once WP_PLUGIN_STARTER_TEMPLATE_PATH . 'includes/class-plugin.php';
+// Use namespace imports instead of require_once.
+use WPALLSTARS\PluginStarterTemplate\Plugin;
+
+// Register autoloader for plugin classes.
+spl_autoload_register( function ( $class ) {
+    // Plugin namespace prefix
+    $prefix = 'WPALLSTARS\\PluginStarterTemplate\\';
+
+    // Check if the class uses our namespace
+    $len = strlen( $prefix );
+    if ( strncmp( $prefix, $class, $len ) !== 0 ) {
+        return;
+    }
+
+    // Get the relative class name
+    $relative_class = substr( $class, $len );
+
+    // Convert namespace to path
+    $file = WP_PLUGIN_STARTER_TEMPLATE_PATH . 'includes/' . str_replace( '\\', '/', $relative_class ) . '.php';
+
+    // Convert class name format to file name format
+    $file = str_replace( 'class-', '', $file );
+    $file = preg_replace( '/([a-z])([A-Z])/', '$1-$2', $file );
+    $file = strtolower( $file );
+
+    // If the file exists, require it
+    if ( file_exists( $file ) ) {
+        require_once $file;
+    }
+} );
 
 // Plugin is multisite compatible - see .wiki/Testing-Framework.md for testing instructions.
 // For multisite-specific functionality, see the includes/Multisite directory.
 
 // Initialize the plugin and store the instance in a global variable.
-$wpst_plugin = new WPALLSTARS\PluginStarterTemplate\Plugin( __FILE__, WP_PLUGIN_STARTER_TEMPLATE_VERSION );
+$wpst_plugin = new Plugin( __FILE__, WP_PLUGIN_STARTER_TEMPLATE_VERSION );
 
 // Initialize the plugin.
 $wpst_plugin->init();
