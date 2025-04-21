@@ -44,11 +44,13 @@ We use `@wordpress/env` and Cypress for testing our plugin.
    * Activate our plugin
 
 2. Run Cypress tests for single site:
+
    ```bash
    npm run test:single
    ```
 
    For headless testing:
+
    ```bash
    npm run test:single:headless
    ```
@@ -60,6 +62,7 @@ We use `@wordpress/env` and Cypress for testing our plugin.
 ## Testing in WordPress Multisite
 
 1. Set up the multisite environment:
+
    ```bash
    npm run setup:multisite
    ```
@@ -71,11 +74,13 @@ We use `@wordpress/env` and Cypress for testing our plugin.
    * Network activate our plugin
 
 2. Run Cypress tests for multisite:
+
    ```bash
    npm run test:multisite
    ```
 
    For headless testing:
+
    ```bash
    npm run test:multisite:headless
    ```
@@ -106,11 +111,13 @@ Add new multisite tests to `cypress/e2e/multisite.cy.js`.
 1. **Database connection errors**: Make sure Docker is running and ports 8888 and 8889 are available.
 
 2. **Multisite conversion fails**: Check the wp-env logs for details:
+
    ```bash
    wp-env logs
    ```
 
 3. **Plugin not activated**: Run the following command:
+
    ```bash
    # For single site
    wp-env run cli wp plugin activate wp-plugin-starter-template-for-ai-coding
