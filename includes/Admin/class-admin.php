@@ -86,14 +86,6 @@ class Admin {
 
         // Localize the script with the data.
         // @TODO: Fix mocking for wp_localize_script. Issue #1.
-		// @phpcs:ignore Squiz.PHP.CommentedOutCode.Found
-
-        /*
-        \wp_localize_script(
-            'wpst-admin-script',
-            'wpst_admin_data',
-            $data
-        );
-        */
+        // Will need to implement wp_localize_script for 'wpst-admin-script' with 'wpst_admin_data' and the data array.
     }
 }
