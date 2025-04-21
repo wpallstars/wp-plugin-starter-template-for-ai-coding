@@ -1,6 +1,8 @@
 # Code Quality Checks Workflow
 
-This document outlines the process for ensuring code quality before pushing changes to the repository. Following these steps will help catch issues early and save time in the review process.
+## Scope
+
+This document is intended for plugin developers and code reviewers working on this repository. It outlines the process for ensuring code quality before pushing changes to the repository. Following these steps will help catch issues early and save time in the review process.
 
 ## Pre-Push Checklist
 
@@ -12,7 +14,7 @@ Before pushing your changes to the repository, run through the following checks:
    composer test
    ```
 
-   Ensure all tests pass. If any tests fail, fix the issues before proceeding.
+   Ensure all tests pass. If any tests fail, resolve the issues before proceeding.
 
 2. **Run PHP CodeSniffer**
 
@@ -73,7 +75,7 @@ $page = filter_input(INPUT_GET, 'page', FILTER_SANITIZE_FULL_SPECIAL_CHARS);
 
 // For testing environments
 if (defined('PHPUNIT_RUNNING') && PHPUNIT_RUNNING) {
-    // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+    // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- This rule is ignored in tests to allow direct access for testing purposes
     $page = isset($_GET['page']) ? wp_unslash($_GET['page']) : '';
 }
 ```
@@ -113,9 +115,9 @@ function_name( $param1, $param2 );
 
 Follow WordPress naming conventions:
 
-* Functions and variables: snake_case
+* Functions and variables: snake_case with plugin-specific prefix (e.g., `myplugin_function_name`)
 * Classes: CamelCase
-* Constants: UPPERCASE_WITH_UNDERSCORES
+* Constants: UPPERCASE_WITH_UNDERSCORES with plugin-specific prefix (e.g., `MYPLUGIN_CONSTANT_NAME`)
 
 ## Automated Checks in CI/CD
 
@@ -126,7 +128,7 @@ Our CI/CD pipeline includes the following automated checks:
 3. **SonarCloud**: Checks for code smells, bugs, and security vulnerabilities
 4. **CodeRabbit**: Provides AI-powered code review
 
-Even though these checks run automatically, it's best to catch issues locally before pushing to save time and reduce the number of commits needed to fix issues.
+Although CI runs these checks, catching issues locally helps save time and minimize follow-up commits.
 
 ## Using AI to Help with Code Quality
 
@@ -145,6 +147,8 @@ I ran PHPCS and got the following errors. Can you help me fix them?
 [Paste error output here]
 ```
 
+For more AI assistance guidelines, see the [AI Assistant Guide](./../.ai-assistant.md).
+
 ## Conclusion
 
-Following this workflow will help maintain high code quality and reduce the time spent on code reviews and fixing issues after pushing. Remember, it's always faster to fix issues locally than to go through multiple rounds of CI/CD and code review.
+This workflow helps maintain high code quality and speeds up the review process. Remember, it's always more efficient to resolve issues locally than to go through multiple rounds of CI/CD and code review.
