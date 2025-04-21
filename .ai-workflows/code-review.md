@@ -1,6 +1,6 @@
 # Code Review Guide for AI Assistants
 
-This document provides guidance for AI assistants to help with code review for the Fix Plugin Does Not Exist Notices plugin.
+This document provides guidance for AI assistants to help with code review for th plugin.
 
 ## Code Review Checklist
 
@@ -56,6 +56,60 @@ When reviewing code, check for the following:
 - [ ] Are ARIA attributes used appropriately?
 - [ ] Is keyboard navigation supported?
 - [ ] Is screen reader support implemented?
+
+## Automated Code Review Tools
+
+This project uses several automated code review tools to maintain high code quality standards. These tools are free to use for public repositories and should be integrated into any new repositories based on this template.
+
+### 1. CodeRabbit
+
+[CodeRabbit](https://www.coderabbit.ai/) is an AI-powered code review tool that provides automated feedback on pull requests.
+
+- **Integration**: Add the CodeRabbit GitHub App to your repository
+- **Benefits**: Provides AI-powered code reviews, identifies potential issues, and suggests improvements
+- **Usage**: CodeRabbit automatically reviews pull requests when they are created or updated
+
+### 2. CodeFactor
+
+[CodeFactor](https://www.codefactor.io/) continuously monitors code quality and provides feedback on code style, complexity, and potential issues.
+
+- **Integration**: Add the CodeFactor GitHub App to your repository
+- **Benefits**: Provides a grade for your codebase, identifies issues, and tracks code quality over time
+- **Usage**: CodeFactor automatically analyzes your codebase and provides feedback on pull requests
+
+### 3. Codacy
+
+[Codacy](https://www.codacy.com/) is a code quality tool that provides static analysis, code coverage, and code duplication detection.
+
+- **Integration**: Add the Codacy GitHub App to your repository
+- **Benefits**: Provides a grade for your codebase, identifies issues, and tracks code quality over time
+- **Usage**: Codacy automatically analyzes your codebase and provides feedback on pull requests
+
+### 4. SonarCloud
+
+[SonarCloud](https://sonarcloud.io/) is a cloud-based code quality and security service that performs static code analysis to detect bugs, vulnerabilities, and code smells.
+
+- **Integration**: Add the SonarCloud GitHub App to your repository
+- **Benefits**: Provides detailed analysis of code quality, security vulnerabilities, and technical debt
+- **Usage**: SonarCloud automatically analyzes your codebase and provides feedback on pull requests
+
+### Using AI Assistants with Code Review Tools
+
+When you receive feedback from these code review tools, you can use AI assistants to help address the issues:
+
+1. Copy the output from the code review tool
+2. Paste it into your AI assistant chat
+3. Ask the AI to help you understand and fix the issues
+4. Implement the suggested fixes
+5. Commit the changes and verify that the issues are resolved
+
+Example prompt for AI assistants:
+
+```
+I received the following feedback from [Tool Name]. Please help me understand these issues and suggest fixes:
+
+[Paste the tool output here]
+```
 
 ## Code Review Process
 

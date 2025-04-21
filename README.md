@@ -235,6 +235,40 @@ Contributions are welcome! Please feel free to submit a Pull Request.
 4. Push to the branch: `git push origin feature/amazing-feature`
 5. Submit a pull request
 
+For more detailed information, see the [Contributing Guide](.wiki/Contributing.md).
+
+### Code Quality Tools
+
+This project uses several automated code quality tools to ensure high standards. These tools are free for public repositories and should be integrated into any new repositories based on this template:
+
+1. **CodeRabbit**: AI-powered code review tool
+   - [Website](https://www.coderabbit.ai/)
+   - Provides automated feedback on pull requests
+
+2. **CodeFactor**: Continuous code quality monitoring
+   - [Website](https://www.codefactor.io/)
+   - Provides a grade for your codebase
+
+3. **Codacy**: Code quality and static analysis
+   - [Website](https://www.codacy.com/)
+   - Identifies issues related to code style, security, and performance
+
+4. **SonarCloud**: Code quality and security analysis
+   - [Website](https://sonarcloud.io/)
+   - Provides detailed analysis of code quality and security
+
+### Using AI Assistants with Code Quality Tools
+
+When you receive feedback from these code quality tools, you can use AI assistants to help address the issues:
+
+1. Copy the output from the code quality tool
+2. Paste it into your AI assistant chat
+3. Ask the AI to help you understand and fix the issues
+4. Implement the suggested fixes
+5. Commit the changes and verify that the issues are resolved
+
+For more information on coding standards and how to pass code quality checks, see the [Coding Standards Guide](.wiki/Coding-Standards.md).
+
 ## Developers
 
 ### AI-Powered Development
