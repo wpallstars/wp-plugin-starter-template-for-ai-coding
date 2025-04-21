@@ -20,8 +20,12 @@
         "dealerdirect/phpcodesniffer-composer-installer": "^1.0",
         "wp-coding-standards/wpcs": "^3.0",
         "phpcompatibility/phpcompatibility-wp": "^2.1",
-        "phpstan/phpstan": "^1.10",
-        "phpmd/phpmd": "^2.13"
+        "phpstan/phpstan": "^1.10.0",
+        "phpmd/phpmd": "^2.13.0",
+        "symfony/dependency-injection": "^5.4",
+        "symfony/config": "^5.4",
+        "symfony/filesystem": "^5.4",
+        "psr/log": "^1.1"
     },
     "autoload": {
         "psr-4": {
