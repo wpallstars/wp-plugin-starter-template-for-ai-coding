@@ -1,15 +1,18 @@
 {
-  "landingPage": "/wp-admin/options-general.php",
+  "$schema": "https://playground.wordpress.net/blueprint-schema.json",
+  "landingPage": "/wp-admin/network/",
   "login": true,
-  "preferredVersions": {
-    "php": "8.0",
-    "wp": "latest"
-  },
-  "options": {
-    "multisite": true,
+  "features": {
     "networking": true
   },
   "steps": [
+    {
+      "step": "enableMultisite"
+    },
+    {
+      "step": "wp-cli",
+      "command": "wp site create --slug=testsite"
+    },
     {
       "step": "installPlugin",
       "pluginData": {
