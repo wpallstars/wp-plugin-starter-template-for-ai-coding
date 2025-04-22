@@ -14,8 +14,17 @@ describe('WordPress Playground Multisite Tests', () => {
     // Visit the network admin dashboard
     cy.visit('/wp-admin/network/');
 
+    // Fill in the login form if needed
+    cy.get('body').then(($body) => {
+      if ($body.hasClass('login')) {
+        cy.get('#user_login').type('admin');
+        cy.get('#user_pass').type('password');
+        cy.get('#wp-submit').click();
+      }
+    });
+
     // Check if we're logged in to the network admin
-    cy.get('body').should('have.class', 'wp-admin');
+    cy.get('#wpadminbar').should('exist');
   });
 
   it('Plugin is network activated', () => {

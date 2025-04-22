@@ -6,6 +6,10 @@ on:
   pull_request:
     branches: [ main ]
 
+concurrency:
+  group: playground-tests-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   code-quality:
     name: Code Quality Check
@@ -54,16 +58,20 @@ jobs:
     - name: Install dependencies
       run: npm ci
 
-    - name: Install WordPress Playground CLI
-      run: npm install -g @wp-playground/cli
+    - name: Add WordPress Playground CLI to dependencies
+      run: npm install --save-dev @wp-playground/cli
 
     - name: Create plugin zip
       run: |
         mkdir -p dist
-        zip -r dist/plugin.zip . -x "node_modules/*" "dist/*" ".git/*"
+        zip -r dist/plugin.zip . \
+          -x "node_modules/**" "dist/**" ".git/**" ".github/**" ".wiki/**"
 
     - name: Run tests with WordPress Playground
       run: |
+        # Set base URL for Cypress
+        export CYPRESS_BASE_URL=http://localhost:8888
+
         # Start WordPress Playground with our blueprint
         npx @wp-playground/cli server --blueprint playground/blueprint.json --port 8888 --login &
 
@@ -72,7 +80,14 @@ jobs:
         timeout 60 bash -c 'until curl -s http://localhost:8888; do sleep 2; done'
 
         # Run Cypress tests against WordPress Playground
-        npx cypress run --config specPattern=cypress/e2e/playground-single-site.cy.js
+        npx cypress run --spec "cypress/e2e/playground-single-site.cy.js"
+
+    - name: Upload Cypress artifacts
+      if: always()
+      uses: actions/upload-artifact@v3
+      with:
+        name: cypress-single-site-results
+        path: cypress/videos,cypress/screenshots
 
   playground-multisite-test:
     name: WordPress Playground Multisite Tests
@@ -91,16 +106,20 @@ jobs:
     - name: Install dependencies
       run: npm ci
 
-    - name: Install WordPress Playground CLI
-      run: npm install -g @wp-playground/cli
+    - name: Add WordPress Playground CLI to dependencies
+      run: npm install --save-dev @wp-playground/cli
 
     - name: Create plugin zip
       run: |
         mkdir -p dist
-        zip -r dist/plugin.zip . -x "node_modules/*" "dist/*" ".git/*"
+        zip -r dist/plugin.zip . \
+          -x "node_modules/**" "dist/**" ".git/**" ".github/**" ".wiki/**"
 
     - name: Run tests with WordPress Playground
       run: |
+        # Set base URL for Cypress
+        export CYPRESS_BASE_URL=http://localhost:8888
+
         # Start WordPress Playground with our blueprint
         npx @wp-playground/cli server --blueprint playground/multisite-blueprint.json --port 8888 --login &
 
@@ -109,7 +128,14 @@ jobs:
         timeout 60 bash -c 'until curl -s http://localhost:8888; do sleep 2; done'
 
         # Run Cypress tests against WordPress Playground
-        npx cypress run --config specPattern=cypress/e2e/playground-multisite.cy.js
+        npx cypress run --spec "cypress/e2e/playground-multisite.cy.js"
+
+    - name: Upload Cypress artifacts
+      if: always()
+      uses: actions/upload-artifact@v3
+      with:
+        name: cypress-multisite-results
+        path: cypress/videos,cypress/screenshots
 
   performance-test:
     name: WordPress Performance Tests
