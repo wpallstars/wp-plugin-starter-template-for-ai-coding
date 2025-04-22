@@ -39,12 +39,18 @@
 </head>
 <body>
     <div class="buttons">
-        <button onclick="loadSingleSite()">Single Site</button>
-        <button onclick="loadMultisite()">Multisite</button>
+        <button type="button" id="singleSiteBtn">Single Site</button>
+        <button type="button" id="multisiteBtn">Multisite</button>
     </div>
     <iframe id="playground" src="about:blank" title="WordPress Playground Test Environment"></iframe>
 
     <script>
+        // Use unobtrusive event listeners instead of inline handlers
+        document.addEventListener('DOMContentLoaded', function() {
+            document.getElementById('singleSiteBtn').addEventListener('click', loadSingleSite);
+            document.getElementById('multisiteBtn').addEventListener('click', loadMultisite);
+        });
+
         function loadSingleSite() {
             document.getElementById('playground').src = "https://playground.wordpress.net/?blueprint=" + encodeURIComponent(JSON.stringify(singleSiteBlueprint));
         }

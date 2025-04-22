@@ -106,11 +106,11 @@ WordPress Playground runs WordPress entirely in the browser using WebAssembly. T
 
 The easiest way to test our plugin with WordPress Playground is to use the online version:
 
-1. Single site testing: [Open in WordPress Playground](https://playground.wordpress.net/?blueprint-url=https://raw.githubusercontent.com/wpallstars/wp-plugin-starter-template-for-ai-coding/feature/testing-framework/playground/blueprint.json&_t=9)
+1. Single site testing: [Open in WordPress Playground](https://playground.wordpress.net/?blueprint-url=https://raw.githubusercontent.com/wpallstars/wp-plugin-starter-template-for-ai-coding/main/playground/blueprint.json&_t=1)
 
-2. Multisite testing: [Open in WordPress Playground](https://playground.wordpress.net/?blueprint-url=https://raw.githubusercontent.com/wpallstars/wp-plugin-starter-template-for-ai-coding/feature/testing-framework/playground/multisite-blueprint.json&_t=23)
+2. Multisite testing: [Open in WordPress Playground](https://playground.wordpress.net/?blueprint-url=https://raw.githubusercontent.com/wpallstars/wp-plugin-starter-template-for-ai-coding/main/playground/multisite-blueprint.json&_t=1)
 
-These links will automatically set up WordPress with multisite enabled, WP_DEBUG enabled, and both the Plugin Toggle and Hello Dolly plugins activated.
+These links will automatically set up WordPress with multisite enabled, WP_DEBUG enabled, and both the Plugin Toggle and Kadence Blocks plugins activated.
 
 #### Local Testing with HTML Files
 
@@ -118,6 +118,7 @@ We've also included HTML files that embed WordPress Playground:
 
 1. Open `playground/index.html` in your browser for single site testing
 2. Open `playground/multisite.html` in your browser for multisite testing
+3. Open `playground/test.html` in your browser for a unified interface with buttons to switch between single site and multisite
 
 You can serve these files locally with a simple HTTP server:
 
