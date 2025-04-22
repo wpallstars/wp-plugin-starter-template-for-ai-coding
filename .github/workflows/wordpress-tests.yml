@@ -32,10 +32,7 @@ jobs:
         npm ci --dry-run
 
     - name: Lint JavaScript files
-      run: |
-        echo "Linting JavaScript files"
-        # Add your linting command here when you have one
-        # For example: npm run lint
+      run: npm run lint:js
 
     # Note about e2e tests
     - name: Note about e2e tests

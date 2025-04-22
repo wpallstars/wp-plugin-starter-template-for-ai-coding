@@ -10,7 +10,7 @@ WordPress Multisite allows you to run multiple WordPress sites from a single Wor
 
 The plugin includes a dedicated directory for multisite-specific functionality:
 
-```text
+```bash
 includes/
 └── Multisite/
     ├── class-multisite.php    # Base class for multisite functionality

@@ -2,12 +2,12 @@ name: WordPress Playground Tests
 
 on:
   push:
-    branches: [ main, feature/*, bugfix/* ]
+    branches: [ main ]
   pull_request:
     branches: [ main ]
 
 concurrency:
-  group: playground-tests-${{ github.ref }}
+  group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
@@ -36,10 +36,7 @@ jobs:
         npm ci --dry-run
 
     - name: Lint JavaScript files
-      run: |
-        echo "Linting JavaScript files"
-        # Add your linting command here when you have one
-        # For example: npm run lint
+      run: npm run lint:js
 
   playground-single-test:
     name: WordPress Playground Single Site Tests
@@ -62,10 +59,7 @@ jobs:
       run: npm install --save-dev @wp-playground/cli
 
     - name: Create plugin zip
-      run: |
-        mkdir -p dist
-        zip -r dist/plugin.zip . \
-          -x "node_modules/**" "dist/**" ".git/**" ".github/**" ".wiki/**"
+      uses: ./.github/actions/create-plugin-zip
 
     - name: Run tests with WordPress Playground
       run: |
@@ -112,10 +106,7 @@ jobs:
       run: npm install --save-dev @wp-playground/cli
 
     - name: Create plugin zip
-      run: |
-        mkdir -p dist
-        zip -r dist/plugin.zip . \
-          -x "node_modules/**" "dist/**" ".git/**" ".github/**" ".wiki/**"
+      uses: ./.github/actions/create-plugin-zip
 
     - name: Run tests with WordPress Playground
       run: |
@@ -123,7 +114,7 @@ jobs:
         export CYPRESS_BASE_URL=http://localhost:80
 
         # Start WordPress Playground with our blueprint
-        # Use port 80 for multisite as WordPress multisites don't support custom ports
+        # Use port 80 for multisite to avoid port configuration issues with WP Playground CLI
         npx @wp-playground/cli server --blueprint playground/multisite-blueprint.json --port 80 --login &
 
         # Wait for WordPress Playground to be ready
@@ -159,4 +150,4 @@ jobs:
           /
           /wp-admin/
         php-version: '8.0'
-        wp-version: 'latest'
+        wp-version: '6.4'
