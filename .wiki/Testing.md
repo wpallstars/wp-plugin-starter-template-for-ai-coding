@@ -106,9 +106,9 @@ The easiest way to test our plugin with WordPress Playground is to use the onlin
 
 1. Single site testing: [Open in WordPress Playground](https://playground.wordpress.net/?blueprint-url=https://raw.githubusercontent.com/wpallstars/wp-plugin-starter-template-for-ai-coding/feature/testing-framework/playground/blueprint.json&_t=4)
 
-2. Multisite testing: [Open in WordPress Playground](https://playground.wordpress.net/?blueprint-url=https://raw.githubusercontent.com/wpallstars/wp-plugin-starter-template-for-ai-coding/feature/testing-framework/playground/multisite-blueprint.json&_t=16)
+2. Multisite testing: [Open in WordPress Playground](https://playground.wordpress.net/?blueprint-url=https://raw.githubusercontent.com/wpallstars/wp-plugin-starter-template-for-ai-coding/feature/testing-framework/playground/multisite-blueprint.json&_t=17)
 
-These links will automatically set up WordPress with multisite enabled.
+These links will automatically set up WordPress with multisite enabled and the Hello Dolly plugin network-activated.
 
 #### Local Testing with HTML Files
 

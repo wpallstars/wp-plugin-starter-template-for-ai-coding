@@ -12,6 +12,10 @@
     {
       "step": "wp-cli",
       "command": "wp site create --slug=testsite"
+    },
+    {
+      "step": "wp-cli",
+      "command": "wp plugin install hello-dolly --activate-network"
     }
   ]
 }

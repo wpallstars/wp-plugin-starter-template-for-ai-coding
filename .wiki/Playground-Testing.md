@@ -17,9 +17,25 @@ The easiest way to test our plugin with WordPress Playground is to use the onlin
 
 1. Single site testing: [Open in WordPress Playground](https://playground.wordpress.net/?blueprint-url=https://raw.githubusercontent.com/wpallstars/wp-plugin-starter-template-for-ai-coding/feature/testing-framework/playground/blueprint.json&_t=4)
 
-2. Multisite testing: [Open in WordPress Playground](https://playground.wordpress.net/?blueprint-url=https://raw.githubusercontent.com/wpallstars/wp-plugin-starter-template-for-ai-coding/feature/testing-framework/playground/multisite-blueprint.json&_t=16)
+2. Multisite testing: [Open in WordPress Playground](https://playground.wordpress.net/?blueprint-url=https://raw.githubusercontent.com/wpallstars/wp-plugin-starter-template-for-ai-coding/feature/testing-framework/playground/multisite-blueprint.json&_t=17)
 
-These links will automatically set up WordPress with multisite enabled.
+These links will automatically set up WordPress with multisite enabled and the Hello Dolly plugin network-activated.
+
+## Plugin Activation in Multisite
+
+In a WordPress multisite environment, there are two ways to activate plugins:
+
+1. **Network Activation**: Activates a plugin for all sites in the network
+   - In the WordPress admin, go to Network Admin > Plugins
+   - Click "Network Activate" under the plugin
+   - Or use WP-CLI: `wp plugin activate plugin-name --network`
+
+2. **Per-Site Activation**: Activates a plugin for a specific site
+   - In the WordPress admin, go to the specific site's admin area
+   - Go to Plugins and activate the plugin for that site only
+   - Or use WP-CLI: `wp plugin activate plugin-name --url=site-url`
+
+Our multisite blueprint uses network activation for the Hello Dolly plugin as an example.
 
 ## Running Tests with WordPress Playground
 
@@ -32,7 +48,7 @@ To run tests with WordPress Playground:
 
 1. Open the appropriate WordPress Playground link:
    - [Single site](https://playground.wordpress.net/?blueprint-url=https://raw.githubusercontent.com/wpallstars/wp-plugin-starter-template-for-ai-coding/feature/testing-framework/playground/blueprint.json&_t=4)
-   - [Multisite](https://playground.wordpress.net/?blueprint-url=https://raw.githubusercontent.com/wpallstars/wp-plugin-starter-template-for-ai-coding/feature/testing-framework/playground/multisite-blueprint.json&_t=16)
+   - [Multisite](https://playground.wordpress.net/?blueprint-url=https://raw.githubusercontent.com/wpallstars/wp-plugin-starter-template-for-ai-coding/feature/testing-framework/playground/multisite-blueprint.json&_t=17)
 
 2. Test the plugin manually in the browser
 
