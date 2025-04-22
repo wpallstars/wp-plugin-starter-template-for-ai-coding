@@ -10,18 +10,8 @@
       }
     },
     {
-      "step": "installPlugin",
-      "pluginData": {
-        "resource": "wordpress.org/plugins",
-        "slug": "plugin-toggle"
-      }
-    },
-    {
-      "step": "installPlugin",
-      "pluginData": {
-        "resource": "wordpress.org/plugins",
-        "slug": "hello-dolly"
-      }
+      "step": "wp-cli",
+      "command": "wp plugin install plugin-toggle kadence-blocks --activate"
     }
   ]
 }

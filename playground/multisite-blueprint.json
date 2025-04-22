@@ -21,11 +21,7 @@
     },
     {
       "step": "wp-cli",
-      "command": "wp plugin install plugin-toggle --activate-network"
-    },
-    {
-      "step": "wp-cli",
-      "command": "wp plugin install hello-dolly"
+      "command": "wp plugin install plugin-toggle kadence-blocks --activate-network"
     }
   ]
 }
