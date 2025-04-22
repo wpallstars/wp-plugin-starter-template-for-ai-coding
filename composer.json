@@ -32,12 +32,14 @@
     },
     "autoload": {
         "psr-4": {
-            "WPALLSTARS\\PluginStarterTemplate\\": "includes/"
+            "WPALLSTARS\\PluginStarterTemplate\\": "includes/",
+            "WP_Plugin_Starter_Template_For_AI_Coding\\": "includes/"
         }
     },
     "autoload-dev": {
         "classmap": [
-            "includes/Admin/class-admin.php"
+            "includes/Admin/class-admin.php",
+            "tests/phpunit/"
         ]
     },
     "config": {

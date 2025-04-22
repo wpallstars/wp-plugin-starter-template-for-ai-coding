@@ -17,6 +17,8 @@
     "test:e2e:multisite": "npm run setup:multisite && sleep 5 && npm run test:multisite:headless",
     "test:playground:single": "cypress run --spec cypress/e2e/playground-single-site.cy.js",
     "test:playground:multisite": "cypress run --spec cypress/e2e/playground-multisite.cy.js",
+    "test:phpunit": "composer test",
+    "test:phpunit:multisite": "WP_MULTISITE=1 composer test",
     "build": "./build.sh",
     "lint:php": "composer run-script phpcs",
     "lint:php:simple": "composer run-script phpcs:simple",

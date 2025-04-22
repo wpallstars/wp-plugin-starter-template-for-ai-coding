@@ -12,6 +12,7 @@ This document explains how to use the testing framework for our plugin.
 * [Writing Tests](#writing-tests)
 * [CI/CD Integration](#cicd-integration)
 * [Troubleshooting](#troubleshooting)
+* [PHPUnit Tests](#phpunit-tests)
 * [Future Improvements](#future-improvements)
 
 ## Overview
@@ -200,15 +201,56 @@ We have GitHub Actions workflows for running tests in CI/CD:
 1. **Docker not running**: Make sure Docker is running before starting wp-env
 2. **Port conflicts**: If ports 8888 or 8889 are in use, wp-env will fail to start
 3. **wp-env not installed**: Run `npm install -g @wordpress/env` to install wp-env globally
+4. **WordPress Playground not loading**: Check your network connection and try refreshing the page
+5. **Tests failing**: Check the error messages in the console and fix the issues
+
+### Error Checking and Feedback Loops
+
+For detailed information on how to check for code quality issues and get feedback from automated tools, see the [Error Checking and Feedback Loops](Error-Checking-Feedback-Loops.md) documentation.
 
 ### Debugging
 
 1. **Cypress debugging**: Use `cy.debug()` to pause test execution
 2. **wp-env debugging**: Run `wp-env logs` to see WordPress logs
+3. **GitHub Actions debugging**: Check the workflow logs for detailed error messages
+
+## PHPUnit Tests
+
+We use PHPUnit for unit testing PHP code. The tests are located in the `tests/phpunit` directory.
+
+### Running PHPUnit Tests
+
+```bash
+# Run PHPUnit tests for single site
+npm run test:phpunit
+
+# Run PHPUnit tests for multisite
+npm run test:phpunit:multisite
+```
+
+### Writing PHPUnit Tests
+
+Here's an example of a PHPUnit test for the Multisite class:
+
+```php
+<?php
+class MultisiteTest extends WP_UnitTestCase {
+
+    public function test_is_multisite_compatible() {
+        $multisite = new WP_Plugin_Starter_Template_For_AI_Coding\Multisite\Multisite();
+        $this->assertTrue($multisite->is_multisite_compatible());
+    }
+
+    public function test_get_network_sites() {
+        $multisite = new WP_Plugin_Starter_Template_For_AI_Coding\Multisite\Multisite();
+        $sites = $multisite->get_network_sites();
+        $this->assertIsArray($sites);
+    }
+}
+```
 
 ## Future Improvements
 
-1. **PHPUnit tests**: Add unit tests for PHP code
-2. **Performance tests**: Add performance testing
-3. **Accessibility tests**: Add accessibility testing
+1. **Performance tests**: Add performance testing
+2. **Accessibility tests**: Add accessibility testing
 
