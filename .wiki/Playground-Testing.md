@@ -15,9 +15,9 @@ This document explains how to use WordPress Playground for testing our plugin.
 
 The easiest way to test our plugin with WordPress Playground is to use the online version:
 
-1. Single site testing: [Open in WordPress Playground](https://playground.wordpress.net/?blueprint-url=https://raw.githubusercontent.com/wpallstars/wp-plugin-starter-template-for-ai-coding/feature/testing-framework/playground/blueprint.json&_t=6)
+1. Single site testing: [Open in WordPress Playground](https://playground.wordpress.net/?blueprint-url=https://raw.githubusercontent.com/wpallstars/wp-plugin-starter-template-for-ai-coding/feature/testing-framework/playground/blueprint.json&_t=7)
 
-2. Multisite testing: [Open in WordPress Playground](https://playground.wordpress.net/?blueprint-url=https://raw.githubusercontent.com/wpallstars/wp-plugin-starter-template-for-ai-coding/feature/testing-framework/playground/multisite-blueprint.json&_t=19)
+2. Multisite testing: [Open in WordPress Playground](https://playground.wordpress.net/?blueprint-url=https://raw.githubusercontent.com/wpallstars/wp-plugin-starter-template-for-ai-coding/feature/testing-framework/playground/multisite-blueprint.json&_t=20)
 
 These links will automatically set up WordPress with multisite enabled, WP_DEBUG enabled, and both the Plugin Toggle and Hello Dolly plugins activated.
 
@@ -92,7 +92,7 @@ In a WordPress multisite environment, there are two ways to activate plugins:
 1. **Network Activation**: Activates a plugin for all sites in the network
    - In the WordPress admin, go to Network Admin > Plugins
    - Click "Network Activate" under the plugin
-   - Or use WP-CLI: `wp plugin activate plugin-name --network`
+   - Or use WP-CLI: `wp plugin install plugin-name --activate-network`
 
 2. **Per-Site Activation**: Activates a plugin for a specific site
    - In the WordPress admin, go to the specific site's admin area
@@ -111,8 +111,8 @@ We have two blueprints for testing:
 To run tests with WordPress Playground:
 
 1. Open the appropriate WordPress Playground link:
-   - [Single site](https://playground.wordpress.net/?blueprint-url=https://raw.githubusercontent.com/wpallstars/wp-plugin-starter-template-for-ai-coding/feature/testing-framework/playground/blueprint.json&_t=6)
-   - [Multisite](https://playground.wordpress.net/?blueprint-url=https://raw.githubusercontent.com/wpallstars/wp-plugin-starter-template-for-ai-coding/feature/testing-framework/playground/multisite-blueprint.json&_t=19)
+   - [Single site](https://playground.wordpress.net/?blueprint-url=https://raw.githubusercontent.com/wpallstars/wp-plugin-starter-template-for-ai-coding/feature/testing-framework/playground/blueprint.json&_t=7)
+   - [Multisite](https://playground.wordpress.net/?blueprint-url=https://raw.githubusercontent.com/wpallstars/wp-plugin-starter-template-for-ai-coding/feature/testing-framework/playground/multisite-blueprint.json&_t=20)
 
 2. Test the plugin manually in the browser
 
@@ -181,7 +181,8 @@ await playground.run({
   steps: [
     { step: 'enableMultisite' },
     { step: 'wp-cli', command: 'wp site create --slug=testsite' },
-    { step: 'wp-cli', command: 'wp plugin install plugin-toggle --activate-network' }
+    { step: 'wp-cli', command: 'wp plugin install plugin-toggle --activate-network' },
+    { step: 'wp-cli', command: 'wp plugin install hello-dolly --activate-network' }
   ]
 });
 
@@ -215,7 +216,8 @@ describe('Plugin Tests', () => {
       steps: [
         { step: 'enableMultisite' },
         { step: 'wp-cli', command: 'wp site create --slug=testsite' },
-        { step: 'wp-cli', command: 'wp plugin install plugin-toggle --activate-network' }
+        { step: 'wp-cli', command: 'wp plugin install plugin-toggle --activate-network' },
+        { step: 'wp-cli', command: 'wp plugin install hello-dolly --activate-network' }
       ]
     });
   });

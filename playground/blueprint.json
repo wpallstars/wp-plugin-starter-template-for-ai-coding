@@ -18,7 +18,7 @@
     },
     {
       "step": "wp-cli",
-      "command": "wp plugin activate hello-dolly"
+      "command": "wp plugin install hello-dolly --activate"
     }
   ]
 }

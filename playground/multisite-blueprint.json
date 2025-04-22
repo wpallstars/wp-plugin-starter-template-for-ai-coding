@@ -25,7 +25,7 @@
     },
     {
       "step": "wp-cli",
-      "command": "wp plugin activate hello-dolly --network"
+      "command": "wp plugin install hello-dolly --activate-network"
     }
   ]
 }
