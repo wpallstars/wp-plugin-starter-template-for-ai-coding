@@ -83,9 +83,12 @@ jobs:
     - uses: actions/checkout@v4
 
     - name: WordPress Performance Tests
-      uses: wptrt/wordpress-plugin-performance-tests@1.0.0
+      uses: swissspidy/wp-performance-action@v2.0.3
       with:
-        plugin-slug: wp-plugin-starter-template-for-ai-coding
+        plugins: |
+          ./
+        urls: |
+          /
+          /wp-admin/
         php-version: '8.0'
         wp-version: 'latest'
-        test-type: 'all'
