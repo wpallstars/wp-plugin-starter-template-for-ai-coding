@@ -101,7 +101,17 @@ This template includes configuration for WordPress Environment (wp-env) to make 
 
 ### Testing
 
-The template includes both PHP unit tests and end-to-end tests:
+The template includes multiple testing approaches:
+
+#### WordPress Playground Testing (No Docker Required)
+
+Test your plugin directly in the browser without any local setup:
+
+1. Single site testing: [Open in WordPress Playground](https://playground.wordpress.net/?blueprint-url=https://raw.githubusercontent.com/wpallstars/wp-plugin-starter-template-for-ai-coding/feature/testing-framework/playground/blueprint.json&_t=5)
+
+2. Multisite testing: [Open in WordPress Playground](https://playground.wordpress.net/?blueprint-url=https://raw.githubusercontent.com/wpallstars/wp-plugin-starter-template-for-ai-coding/feature/testing-framework/playground/multisite-blueprint.json&_t=18)
+
+For more details, see the [Playground Testing](.wiki/Playground-Testing.md) documentation.
 
 #### PHP Unit Tests
 
@@ -221,13 +231,17 @@ Customize the includes/core.php file to implement your core functionality and th
 
 Yes, this template is fully compatible with WordPress multisite installations. We have a comprehensive testing framework that allows you to verify functionality in both single site and multisite environments.
 
-You can test multisite compatibility by running:
+You can test multisite compatibility in two ways:
 
-```bash
-npm run setup:multisite
-```
+1. Using WordPress Playground (no Docker required):
+   * [Open Multisite in WordPress Playground](https://playground.wordpress.net/?blueprint-url=https://raw.githubusercontent.com/wpallstars/wp-plugin-starter-template-for-ai-coding/feature/testing-framework/playground/multisite-blueprint.json&_t=18)
 
-For more details on our testing approach, see the [Testing Framework](.wiki/Testing-Framework.md) file.
+2. Using wp-env (requires Docker):
+   ```bash
+   npm run setup:multisite
+   ```
+
+For more details on our testing approach, see the [Testing Framework](.wiki/Testing-Framework.md) and [Playground Testing](.wiki/Playground-Testing.md) documentation.
 
 ## Support & Feedback
 

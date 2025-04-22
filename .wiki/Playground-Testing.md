@@ -15,11 +15,75 @@ This document explains how to use WordPress Playground for testing our plugin.
 
 The easiest way to test our plugin with WordPress Playground is to use the online version:
 
-1. Single site testing: [Open in WordPress Playground](https://playground.wordpress.net/?blueprint-url=https://raw.githubusercontent.com/wpallstars/wp-plugin-starter-template-for-ai-coding/feature/testing-framework/playground/blueprint.json&_t=4)
+1. Single site testing: [Open in WordPress Playground](https://playground.wordpress.net/?blueprint-url=https://raw.githubusercontent.com/wpallstars/wp-plugin-starter-template-for-ai-coding/feature/testing-framework/playground/blueprint.json&_t=5)
 
-2. Multisite testing: [Open in WordPress Playground](https://playground.wordpress.net/?blueprint-url=https://raw.githubusercontent.com/wpallstars/wp-plugin-starter-template-for-ai-coding/feature/testing-framework/playground/multisite-blueprint.json&_t=17)
+2. Multisite testing: [Open in WordPress Playground](https://playground.wordpress.net/?blueprint-url=https://raw.githubusercontent.com/wpallstars/wp-plugin-starter-template-for-ai-coding/feature/testing-framework/playground/multisite-blueprint.json&_t=18)
 
-These links will automatically set up WordPress with multisite enabled and the Hello Dolly plugin network-activated.
+These links will automatically set up WordPress with multisite enabled and the Plugin Toggle plugin network-activated.
+
+## WP-CLI Commands for WordPress Playground
+
+WordPress Playground supports WP-CLI commands, which can be used to interact with WordPress programmatically. Here are some useful commands for testing:
+
+### General Commands
+
+```bash
+# Get WordPress version
+wp core version
+
+# List installed plugins
+wp plugin list
+
+# Install a plugin
+wp plugin install plugin-slug
+
+# Activate a plugin
+wp plugin activate plugin-slug
+
+# Deactivate a plugin
+wp plugin deactivate plugin-slug
+
+# Get plugin status
+wp plugin status plugin-slug
+```
+
+### Multisite Commands
+
+```bash
+# List all sites in the network
+wp site list
+
+# Create a new site
+wp site create --slug=testsite
+
+# Delete a site
+wp site delete 2
+
+# Network activate a plugin
+wp plugin activate plugin-slug --network
+
+# Activate a plugin for a specific site
+wp plugin activate plugin-slug --url=example.com/testsite
+
+# Create a new user and add them to a site
+wp user create testuser test@example.com --role=editor
+wp user add-role testuser editor --url=example.com/testsite
+```
+
+### Testing Commands
+
+```bash
+# Run a specific test
+wp scaffold plugin-tests my-plugin
+wp test run --filter=test_function_name
+
+# Check for PHP errors
+wp site health check
+
+# Export/import content for testing
+wp export
+wp import
+```
 
 ## Plugin Activation in Multisite
 
@@ -35,7 +99,7 @@ In a WordPress multisite environment, there are two ways to activate plugins:
    - Go to Plugins and activate the plugin for that site only
    - Or use WP-CLI: `wp plugin activate plugin-name --url=site-url`
 
-Our multisite blueprint uses network activation for the Hello Dolly plugin as an example.
+Our multisite blueprint uses network activation for the Plugin Toggle plugin as an example.
 
 ## Running Tests with WordPress Playground
 
@@ -47,8 +111,8 @@ We have two blueprints for testing:
 To run tests with WordPress Playground:
 
 1. Open the appropriate WordPress Playground link:
-   - [Single site](https://playground.wordpress.net/?blueprint-url=https://raw.githubusercontent.com/wpallstars/wp-plugin-starter-template-for-ai-coding/feature/testing-framework/playground/blueprint.json&_t=4)
-   - [Multisite](https://playground.wordpress.net/?blueprint-url=https://raw.githubusercontent.com/wpallstars/wp-plugin-starter-template-for-ai-coding/feature/testing-framework/playground/multisite-blueprint.json&_t=17)
+   - [Single site](https://playground.wordpress.net/?blueprint-url=https://raw.githubusercontent.com/wpallstars/wp-plugin-starter-template-for-ai-coding/feature/testing-framework/playground/blueprint.json&_t=5)
+   - [Multisite](https://playground.wordpress.net/?blueprint-url=https://raw.githubusercontent.com/wpallstars/wp-plugin-starter-template-for-ai-coding/feature/testing-framework/playground/multisite-blueprint.json&_t=18)
 
 2. Test the plugin manually in the browser
 
@@ -72,9 +136,123 @@ python -m http.server 8888 --directory playground
 
 You can customize the blueprints to suit your testing needs. See the [WordPress Playground Blueprints documentation](https://wordpress.github.io/wordpress-playground/blueprints/) for more information.
 
+## WordPress Playground JavaScript API
+
+WordPress Playground provides a JavaScript API that allows you to programmatically interact with WordPress. This is useful for automated testing and CI/CD integration.
+
+### Basic Usage
+
+```javascript
+// Import the WordPress Playground client
+import { createWordPressPlayground } from '@wp-playground/client';
+
+// Create a playground instance
+const playground = await createWordPressPlayground({
+  iframe: document.getElementById('wp-playground'),
+  remoteUrl: 'https://playground.wordpress.net/remote.html',
+});
+
+// Run a blueprint
+await playground.run({
+  steps: [
+    { step: 'enableMultisite' },
+    { step: 'wp-cli', command: 'wp site create --slug=testsite' },
+    { step: 'wp-cli', command: 'wp plugin install plugin-toggle --activate-network' }
+  ]
+});
+
+// Run WP-CLI commands
+const result = await playground.run({
+  step: 'wp-cli',
+  command: 'wp plugin list --format=json'
+});
+
+// Parse the JSON output
+const plugins = JSON.parse(result.output);
+console.log(plugins);
+```
+
+### Automated Testing
+
+You can use the JavaScript API with testing frameworks like Jest or Cypress:
+
+```javascript
+describe('Plugin Tests', () => {
+  let playground;
+
+  beforeAll(async () => {
+    playground = await createWordPressPlayground({
+      iframe: document.getElementById('wp-playground'),
+      remoteUrl: 'https://playground.wordpress.net/remote.html',
+    });
+
+    // Set up WordPress with our blueprint
+    await playground.run({
+      steps: [
+        { step: 'enableMultisite' },
+        { step: 'wp-cli', command: 'wp site create --slug=testsite' },
+        { step: 'wp-cli', command: 'wp plugin install plugin-toggle --activate-network' }
+      ]
+    });
+  });
+
+  test('Plugin is activated', async () => {
+    const result = await playground.run({
+      step: 'wp-cli',
+      command: 'wp plugin list --format=json'
+    });
+
+    const plugins = JSON.parse(result.output);
+    const pluginToggle = plugins.find(plugin => plugin.name === 'plugin-toggle');
+    expect(pluginToggle.status).toBe('active');
+  });
+});
+```
+
 ## CI/CD Integration
 
 We have a GitHub Actions workflow that uses WordPress Playground for testing. See `.github/workflows/playground-tests.yml` for more information.
+
+### Example GitHub Actions Workflow
+
+```yaml
+jobs:
+  playground-test:
+    name: WordPress Playground Tests
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+        cache: 'npm'
+
+    - name: Install dependencies
+      run: npm ci
+
+    - name: Install WordPress Playground CLI
+      run: npm install -g @wordpress/playground-tools
+
+    - name: Create plugin zip
+      run: |
+        mkdir -p dist
+        zip -r dist/plugin.zip . -x "node_modules/*" "dist/*" ".git/*"
+
+    - name: Run tests with WordPress Playground
+      run: |
+        # Start WordPress Playground with our blueprint
+        wp-playground start --blueprint playground/blueprint.json --port 8888 &
+
+        # Wait for WordPress Playground to be ready
+        echo "Waiting for WordPress Playground to be ready..."
+        timeout 60 bash -c 'until curl -s http://localhost:8888; do sleep 2; done'
+
+        # Run Cypress tests against WordPress Playground
+        npm run test:single:headless
+```
 
 ## Performance Testing
 

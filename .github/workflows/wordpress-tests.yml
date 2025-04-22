@@ -40,38 +40,45 @@ jobs:
     # Note about e2e tests
     - name: Note about e2e tests
       run: |
-        echo "Note: e2e tests are temporarily disabled in CI due to Docker compatibility issues."
+        echo "Note: We now use WordPress Playground for e2e tests instead of Docker."
         echo "Please run tests locally before submitting PRs using:"
-        echo "npm run setup:single && npm run test:single:headless"
-        echo "npm run setup:multisite && npm run test:multisite:headless"
+        echo "npm run test:playground:single"
+        echo "npm run test:playground:multisite"
+        echo "Or use the online WordPress Playground links in the documentation."
 
-  # Temporarily disable e2e tests until we can fix the Docker service container issues
-  # e2e-test:
-  #   name: End-to-End Tests
-  #   runs-on: ubuntu-latest
-  #   needs: code-quality
-  #   steps:
-  #   - uses: actions/checkout@v4
-  #
-  #   - name: Setup Node.js
-  #     uses: actions/setup-node@v4
-  #     with:
-  #       node-version: '20'
-  #       cache: 'npm'
-  #
-  #   - name: Install dependencies
-  #     run: npm ci
-  #
-  #   - name: Install Cypress
-  #     run: npm install cypress
-  #
-  #   - name: Wait for WordPress
-  #     run: |
-  #       echo "Waiting for WordPress to be ready..."
-  #       timeout 60 bash -c 'until curl -s http://localhost:8000; do sleep 2; done'
-  #
-  #   - name: Run Cypress tests
-  #     run: |
-  #       echo "Running e2e tests..."
-  #       # This is a placeholder for the actual test command
-  #       # npm run test:single:headless
+  # Use WordPress Playground for e2e tests
+  e2e-test:
+    name: WordPress Playground Tests
+    runs-on: ubuntu-latest
+    needs: code-quality
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+        cache: 'npm'
+
+    - name: Install dependencies
+      run: npm ci
+
+    - name: Install WordPress Playground CLI
+      run: npm install -g @wordpress/playground-tools
+
+    - name: Create plugin zip
+      run: |
+        mkdir -p dist
+        zip -r dist/plugin.zip . -x "node_modules/*" "dist/*" ".git/*"
+
+    - name: Run tests with WordPress Playground
+      run: |
+        # Start WordPress Playground with our blueprint
+        wp-playground start --blueprint playground/blueprint.json --port 8888 &
+
+        # Wait for WordPress Playground to be ready
+        echo "Waiting for WordPress Playground to be ready..."
+        timeout 60 bash -c 'until curl -s http://localhost:8888; do sleep 2; done'
+
+        # Run tests against WordPress Playground
+        npm run test:playground:single

@@ -4,6 +4,17 @@ This document provides guidance for AI assistants to help with code review for t
 
 ## Code Review Checklist
 
+### Testing with WordPress Playground
+
+Before submitting code for review, test it with WordPress Playground:
+
+* [ ] Test in single site environment: [Open in WordPress Playground](https://playground.wordpress.net/?blueprint-url=https://raw.githubusercontent.com/wpallstars/wp-plugin-starter-template-for-ai-coding/feature/testing-framework/playground/blueprint.json&_t=5)
+* [ ] Test in multisite environment: [Open in WordPress Playground](https://playground.wordpress.net/?blueprint-url=https://raw.githubusercontent.com/wpallstars/wp-plugin-starter-template-for-ai-coding/feature/testing-framework/playground/multisite-blueprint.json&_t=18)
+* [ ] Verify plugin functionality works in both environments
+* [ ] Check for any JavaScript errors in the browser console
+
+For more details on WordPress Playground testing, see the [Playground Testing](.wiki/Playground-Testing.md) documentation.
+
 When reviewing code, check for the following:
 
 ### Functionality
