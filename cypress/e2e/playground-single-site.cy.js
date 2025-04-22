@@ -11,8 +11,11 @@ describe('WordPress Playground Single Site Tests', () => {
   });
 
   it('Can access the admin area', () => {
-    // WordPress Playground should auto-login as admin
-    cy.get('#wpadminbar').should('exist');
+    // Visit the admin dashboard
+    cy.visit('/wp-admin/');
+
+    // Check if we're logged in
+    cy.get('body').should('have.class', 'wp-admin');
   });
 
   it('Plugin is activated', () => {

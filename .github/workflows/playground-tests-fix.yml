@@ -1,0 +1,44 @@
+name: WordPress Playground Tests Fix
+
+on:
+  push:
+    branches: [ main, feature/*, bugfix/* ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  playground-test:
+    name: WordPress Playground Tests
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+        cache: 'npm'
+
+    - name: Install dependencies
+      run: npm ci
+
+    - name: Install WordPress Playground CLI
+      run: npm install -g @wp-playground/cli
+
+    - name: Create plugin zip
+      run: |
+        mkdir -p dist
+        zip -r dist/plugin.zip . -x "node_modules/*" "dist/*" ".git/*"
+
+    - name: Run tests with WordPress Playground
+      run: |
+        # Start WordPress Playground with our blueprint
+        npx @wp-playground/cli server --blueprint playground/blueprint.json --port 8888 --login &
+
+        # Wait for WordPress Playground to be ready
+        echo "Waiting for WordPress Playground to be ready..."
+        timeout 60 bash -c 'until curl -s http://localhost:8888; do sleep 2; done'
+
+        # Run Cypress tests against WordPress Playground
+        npx cypress run --config specPattern=cypress/e2e/playground-single-site.cy.js

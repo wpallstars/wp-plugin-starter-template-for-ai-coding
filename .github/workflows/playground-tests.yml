@@ -102,14 +102,14 @@ jobs:
     - name: Run tests with WordPress Playground
       run: |
         # Start WordPress Playground with our blueprint
-        npx @wp-playground/cli server --blueprint playground/multisite-blueprint.json --port 8889 --login &
+        npx @wp-playground/cli server --blueprint playground/multisite-blueprint.json --port 8888 --login &
 
         # Wait for WordPress Playground to be ready
         echo "Waiting for WordPress Playground to be ready..."
-        timeout 60 bash -c 'until curl -s http://localhost:8889; do sleep 2; done'
+        timeout 60 bash -c 'until curl -s http://localhost:8888; do sleep 2; done'
 
         # Run Cypress tests against WordPress Playground
-        npx cypress run --config specPattern=cypress/e2e/playground-multisite.cy.js,baseUrl=http://localhost:8889
+        npx cypress run --config specPattern=cypress/e2e/playground-multisite.cy.js
 
   performance-test:
     name: WordPress Performance Tests

@@ -11,13 +11,15 @@ describe('WordPress Playground Multisite Tests', () => {
   });
 
   it('Can access the network admin area', () => {
-    // WordPress Playground should auto-login as admin
-    cy.get('#wpadminbar').should('exist');
+    // Visit the network admin dashboard
+    cy.visit('/wp-admin/network/');
+
+    // Check if we're logged in to the network admin
+    cy.get('body').should('have.class', 'wp-admin');
   });
 
   it('Plugin is network activated', () => {
     // Navigate to network plugins page
-    cy.get('#wp-admin-bar-network-admin a').click();
     cy.visit('/wp-admin/network/plugins.php');
 
     // Check if the plugins are active
