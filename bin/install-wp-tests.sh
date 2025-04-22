@@ -17,9 +17,9 @@ WP_TESTS_DIR=${WP_TESTS_DIR-/tmp/wordpress-tests-lib}
 WP_CORE_DIR=${WP_CORE_DIR-/tmp/wordpress/}
 
 download() {
-    if [ `which curl` ]; then
+    if [ $(which curl) ]; then
         curl -s "$1" > "$2";
-    elif [ `which wget` ]; then
+    elif [ $(which wget) ]; then
         wget -nv -O "$2" "$1"
     fi
 }
@@ -76,7 +76,7 @@ install_wp() {
 				LATEST_VERSION=${WP_VERSION%??}
 			else
 				# otherwise, scan the releases and get the most up to date minor version of the major release
-				local VERSION_ESCAPED=`echo $WP_VERSION | sed 's/\./\\\\./g'`
+				local VERSION_ESCAPED=$(echo $WP_VERSION | sed 's/\./\\\\./g'`
 				LATEST_VERSION=$(grep -o '"version":"'$VERSION_ESCAPED'[^"]*' $WP_CORE_DIR/wp-latest.json | sed 's/"version":"//' | head -1)
 			fi
 			if [[ -z "$LATEST_VERSION" ]]; then
@@ -120,7 +120,7 @@ install_test_suite() {
 		sed $ioption "s/yourusernamehere/$DB_USER/" "$WP_TESTS_DIR"/wp-tests-config.php
 		sed $ioption "s/yourpasswordhere/$DB_PASS/" "$WP_TESTS_DIR"/wp-tests-config.php
 		sed $ioption "s|localhost|${DB_HOST}|" "$WP_TESTS_DIR"/wp-tests-config.php
-		
+
 		if [ "$MULTISITE" = "true" ]; then
 			sed $ioption "s:// define( 'WP_TESTS_MULTISITE', true );:define( 'WP_TESTS_MULTISITE', true );:" "$WP_TESTS_DIR"/wp-tests-config.php
 		fi
