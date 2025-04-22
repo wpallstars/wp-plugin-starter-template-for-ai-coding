@@ -2,7 +2,7 @@
 describe('WordPress Playground Single Site Tests', () => {
   beforeEach(() => {
     // Visit the WordPress Playground page
-    cy.visit('/index.html');
+    cy.visit('/');
 
     // Wait for the iframe to load
     cy.get('iframe').should('be.visible');

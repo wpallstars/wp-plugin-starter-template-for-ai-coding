@@ -35,7 +35,11 @@
     },
     {
       "step": "wp-cli",
-      "command": "wp plugin activate plugin-toggle kadence-blocks --network"
+      "command": "wp plugin activate plugin-toggle --network"
+    },
+    {
+      "step": "wp-cli",
+      "command": "wp plugin activate kadence-blocks --network"
     }
   ]
 }

@@ -6,6 +6,10 @@ This document explains how to use the testing framework for our plugin.
 
 Our testing framework uses:
 
+See also:
+* [.wiki/Architecture-Overview.md](Architecture-Overview.md) – high-level design
+* [.wiki/Multisite-Development.md](Multisite-Development.md) – deeper multisite guidance
+
 * **wp-env**: For setting up WordPress environments (both single site and multisite)
 * **WordPress Playground**: For browser-based testing without Docker
 * **Cypress**: For end-to-end testing
@@ -16,6 +20,8 @@ Our testing framework uses:
 1. **Node.js**: Version 16 or higher
 2. **npm**: For package management
 3. **Docker**: For running WordPress environments with wp-env (not needed for WordPress Playground)
+4. **PHP**: Version 7.4 or higher (for future PHPUnit tests)
+5. **Composer**: For managing PHP dependencies
 
 ## Testing Approaches
 
@@ -35,6 +41,9 @@ We provide scripts to easily set up test environments:
 ```bash
 # Set up a single site environment
 npm run setup:single
+
+# You can also use the unified setup script:
+bash bin/setup-test-env.sh single
 ```
 
 This will:
@@ -48,6 +57,9 @@ This will:
 ```bash
 # Set up a multisite environment
 npm run setup:multisite
+
+# Or via the setup script:
+bash bin/setup-test-env.sh multisite
 ```
 
 This will:
@@ -127,6 +139,7 @@ You can serve these files locally with a simple HTTP server:
 python -m http.server 8888 --directory playground
 
 # Then open http://localhost:8888/index.html in your browser
+# Or open http://localhost:8888/test.html for a unified single/multisite switcher
 ```
 
 ## Writing Tests

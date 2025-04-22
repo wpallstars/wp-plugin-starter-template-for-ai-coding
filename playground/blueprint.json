@@ -27,8 +27,14 @@
       }
     },
     {
-      "step": "wp-cli",
-      "command": "wp plugin activate plugin-toggle kadence-blocks"
+      "step": "activatePlugin",
+      "pluginName": "Plugin Toggle",
+      "pluginPath": "/wordpress/wp-content/plugins/plugin-toggle"
+    },
+    {
+      "step": "activatePlugin",
+      "pluginName": "Kadence Blocks",
+      "pluginPath": "/wordpress/wp-content/plugins/kadence-blocks"
     }
   ]
 }
