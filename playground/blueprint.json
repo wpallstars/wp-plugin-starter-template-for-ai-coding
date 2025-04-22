@@ -17,8 +17,15 @@
       }
     },
     {
+      "step": "installPlugin",
+      "pluginData": {
+        "resource": "wordpress.org/plugins",
+        "slug": "hello-dolly"
+      }
+    },
+    {
       "step": "wp-cli",
-      "command": "wp plugin install hello-dolly --activate"
+      "command": "wp plugin activate hello-dolly"
     }
   ]
 }

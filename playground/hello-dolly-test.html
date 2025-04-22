@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hello Dolly Test</title>
+    <style>
+        body, html {
+            margin: 0;
+            padding: 0;
+            height: 100%;
+            overflow: hidden;
+        }
+        iframe {
+            width: 100%;
+            height: 100%;
+            border: none;
+        }
+    </style>
+</head>
+<body>
+    <iframe id="playground" src="about:blank"></iframe>
+
+    <script>
+        // Simple blueprint that only installs Hello Dolly
+        const blueprint = {
+            "$schema": "https://playground.wordpress.net/blueprint-schema.json",
+            "landingPage": "/wp-admin/plugins.php",
+            "login": true,
+            "steps": [
+                {
+                    "step": "wp-cli",
+                    "command": "wp plugin install hello-dolly"
+                },
+                {
+                    "step": "wp-cli",
+                    "command": "wp plugin activate hello-dolly"
+                }
+            ]
+        };
+
+        // Load the blueprint
+        document.getElementById('playground').src = "https://playground.wordpress.net/?blueprint=" + encodeURIComponent(JSON.stringify(blueprint));
+    </script>
+</body>
+</html>

@@ -24,8 +24,15 @@
       "command": "wp plugin install plugin-toggle --activate-network"
     },
     {
+      "step": "installPlugin",
+      "pluginData": {
+        "resource": "wordpress.org/plugins",
+        "slug": "hello-dolly"
+      }
+    },
+    {
       "step": "wp-cli",
-      "command": "wp plugin install hello-dolly --activate-network"
+      "command": "wp plugin activate hello-dolly --network"
     }
   ]
 }
