@@ -13,8 +13,22 @@
       }
     },
     {
+      "step": "installPlugin",
+      "pluginData": {
+        "resource": "wordpress.org/plugins",
+        "slug": "plugin-toggle"
+      }
+    },
+    {
+      "step": "installPlugin",
+      "pluginData": {
+        "resource": "wordpress.org/plugins",
+        "slug": "kadence-blocks"
+      }
+    },
+    {
       "step": "wp-cli",
-      "command": "wp plugin install plugin-toggle kadence-blocks --activate"
+      "command": "wp plugin activate plugin-toggle kadence-blocks"
     }
   ]
 }

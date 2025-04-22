@@ -72,7 +72,7 @@ jobs:
         timeout 60 bash -c 'until curl -s http://localhost:8888; do sleep 2; done'
 
         # Run Cypress tests against WordPress Playground
-        npm run test:single:headless
+        npx cypress run --config specPattern=cypress/e2e/playground-single-site.cy.js
 
   performance-test:
     name: WordPress Performance Tests
