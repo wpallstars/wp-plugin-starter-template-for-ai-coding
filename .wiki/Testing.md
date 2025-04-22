@@ -2,14 +2,26 @@
 
 This document explains how to use the testing framework for our plugin.
 
+## Table of Contents
+
+* [Overview](#overview)
+* [Prerequisites](#prerequisites)
+* [Testing Approaches](#testing-approaches)
+  * [wp-env Approach](#1-wp-env-approach)
+  * [WordPress Playground Approach](#2-wordpress-playground-approach)
+* [Writing Tests](#writing-tests)
+* [CI/CD Integration](#cicd-integration)
+* [Troubleshooting](#troubleshooting)
+* [Future Improvements](#future-improvements)
+
 ## Overview
 
 Our testing framework uses:
 
 See also:
 
-* [.wiki/Architecture-Overview.md](Architecture-Overview.md) – high-level design
-* [.wiki/Multisite-Development.md](Multisite-Development.md) – deeper multisite guidance
+* [Architecture Overview](Architecture-Overview.md) – high-level design
+* [Multisite Development](Multisite-Development.md) – deeper multisite guidance
 
 Components:
 
@@ -199,3 +211,4 @@ We have GitHub Actions workflows for running tests in CI/CD:
 1. **PHPUnit tests**: Add unit tests for PHP code
 2. **Performance tests**: Add performance testing
 3. **Accessibility tests**: Add accessibility testing
+

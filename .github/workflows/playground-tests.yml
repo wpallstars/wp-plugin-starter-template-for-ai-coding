@@ -6,6 +6,9 @@ on:
   pull_request:
     branches: [ main ]
 
+permissions:
+  contents: read
+
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
@@ -111,15 +114,15 @@ jobs:
     - name: Run tests with WordPress Playground
       run: |
         # Set base URL for Cypress
-        export CYPRESS_BASE_URL=http://localhost:80
+        export CYPRESS_BASE_URL=http://localhost:8889
 
         # Start WordPress Playground with our blueprint
-        # Use port 80 for multisite to avoid port configuration issues with WP Playground CLI
-        npx @wp-playground/cli server --blueprint playground/multisite-blueprint.json --port 80 --login &
+        # Use a different port for multisite to avoid conflicts with single site tests
+        npx @wp-playground/cli server --blueprint playground/multisite-blueprint.json --port 8889 --login &
 
         # Wait for WordPress Playground to be ready
         echo "Waiting for WordPress Playground to be ready..."
-        timeout 60 bash -c 'until curl -s http://localhost:80; do sleep 2; done'
+        timeout 60 bash -c 'until curl -s http://localhost:8889; do sleep 2; done'
 
         # Run Cypress tests against WordPress Playground
         npx cypress run --spec "cypress/e2e/playground-multisite.cy.js"

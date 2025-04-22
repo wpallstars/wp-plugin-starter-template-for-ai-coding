@@ -8,6 +8,8 @@ describe('WordPress Playground Multisite Tests', () => {
   it('Can access the site', () => {
     // Check if the page loaded
     cy.get('body').should('exist');
+    cy.get('h1').should('exist');
+    cy.title().should('include', 'WordPress');
   });
 
   it('Can access the network admin area', () => {
@@ -19,6 +21,8 @@ describe('WordPress Playground Multisite Tests', () => {
 
     // Check if we're logged in to the network admin
     cy.get('#wpadminbar').should('exist');
+    cy.get('#wpbody-content').should('exist');
+    cy.title().should('include', 'Network Admin');
   });
 
   it('Plugin is network activated', () => {

@@ -40,5 +40,6 @@ describe('WordPress Playground Single Site Tests', () => {
     // Check if the settings page exists
     cy.get('#wpbody-content').should('exist');
     cy.get('h1').should('be.visible');
+    cy.title().should('include', 'Settings');
   });
 });

@@ -2,12 +2,15 @@ name: WordPress Playground Tests Fix
 
 on:
   push:
-    branches: [ main, feature/*, bugfix/* ]
+    branches: [ main ]
   pull_request:
     branches: [ main ]
 
+permissions:
+  contents: read
+
 concurrency:
-  group: playground-tests-${{ github.ref }}
+  group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
@@ -31,10 +34,7 @@ jobs:
       run: npm install --save-dev @wp-playground/cli
 
     - name: Create plugin zip
-      run: |
-        mkdir -p dist
-        zip -r dist/plugin.zip . \
-          -x "node_modules/**" "dist/**" ".git/**" ".github/**" ".wiki/**"
+      uses: ./.github/actions/create-plugin-zip
 
     - name: Run tests with WordPress Playground
       run: |

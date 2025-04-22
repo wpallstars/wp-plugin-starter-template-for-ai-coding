@@ -2,9 +2,16 @@ name: WordPress Tests
 
 on:
   push:
-    branches: [ main, feature/*, bugfix/* ]
+    branches: [ main ]
   pull_request:
     branches: [ main ]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   code-quality:
@@ -61,21 +68,28 @@ jobs:
       run: npm ci
 
     - name: Install WordPress Playground CLI
-      run: npm install -g @wordpress/playground-tools
+      run: npm install --save-dev @wp-playground/cli
 
     - name: Create plugin zip
-      run: |
-        mkdir -p dist
-        zip -r dist/plugin.zip . -x "node_modules/*" "dist/*" ".git/*"
+      uses: ./.github/actions/create-plugin-zip
 
     - name: Run tests with WordPress Playground
       run: |
         # Start WordPress Playground with our blueprint
-        wp-playground start --blueprint playground/blueprint.json --port 8888 &
+        npx @wp-playground/cli server --blueprint playground/blueprint.json --port 8888 --login &
 
         # Wait for WordPress Playground to be ready
         echo "Waiting for WordPress Playground to be ready..."
         timeout 60 bash -c 'until curl -s http://localhost:8888; do sleep 2; done'
 
         # Run tests against WordPress Playground
-        npm run test:playground:single
+        npx cypress run --spec "cypress/e2e/playground-single-site.cy.js"
+
+    - name: Upload Cypress artifacts
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: cypress-results
+        path: |
+          cypress/videos
+          cypress/screenshots
