@@ -7,8 +7,11 @@ This document explains how to use the testing framework for our plugin.
 Our testing framework uses:
 
 See also:
+
 * [.wiki/Architecture-Overview.md](Architecture-Overview.md) – high-level design
 * [.wiki/Multisite-Development.md](Multisite-Development.md) – deeper multisite guidance
+
+Components:
 
 * **wp-env**: For setting up WordPress environments (both single site and multisite)
 * **WordPress Playground**: For browser-based testing without Docker
