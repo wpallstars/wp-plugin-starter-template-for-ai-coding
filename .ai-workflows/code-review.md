@@ -8,12 +8,13 @@ This document provides guidance for AI assistants to help with code review for t
 
 Before submitting code for review, test it with WordPress Playground:
 
-* [ ] Test in single site environment: [Open in WordPress Playground](https://playground.wordpress.net/?blueprint-url=https://raw.githubusercontent.com/wpallstars/wp-plugin-starter-template-for-ai-coding/feature/testing-framework/playground/blueprint.json&_t=5)
-* [ ] Test in multisite environment: [Open in WordPress Playground](https://playground.wordpress.net/?blueprint-url=https://raw.githubusercontent.com/wpallstars/wp-plugin-starter-template-for-ai-coding/feature/testing-framework/playground/multisite-blueprint.json&_t=18)
+* [ ] Test in single site environment: [Open in WordPress Playground](https://playground.wordpress.net/?blueprint-url=https://raw.githubusercontent.com/wpallstars/wp-plugin-starter-template-for-ai-coding/main/playground/blueprint.json&_t=5)
+* [ ] Test in multisite environment: [Open in WordPress Playground](https://playground.wordpress.net/?blueprint-url=https://raw.githubusercontent.com/wpallstars/wp-plugin-starter-template-for-ai-coding/main/playground/multisite-blueprint.json&_t=18)
 * [ ] Verify plugin functionality works in both environments
 * [ ] Check for any JavaScript errors in the browser console
+* [ ] Run Cypress tests locally: `npm run test:playground:single` and `npm run test:playground:multisite`
 
-For more details on WordPress Playground testing, see the [Playground Testing](.wiki/Playground-Testing.md) documentation.
+For more details on WordPress Playground testing, see the [Testing Framework](../.wiki/Testing.md) documentation.
 
 When reviewing code, check for the following:
 
@@ -67,6 +68,14 @@ When reviewing code, check for the following:
 * [ ] Are ARIA attributes used appropriately?
 * [ ] Is keyboard navigation supported?
 * [ ] Is screen reader support implemented?
+
+### Testing
+
+* [ ] Are there appropriate unit tests for PHP code?
+* [ ] Are there appropriate end-to-end tests for UI functionality?
+* [ ] Do tests cover both single site and multisite scenarios?
+* [ ] Are tests well-organized and maintainable?
+* [ ] Do tests use appropriate assertions and expectations?
 
 ## Automated Code Review Tools
 
