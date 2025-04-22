@@ -36,7 +36,7 @@ class Multisite {
      *
      * @return bool Always returns true.
      */
-    public function is_multisite_compatible() {
+    public function isMultisiteCompatible() {
         return true;
     }
 
@@ -45,7 +45,7 @@ class Multisite {
      *
      * @return array An empty array as this is just a placeholder.
      */
-    public function get_network_sites() {
+    public function getNetworkSites() {
         // This is just a placeholder method.
         // In a real implementation, you might use get_sites() or a custom query.
         return function_exists( 'get_sites' ) ? get_sites( array( 'public' => 1 ) ) : array();
