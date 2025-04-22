@@ -12,7 +12,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        node-version: [18, 20]
+        node-version: [18.18, 20]
 
     steps:
     - uses: actions/checkout@v4
@@ -66,11 +66,11 @@ jobs:
       run: |
         # Start WordPress Playground with our blueprint
         wp-playground start --blueprint playground/blueprint.json --port 8888 &
-        
+
         # Wait for WordPress Playground to be ready
         echo "Waiting for WordPress Playground to be ready..."
         timeout 60 bash -c 'until curl -s http://localhost:8888; do sleep 2; done'
-        
+
         # Run Cypress tests against WordPress Playground
         npm run test:single:headless
 

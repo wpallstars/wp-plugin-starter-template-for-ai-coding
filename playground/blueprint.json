@@ -4,11 +4,21 @@
   "login": true,
   "steps": [
     {
+      "step": "defineWpConfigConsts",
+      "consts": {
+        "WP_DEBUG": true
+      }
+    },
+    {
       "step": "installPlugin",
       "pluginData": {
         "resource": "wordpress.org/plugins",
         "slug": "plugin-toggle"
       }
+    },
+    {
+      "step": "wp-cli",
+      "command": "wp plugin activate hello-dolly"
     }
   ]
 }

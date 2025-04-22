@@ -7,6 +7,12 @@
   },
   "steps": [
     {
+      "step": "defineWpConfigConsts",
+      "consts": {
+        "WP_DEBUG": true
+      }
+    },
+    {
       "step": "enableMultisite"
     },
     {
@@ -16,6 +22,10 @@
     {
       "step": "wp-cli",
       "command": "wp plugin install plugin-toggle --activate-network"
+    },
+    {
+      "step": "wp-cli",
+      "command": "wp plugin activate hello-dolly --network"
     }
   ]
 }
