@@ -38,6 +38,7 @@ npm run setup:single
 ```
 
 This will:
+
 1. Start a WordPress single site environment using wp-env
 2. Install and activate our plugin
 3. Configure WordPress for testing
@@ -50,6 +51,7 @@ npm run setup:multisite
 ```
 
 This will:
+
 1. Start a WordPress multisite environment using wp-env
 2. Install and activate our plugin network-wide
 3. Create a test subsite
@@ -158,7 +160,8 @@ describe('WordPress Single Site Tests', () => {
 
 We have GitHub Actions workflows for running tests in CI/CD:
 
-* `.github/workflows/cypress.yml`: Runs Cypress tests
+* `.github/workflows/wordpress-tests.yml`: Runs wp-env e2e tests
+* `.github/workflows/playground-tests.yml`: Runs Playground e2e tests
 * `.github/workflows/phpunit.yml`: Runs PHPUnit tests (coming soon)
 
 ## Troubleshooting

@@ -11,6 +11,7 @@
             height: 100%;
             overflow: hidden;
         }
+
         iframe {
             width: 100%;
             height: 100%;
@@ -41,7 +42,7 @@
         <button onclick="loadSingleSite()">Single Site</button>
         <button onclick="loadMultisite()">Multisite</button>
     </div>
-    <iframe id="playground" src="about:blank"></iframe>
+    <iframe id="playground" src="about:blank" title="WordPress Playground Test Environment"></iframe>
 
     <script>
         function loadSingleSite() {
@@ -57,6 +58,9 @@
             "$schema": "https://playground.wordpress.net/blueprint-schema.json",
             "landingPage": "/wp-admin/",
             "login": true,
+            "features": {
+                "networking": true
+            },
             "steps": [
                 {
                     "step": "defineWpConfigConsts",
@@ -65,18 +69,8 @@
                     }
                 },
                 {
-                    "step": "installPlugin",
-                    "pluginData": {
-                        "resource": "wordpress.org/plugins",
-                        "slug": "plugin-toggle"
-                    }
-                },
-                {
-                    "step": "installPlugin",
-                    "pluginData": {
-                        "resource": "wordpress.org/plugins",
-                        "slug": "hello-dolly"
-                    }
+                    "step": "wp-cli",
+                    "command": "wp plugin install plugin-toggle kadence-blocks --activate"
                 }
             ]
         };
@@ -105,11 +99,7 @@
                 },
                 {
                     "step": "wp-cli",
-                    "command": "wp plugin install plugin-toggle --activate-network"
-                },
-                {
-                    "step": "wp-cli",
-                    "command": "wp plugin install hello-dolly"
+                    "command": "wp plugin install plugin-toggle kadence-blocks --activate-network"
                 }
             ]
         };

@@ -90,14 +90,14 @@ wp import
 In a WordPress multisite environment, there are two ways to activate plugins:
 
 1. **Network Activation**: Activates a plugin for all sites in the network
-   - In the WordPress admin, go to Network Admin > Plugins
-   - Click "Network Activate" under the plugin
-   - Or use WP-CLI: `wp plugin install plugin-name --activate-network`
+   * In the WordPress admin, go to Network Admin > Plugins
+   * Click "Network Activate" under the plugin
+   * Or use WP-CLI: `wp plugin install plugin-name --activate-network`
 
 2. **Per-Site Activation**: Activates a plugin for a specific site
-   - In the WordPress admin, go to the specific site's admin area
-   - Go to Plugins and activate the plugin for that site only
-   - Or use WP-CLI: `wp plugin activate plugin-name --url=site-url`
+   * In the WordPress admin, go to the specific site's admin area
+   * Go to Plugins and activate the plugin for that site only
+   * Or use WP-CLI: `wp plugin activate plugin-name --url=site-url`
 
 Our multisite blueprint uses network activation for the Plugin Toggle plugin as an example.
 
@@ -111,8 +111,8 @@ We have two blueprints for testing:
 To run tests with WordPress Playground:
 
 1. Open the appropriate WordPress Playground link:
-   - [Single site](https://playground.wordpress.net/?blueprint-url=https://raw.githubusercontent.com/wpallstars/wp-plugin-starter-template-for-ai-coding/feature/testing-framework/playground/blueprint.json&_t=11)
-   - [Multisite](https://playground.wordpress.net/?blueprint-url=https://raw.githubusercontent.com/wpallstars/wp-plugin-starter-template-for-ai-coding/feature/testing-framework/playground/multisite-blueprint.json&_t=23)
+   * [Single site](https://playground.wordpress.net/?blueprint-url=https://raw.githubusercontent.com/wpallstars/wp-plugin-starter-template-for-ai-coding/feature/testing-framework/playground/blueprint.json&_t=11)
+   * [Multisite](https://playground.wordpress.net/?blueprint-url=https://raw.githubusercontent.com/wpallstars/wp-plugin-starter-template-for-ai-coding/feature/testing-framework/playground/multisite-blueprint.json&_t=23)
 
 2. Test the plugin manually in the browser
 
