@@ -65,7 +65,7 @@ jobs:
     - name: Run tests with WordPress Playground
       run: |
         # Start WordPress Playground with our blueprint
-        npx @wp-playground/cli start --blueprint playground/blueprint.json --port 8888 &
+        npx @wp-playground/cli server --blueprint playground/blueprint.json --port 8888 --login &
 
         # Wait for WordPress Playground to be ready
         echo "Waiting for WordPress Playground to be ready..."

@@ -83,7 +83,7 @@ class Plugin {
      *
      * @return string The plugin version.
      */
-    public function getVersion(): string {
+    public function get_version(): string {
         return $this->version;
     }
 
@@ -92,7 +92,7 @@ class Plugin {
      *
      * @return Admin The admin instance.
      */
-    public function getAdmin(): Admin {
+    public function get_admin(): Admin {
         return $this->admin;
     }
 }
