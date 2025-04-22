@@ -84,10 +84,12 @@ jobs:
 
     - name: Upload Cypress artifacts
       if: always()
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: cypress-single-site-results
-        path: cypress/videos,cypress/screenshots
+        path: |
+          cypress/videos
+          cypress/screenshots
 
   playground-multisite-test:
     name: WordPress Playground Multisite Tests
@@ -118,24 +120,27 @@ jobs:
     - name: Run tests with WordPress Playground
       run: |
         # Set base URL for Cypress
-        export CYPRESS_BASE_URL=http://localhost:8888
+        export CYPRESS_BASE_URL=http://localhost:80
 
         # Start WordPress Playground with our blueprint
-        npx @wp-playground/cli server --blueprint playground/multisite-blueprint.json --port 8888 --login &
+        # Use port 80 for multisite as WordPress multisites don't support custom ports
+        npx @wp-playground/cli server --blueprint playground/multisite-blueprint.json --port 80 --login &
 
         # Wait for WordPress Playground to be ready
         echo "Waiting for WordPress Playground to be ready..."
-        timeout 60 bash -c 'until curl -s http://localhost:8888; do sleep 2; done'
+        timeout 60 bash -c 'until curl -s http://localhost:80; do sleep 2; done'
 
         # Run Cypress tests against WordPress Playground
         npx cypress run --spec "cypress/e2e/playground-multisite.cy.js"
 
     - name: Upload Cypress artifacts
       if: always()
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: cypress-multisite-results
-        path: cypress/videos,cypress/screenshots
+        path: |
+          cypress/videos
+          cypress/screenshots
 
   performance-test:
     name: WordPress Performance Tests

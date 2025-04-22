@@ -53,7 +53,9 @@ jobs:
 
     - name: Upload Cypress artifacts
       if: always()
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: cypress-playground-results
-        path: cypress/videos,cypress/screenshots
+        path: |
+          cypress/videos
+          cypress/screenshots
