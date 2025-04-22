@@ -19,7 +19,7 @@ The easiest way to test our plugin with WordPress Playground is to use the onlin
 
 2. Multisite testing: [Open in WordPress Playground](https://playground.wordpress.net/?blueprint-url=https://raw.githubusercontent.com/wpallstars/wp-plugin-starter-template-for-ai-coding/feature/testing-framework/playground/multisite-blueprint.json&_t=23)
 
-These links will automatically set up WordPress with multisite enabled, WP_DEBUG enabled, and both the Plugin Toggle and Hello Dolly plugins activated.
+These links will automatically set up WordPress with multisite enabled, WP_DEBUG enabled, and both the Plugin Toggle and Kadence Blocks plugins activated.
 
 ## WP-CLI Commands for WordPress Playground
 
@@ -181,8 +181,7 @@ await playground.run({
   steps: [
     { step: 'enableMultisite' },
     { step: 'wp-cli', command: 'wp site create --slug=testsite' },
-    { step: 'wp-cli', command: 'wp plugin install plugin-toggle --activate-network' },
-    { step: 'wp-cli', command: 'wp plugin install hello-dolly' }
+    { step: 'wp-cli', command: 'wp plugin install plugin-toggle kadence-blocks --activate-network' }
   ]
 });
 
@@ -216,8 +215,7 @@ describe('Plugin Tests', () => {
       steps: [
         { step: 'enableMultisite' },
         { step: 'wp-cli', command: 'wp site create --slug=testsite' },
-        { step: 'wp-cli', command: 'wp plugin install plugin-toggle --activate-network' },
-        { step: 'wp-cli', command: 'wp plugin install hello-dolly' }
+        { step: 'wp-cli', command: 'wp plugin install plugin-toggle kadence-blocks --activate-network' }
       ]
     });
   });
