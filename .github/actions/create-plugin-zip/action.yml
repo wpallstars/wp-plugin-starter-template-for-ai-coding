@@ -1,0 +1,11 @@
+name: 'Create Plugin Zip'
+description: 'Creates a zip file of the WordPress plugin, excluding unnecessary files'
+runs:
+  using: 'composite'
+  steps:
+    - name: Create plugin zip
+      shell: bash
+      run: |
+        mkdir -p dist
+        zip -r dist/plugin.zip . \
+          -x "node_modules/**" "dist/**" ".git/**" ".github/**" ".wiki/**"

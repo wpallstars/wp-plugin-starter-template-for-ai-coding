@@ -15,7 +15,9 @@ require_once getenv( 'WP_PHPUNIT__DIR' ) . '/includes/functions.php';
  * Manually load the plugin being tested.
  */
 function _manually_load_plugin() {
-	require dirname( dirname( __DIR__ ) ) . '/plugin-toggle.php';
+	require dirname( dirname( __DIR__ ) ) . '/wp-plugin-starter-template.php';
+	// Load the multisite class for testing
+	require dirname( dirname( __DIR__ ) ) . '/includes/multisite/class-multisite.php';
 }
 
 // Start up the WP testing environment.

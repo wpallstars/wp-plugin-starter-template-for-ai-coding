@@ -2,9 +2,10 @@ name: WordPress Playground Tests
 
 on:
   push:
-    branches: [ main ]
+    branches: [ main, feature/* ]
   pull_request:
     branches: [ main ]
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -22,16 +23,16 @@ jobs:
         node-version: [18.18, 20]
 
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
 
     - name: Setup Node.js
-      uses: actions/setup-node@v4
+      uses: actions/setup-node@60edb5dd545a775178f52524a9de5299b6d2bbed # v4.0.2
       with:
         node-version: ${{ matrix.node-version }}
         cache: 'npm'
 
     - name: Install dependencies
-      run: npm ci
+      run: npm ci --legacy-peer-deps
 
     - name: Verify package.json and package-lock.json
       run: |
@@ -47,16 +48,16 @@ jobs:
     needs: code-quality
 
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
 
     - name: Setup Node.js
-      uses: actions/setup-node@v4
+      uses: actions/setup-node@60edb5dd545a775178f52524a9de5299b6d2bbed # v4.0.2
       with:
         node-version: '20'
         cache: 'npm'
 
     - name: Install dependencies
-      run: npm ci
+      run: npm ci --legacy-peer-deps
 
     - name: Add WordPress Playground CLI to dependencies
       run: npm install --save-dev @wp-playground/cli
@@ -94,16 +95,16 @@ jobs:
     needs: [code-quality, playground-single-test]
 
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
 
     - name: Setup Node.js
-      uses: actions/setup-node@v4
+      uses: actions/setup-node@60edb5dd545a775178f52524a9de5299b6d2bbed # v4.0.2
       with:
         node-version: '20'
         cache: 'npm'
 
     - name: Install dependencies
-      run: npm ci
+      run: npm ci --legacy-peer-deps
 
     - name: Add WordPress Playground CLI to dependencies
       run: npm install --save-dev @wp-playground/cli
@@ -142,10 +143,10 @@ jobs:
     needs: code-quality
 
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
 
     - name: WordPress Performance Tests
-      uses: swissspidy/wp-performance-action@v2.0.3
+      uses: swissspidy/wp-performance-action@b7e3ffcf0fc4a48b62492e021e0ebeb51430ff11 # v2.0.3
       with:
         plugins: |
           ./

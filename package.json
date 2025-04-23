@@ -20,6 +20,7 @@
     "test:phpunit": "composer test",
     "test:phpunit:multisite": "WP_MULTISITE=1 composer test",
     "build": "./build.sh",
+    "lint:js": "eslint cypress/",
     "lint:php": "composer run-script phpcs",
     "lint:php:simple": "composer run-script phpcs:simple",
     "lint:phpstan": "composer run-script phpstan",
@@ -53,6 +54,8 @@
     "@wp-playground/blueprints": "^1.0.28",
     "@wp-playground/client": "^1.0.28",
     "@wp-playground/cli": "^1.0.28",
-    "cypress": "^13.17.0"
+    "cypress": "^13.17.0",
+    "eslint": "^8.57.0",
+    "eslint-plugin-cypress": "^2.15.1"
   }
 }

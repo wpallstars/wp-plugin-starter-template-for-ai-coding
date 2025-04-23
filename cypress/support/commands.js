@@ -16,17 +16,19 @@ Cypress.Commands.add('loginAsAdmin', () => {
 
   // Check if we're already logged in
   cy.get('body').then(($body) => {
-    if ($body.find('body.wp-admin').length > 0) {
+    if ($body.find('#wpadminbar').length > 0) {
       // Already logged in
       cy.log('Already logged in as admin');
       return;
     }
 
     // Need to log in
-    cy.get('#user_login').type('admin');
-    cy.get('#user_pass').type('password');
-    cy.get('#wp-submit').click();
-    cy.get('body.wp-admin').should('exist');
+    cy.get('#user_login').should('be.visible').type('admin');
+    cy.get('#user_pass').should('be.visible').type('password');
+    cy.get('#wp-submit').should('be.visible').click();
+
+    // Wait for admin bar to appear
+    cy.get('#wpadminbar', { timeout: 10000 }).should('exist');
   });
 });
 
@@ -38,7 +40,7 @@ Cypress.Commands.add('activatePlugin', (pluginSlug) => {
   cy.visit('/wp-admin/plugins.php');
 
   // Check if plugin is already active
-  cy.get(`tr[data-slug="${pluginSlug}"]`).then(($tr) => {
+  cy.contains('tr', pluginSlug).then(($tr) => {
     if ($tr.find('.deactivate').length > 0) {
       // Plugin is already active
       cy.log(`Plugin ${pluginSlug} is already active`);
@@ -46,8 +48,8 @@ Cypress.Commands.add('activatePlugin', (pluginSlug) => {
     }
 
     // Activate the plugin
-    cy.get(`tr[data-slug="${pluginSlug}"] .activate a`).click();
-    cy.get(`tr[data-slug="${pluginSlug}"] .deactivate`).should('exist');
+    cy.contains('tr', pluginSlug).find('.activate a').click();
+    cy.contains('tr', pluginSlug).find('.deactivate').should('exist');
   });
 });
 
@@ -59,7 +61,7 @@ Cypress.Commands.add('networkActivatePlugin', (pluginSlug) => {
   cy.visit('/wp-admin/network/plugins.php');
 
   // Check if plugin is already network active
-  cy.get(`tr[data-slug="${pluginSlug}"]`).then(($tr) => {
+  cy.contains('tr', pluginSlug).then(($tr) => {
     if ($tr.find('.network_active').length > 0) {
       // Plugin is already network active
       cy.log(`Plugin ${pluginSlug} is already network active`);
@@ -67,7 +69,7 @@ Cypress.Commands.add('networkActivatePlugin', (pluginSlug) => {
     }
 
     // Network activate the plugin
-    cy.get(`tr[data-slug="${pluginSlug}"] .activate a`).click();
-    cy.get(`tr[data-slug="${pluginSlug}"] .network_active`).should('exist');
+    cy.contains('tr', pluginSlug).find('.activate a').click();
+    cy.contains('tr', pluginSlug).find('.network_active').should('exist');
   });
 });

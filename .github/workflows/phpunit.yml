@@ -2,9 +2,10 @@ name: PHPUnit Tests
 
 on:
   push:
-    branches: [ main ]
+    branches: [ main, feature/* ]
   pull_request:
     branches: [ main ]
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -17,13 +18,13 @@ jobs:
   test:
     name: PHP ${{ matrix.php }} - WP ${{ matrix.wp }} - ${{ matrix.multisite && 'Multisite' || 'Single Site' }}
     runs-on: ubuntu-latest
-    
+
     strategy:
       matrix:
         php: [ '7.4', '8.0' ]
         wp: [ 'latest' ]
         multisite: [ false, true ]
-    
+
     services:
       mysql:
         image: mysql:5.7
@@ -33,25 +34,25 @@ jobs:
         ports:
           - 3306:3306
         options: --health-cmd="mysqladmin ping" --health-interval=10s --health-timeout=5s --health-retries=3
-    
+
     steps:
       - name: Checkout code
         uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
-      
+
       - name: Setup PHP
         uses: shivammathur/setup-php@e6f75134d35752277f093989e72e140eaa222f35 # v2.30.0
         with:
           php-version: ${{ matrix.php }}
           extensions: dom, curl, libxml, mbstring, zip, pdo, mysql, pdo_mysql, bcmath, soap, intl, gd, exif, iconv
           coverage: none
-      
+
       - name: Install Composer dependencies
         uses: ramsey/composer-install@83af392bf5f031813d25e6fe4cd626cdba9a2df6 # v2.2.0
-      
+
       - name: Install WordPress test suite
         run: |
           bash bin/install-wp-tests.sh wordpress_test root root 127.0.0.1 ${{ matrix.wp }} ${{ matrix.multisite && 'true' || 'false' }}
-      
+
       - name: Run PHPUnit tests
         run: |
           if [ "${{ matrix.multisite }}" = "true" ]; then

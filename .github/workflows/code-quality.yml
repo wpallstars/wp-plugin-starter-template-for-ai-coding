@@ -2,9 +2,10 @@ name: Code Quality
 
 on:
   push:
-    branches: [ main ]
+    branches: [ main, feature/* ]
   pull_request:
     branches: [ main ]
+  workflow_dispatch:
 
 jobs:
   phpcs:
@@ -12,12 +13,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
         with:
           clean: 'true'
 
       - name: Setup PHP
-        uses: shivammathur/setup-php@v2
+        uses: shivammathur/setup-php@e6f75134d35752277f093989e72e140eaa222f35 # v2.30.0
         with:
           php-version: '8.1'
           extensions: mbstring, intl, zip
@@ -46,10 +47,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
 
       - name: Setup PHP
-        uses: shivammathur/setup-php@v2
+        uses: shivammathur/setup-php@e6f75134d35752277f093989e72e140eaa222f35 # v2.30.0
         with:
           php-version: '8.1'
           extensions: mbstring, intl, zip
@@ -70,10 +71,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
 
       - name: Setup PHP
-        uses: shivammathur/setup-php@v2
+        uses: shivammathur/setup-php@e6f75134d35752277f093989e72e140eaa222f35 # v2.30.0
         with:
           php-version: '8.1'
           extensions: mbstring, intl, zip
@@ -91,25 +92,25 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
         with:
           fetch-depth: 0
 
       - name: Set up JDK 17
-        uses: actions/setup-java@v3
+        uses: actions/setup-java@0ab4596768b603586c0de567f2430c30f5b0d2b0 # v3.13.0
         with:
           java-version: 17
           distribution: 'temurin'
 
       - name: Cache SonarCloud packages
-        uses: actions/cache@v3
+        uses: actions/cache@13aacd865c20de90d75de3b17ebe84f7a17d57d2 # v3.3.2
         with:
           path: ~/.sonar/cache
           key: ${{ runner.os }}-sonar
           restore-keys: ${{ runner.os }}-sonar
 
       - name: SonarCloud Scan
-        uses: SonarSource/sonarqube-scan-action@master
+        uses: SonarSource/sonarcloud-github-action@5ee4a0e4e1e9c0f7cfde3bf96fd7647b9d897256 # v2.1.1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
@@ -118,7 +119,7 @@ jobs:
             -Dsonar.projectKey=wpallstars_wp-plugin-starter-template-for-ai-coding
             -Dsonar.organization=wpallstars
             -Dsonar.sources=.
-            -Dsonar.exclusions=vendor/**,node_modules/**,tests/**,bin/**,build/**,dist/**
+            -Dsonar.exclusions=vendor/**,node_modules/**,tests/**,bin/**,build/**,dist/**,.github/**,.git/**,cypress/**,playground/**,.wiki/**
             -Dsonar.sourceEncoding=UTF-8
         continue-on-error: true
 
@@ -127,12 +128,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
         with:
           fetch-depth: 0
 
       - name: Run Codacy Analysis CLI
-        uses: codacy/codacy-analysis-cli-action@v4.3.0
+        uses: codacy/codacy-analysis-cli-action@5cc54a75f9ad8e86bb795a5d3d4f2f70c9baa1a7 # v4.3.0
         with:
           project-token: ${{ secrets.CODACY_PROJECT_TOKEN }}
           verbose: true
@@ -146,7 +147,7 @@ jobs:
         continue-on-error: true
 
       - name: Upload SARIF results file
-        uses: github/codeql-action/upload-sarif@v3
+        uses: github/codeql-action/upload-sarif@cdcdbb579706841c47f7063dda365e292e5cad7a # v2.2.7
         with:
           sarif_file: results.sarif
         continue-on-error: true

@@ -2,9 +2,10 @@ name: WordPress Tests
 
 on:
   push:
-    branches: [ main ]
+    branches: [ main, feature/* ]
   pull_request:
     branches: [ main ]
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -22,16 +23,16 @@ jobs:
         node-version: [18.18, 20]
 
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
 
     - name: Setup Node.js
-      uses: actions/setup-node@v4
+      uses: actions/setup-node@60edb5dd545a775178f52524a9de5299b6d2bbed # v4.0.2
       with:
         node-version: ${{ matrix.node-version }}
         cache: 'npm'
 
     - name: Install dependencies
-      run: npm ci
+      run: npm ci --legacy-peer-deps
 
     - name: Verify package.json and package-lock.json
       run: |
@@ -56,16 +57,16 @@ jobs:
     runs-on: ubuntu-latest
     needs: code-quality
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
 
     - name: Setup Node.js
-      uses: actions/setup-node@v4
+      uses: actions/setup-node@60edb5dd545a775178f52524a9de5299b6d2bbed # v4.0.2
       with:
         node-version: '20'
         cache: 'npm'
 
     - name: Install dependencies
-      run: npm ci
+      run: npm ci --legacy-peer-deps
 
     - name: Install WordPress Playground CLI
       run: npm install --save-dev @wp-playground/cli
@@ -75,6 +76,9 @@ jobs:
 
     - name: Run tests with WordPress Playground
       run: |
+        # Set base URL for Cypress
+        export CYPRESS_BASE_URL=http://localhost:8888
+
         # Start WordPress Playground with our blueprint
         npx @wp-playground/cli server --blueprint playground/blueprint.json --port 8888 --login &
 

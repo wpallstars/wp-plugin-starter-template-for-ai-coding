@@ -27,7 +27,6 @@ download() {
 if [[ $WP_VERSION =~ ^[0-9]+\.[0-9]+\-(beta|RC)[0-9]+$ ]]; then
 	WP_BRANCH=${WP_VERSION%\-*}
 	WP_TESTS_TAG="branches/$WP_BRANCH"
-	WP_TESTS_TAG="tags/$WP_VERSION"
 elif [[ $WP_VERSION =~ ^[0-9]+\.[0-9]+$ ]]; then
 	WP_TESTS_TAG="branches/$WP_VERSION"
 elif [[ $WP_VERSION =~ [0-9]+\.[0-9]+\.[0-9]+ ]]; then
@@ -76,7 +75,7 @@ install_wp() {
 				LATEST_VERSION=${WP_VERSION%??}
 			else
 				# otherwise, scan the releases and get the most up to date minor version of the major release
-				local VERSION_ESCAPED=$(echo $WP_VERSION | sed 's/\./\\\\./g'`
+				local VERSION_ESCAPED=$(echo $WP_VERSION | sed 's/\./\\\\./g')
 				LATEST_VERSION=$(grep -o '"version":"'$VERSION_ESCAPED'[^"]*' $WP_CORE_DIR/wp-latest.json | sed 's/"version":"//' | head -1)
 			fi
 			if [[ -z "$LATEST_VERSION" ]]; then
@@ -107,12 +106,22 @@ install_test_suite() {
 	if [ ! -d $WP_TESTS_DIR ]; then
 		# set up testing suite
 		mkdir -p $WP_TESTS_DIR
-		svn co --quiet https://develop.svn.wordpress.org/${WP_TESTS_TAG}/tests/phpunit/includes/ $WP_TESTS_DIR/includes
-		svn co --quiet https://develop.svn.wordpress.org/${WP_TESTS_TAG}/tests/phpunit/data/ $WP_TESTS_DIR/data
+		# Use git instead of svn
+		git clone --quiet --depth=1 https://github.com/WordPress/wordpress-develop.git /tmp/wordpress-develop
+		if [ -d /tmp/wordpress-develop/tests/phpunit/includes ]; then
+			cp -r /tmp/wordpress-develop/tests/phpunit/includes $WP_TESTS_DIR/
+		fi
+		if [ -d /tmp/wordpress-develop/tests/phpunit/data ]; then
+			cp -r /tmp/wordpress-develop/tests/phpunit/data $WP_TESTS_DIR/
+		fi
 	fi
 
 	if [ ! -f wp-tests-config.php ]; then
-		download https://develop.svn.wordpress.org/${WP_TESTS_TAG}/wp-tests-config-sample.php "$WP_TESTS_DIR"/wp-tests-config.php
+		if [ -f /tmp/wordpress-develop/wp-tests-config-sample.php ]; then
+			cp /tmp/wordpress-develop/wp-tests-config-sample.php "$WP_TESTS_DIR"/wp-tests-config.php
+		else
+			download https://raw.githubusercontent.com/WordPress/wordpress-develop/master/wp-tests-config-sample.php "$WP_TESTS_DIR"/wp-tests-config.php
+		fi
 		# remove all forward slashes in the end
 		WP_CORE_DIR=$(echo $WP_CORE_DIR | sed "s:/\+$::")
 		sed $ioption "s:dirname( __FILE__ ) . '/src/':'$WP_CORE_DIR/':" "$WP_TESTS_DIR"/wp-tests-config.php
