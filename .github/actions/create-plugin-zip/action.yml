@@ -7,5 +7,8 @@ runs:
       shell: bash
       run: |
         mkdir -p dist
+        echo "Creating plugin zip file..."
         zip -r dist/plugin.zip . \
-          -x "node_modules/**" "dist/**" ".git/**" ".github/**" ".wiki/**"
+          -x "node_modules/**" "dist/**" ".git/**" ".github/**" ".wiki/**" "cypress/**" "playground/**" "tests/**" "vendor/**"
+        echo "Plugin zip created at dist/plugin.zip"
+        ls -la dist/

@@ -2,9 +2,10 @@ name: WordPress Playground Tests Fix
 
 on:
   push:
-    branches: [ main ]
+    branches: [ main, feature/* ]
   pull_request:
     branches: [ main ]
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -31,7 +32,11 @@ jobs:
       run: npm ci --legacy-peer-deps
 
     - name: Add WordPress Playground CLI to dependencies
-      run: npm install --save-dev @wp-playground/cli
+      run: |
+        echo "Installing WordPress Playground CLI..."
+        npm install --save-dev @wp-playground/cli @wp-playground/blueprints @wp-playground/client
+        echo "WordPress Playground CLI installed"
+        npx @wp-playground/cli --version
 
     - name: Create plugin zip
       uses: ./.github/actions/create-plugin-zip
@@ -41,15 +46,31 @@ jobs:
         # Set base URL for Cypress
         export CYPRESS_BASE_URL=http://localhost:8888
 
+        # Check if blueprint file exists
+        echo "Checking blueprint file..."
+        ls -la playground/
+        cat playground/blueprint.json
+
         # Start WordPress Playground with our blueprint
+        echo "Starting WordPress Playground server..."
         npx @wp-playground/cli server --blueprint playground/blueprint.json --port 8888 --login &
+        SERVER_PID=$!
 
         # Wait for WordPress Playground to be ready
         echo "Waiting for WordPress Playground to be ready..."
         timeout 60 bash -c 'until curl -s http://localhost:8888; do sleep 2; done'
+        echo "WordPress Playground is ready"
 
         # Run Cypress tests against WordPress Playground
+        echo "Running Cypress tests..."
         npx cypress run --spec "cypress/e2e/playground-single-site.cy.js"
+        TEST_EXIT_CODE=$?
+
+        # Kill the server process
+        kill $SERVER_PID || true
+
+        # Return the test exit code
+        exit $TEST_EXIT_CODE
 
     - name: Upload Cypress artifacts
       if: always()
