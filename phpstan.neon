@@ -5,7 +5,14 @@ parameters:
         - admin
         - wp-plugin-starter-template.php
     excludePaths:
-        paths:
+        analyse:
+            - vendor
+            - node_modules
+            - tests
+            - bin
+            - build
+            - dist
+        analyseAndScan:
             - vendor
             - node_modules
             - tests

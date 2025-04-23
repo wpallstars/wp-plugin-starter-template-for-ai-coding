@@ -43,9 +43,6 @@ class Admin {
      *
      * This method is hooked into 'admin_enqueue_scripts'. It checks if the current
      * screen is relevant to the plugin before enqueueing assets.
-
-
-     *
      */
     public function enqueue_admin_assets(): void {
 

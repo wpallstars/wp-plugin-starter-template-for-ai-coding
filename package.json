@@ -1,16 +1,26 @@
 {
   "name": "wp-plugin-starter-template-for-ai-coding",
-  "version": "0.1.10",
+  "version": "0.1.13",
   "description": "A comprehensive starter template for WordPress plugins with best practices for AI-assisted development.",
   "main": "index.js",
   "scripts": {
     "start": "wp-env start",
     "stop": "wp-env stop",
     "wp-env": "wp-env",
-    "multisite": "wp-env start --config=.wp-env.multisite.json",
-    "test:e2e": "cypress open --config-file tests/e2e/cypress.json",
-    "test:e2e:headless": "cypress run --config-file tests/e2e/cypress.json",
+    "setup:single": "bash bin/setup-test-env.sh single",
+    "setup:multisite": "bash bin/setup-test-env.sh multisite",
+    "test:single": "cypress open --config specPattern=cypress/e2e/single-site.cy.js",
+    "test:single:headless": "cypress run --config specPattern=cypress/e2e/single-site.cy.js",
+    "test:multisite": "cypress open --config specPattern=cypress/e2e/multisite.cy.js",
+    "test:multisite:headless": "cypress run --config specPattern=cypress/e2e/multisite.cy.js",
+    "test:e2e:single": "npm run setup:single && sleep 5 && npm run test:single:headless",
+    "test:e2e:multisite": "npm run setup:multisite && sleep 5 && npm run test:multisite:headless",
+    "test:playground:single": "cypress run --spec cypress/e2e/playground-single-site.cy.js",
+    "test:playground:multisite": "cypress run --spec cypress/e2e/playground-multisite.cy.js",
+    "test:phpunit": "composer test",
+    "test:phpunit:multisite": "WP_MULTISITE=1 composer test",
     "build": "./build.sh",
+    "lint:js": "eslint cypress/",
     "lint:php": "composer run-script phpcs",
     "lint:php:simple": "composer run-script phpcs:simple",
     "lint:phpstan": "composer run-script phpstan",
@@ -40,7 +50,12 @@
   },
   "homepage": "https://github.com/wpallstars/wp-plugin-starter-template-for-ai-coding#readme",
   "devDependencies": {
-    "@wordpress/env": "^5.0.0",
-    "cypress": "^9.7.0"
+    "@wordpress/env": "^8.12.0",
+    "@wp-playground/blueprints": "^1.0.28",
+    "@wp-playground/client": "^1.0.28",
+    "@wp-playground/cli": "^1.0.28",
+    "cypress": "^13.17.0",
+    "eslint": "^8.57.0",
+    "eslint-plugin-cypress": "^2.15.1"
   }
 }
