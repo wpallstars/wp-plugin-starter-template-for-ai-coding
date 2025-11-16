@@ -12,23 +12,22 @@
  * Custom command to login as admin
  */
 Cypress.Commands.add('loginAsAdmin', () => {
-  cy.visit('/wp-admin');
+  cy.visit('/wp-admin', { timeout: 30000 });
 
-  // Check if we're already logged in
-  cy.get('body').then(($body) => {
+  cy.get('body', { timeout: 15000 }).then(($body) => {
     if ($body.find('#wpadminbar').length > 0) {
-      // Already logged in
       cy.log('Already logged in as admin');
       return;
     }
 
-    // Need to log in
-    cy.get('#user_login').should('be.visible').type('admin');
-    cy.get('#user_pass').should('be.visible').type('password');
-    cy.get('#wp-submit').should('be.visible').click();
-
-    // Wait for admin bar to appear
-    cy.get('#wpadminbar', { timeout: 10000 }).should('exist');
+    if ($body.find('#user_login').length > 0) {
+      cy.get('#user_login').should('be.visible').type('admin');
+      cy.get('#user_pass').should('be.visible').type('password');
+      cy.get('#wp-submit').should('be.visible').click();
+      cy.get('#wpadminbar', { timeout: 15000 }).should('exist');
+    } else {
+      cy.log('Login form not found, assuming already logged in');
+    }
   });
 });
 

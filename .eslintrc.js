@@ -3,21 +3,21 @@ module.exports = {
     browser: true,
     es2021: true,
     node: true,
-    'cypress/globals': true,
+    'cypress/globals': true
   },
   extends: [
-    'eslint:recommended',
+    'eslint:recommended'
   ],
   plugins: [
-    'cypress',
+    'cypress'
   ],
   parserOptions: {
     ecmaVersion: 'latest',
-    sourceType: 'module',
+    sourceType: 'module'
   },
   rules: {
     'no-console': 'warn',
-    'no-unused-vars': 'warn',
+    'no-unused-vars': 'warn'
   },
   globals: {
     cy: 'readonly',
@@ -28,6 +28,6 @@ module.exports = {
     beforeEach: 'readonly',
     afterEach: 'readonly',
     before: 'readonly',
-    after: 'readonly',
-  },
+    after: 'readonly'
+  }
 };
