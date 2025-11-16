@@ -28,6 +28,10 @@ module.exports = {
     beforeEach: 'readonly',
     afterEach: 'readonly',
     before: 'readonly',
-    after: 'readonly'
+    after: 'readonly',
+    jQuery: 'readonly',
+    wpstData: 'readonly',
+    wpstModalData: 'readonly',
+    wp: 'readonly'
   }
 };
