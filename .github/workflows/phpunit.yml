@@ -51,7 +51,7 @@ jobs:
 
       - name: Install WordPress test suite
         run: |
-          bash bin/install-wp-tests.sh wordpress_test root root 127.0.0.1 ${{ matrix.wp }} ${{ matrix.multisite && 'true' || 'false' }}
+          bash bin/install-wp-tests.sh wordpress_test root root 127.0.0.1 ${{ matrix.wp }} false ${{ matrix.multisite && 'true' || 'false' }}
 
       - name: Run PHPUnit tests
         run: |
