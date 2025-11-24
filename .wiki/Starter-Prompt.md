@@ -4,7 +4,7 @@ This document provides a comprehensive prompt to help you get started with creat
 
 ## Important: Optimize AI Context
 
-**Before starting, add the .ai-assistant.md file and .ai-workflows/ directory to your AI IDE chat context.** In most AI IDEs, you can pin these files to ensure they're considered in each message. This will help the AI understand the project structure and follow the established best practices.
+**Before starting, add the AGENTS.md file and .agents/ directory to your AI IDE chat context.** In most AI IDEs, you can pin these files to ensure they're considered in each message. This will help the AI understand the project structure and follow the established best practices.
 
 ## Initial Setup Prompt
 
@@ -35,7 +35,7 @@ I need help with the following tasks:
 2. Customizing the plugin structure for my specific needs
 3. Setting up the initial functionality for my plugin
 
-I've added the .ai-assistant.md and .ai-workflows/ directory to the chat context to ensure you have all the necessary information about the project structure and best practices.
+I've added the AGENTS.md and .agents/ directory to the chat context to ensure you have all the necessary information about the project structure and best practices.
 
 Please guide me through this process step by step, starting with identifying all files that need to be updated with my plugin information.
 ```
@@ -52,7 +52,7 @@ The AI will help you identify and update the following files with your plugin in
 6. **languages/pot file**: Rename and update the POT file
 7. **.github/workflows/**: Update GitHub Actions workflows with your repository information
 8. **.wiki/**: Update wiki documentation with your plugin information
-9. **.ai-assistant.md**: Update AI assistant guidance for your specific plugin
+9. **AGENTS.md**: Update AI assistant guidance for your specific plugin
 10. **includes/plugin.php**: Update namespace and class references
 11. **includes/core.php**: Update namespace and customize core functionality
 12. **admin/lib/admin.php**: Update namespace and customize admin functionality
@@ -174,7 +174,7 @@ Please guide me through the process of building and testing my plugin:
 To ensure the AI assistant has all the necessary context about your plugin's structure and best practices:
 
 ```
-Please add the .ai-assistant.md and .ai-workflows/ directory to your AI IDE chat context. In most AI IDEs, you can pin these files to ensure they're considered in each message. This will help the AI understand the project structure and follow the established best practices.
+Please add the AGENTS.md and .agents/ directory to your AI IDE chat context. In most AI IDEs, you can pin these files to ensure they're considered in each message. This will help the AI understand the project structure and follow the established best practices.
 ```
 
 ## Remember
@@ -183,7 +183,7 @@ Please add the .ai-assistant.md and .ai-workflows/ directory to your AI IDE chat
 - The AI assistant can help you understand the existing code and make appropriate modifications, but you should review all changes to ensure they meet your requirements.
 - Always test your plugin thoroughly before releasing it.
 - Keep documentation updated as you develop your plugin.
-- Pin the .ai-assistant.md and .ai-workflows/ files in your AI IDE chat to ensure the AI has the necessary context for each interaction.
+- Pin the AGENTS.md and .agents/ files in your AI IDE chat to ensure the AI has the necessary context for each interaction.
 
 ## Credits
 

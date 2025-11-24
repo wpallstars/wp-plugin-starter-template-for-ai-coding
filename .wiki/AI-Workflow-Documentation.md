@@ -12,8 +12,8 @@ AI-assisted development uses artificial intelligence tools to help with coding, 
 
 To get the most out of AI-assisted development, make sure to include these files in your AI IDE context:
 
-1. **.ai-assistant.md**: Contains essential information about the project structure and conventions
-2. **.ai-workflows/**: Directory containing detailed workflow documentation for common tasks
+1. **AGENTS.md**: Contains essential information about the project structure and conventions
+2. **.agents/**: Directory containing detailed workflow documentation for common tasks
 
 ### Pinning Files in AI IDEs
 
@@ -26,7 +26,7 @@ For the best results, pin these files in your AI IDE chat context:
 
 ## AI Workflow Files
 
-The `.ai-workflows/` directory contains detailed guides for common development tasks:
+The `.agents/` directory contains detailed guides for common development tasks:
 
 1. **plugin-customization.md**: Guide for customizing the plugin for specific needs
 2. **feature-development.md**: Workflow for developing new features
@@ -50,7 +50,7 @@ The [Starter Prompt](Starter-Prompt) is a comprehensive guide for AI tools to he
 
 ### Customizing the Plugin
 
-1. Open your AI IDE and pin the `.ai-assistant.md` file and `.ai-workflows/` directory
+1. Open your AI IDE and pin the `AGENTS.md` file and `.agents/` directory
 2. Provide the Starter Prompt to the AI
 3. Follow the AI's guidance to customize the plugin
 4. Review and test the changes

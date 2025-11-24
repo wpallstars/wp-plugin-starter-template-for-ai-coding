@@ -34,7 +34,7 @@ This workspace may contain multiple repository folders. Always focus ONLY on the
   * **js/**: Admin JavaScript files
 * **languages/**: Translation files
 * **.github/workflows/**: GitHub Actions workflows
-* **.ai-workflows/**: Documentation for AI assistants
+* **.agents/**: Documentation for AI assistants
 * **.wiki/**: Wiki documentation templates
 
 ## Coding Standards
@@ -87,7 +87,7 @@ Always run PHPCS and PHPCBF locally before committing code to ensure it meets th
 
 ## Common Tasks
 
-For detailed instructions on common tasks like creating releases, adding features, fixing bugs, and testing previous versions, see **@.ai-workflows/release-process.md**.
+For detailed instructions on common tasks like creating releases, adding features, fixing bugs, and testing previous versions, see **@.agents/release-process.md**.
 
 ## Avoiding Cross-Repository Confusion
 

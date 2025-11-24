@@ -80,8 +80,8 @@ To configure the update mechanism:
 
 The template includes:
 
-1. Detailed documentation in the `.ai-assistant.md` file
-2. Workflow guidelines in the `.ai-workflows/` directory
+1. Detailed documentation in the `AGENTS.md` file
+2. Workflow guidelines in the `.agents/` directory
 3. Clear code structure and comments that help AI understand the codebase
 4. Best practices for AI-friendly code organization
 
@@ -96,7 +96,7 @@ This template is designed to work well with various AI coding assistants, includ
 
 ### How do I use the AI workflow documentation?
 
-The AI workflow documentation in the `.ai-workflows/` directory provides guidelines for AI assistants working with this template. These files help ensure consistent, high-quality code and documentation when using AI tools for development.
+The AI workflow documentation in the `.agents/` directory provides guidelines for AI assistants working with this template. These files help ensure consistent, high-quality code and documentation when using AI tools for development.
 
 ## Contributing Questions
 

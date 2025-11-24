@@ -25,7 +25,7 @@ wp-plugin-starter-template/
 │   └── unit/               # Unit tests
 ├── .github/                # GitHub-specific files
 │   └── workflows/          # GitHub Actions workflows
-├── .ai-workflows/          # AI workflow documentation
+├── .agents/          # AI workflow documentation
 ├── .wiki/                  # Wiki documentation
 └── wp-plugin-starter-template.php  # Main plugin file
 ```

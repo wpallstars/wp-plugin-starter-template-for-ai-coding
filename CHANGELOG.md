@@ -89,7 +89,7 @@ All notable changes to this project should be documented both here and in the ma
 #### Added
 
 - Improved AI IDE context recommendations in documentation
-- Enhanced Starter Prompt with guidance on pinning .ai-assistant.md and .ai-workflows/
+- Enhanced Starter Prompt with guidance on pinning AGENTS.md and .agents/
 
 #### Changed
 

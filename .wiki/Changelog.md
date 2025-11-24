@@ -25,7 +25,7 @@ This page documents all notable changes to the WordPress Plugin Starter Template
 ### Added
 
 - Improved AI IDE context recommendations in documentation
-- Enhanced Starter Prompt with guidance on pinning .ai-assistant.md and .ai-workflows/
+- Enhanced Starter Prompt with guidance on pinning AGENTS.md and .agents/
 
 ### Changed
 
