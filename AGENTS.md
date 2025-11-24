@@ -4,11 +4,15 @@ This guide helps AI assistants understand the project structure, workflows, and 
 
 ## IMPORTANT: Repository Context
 
-This workspace may contain multiple repository folders. Always focus ONLY on the current repository you're working in and avoid hallucinating functionality from other repositories in the workspace.
+This workspace may contain multiple repository folders.
+
+Always focus ONLY on the current repository you're working in.
+
+Avoid hallucinating functionality from other repositories in the workspace.
 
 * **Current Repository**: wp-plugin-starter-template-for-ai-coding
-* **Repository Purpose**: A comprehensive starter template for WordPress plugins with best practices for AI-assisted development
-* **Repository Scope**: All code changes, documentation, and functionality discussions should be limited to THIS repository only
+* **Repository Purpose**: A starter template for WordPress plugins with AI-assisted development
+* **Repository Scope**: All code changes and discussions should be limited to THIS repository only
 
 ## Project Overview
 
@@ -39,7 +43,7 @@ This workspace may contain multiple repository folders. Always focus ONLY on the
 
 ## Coding Standards
 
-This project follows the [WordPress Coding Standards](https://developer.wordpress.org/coding-standards/wordpress-coding-standards/):
+This project follows the [WordPress Coding Standards](https://developer.wordpress.org/coding-standards/):
 
 * Use 4 spaces for indentation, not tabs (this is a project-specific override of WordPress standards)
 * Follow WordPress naming conventions:
@@ -87,7 +91,7 @@ Always run PHPCS and PHPCBF locally before committing code to ensure it meets th
 
 ## Common Tasks
 
-For detailed instructions on common tasks like creating releases, adding features, fixing bugs, and testing previous versions, see **@.agents/release-process.md**.
+For detailed instructions on releases, features, bugs, and testing, see **@.agents/release-process.md**.
 
 ## Avoiding Cross-Repository Confusion
 

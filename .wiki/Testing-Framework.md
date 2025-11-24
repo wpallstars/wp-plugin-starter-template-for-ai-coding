@@ -1,6 +1,8 @@
 # WordPress Plugin Testing Framework
 
-This document outlines how to set up and run tests for our plugin in both single site and multisite WordPress environments.
+This document outlines how to set up and run tests for our plugin.
+
+It covers both single site and multisite WordPress environments.
 
 ## Overview
 

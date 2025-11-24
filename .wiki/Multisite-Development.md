@@ -161,12 +161,15 @@ For more details on testing, see the [Testing Framework](Testing-Framework.md) d
 2. **Use Network-Specific Functions**: WordPress provides specific functions for multisite.
    Use `update_site_option()` instead of `update_option()` for network-wide settings.
 
-3. **Handle Blog Switching Properly**: When working with specific sites, use `switch_to_blog()` and `restore_current_blog()`.
+3. **Handle Blog Switching Properly**: When working with specific sites, use `switch_to_blog()`.
+   Always call `restore_current_blog()` when done.
 
-4. **Respect Network Admin Capabilities**: Use appropriate capabilities like `manage_network_options` for network admin pages.
+4. **Respect Network Admin Capabilities**: Use capabilities like `manage_network_options` for network admin.
 
-5. **Test in Both Environments**: Always test your plugin in both single site and multisite environments to ensure compatibility.
+5. **Test in Both Environments**: Test in both single site and multisite to ensure compatibility.
 
 ## Conclusion
 
-By following this guide, you can extend the WordPress Plugin Starter Template to add multisite-specific functionality. The included structure provides a solid foundation for developing features that work seamlessly in multisite environments.
+By following this guide, you can extend the WordPress Plugin Starter Template.
+
+The included structure provides a solid foundation for multisite features.

@@ -2,7 +2,9 @@
 
 This document outlines the processes for error checking, debugging, and establishing feedback loops.
 
-The goal is to create a seamless, autonomous CI/CD pipeline where the AI can identify, diagnose, and fix issues with minimal human intervention.
+The goal is to create a seamless, autonomous CI/CD pipeline.
+
+The AI can identify, diagnose, and fix issues with minimal human intervention.
 
 ## Table of Contents
 

@@ -6,9 +6,11 @@ A comprehensive starter template for WordPress plugins with best practices for A
 
 ## Description
 
-The WordPress Plugin Starter Template provides a solid foundation for developing WordPress plugins. It incorporates best practices, modern coding standards, and a comprehensive structure that makes it easy to get started with plugin development.
+The WordPress Plugin Starter Template provides a solid foundation for developing WordPress plugins.
 
-This template is based on the experience gained from developing the "Fix 'Plugin file does not exist' Notices" plugin and other successful WordPress plugins.
+It incorporates best practices, modern coding standards, and a comprehensive structure.
+
+This template is based on experience from developing successful WordPress plugins.
 
 ### Key Features
 
@@ -39,9 +41,11 @@ This template includes comprehensive documentation for AI-assisted development:
 
 * **AGENTS.md**: Guide for AI assistants to understand the project structure
 * **.agents/**: Detailed workflow documentation for common development tasks
-* **Starter Prompt**: Comprehensive prompt for AI tools to help customize the template (available in the [wiki](.wiki/Starter-Prompt.md))
+* **Starter Prompt**: Prompt for AI tools to customize the template ([wiki](.wiki/Starter-Prompt.md))
 
-**Important**: For the best AI assistance, add the AGENTS.md file and .agents/ directory to your AI IDE chat context. In most AI IDEs, you can pin these files to ensure they're considered in each message.
+**Important**: For the best AI assistance, add AGENTS.md and .agents/ to your AI IDE chat context.
+
+In most AI IDEs, you can pin these files to ensure they're considered in each message.
 
 ## Installation
 
