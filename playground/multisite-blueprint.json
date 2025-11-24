@@ -31,10 +31,6 @@
       "pluginData": {
         "resource": "wordpress.org/plugins",
         "slug": "plugin-toggle"
-      },
-      "options": {
-        "activate": true,
-        "networkActivate": true
       }
     },
     {
@@ -42,11 +38,15 @@
       "pluginData": {
         "resource": "wordpress.org/plugins",
         "slug": "kadence-blocks"
-      },
-      "options": {
-        "activate": true,
-        "networkActivate": true
       }
+    },
+    {
+      "step": "wp-cli",
+      "command": "wp plugin activate plugin-toggle --network"
+    },
+    {
+      "step": "wp-cli",
+      "command": "wp plugin activate kadence-blocks --network"
     }
   ]
 }
