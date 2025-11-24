@@ -1,8 +1,10 @@
 name: PHPUnit Tests
 
 on:
+  # Only run on push to main (not feature branches) to avoid duplicate runs.
+  # Feature branches get CI via pull_request trigger.
   push:
-    branches: [ main, feature/* ]
+    branches: [ main ]
   pull_request:
     branches: [ main ]
   workflow_dispatch:
