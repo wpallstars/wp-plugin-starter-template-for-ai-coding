@@ -1,24 +1,12 @@
 name: SonarCloud Analysis
 
-# NOTE: This workflow requires a valid SONAR_TOKEN secret to be configured.
-# If you see HTTP 403 errors, the token may be expired or invalid.
-# Generate a new token at: https://sonarcloud.io/account/security
-
 on:
-  # Only run manually until SONAR_TOKEN is properly configured
+  push:
+    branches: [ main, feature/* ]
+  pull_request:
+    branches: [ main ]
+    types: [opened, synchronize, reopened]
   workflow_dispatch:
-    inputs:
-      force_run:
-        description: 'Force run even if token validation fails'
-        required: false
-        default: 'false'
-
-# Commented out automatic triggers until SONAR_TOKEN is properly configured:
-#  push:
-#    branches: [ main, feature/* ]
-#  pull_request:
-#    branches: [ main ]
-#    types: [opened, synchronize, reopened]
 
 permissions:
   contents: read
@@ -32,8 +20,6 @@ jobs:
   sonarcloud:
     name: SonarCloud
     runs-on: ubuntu-latest
-    # Allow failures since SONAR_TOKEN may not be configured
-    continue-on-error: true
 
     steps:
       - name: Checkout code
@@ -44,8 +30,8 @@ jobs:
       - name: Check if SonarCloud token is set
         id: check_token
         run: |
-          if [ -z "${{ secrets.SONAR_TOKEN }}" ]; then
-            echo "SONAR_TOKEN is not set, skipping SonarCloud analysis"
+          if [ -z "${{ secrets.SONARCLOUD_GITHUB }}" ]; then
+            echo "SONARCLOUD_GITHUB is not set, skipping SonarCloud analysis"
             echo "skip=true" >> $GITHUB_OUTPUT
           else
             echo "skip=false" >> $GITHUB_OUTPUT
@@ -55,8 +41,8 @@ jobs:
         if: steps.check_token.outputs.skip != 'true'
         uses: SonarSource/sonarqube-scan-action@master
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}  # Needed to get PR information, if any
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SONAR_TOKEN: ${{ secrets.SONARCLOUD_GITHUB }}
         with:
           args: >
             -Dsonar.projectKey=wpallstars_wp-plugin-starter-template-for-ai-coding
@@ -68,4 +54,3 @@ jobs:
             -Dsonar.exclusions=vendor/**,node_modules/**,tests/**,bin/**,build/**,dist/**,.github/**,.git/**,cypress/**,playground/**,.wiki/**
             -Dsonar.php.coverage.reportPaths=coverage.xml
             -Dsonar.php.tests.reportPath=test-report.xml
-            -Dsonar.verbose=true
