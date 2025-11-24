@@ -4,7 +4,11 @@ This guide explains how to extend the WordPress Plugin Starter Template for mult
 
 ## Overview
 
-WordPress Multisite allows you to run multiple WordPress sites from a single WordPress installation. The plugin template includes a basic structure for multisite-specific functionality that you can extend to add features for multisite environments.
+WordPress Multisite allows you to run multiple WordPress sites from a single installation.
+
+The plugin template includes a basic structure for multisite-specific functionality.
+
+You can extend this to add features for multisite environments.
 
 ## Directory Structure
 
@@ -21,7 +25,9 @@ includes/
 
 ### 1. Understand the Base Class
 
-The `Multisite` class in `includes/Multisite/class-multisite.php` provides a foundation for multisite-specific functionality. It includes:
+The `Multisite` class in `includes/Multisite/class-multisite.php` provides a foundation for multisite functionality.
+
+It includes:
 
 * A constructor for initialization
 * Example methods for multisite functionality
@@ -42,7 +48,9 @@ if ( is_multisite() ) {
 
 ### 3. Extend the Base Class
 
-You can extend the base `Multisite` class or create additional classes in the `Multisite` directory to implement specific features:
+You can extend the base `Multisite` class or create additional classes in the `Multisite` directory.
+
+This allows you to implement specific features:
 
 ```php
 <?php
@@ -148,11 +156,12 @@ For more details on testing, see the [Testing Framework](Testing-Framework.md) d
 
 ## Best Practices
 
-1. **Always Check for Multisite**: Use `is_multisite()` to check if the current installation is a multisite network before loading multisite-specific functionality.
+1. **Always Check for Multisite**: Use `is_multisite()` to check if the current installation is a multisite network.
 
-2. **Use Network-Specific Functions**: WordPress provides specific functions for multisite, such as `update_site_option()` instead of `update_option()` for network-wide settings.
+2. **Use Network-Specific Functions**: WordPress provides specific functions for multisite.
+   Use `update_site_option()` instead of `update_option()` for network-wide settings.
 
-3. **Handle Blog Switching Properly**: When working with specific sites, use `switch_to_blog()` and `restore_current_blog()` to ensure you're in the correct context.
+3. **Handle Blog Switching Properly**: When working with specific sites, use `switch_to_blog()` and `restore_current_blog()`.
 
 4. **Respect Network Admin Capabilities**: Use appropriate capabilities like `manage_network_options` for network admin pages.
 

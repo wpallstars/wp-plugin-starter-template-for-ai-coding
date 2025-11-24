@@ -159,7 +159,9 @@ This ensures consistency across coding sessions and reduces the need for develop
 
 ## Autonomous CI/CD and Error Handling
 
-This repository is set up for autonomous continuous integration and deployment with minimal human intervention. As an AI assistant, you should:
+This repository is set up for autonomous CI/CD with minimal human intervention.
+
+As an AI assistant, you should:
 
 1. **Monitor CI/CD Pipelines**: Use the GitHub API to check workflow status and identify failures
 2. **Diagnose Issues**: Analyze error logs and determine root causes

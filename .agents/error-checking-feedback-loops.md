@@ -1,6 +1,8 @@
 # Error Checking and Feedback Loops
 
-This document outlines the processes for error checking, debugging, and establishing feedback loops between AI assistants and various systems in the development workflow. The goal is to create a seamless, autonomous CI/CD pipeline where the AI can identify, diagnose, and fix issues with minimal human intervention.
+This document outlines the processes for error checking, debugging, and establishing feedback loops.
+
+The goal is to create a seamless, autonomous CI/CD pipeline where the AI can identify, diagnose, and fix issues with minimal human intervention.
 
 ## Table of Contents
 
@@ -15,7 +17,9 @@ This document outlines the processes for error checking, debugging, and establis
 
 ### Checking Workflow Status via GitHub API
 
-AI assistants can directly monitor GitHub Actions workflows using the GitHub API to identify failures and diagnose issues:
+AI assistants can directly monitor GitHub Actions workflows using the GitHub API.
+
+This helps identify failures and diagnose issues:
 
 ```
 github-api /repos/{owner}/{repo}/actions/runs
@@ -94,7 +98,7 @@ concurrency:
 
 ### Monitoring Local Test Runs
 
-AI assistants can monitor local test runs by analyzing the output of test commands:
+AI assistants can monitor local test runs by analyzing the output of test commands.
 
 #### PHP Unit Tests
 
@@ -125,19 +129,19 @@ npm run test:playground:multisite
 
 2. **Analyze Output for Errors**:
    ```bash
-   launch-process command="cat test-output.log | grep -i 'error\|fail\|exception'" wait=true max_wait_seconds=10
+   cat test-output.log | grep -i 'error\|fail\|exception'
    ```
 
 3. **Parse Structured Test Results** (if available):
    ```bash
-   launch-process command="cat cypress/results/results.json" wait=true max_wait_seconds=10
+   cat cypress/results/results.json
    ```
 
 ### Common Local Test Errors and Solutions
 
 #### WordPress Playground Port Issues
 
-**Error**: `Error: The current host is 127.0.0.1:8888, but WordPress multisites do not support custom ports.`
+**Error**: `The current host is 127.0.0.1:8888, but WordPress multisites do not support custom ports.`
 
 **Solution**: Modify the port in the blueprint or test configuration:
 ```json
@@ -150,7 +154,7 @@ npm run test:playground:multisite
 
 #### Cypress Selector Errors
 
-**Error**: `Timed out retrying after 4000ms: expected '<body.login.js.login-action-login.wp-core-ui.locale-en-us>' to have class 'wp-admin'`
+**Error**: `Timed out retrying after 4000ms: expected '<body...>' to have class 'wp-admin'`
 
 **Solution**: Update selectors to be more robust and handle login states:
 ```javascript
@@ -170,7 +174,7 @@ cy.get('#wpadminbar').should('exist');
 
 ### Automated Code Quality Checks
 
-AI assistants can integrate with various code quality tools to identify and fix issues:
+AI assistants can integrate with various code quality tools to identify and fix issues.
 
 #### PHPCS (PHP CodeSniffer)
 
@@ -199,7 +203,7 @@ npm run lint:css
 
 2. **Analyze Output for Errors**:
    ```bash
-   launch-process command="cat phpcs-output.log | grep -i 'ERROR\|WARNING'" wait=true max_wait_seconds=10
+   cat phpcs-output.log | grep -i 'ERROR\|WARNING'
    ```
 
 3. **Automatically Fix Issues** (when possible):
@@ -209,7 +213,9 @@ npm run lint:css
 
 ### Monitoring Code Quality Feedback in Pull Requests
 
-Automated code quality tools often provide feedback directly in pull requests. AI assistants can check these comments to identify and address issues:
+Automated code quality tools often provide feedback directly in pull requests.
+
+AI assistants can check these comments to identify and address issues.
 
 #### Accessing PR Comments via GitHub API
 
@@ -225,7 +231,7 @@ github-api /repos/wpallstars/wp-plugin-starter-template-for-ai-coding/pulls/{pul
 
 #### Checking CodeRabbit Feedback
 
-CodeRabbit provides AI-powered code review comments that can be accessed via the GitHub API:
+CodeRabbit provides AI-powered code review comments via the GitHub API.
 
 1. **Get PR Comments**:
    ```
@@ -236,7 +242,6 @@ CodeRabbit provides AI-powered code review comments that can be accessed via the
    Look for comments from the `coderabbitai` user.
 
 3. **Parse Actionable Feedback**:
-   CodeRabbit comments typically include:
    * Code quality issues
    * Suggested improvements
    * Best practice recommendations
@@ -244,16 +249,16 @@ CodeRabbit provides AI-powered code review comments that can be accessed via the
 
 #### Checking Codacy and CodeFactor Feedback
 
-These tools provide automated code quality checks and post results as PR comments or status checks:
+These tools provide automated code quality checks and post results as PR comments.
 
 1. **Check PR Status Checks**:
    ```
-   github-api /repos/wpallstars/wp-plugin-starter-template-for-ai-coding/commits/{commit_sha}/check-runs
+   github-api /repos/wpallstars/wp-plugin-starter-template-for-ai-coding/commits/{sha}/check-runs
    ```
 
 2. **Get Detailed Reports** (if available via API):
    ```
-   github-api /repos/wpallstars/wp-plugin-starter-template-for-ai-coding/commits/{commit_sha}/check-runs/{check_run_id}
+   github-api /repos/wpallstars/wp-plugin-starter-template-for-ai-coding/commits/{sha}/check-runs/{id}
    ```
 
 3. **Parse Common Issues**:
@@ -265,11 +270,11 @@ These tools provide automated code quality checks and post results as PR comment
 
 #### Checking SonarCloud Analysis
 
-SonarCloud provides detailed code quality and security analysis:
+SonarCloud provides detailed code quality and security analysis.
 
 1. **Check SonarCloud Status**:
    ```
-   github-api /repos/wpallstars/wp-plugin-starter-template-for-ai-coding/commits/{commit_sha}/check-runs?check_name=SonarCloud
+   github-api /repos/wpallstars/wp-plugin-starter-template-for-ai-coding/commits/{sha}/check-runs?check_name=SonarCloud
    ```
 
 2. **Parse SonarCloud Issues**:
@@ -326,8 +331,8 @@ function get_plugin_version() { ... }
 
 1. **Collect All Feedback**:
    ```
-   github-api /repos/wpallstars/wp-plugin-starter-template-for-ai-coding/pulls/{pull_number}/comments
-   github-api /repos/wpallstars/wp-plugin-starter-template-for-ai-coding/pulls/{pull_number}/reviews
+   github-api /repos/wpallstars/wp-plugin-starter-template-for-ai-coding/pulls/{number}/comments
+   github-api /repos/wpallstars/wp-plugin-starter-template-for-ai-coding/pulls/{number}/reviews
    ```
 
 2. **Categorize Issues**:
@@ -348,46 +353,10 @@ function get_plugin_version() { ... }
 
 #### Responding to Code Quality Tool Comments
 
-1. **Acknowledge Feedback**:
-   ```
-   github-api /repos/wpallstars/wp-plugin-starter-template-for-ai-coding/issues/comments/{comment_id}/reactions
-   ```
-
-2. **Implement Fixes**:
-   ```
-   str-replace-editor command="str_replace" path="path/to/file.php" str_replace_entries=[...]
-   ```
-
-3. **Explain Changes** (if needed):
-   ```
-   github-api /repos/wpallstars/wp-plugin-starter-template-for-ai-coding/pulls/{pull_number}/comments
-   ```
-
-4. **Request Review** (if needed):
-   ```
-   github-api /repos/wpallstars/wp-plugin-starter-template-for-ai-coding/pulls/{pull_number}/requested_reviewers
-   ```
-
-### Example: Fixing GitHub Actions Workflow
-
-```
-# 1. Identify the error
-github-api /repos/wpallstars/wp-plugin-starter-template-for-ai-coding/actions/runs?status=failure
-
-# 2. Get details of the failing job
-github-api /repos/wpallstars/wp-plugin-starter-template-for-ai-coding/actions/runs/{run_id}/jobs
-
-# 3. Fix the issue in the workflow file
-str-replace-editor command="str_replace" path=".github/workflows/playground-tests.yml" str_replace_entries=[...]
-
-# 4. Commit and push the changes
-launch-process command="git add .github/workflows/playground-tests.yml" wait=true max_wait_seconds=30
-launch-process command="git commit -m 'Fix GitHub Actions workflow: update upload-artifact to v4'" wait=true max_wait_seconds=60
-launch-process command="git push" wait=true max_wait_seconds=60
-
-# 5. Verify the fix
-github-api /repos/wpallstars/wp-plugin-starter-template-for-ai-coding/actions/runs
-```
+1. **Acknowledge Feedback**: React to or reply to comments
+2. **Implement Fixes**: Make the necessary code changes
+3. **Explain Changes** (if needed): Add comments explaining decisions
+4. **Request Review** (if needed): Ask for re-review after fixes
 
 ## Feedback Loop Architecture
 
@@ -432,7 +401,9 @@ github-api /repos/wpallstars/wp-plugin-starter-template-for-ai-coding/actions/ru
 
 ### Accessing and Processing CodeRabbit Feedback
 
-CodeRabbit provides detailed AI-powered code reviews that can be directly accessed and processed:
+CodeRabbit provides detailed AI-powered code reviews.
+
+These can be directly accessed and processed.
 
 #### Example CodeRabbit Feedback
 
@@ -443,11 +414,6 @@ Actionable comments posted: 1
 🧹 Nitpick comments (3)
 .github/workflows/playground-tests-fix.yml (3)
 9-13: Add concurrency control to avoid redundant runs.
-When multiple commits land in quick succession, you may end up with overlapping Playground test jobs. Adding a concurrency block will cancel in‑progress runs for the same ref and reduce CI load:
-
-concurrency:
-  group: playground-tests-${{ github.ref }}
-  cancel-in-progress: true
 ```
 
 #### Processing Steps
@@ -457,10 +423,7 @@ concurrency:
    * Parse suggested code changes
    * Understand the rationale for changes
 
-2. **Implement Recommendations**:
-   ```
-   str-replace-editor command="str_replace" path=".github/workflows/playground-tests-fix.yml" str_replace_entries=[{"old_str": "name: WordPress Playground Tests Fix\n\non:\n  push:\n    branches: [ main, feature/*, bugfix/* ]\n  pull_request:\n    branches: [ main ]", "new_str": "name: WordPress Playground Tests Fix\n\non:\n  push:\n    branches: [ main, feature/*, bugfix/* ]\n  pull_request:\n    branches: [ main ]\n\nconcurrency:\n  group: playground-tests-${{ github.ref }}\n  cancel-in-progress: true", "old_str_start_line_number": 1, "old_str_end_line_number": 6}]
-   ```
+2. **Implement Recommendations**: Apply the suggested changes
 
 3. **Verify Implementation**:
    * Run local tests if applicable
@@ -469,7 +432,7 @@ concurrency:
 
 ### Handling SonarCloud and Codacy Feedback
 
-These tools provide structured feedback that can be systematically addressed:
+These tools provide structured feedback that can be systematically addressed.
 
 #### Example SonarCloud Feedback
 
@@ -497,7 +460,7 @@ SonarCloud Quality Gate failed
 
 ## When to Consult Humans
 
-While the goal is to create an autonomous system, there are scenarios where human input is necessary:
+While the goal is to create an autonomous system, there are scenarios where human input is necessary.
 
 ### Scenarios Requiring Human Consultation
 
@@ -522,6 +485,8 @@ When consulting humans, provide:
 
 ## Conclusion
 
-This error checking and feedback loop system creates a comprehensive framework for AI-driven development with minimal human intervention. By systematically monitoring, analyzing, and resolving errors across local and remote environments, the AI assistant can maintain high code quality and ensure smooth CI/CD processes.
+This error checking and feedback loop system creates a comprehensive framework for AI-driven development.
 
-For specific workflows related to feature development, bug fixing, and releases, refer to the other documents in the `.ai-workflows/` directory.
+By systematically monitoring, analyzing, and resolving errors, the AI assistant can maintain high code quality.
+
+For related workflows, refer to the other documents in the `.agents/` directory.
