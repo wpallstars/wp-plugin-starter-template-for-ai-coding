@@ -1,12 +1,24 @@
 name: SonarCloud Analysis
 
+# NOTE: This workflow requires a valid SONAR_TOKEN secret to be configured.
+# If you see HTTP 403 errors, the token may be expired or invalid.
+# Generate a new token at: https://sonarcloud.io/account/security
+
 on:
-  push:
-    branches: [ main, feature/* ]
-  pull_request:
-    branches: [ main ]
-    types: [opened, synchronize, reopened]
+  # Only run manually until SONAR_TOKEN is properly configured
   workflow_dispatch:
+    inputs:
+      force_run:
+        description: 'Force run even if token validation fails'
+        required: false
+        default: 'false'
+
+# Commented out automatic triggers until SONAR_TOKEN is properly configured:
+#  push:
+#    branches: [ main, feature/* ]
+#  pull_request:
+#    branches: [ main ]
+#    types: [opened, synchronize, reopened]
 
 permissions:
   contents: read
