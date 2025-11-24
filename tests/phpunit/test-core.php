@@ -8,7 +8,7 @@
 
 // Skip this test file if WP_Mock is not available or WordPress test framework is loaded.
 if ( ! class_exists( 'WP_Mock' ) || class_exists( 'WP_UnitTestCase' ) ) {
-	return;
+    return; // phpcs:ignore -- Early return is intentional.
 }
 
 use WPALLSTARS\PluginStarterTemplate\Core;
@@ -27,42 +27,48 @@ class CoreTest extends \WP_Mock\Tools\TestCase {
 
     /**
      * Set up the test environment.
+     *
+     * @return void
      */
-    public function setUp(): void
-    {
+    public function setUp(): void {
         parent::setUp();
 
-        // Set up mocks
+        // Set up mocks.
         WP_Mock::setUp();
 
-        // Create instance of Core class
+        // Create instance of Core class.
         $this->core = new Core();
     }
 
     /**
      * Tear down the test environment.
+     *
+     * @return void
      */
-    public function tearDown(): void
-    {
+    public function tearDown(): void {
         WP_Mock::tearDown();
         parent::tearDown();
     }
 
     /**
-     * Test constructor
+     * Test constructor.
+     *
+     * @return void
      */
     public function test_constructor() {
-        // Verify that the constructor initializes hooks
-        $this->assertInstanceOf(Core::class, $this->core);
+        // Verify that the constructor initializes hooks.
+        $this->assertInstanceOf( Core::class, $this->core );
     }
 
     /**
-     * Test example method
+     * Test example method.
+     *
+     * @return void
      */
     public function test_filter_content() {
         $content = 'Test content';
 
-        // Test that filter_content returns the content
-        $this->assertEquals($content, $this->core->filter_content($content));
+        // Test that filter_content returns the content.
+        $this->assertEquals( $content, $this->core->filter_content( $content ) );
     }
 }

@@ -6,81 +6,93 @@
  * @group wordpress
  */
 
+use WP_Plugin_Starter_Template_For_AI_Coding\Multisite\Multisite;
+
 // Skip this test file if WordPress test framework is not available.
 if ( ! class_exists( 'WP_UnitTestCase' ) ) {
-	return;
+    return; // phpcs:ignore -- Early return is intentional.
 }
+
+/**
+ * Multisite class name constant for testing.
+ */
+const MULTISITE_CLASS = 'WP_Plugin_Starter_Template_For_AI_Coding\Multisite\Multisite';
+
+/**
+ * Skip message constant.
+ */
+const MULTISITE_SKIP_MSG = 'Multisite class not available';
 
 /**
  * Sample test case for the Multisite class.
  */
 class MultisiteTest extends WP_UnitTestCase {
 
-	/**
-	 * Test instance creation.
-	 */
-	public function test_instance() {
-		// Skip this test if the class doesn't exist
-		if (!class_exists('WP_Plugin_Starter_Template_For_AI_Coding\Multisite\Multisite')) {
-			$this->markTestSkipped('Multisite class not available');
-			return;
-		}
+    /**
+     * Test instance creation.
+     *
+     * @return void
+     */
+    public function test_instance() {
+        if ( ! class_exists( MULTISITE_CLASS ) ) {
+            $this->markTestSkipped( MULTISITE_SKIP_MSG );
+        }
 
-		$multisite = new WP_Plugin_Starter_Template_For_AI_Coding\Multisite\Multisite();
-		$this->assertInstanceOf( 'WP_Plugin_Starter_Template_For_AI_Coding\Multisite\Multisite', $multisite );
-	}
+        $multisite = new Multisite();
+        $this->assertInstanceOf( MULTISITE_CLASS, $multisite );
+    }
 
-	/**
-	 * Test is_multisite_compatible method.
-	 */
-	public function test_is_multisite_compatible() {
-		// Skip this test if the class doesn't exist
-		if (!class_exists('WP_Plugin_Starter_Template_For_AI_Coding\Multisite\Multisite')) {
-			$this->markTestSkipped('Multisite class not available');
-			return;
-		}
+    /**
+     * Test is_multisite_compatible method.
+     *
+     * @return void
+     */
+    public function test_is_multisite_compatible() {
+        if ( ! class_exists( MULTISITE_CLASS ) ) {
+            $this->markTestSkipped( MULTISITE_SKIP_MSG );
+        }
 
-		$multisite = new WP_Plugin_Starter_Template_For_AI_Coding\Multisite\Multisite();
-		$this->assertTrue( $multisite->is_multisite_compatible() );
-	}
+        $multisite = new Multisite();
+        $this->assertTrue( $multisite->is_multisite_compatible() );
+    }
 
-	/**
-	 * Test get_network_sites method.
-	 */
-	public function test_get_network_sites() {
-		// Skip this test if the class doesn't exist
-		if (!class_exists('WP_Plugin_Starter_Template_For_AI_Coding\Multisite\Multisite')) {
-			$this->markTestSkipped('Multisite class not available');
-			return;
-		}
+    /**
+     * Test get_network_sites method.
+     *
+     * @return void
+     */
+    public function test_get_network_sites() {
+        if ( ! class_exists( MULTISITE_CLASS ) ) {
+            $this->markTestSkipped( MULTISITE_SKIP_MSG );
+        }
 
-		$multisite = new WP_Plugin_Starter_Template_For_AI_Coding\Multisite\Multisite();
+        $multisite = new Multisite();
 
-		// Mock the get_sites function if we're not in a multisite environment.
-		if ( ! function_exists( 'get_sites' ) ) {
-			$this->assertEquals( array(), $multisite->get_network_sites() );
-		} else {
-			$sites = $multisite->get_network_sites();
-			$this->assertIsArray( $sites );
-		}
-	}
+        // Mock the get_sites function if we're not in a multisite environment.
+        if ( ! function_exists( 'get_sites' ) ) {
+            $this->assertEquals( array(), $multisite->get_network_sites() );
+        } else {
+            $sites = $multisite->get_network_sites();
+            $this->assertIsArray( $sites );
+        }
+    }
 
-	/**
-	 * Test initialize_hooks method.
-	 */
-	public function test_initialize_hooks() {
-		// Skip this test if the class doesn't exist
-		if (!class_exists('WP_Plugin_Starter_Template_For_AI_Coding\Multisite\Multisite')) {
-			$this->markTestSkipped('Multisite class not available');
-			return;
-		}
+    /**
+     * Test initialize_hooks method.
+     *
+     * @return void
+     */
+    public function test_initialize_hooks() {
+        if ( ! class_exists( MULTISITE_CLASS ) ) {
+            $this->markTestSkipped( MULTISITE_SKIP_MSG );
+        }
 
-		$multisite = new WP_Plugin_Starter_Template_For_AI_Coding\Multisite\Multisite();
+        $multisite = new Multisite();
 
-		// Call the method.
-		$multisite->initialize_hooks();
+        // Call the method.
+        $multisite->initialize_hooks();
 
-		// Check if the action was added.
-		$this->assertEquals( 10, has_action( 'network_admin_menu', array( $multisite, 'add_network_menu' ) ) );
-	}
+        // Check if the action was added.
+        $this->assertEquals( 10, has_action( 'network_admin_menu', array( $multisite, 'add_network_menu' ) ) );
+    }
 }

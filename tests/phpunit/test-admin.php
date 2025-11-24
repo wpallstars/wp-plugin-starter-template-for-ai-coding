@@ -8,11 +8,16 @@
 
 // Skip this test file if WP_Mock is not available or WordPress test framework is loaded.
 if ( ! class_exists( 'WP_Mock' ) || class_exists( 'WP_UnitTestCase' ) ) {
-	return;
+    return; // phpcs:ignore -- Early return is intentional.
 }
 
 use WPALLSTARS\PluginStarterTemplate\Admin\Admin;
 use WPALLSTARS\PluginStarterTemplate\Core;
+
+/**
+ * Test version constant.
+ */
+const TEST_VERSION = '1.0.0';
 
 /**
  * Admin test case.
@@ -35,18 +40,19 @@ class AdminTest extends \WP_Mock\Tools\TestCase {
 
     /**
      * Set up the test environment.
+     *
+     * @return void
      */
-    public function setUp(): void
-    {
+    public function setUp(): void {
         parent::setUp();
 
-        // Set up mocks
+        // Set up mocks.
         WP_Mock::setUp();
 
         // Mock the Core class dependency using Mockery.
         $this->core = \Mockery::mock( '\WPALLSTARS\PluginStarterTemplate\Core' );
         // Add expectation for get_plugin_version BEFORE Admin is instantiated.
-        $this->core->shouldReceive( 'get_plugin_version' )->andReturn( '1.0.0' );
+        $this->core->shouldReceive( 'get_plugin_version' )->andReturn( TEST_VERSION );
 
         // Expect the action hook to be added BEFORE Admin is instantiated.
         \WP_Mock::expectActionAdded( 'admin_enqueue_scripts', array( \Mockery::any(), 'enqueue_admin_assets' ) );
@@ -56,7 +62,9 @@ class AdminTest extends \WP_Mock\Tools\TestCase {
     }
 
     /**
-     * Tear down test environment
+     * Tear down test environment.
+     *
+     * @return void
      */
     public function tearDown(): void {
         WP_Mock::tearDown();
@@ -64,18 +72,21 @@ class AdminTest extends \WP_Mock\Tools\TestCase {
     }
 
     /**
-     * Test constructor
+     * Test constructor.
+     *
+     * @return void
      */
     public function test_constructor() {
-        // Verify that the constructor initializes hooks
-        $this->assertInstanceOf(Admin::class, $this->admin);
+        // Verify that the constructor initializes hooks.
+        $this->assertInstanceOf( Admin::class, $this->admin );
     }
 
     /**
      * Test the enqueue_admin_assets method.
+     *
+     * @return void
      */
-    public function test_enqueue_admin_assets(): void
-    {
+    public function test_enqueue_admin_assets(): void {
         // Define the PHPUNIT_RUNNING constant
         if ( ! defined( 'PHPUNIT_RUNNING' ) ) {
             define( 'PHPUNIT_RUNNING', true );
