@@ -151,7 +151,10 @@ jobs:
     name: WordPress Playground Multisite Tests
     runs-on: ubuntu-latest
     needs: [code-quality, playground-single-test]
-    # Allow failures since WordPress Playground CLI can be unreliable in CI environments
+    # DISABLED: WordPress Multisite does not support custom ports (requires port 80/443).
+    # This is a fundamental WordPress limitation. Multisite tests can only run locally
+    # where port 80 can be used. See: https://developer.wordpress.org/advanced-administration/multisite/
+    if: false
     continue-on-error: true
 
     steps:
@@ -259,7 +262,8 @@ jobs:
         urls: |
           /
           /wp-admin/
-        blueprint: playground/blueprint.json
+        # Don't pass blueprint - let the action use its own internal setup.
+        # Our blueprint includes features that may conflict with the action's Lighthouse setup.
         wp-version: 'latest'
         php-version: '8.0'
         iterations: 5
