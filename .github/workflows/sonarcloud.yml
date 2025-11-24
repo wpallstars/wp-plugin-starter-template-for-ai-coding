@@ -1,12 +1,22 @@
 name: SonarCloud Analysis
 
+# DISABLED: Using SonarCloud Automatic Analysis instead of CI-based analysis.
+# Custom Quality Gates require a paid plan, which isn't suitable for FOSS projects.
+# The free Automatic Analysis provides code quality feedback without coverage requirements.
+#
+# To re-enable CI-based analysis:
+# 1. Uncomment the triggers below
+# 2. Disable Automatic Analysis on SonarCloud.io
+# 3. Consider upgrading to a paid plan for custom Quality Gate settings
+
 on:
-  push:
-    branches: [ main, feature/* ]
-  pull_request:
-    branches: [ main ]
-    types: [opened, synchronize, reopened]
-  workflow_dispatch:
+  # Disabled - using Automatic Analysis instead
+  # push:
+  #   branches: [ main, feature/* ]
+  # pull_request:
+  #   branches: [ main ]
+  #   types: [opened, synchronize, reopened]
+  workflow_dispatch:  # Keep manual trigger for testing
 
 permissions:
   contents: read
