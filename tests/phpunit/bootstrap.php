@@ -10,6 +10,11 @@ require_once dirname( dirname( __DIR__ ) ) . '/vendor/autoload.php';
 
 // Check if we're running the WordPress tests
 if ( getenv( 'WP_PHPUNIT__DIR' ) ) {
+	// Define PHPUnit Polyfills path for WordPress test suite.
+	if ( ! defined( 'WP_TESTS_PHPUNIT_POLYFILLS_PATH' ) ) {
+		define( 'WP_TESTS_PHPUNIT_POLYFILLS_PATH', dirname( dirname( __DIR__ ) ) . '/vendor/yoast/phpunit-polyfills/' );
+	}
+
 	// Give access to tests_add_filter() function.
 	require_once getenv( 'WP_PHPUNIT__DIR' ) . '/includes/functions.php';
 

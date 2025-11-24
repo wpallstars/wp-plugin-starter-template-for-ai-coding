@@ -97,13 +97,13 @@ jobs:
           fetch-depth: 0
 
       - name: Set up JDK 17
-        uses: actions/setup-java@0ab4596768b603586c0de567f2430c30f5b0d2b0 # v3.13.0
+        uses: actions/setup-java@v4
         with:
           java-version: 17
           distribution: 'temurin'
 
       - name: Cache SonarCloud packages
-        uses: actions/cache@13aacd865c20de90d75de3b17ebe84f7a17d57d2 # v3.3.2
+        uses: actions/cache@v4
         with:
           path: ~/.sonar/cache
           key: ${{ runner.os }}-sonar
@@ -154,7 +154,7 @@ jobs:
           fi
 
       - name: Run Codacy Analysis CLI
-        uses: codacy/codacy-analysis-cli-action@5cc54a75f9ad8e86bb795a5d3d4f2f70c9baa1a7 # v4.3.0
+        uses: codacy/codacy-analysis-cli-action@v4
         with:
           project-token: ${{ secrets.CODACY_PROJECT_TOKEN }}
           verbose: true
@@ -169,7 +169,7 @@ jobs:
 
       - name: Upload SARIF results file
         if: steps.check_codacy_token.outputs.skip_upload != 'true'
-        uses: github/codeql-action/upload-sarif@cdcdbb579706841c47f7063dda365e292e5cad7a # v2.2.7
+        uses: github/codeql-action/upload-sarif@v3
         with:
           sarif_file: results.sarif
         continue-on-error: true
