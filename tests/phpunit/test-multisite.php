@@ -3,7 +3,13 @@
  * Class MultisiteTest
  *
  * @package WP_Plugin_Starter_Template_For_AI_Coding
+ * @group wordpress
  */
+
+// Skip this test file if WordPress test framework is not available.
+if ( ! class_exists( 'WP_UnitTestCase' ) ) {
+	return;
+}
 
 /**
  * Sample test case for the Multisite class.

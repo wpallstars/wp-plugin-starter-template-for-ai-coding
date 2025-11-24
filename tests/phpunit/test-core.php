@@ -3,7 +3,13 @@
  * Class CoreTest
  *
  * @package WPALLSTARS\PluginStarterTemplate
+ * @group wpmock
  */
+
+// Skip this test file if WP_Mock is not available or WordPress test framework is loaded.
+if ( ! class_exists( 'WP_Mock' ) || class_exists( 'WP_UnitTestCase' ) ) {
+	return;
+}
 
 use WPALLSTARS\PluginStarterTemplate\Core;
 
