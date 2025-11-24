@@ -1,5 +1,11 @@
 All notable changes to this project should be documented both here and in the main Readme files.
 
+#### [0.1.15] - 2025-11-24
+
+#### Release
+
+- Maintenance release
+
 #### [0.1.14] - 2025-11-24
 
 #### Changed

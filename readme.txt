@@ -5,7 +5,7 @@ Tags: starter, template, boilerplate, plugin development, ai coding
 Requires at least: 5.0
 Tested up to: 6.5
 Requires PHP: 7.4
-Stable tag: 0.1.14
+Stable tag: 0.1.15
 License: GPL-2.0-or-later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -228,6 +228,9 @@ npm run multisite
 
 == Changelog ==
 
+= 0.1.15 =
+* Release: Maintenance release
+
 = 0.1.14 =
 * Changed: Renamed .ai-assistant.md to AGENTS.md for better discoverability
 * Changed: Renamed .ai-workflows directory to .agents
@@ -307,6 +310,9 @@ npm run multisite
 * Added: Wiki documentation templates
 
 == Upgrade Notice ==
+
+= 0.1.15 =
+Maintenance release.
 
 = 0.1.14 =
 Renamed AI assistant documentation files to AGENTS.md and .agents/ directory.
