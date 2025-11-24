@@ -26,7 +26,7 @@ This template is based on the experience gained from developing the "Fix 'Plugin
 
 1. Clone or download this repository
 2. **Important**: Begin by reading the [Starter Prompt](.wiki/Starter-Prompt.md) file for detailed instructions
-3. Add the .ai-assistant.md file and .ai-workflows/ directory to your AI IDE chat context (pin them if possible)
+3. Add the AGENTS.md file and .agents/ directory to your AI IDE chat context (pin them if possible)
 4. Use the prompt in the Starter Prompt file to guide the AI in customizing the template for your plugin
 5. Rename files and update namespaces to match your plugin
 6. Customize the functionality for your specific needs
@@ -37,17 +37,17 @@ This template is based on the experience gained from developing the "Fix 'Plugin
 
 This template includes comprehensive documentation for AI-assisted development:
 
-* **.ai-assistant.md**: Guide for AI assistants to understand the project structure
-* **.ai-workflows/**: Detailed workflow documentation for common development tasks
+* **AGENTS.md**: Guide for AI assistants to understand the project structure
+* **.agents/**: Detailed workflow documentation for common development tasks
 * **Starter Prompt**: Comprehensive prompt for AI tools to help customize the template (available in the [wiki](.wiki/Starter-Prompt.md))
 
-**Important**: For the best AI assistance, add the .ai-assistant.md file and .ai-workflows/ directory to your AI IDE chat context. In most AI IDEs, you can pin these files to ensure they're considered in each message.
+**Important**: For the best AI assistance, add the AGENTS.md file and .agents/ directory to your AI IDE chat context. In most AI IDEs, you can pin these files to ensure they're considered in each message.
 
 ## Installation
 
 1. Clone or download this repository
 2. Read the [Starter Prompt](.wiki/Starter-Prompt.md) file for detailed instructions
-3. Add the .ai-assistant.md file and .ai-workflows/ directory to your AI IDE chat context
+3. Add the AGENTS.md file and .agents/ directory to your AI IDE chat context
 4. Use the prompt in the Starter Prompt file to guide the AI in customizing the template
 5. Rename files and update namespaces to match your plugin
 6. Customize the functionality for your specific needs
@@ -67,7 +67,7 @@ To get started with this template, follow these steps:
 
 2. Open the [Starter Prompt](.wiki/Starter-Prompt.md) file and follow the instructions to customize the template for your plugin.
 
-3. Add the .ai-assistant.md file and .ai-workflows/ directory to your AI IDE chat context.
+3. Add the AGENTS.md file and .agents/ directory to your AI IDE chat context.
 
 4. Use an AI assistant like GitHub Copilot, Claude, or ChatGPT to help you customize the template by providing the prompt from the Starter Prompt file.
 
@@ -193,7 +193,7 @@ This template includes functionality that allows users to choose where they want
 
 ### How do I customize this template for my plugin?
 
-See the [Starter Prompt](.wiki/Starter-Prompt.md) file for detailed instructions on customizing this template for your specific plugin needs. Make sure to add the .ai-assistant.md file and .ai-workflows/ directory to your AI IDE chat context for the best results.
+See the [Starter Prompt](.wiki/Starter-Prompt.md) file for detailed instructions on customizing this template for your specific plugin needs. Make sure to add the AGENTS.md file and .agents/ directory to your AI IDE chat context for the best results.
 
 ### What files do I need to update with my plugin information?
 
@@ -208,7 +208,7 @@ The main files you need to update include:
 7. languages/pot file
 8. .github/workflows/
 9. .wiki/
-10. .ai-assistant.md
+10. AGENTS.md
 11. includes/plugin.php
 12. includes/core.php
 13. admin/lib/admin.php
@@ -562,7 +562,7 @@ For more information on Git Updater integration, see the [Git Updater Required H
 ### 0.1.3
 
 * Added: Improved AI IDE context recommendations in documentation
-* Enhanced: Starter Prompt with guidance on pinning .ai-assistant.md and .ai-workflows/
+* Enhanced: Starter Prompt with guidance on pinning AGENTS.md and .agents/
 * Moved: Starter Prompt to the wiki for better organization
 * Updated: README.md and readme.txt with AI IDE context recommendations
 * Improved: Documentation for AI-assisted development

@@ -39,7 +39,7 @@ This template is based on the experience gained from developing the "Fix 'Plugin
 
 To get started with this template, check out the [Starter Prompt](Starter-Prompt) for a comprehensive guide on customizing the template for your specific plugin needs.
 
-**Important**: For the best AI assistance, add the .ai-assistant.md file and .ai-workflows/ directory to your AI IDE chat context. In most AI IDEs, you can pin these files to ensure they're considered in each message.
+**Important**: For the best AI assistance, add the AGENTS.md file and .agents/ directory to your AI IDE chat context. In most AI IDEs, you can pin these files to ensure they're considered in each message.
 
 ## Support
 

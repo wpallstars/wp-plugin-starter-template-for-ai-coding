@@ -30,10 +30,7 @@ wp-plugin-starter-template/
 │   └── setup-test-env.sh   # Test environment setup script
 ├── .github/                # GitHub-specific files
 │   └── workflows/          # GitHub Actions workflows
-├── .wp-env.json            # WordPress environment config
-├── .wp-env.multisite.json  # Multisite environment config
-├── cypress.config.js       # Cypress configuration
-├── .ai-workflows/          # AI workflow documentation
+├── .agents/                # AI workflow documentation
 ├── .wiki/                  # Wiki documentation
 │   ├── Testing-Framework.md  # Testing framework documentation
 │   └── Multisite-Development.md # Multisite development guide

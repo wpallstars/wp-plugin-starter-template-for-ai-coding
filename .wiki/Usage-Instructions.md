@@ -21,7 +21,7 @@ The template follows a modular structure:
   - `js/`: Admin JavaScript files
 - `languages/`: Translation files
 - `.github/workflows/`: GitHub Actions workflows
-- `.ai-workflows/`: Documentation for AI assistants
+- `.agents/`: Documentation for AI assistants
 - `.wiki/`: Wiki documentation templates
 
 ### Customizing for Your Plugin

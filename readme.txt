@@ -5,7 +5,7 @@ Tags: starter, template, boilerplate, plugin development, ai coding
 Requires at least: 5.0
 Tested up to: 6.5
 Requires PHP: 7.4
-Stable tag: 0.1.13
+Stable tag: 0.1.15
 License: GPL-2.0-or-later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -33,7 +33,7 @@ This template is based on the experience gained from developing the "Fix 'Plugin
 
 1. Clone or download this repository
 2. **Important**: Begin by reading the Starter Prompt file in the wiki for detailed instructions
-3. Add the .ai-assistant.md file and .ai-workflows/ directory to your AI IDE chat context (pin them if possible)
+3. Add the AGENTS.md file and .agents/ directory to your AI IDE chat context (pin them if possible)
 4. Use the prompt in the Starter Prompt file to guide the AI in customizing the template for your plugin
 5. Rename files and update namespaces to match your plugin
 6. Customize the functionality for your specific needs
@@ -46,11 +46,11 @@ For detailed instructions, see the [Starter Prompt](https://github.com/wpallstar
 
 This template includes comprehensive documentation for AI-assisted development:
 
-* **.ai-assistant.md**: Guide for AI assistants to understand the project structure
-* **.ai-workflows/**: Detailed workflow documentation for common development tasks
+* **AGENTS.md**: Guide for AI assistants to understand the project structure
+* **.agents/**: Detailed workflow documentation for common development tasks
 * **Starter Prompt**: Comprehensive prompt for AI tools to help customize the template (available in the wiki)
 
-**Important**: For the best AI assistance, add the .ai-assistant.md file and .ai-workflows/ directory to your AI IDE chat context. In most AI IDEs, you can pin these files to ensure they're considered in each message.
+**Important**: For the best AI assistance, add the AGENTS.md file and .agents/ directory to your AI IDE chat context. In most AI IDEs, you can pin these files to ensure they're considered in each message.
 
 = Development Environment =
 
@@ -160,7 +160,7 @@ For more information on coding standards and how to pass code quality checks, se
 
 1. Clone or download this repository
 2. Read the Starter Prompt file in the wiki for detailed instructions
-3. Add the .ai-assistant.md file and .ai-workflows/ directory to your AI IDE chat context
+3. Add the AGENTS.md file and .agents/ directory to your AI IDE chat context
 4. Use the prompt in the Starter Prompt file to guide the AI in customizing the template
 5. Rename files and update namespaces to match your plugin
 6. Customize the functionality for your specific needs
@@ -173,7 +173,7 @@ For detailed instructions, see the [Starter Prompt](https://github.com/wpallstar
 
 = How do I customize this template for my plugin? =
 
-See the [Starter Prompt](https://github.com/wpallstars/wp-plugin-starter-template-for-ai-coding/wiki/Starter-Prompt) file in the wiki for detailed instructions on customizing this template for your specific plugin needs. Make sure to add the .ai-assistant.md file and .ai-workflows/ directory to your AI IDE chat context for the best results.
+See the [Starter Prompt](https://github.com/wpallstars/wp-plugin-starter-template-for-ai-coding/wiki/Starter-Prompt) file in the wiki for detailed instructions on customizing this template for your specific plugin needs. Make sure to add the AGENTS.md file and .agents/ directory to your AI IDE chat context for the best results.
 
 = What files do I need to update with my plugin information? =
 
@@ -187,7 +187,7 @@ The main files you need to update include:
 7. languages/pot file
 8. .github/workflows/
 9. .wiki/
-10. .ai-assistant.md
+10. AGENTS.md
 11. includes/plugin.php
 12. includes/core.php
 13. admin/lib/admin.php
@@ -227,6 +227,14 @@ npm run multisite
 1. This is a placeholder for your plugin's screenshots. Replace with actual screenshots of your plugin in action.
 
 == Changelog ==
+
+= 0.1.15 =
+* Release: Maintenance release
+
+= 0.1.14 =
+* Changed: Renamed .ai-assistant.md to AGENTS.md for better discoverability
+* Changed: Renamed .ai-workflows directory to .agents
+* Updated: All references to these files in documentation and codebase
 
 = 0.1.13 =
 * Improved: Code quality with proper type declarations
@@ -278,7 +286,7 @@ npm run multisite
 
 = 0.1.3 =
 * Added: Improved AI IDE context recommendations in documentation
-* Enhanced: Starter Prompt with guidance on pinning .ai-assistant.md and .ai-workflows/
+* Enhanced: Starter Prompt with guidance on pinning AGENTS.md and .agents/
 * Moved: Starter Prompt to the wiki for better organization
 * Updated: README.md and readme.txt with AI IDE context recommendations
 * Improved: Documentation for AI-assisted development
@@ -302,6 +310,12 @@ npm run multisite
 * Added: Wiki documentation templates
 
 == Upgrade Notice ==
+
+= 0.1.15 =
+Maintenance release.
+
+= 0.1.14 =
+Renamed AI assistant documentation files to AGENTS.md and .agents/ directory.
 
 = 0.1.13 =
 Improved code quality with proper type declarations, consistent variable naming, and better path handling.
@@ -331,7 +345,7 @@ Fixed GitHub Actions workflows permissions for releases and wiki sync.
 Fixed release workflow and added testing setup with wp-env and Cypress, multisite compatibility, and npm scripts for development and testing.
 
 = 0.1.3 =
-Added improved AI IDE context recommendations and moved Starter Prompt to the wiki with guidance on pinning .ai-assistant.md and .ai-workflows/ files.
+Added improved AI IDE context recommendations and moved Starter Prompt to the wiki with guidance on pinning AGENTS.md and .agents/ files.
 
 = 0.1.1 =
 Updated LICENSE file with correct GPL-2.0 text.

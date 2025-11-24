@@ -127,7 +127,7 @@ When working in a multi-repository workspace, it's critical to ensure that wiki 
    - If referencing functionality from another repository, clearly indicate that it's external
    - Use phrases like "unlike Repository X, this plugin does not include..."
 
-For detailed guidelines on working in multi-repository workspaces, see **@.ai-workflows/multi-repo-workspace.md**.
+For detailed guidelines on working in multi-repository workspaces, see **@.agents/multi-repo-workspace.md**.
 
 ## Best Practices
 

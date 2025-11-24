@@ -16,9 +16,9 @@ This workspace may contain multiple repository folders. Always focus ONLY on the
 * **Plugin Slug**: wp-plugin-starter-template
 * **Text Domain**: wp-plugin-starter-template
 * **Namespace**: WPALLSTARS\PluginStarterTemplate
-* **Version**: 0.1.13
+* **Version**: 0.1.15
 * **Requires WordPress**: 5.0+
-* **Requires PHP**: 7.0+
+* **Requires PHP**: 7.4+
 * **License**: GPL-2.0+
 
 ## Repository Structure
@@ -34,7 +34,7 @@ This workspace may contain multiple repository folders. Always focus ONLY on the
   * **js/**: Admin JavaScript files
 * **languages/**: Translation files
 * **.github/workflows/**: GitHub Actions workflows
-* **.ai-workflows/**: Documentation for AI assistants
+* **.agents/**: Documentation for AI assistants
 * **.wiki/**: Wiki documentation templates
 
 ## Coding Standards
@@ -87,12 +87,7 @@ Always run PHPCS and PHPCBF locally before committing code to ensure it meets th
 
 ## Common Tasks
 
-For detailed instructions on common tasks, refer to these workflow documents:
-
-* **@.ai-workflows/release-process.md**: Creating releases, versioning, and deployment
-* **@.ai-workflows/feature-development.md**: Adding new features and functionality
-* **@.ai-workflows/bug-fixing.md**: Diagnosing and fixing issues
-* **@.ai-workflows/error-checking-feedback-loops.md**: Monitoring CI/CD pipelines and establishing feedback loops
+For detailed instructions on common tasks like creating releases, adding features, fixing bugs, and testing previous versions, see **@.agents/release-process.md**.
 
 ## Avoiding Cross-Repository Confusion
 
@@ -172,7 +167,7 @@ This repository is set up for autonomous continuous integration and deployment w
 4. **Verify Solutions**: Ensure fixes pass all tests and quality checks
 5. **Document Resolutions**: Update documentation with solutions for future reference
 
-For detailed instructions on establishing feedback loops and error checking processes, see **@.ai-workflows/error-checking-feedback-loops.md**.
+For detailed instructions on establishing feedback loops and error checking processes, see **@.agents/error-checking-feedback-loops.md**.
 
 ### When to Consult Humans
 

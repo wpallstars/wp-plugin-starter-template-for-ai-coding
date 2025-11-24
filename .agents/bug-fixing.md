@@ -16,7 +16,7 @@ git checkout -b fix/bug-description
 
 Use a descriptive name that clearly indicates what bug is being fixed. If there's an issue number, include it in the branch name (e.g., `fix/123-plugin-activation-error`).
 
-For more detailed git workflow guidelines, see **@.ai-workflows/git-workflow.md**.
+For more detailed git workflow guidelines, see **@.agents/git-workflow.md**.
 
 ### 2. Understand the Bug
 
@@ -111,7 +111,7 @@ After fixing a bug and confirming it works, determine the appropriate version in
 
 This approach is more time-efficient as it allows you to focus on fixing the bug without worrying about version updates until the fix is confirmed working.
 
-For detailed guidelines on time-efficient development and testing, see **@.ai-workflows/incremental-development.md**.
+For detailed guidelines on time-efficient development and testing, see **@.agents/incremental-development.md**.
 
 ## Testing Previous Versions
 

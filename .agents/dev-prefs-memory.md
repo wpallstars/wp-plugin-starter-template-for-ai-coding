@@ -31,9 +31,9 @@ This document serves as a persistent memory for developer preferences establishe
 
 ### Documentation
 
-- Prefer token-efficient documentation in `.ai-assistant.md` that references `.ai-workflows/` files
-- Document the release workflow in `.ai-assistant.md` and `.ai-workflows/release-process.md`
-- Store environment variable documentation in `.ai-workflows/local-env-vars.md`
+- Prefer token-efficient documentation in `AGENTS.md` that references `.agents/` files
+- Document the release workflow in `AGENTS.md` and `.agents/release-process.md`
+- Store environment variable documentation in `.agents/local-env-vars.md`
 - Maintain consistent documentation across readme.txt, README.md, and CHANGELOG.md
 
 ### Asset Organization
