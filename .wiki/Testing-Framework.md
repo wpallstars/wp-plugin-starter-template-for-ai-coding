@@ -4,7 +4,9 @@ This document outlines how to set up and run tests for our plugin in both single
 
 ## Overview
 
-Our plugin is designed to work with both standard WordPress installations and WordPress Multisite. This testing framework allows you to verify functionality in both environments.
+Our plugin is designed to work with both standard WordPress installations and WordPress Multisite.
+
+This testing framework allows you to verify functionality in both environments.
 
 ## Setting Up the Test Environment
 
@@ -92,7 +94,9 @@ We use `@wordpress/env` and Cypress for testing our plugin.
 
 ## Continuous Integration
 
-We use GitHub Actions to automatically run tests on pull requests. The workflow is defined in `.github/workflows/wordpress-tests.yml` and runs tests in both single site and multisite environments.
+We use GitHub Actions to automatically run tests on pull requests.
+
+The workflow is defined in `.github/workflows/wordpress-tests.yml` and runs tests in both environments.
 
 ## Writing Tests
 

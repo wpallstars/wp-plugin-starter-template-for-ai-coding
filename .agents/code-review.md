@@ -79,13 +79,18 @@ When reviewing code, check for the following:
 
 ## Automated Code Review Tools
 
-This project uses several automated code review tools to maintain high code quality standards. These tools are free to use for public repositories and should be integrated into any new repositories based on this template.
+This project uses several automated code review tools to maintain high quality standards.
 
-**Important**: Before pushing your code, run the local code quality checks as described in the [Code Quality Checks Workflow](./code-quality-checks.md) to catch issues early.
+These tools are free for public repositories and should be integrated into new repositories.
+
+**Important**: Before pushing, run local code quality checks as described in
+[Code Quality Checks Workflow](./code-quality-checks.md) to catch issues early.
 
 ### 1. CodeRabbit
 
-[CodeRabbit](https://www.coderabbit.ai/) is an AI-powered code review tool that provides automated feedback on pull requests.
+[CodeRabbit](https://www.coderabbit.ai/) is an AI-powered code review tool.
+
+It provides automated feedback on pull requests.
 
 * **Integration**: Add the CodeRabbit GitHub App to your repository
 * **Benefits**: Provides AI-powered code reviews, identifies potential issues, and suggests improvements
@@ -93,7 +98,9 @@ This project uses several automated code review tools to maintain high code qual
 
 ### 2. CodeFactor
 
-[CodeFactor](https://www.codefactor.io/) continuously monitors code quality and provides feedback on code style, complexity, and potential issues.
+[CodeFactor](https://www.codefactor.io/) continuously monitors code quality.
+
+It provides feedback on code style, complexity, and potential issues.
 
 * **Integration**: Add the CodeFactor GitHub App to your repository
 * **Benefits**: Provides a grade for your codebase, identifies issues, and tracks code quality over time
@@ -101,7 +108,9 @@ This project uses several automated code review tools to maintain high code qual
 
 ### 3. Codacy
 
-[Codacy](https://www.codacy.com/) is a code quality tool that provides static analysis, code coverage, and code duplication detection.
+[Codacy](https://www.codacy.com/) is a code quality tool.
+
+It provides static analysis, code coverage, and code duplication detection.
 
 * **Integration**: Add the Codacy GitHub App to your repository
 * **Benefits**: Provides a grade for your codebase, identifies issues, and tracks code quality over time
@@ -117,7 +126,9 @@ This project uses several automated code review tools to maintain high code qual
 
 ### 5. PHP Mess Detector
 
-[PHP Mess Detector](https://phpmd.org/) is a tool that looks for potential problems in your code such as possible bugs, suboptimal code, overcomplicated expressions, and unused parameters, variables, and methods.
+[PHP Mess Detector](https://phpmd.org/) looks for potential problems in your code.
+
+It detects bugs, suboptimal code, overcomplicated expressions, and unused code.
 
 * **Integration**: Included in the project's composer.json and GitHub Actions workflow
 * **Benefits**: Identifies code smells, complexity issues, unused code, naming problems, and more

@@ -4,7 +4,9 @@ This document explains how to use WordPress Playground for testing our plugin.
 
 ## What is WordPress Playground?
 
-[WordPress Playground](https://wordpress.org/playground/) is a project that runs WordPress entirely in the browser using WebAssembly. This means:
+[WordPress Playground](https://wordpress.org/playground/) is a project that runs WordPress entirely in the browser.
+
+It uses WebAssembly, which means:
 
 * No server required - WordPress runs in the browser
 * Fast startup times
@@ -19,11 +21,15 @@ The easiest way to test our plugin with WordPress Playground is to use the onlin
 
 2. Multisite testing: [Open in WordPress Playground](https://playground.wordpress.net/?blueprint-url=https://raw.githubusercontent.com/wpallstars/wp-plugin-starter-template-for-ai-coding/main/playground/multisite-blueprint.json&_t=2)
 
-These links will automatically set up WordPress with multisite enabled, WP_DEBUG enabled, and both the Plugin Toggle and Kadence Blocks plugins activated.
+These links automatically set up WordPress with multisite enabled and WP_DEBUG enabled.
+
+Both the Plugin Toggle and Kadence Blocks plugins are pre-activated.
 
 ## WP-CLI Commands for WordPress Playground
 
-WordPress Playground supports WP-CLI commands, which can be used to interact with WordPress programmatically. Here are some useful commands for testing:
+WordPress Playground supports WP-CLI commands for programmatic interaction.
+
+Here are some useful commands for testing:
 
 ### General Commands
 
@@ -136,7 +142,9 @@ python -m http.server 8888 --directory playground
 
 ### Using wp-now
 
-Alternatively, you can use [wp-now](https://github.com/WordPress/playground-tools/tree/trunk/packages/wp-now), a tool from the WordPress Playground team that makes it easy to run WordPress locally:
+Alternatively, you can use [wp-now](https://github.com/WordPress/playground-tools/tree/trunk/packages/wp-now).
+
+This tool from the WordPress Playground team makes it easy to run WordPress locally:
 
 ```bash
 # Install wp-now globally
@@ -159,11 +167,15 @@ This will start a local WordPress instance with your plugin installed and activa
 
 ## Customizing Blueprints
 
-You can customize the blueprints to suit your testing needs. See the [WordPress Playground Blueprints documentation](https://wordpress.github.io/wordpress-playground/blueprints/) for more information.
+You can customize the blueprints to suit your testing needs.
+
+See the [WordPress Playground Blueprints documentation](https://wordpress.github.io/wordpress-playground/blueprints/) for details.
 
 ## WordPress Playground JavaScript API
 
-WordPress Playground provides a JavaScript API that allows you to programmatically interact with WordPress. This is useful for automated testing and CI/CD integration.
+WordPress Playground provides a JavaScript API for programmatic interaction with WordPress.
+
+This is useful for automated testing and CI/CD integration.
 
 ### Basic Usage
 
@@ -236,7 +248,9 @@ describe('Plugin Tests', () => {
 
 ## CI/CD Integration
 
-We have a GitHub Actions workflow that uses WordPress Playground for testing. See `.github/workflows/playground-tests.yml` for more information.
+We have a GitHub Actions workflow that uses WordPress Playground for testing.
+
+See `.github/workflows/playground-tests.yml` for details.
 
 ### Example GitHub Actions Workflow
 
@@ -281,4 +295,6 @@ jobs:
 
 ## Performance Testing
 
-We also use the [WP Performance Tests GitHub Action](https://github.com/marketplace/actions/wp-performance-tests) for performance testing. This action tests our plugin against various WordPress versions and PHP versions to ensure it performs well in different environments.
+We also use [WP Performance Tests GitHub Action](https://github.com/marketplace/actions/wp-performance-tests).
+
+This action tests our plugin against various WordPress and PHP versions to ensure good performance.

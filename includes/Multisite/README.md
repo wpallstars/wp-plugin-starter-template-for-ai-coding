@@ -1,6 +1,10 @@
 # Multisite Support
 
-This directory contains placeholder files for multisite-specific functionality. When developing a plugin based on this template, you can extend these files or create additional classes in this directory to implement multisite features.
+This directory contains placeholder files for multisite-specific functionality.
+
+When developing a plugin based on this template, you can extend these files.
+
+Create additional classes in this directory to implement multisite features.
 
 ## Usage
 

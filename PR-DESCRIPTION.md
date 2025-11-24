@@ -1,6 +1,10 @@
 # Add Comprehensive Testing Framework for Single Site and Multisite
 
-This PR adds a comprehensive testing framework for our WordPress plugin template that allows testing in both single site and multisite WordPress environments. The focus is purely on testing functionality, not on adding any multisite-specific features to the plugin itself.
+This PR adds a comprehensive testing framework for our WordPress plugin template.
+
+It allows testing in both single site and multisite WordPress environments.
+
+The focus is purely on testing functionality, not on adding multisite-specific features.
 
 ## Changes
 
@@ -48,4 +52,9 @@ Detailed documentation is available in the [Testing Framework](.wiki/Testing-Fra
 
 ## Inspiration
 
-This implementation was inspired by the e2e testing approach mentioned in [wp-multisite-waas issue #55](https://github.com/superdav42/wp-multisite-waas/issues/55), but focuses specifically on testing our plugin in different WordPress environments without adding any of the domain mapping or other multisite-specific functionality from that plugin.
+This implementation was inspired by the e2e testing approach in
+[wp-multisite-waas issue #55](https://github.com/superdav42/wp-multisite-waas/issues/55).
+
+It focuses on testing our plugin in different WordPress environments.
+
+It does not add domain mapping or other multisite-specific functionality from that plugin.

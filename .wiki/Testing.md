@@ -138,7 +138,9 @@ The easiest way to test our plugin with WordPress Playground is to use the onlin
 
 2. Multisite testing: [Open in WordPress Playground](https://playground.wordpress.net/?blueprint-url=https://raw.githubusercontent.com/wpallstars/wp-plugin-starter-template-for-ai-coding/main/playground/multisite-blueprint.json&_t=2)
 
-These links will automatically set up WordPress with multisite enabled, WP_DEBUG enabled, and both the Plugin Toggle and Kadence Blocks plugins activated.
+These links automatically set up WordPress with multisite enabled and WP_DEBUG enabled.
+
+Both the Plugin Toggle and Kadence Blocks plugins are pre-activated.
 
 #### Local Testing with HTML Files
 
@@ -206,7 +208,8 @@ We have GitHub Actions workflows for running tests in CI/CD:
 
 ### Error Checking and Feedback Loops
 
-For detailed information on how to check for code quality issues and get feedback from automated tools, see the [Error Checking and Feedback Loops](Error-Checking-Feedback-Loops.md) documentation.
+For information on code quality issues and automated tool feedback, see the
+[Error Checking and Feedback Loops](Error-Checking-Feedback-Loops.md) documentation.
 
 ### Debugging
 

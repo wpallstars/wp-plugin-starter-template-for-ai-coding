@@ -229,7 +229,9 @@ Customize the includes/core.php file to implement your core functionality and th
 
 ### Is this template compatible with WordPress multisite?
 
-Yes, this template is fully compatible with WordPress multisite installations. We have a comprehensive testing framework that allows you to verify functionality in both single site and multisite environments.
+Yes, this template is fully compatible with WordPress multisite installations.
+
+We have a testing framework that allows you to verify functionality in both environments.
 
 You can test multisite compatibility in two ways:
 
@@ -241,7 +243,8 @@ You can test multisite compatibility in two ways:
    npm run setup:multisite
    ```
 
-For more details on our testing approach, see the [Testing Framework](.wiki/Testing-Framework.md) and [Playground Testing](.wiki/Playground-Testing.md) documentation.
+For more details on our testing approach, see the [Testing Framework](.wiki/Testing-Framework.md)
+and [Playground Testing](.wiki/Playground-Testing.md) documentation.
 
 ## Support & Feedback
 
