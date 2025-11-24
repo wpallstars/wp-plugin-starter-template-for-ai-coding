@@ -20,6 +20,8 @@ jobs:
   sonarcloud:
     name: SonarCloud
     runs-on: ubuntu-latest
+    # Allow failures since SONAR_TOKEN may not be configured
+    continue-on-error: true
 
     steps:
       - name: Checkout code
