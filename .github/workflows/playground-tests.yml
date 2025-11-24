@@ -84,10 +84,21 @@ jobs:
         npx @wp-playground/cli server --blueprint playground/blueprint.json --port 8888 --login &
         SERVER_PID=$!
 
-        # Wait for WordPress Playground to be ready
+        # Wait for WordPress Playground to be ready (increased timeout to 180s)
         echo "Waiting for WordPress Playground to be ready..."
-        timeout 60 bash -c 'until curl -s http://localhost:8888; do sleep 2; done'
-        echo "WordPress Playground is ready"
+        TIMEOUT=180
+        ELAPSED=0
+        while ! curl -s http://localhost:8888 > /dev/null 2>&1; do
+          if [ $ELAPSED -ge $TIMEOUT ]; then
+            echo "Timeout waiting for WordPress Playground to start"
+            kill $SERVER_PID || true
+            exit 1
+          fi
+          echo "Waiting... ($ELAPSED/$TIMEOUT seconds)"
+          sleep 5
+          ELAPSED=$((ELAPSED + 5))
+        done
+        echo "WordPress Playground is ready after $ELAPSED seconds"
 
         # Run Cypress tests against WordPress Playground
         echo "Running Cypress tests..."
@@ -152,10 +163,21 @@ jobs:
         npx @wp-playground/cli server --blueprint playground/multisite-blueprint.json --port 8889 --login &
         SERVER_PID=$!
 
-        # Wait for WordPress Playground to be ready
+        # Wait for WordPress Playground to be ready (increased timeout to 180s)
         echo "Waiting for WordPress Playground to be ready..."
-        timeout 60 bash -c 'until curl -s http://localhost:8889; do sleep 2; done'
-        echo "WordPress Playground is ready"
+        TIMEOUT=180
+        ELAPSED=0
+        while ! curl -s http://localhost:8889 > /dev/null 2>&1; do
+          if [ $ELAPSED -ge $TIMEOUT ]; then
+            echo "Timeout waiting for WordPress Playground to start"
+            kill $SERVER_PID || true
+            exit 1
+          fi
+          echo "Waiting... ($ELAPSED/$TIMEOUT seconds)"
+          sleep 5
+          ELAPSED=$((ELAPSED + 5))
+        done
+        echo "WordPress Playground is ready after $ELAPSED seconds"
 
         # Run Cypress tests against WordPress Playground
         echo "Running Cypress multisite tests..."

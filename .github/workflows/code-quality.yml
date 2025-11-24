@@ -109,7 +109,18 @@ jobs:
           key: ${{ runner.os }}-sonar
           restore-keys: ${{ runner.os }}-sonar
 
+      - name: Check if SonarCloud token is set
+        id: check_sonar_token
+        run: |
+          if [ -z "${{ secrets.SONAR_TOKEN }}" ]; then
+            echo "SONAR_TOKEN is not set, skipping SonarCloud analysis"
+            echo "skip=true" >> $GITHUB_OUTPUT
+          else
+            echo "skip=false" >> $GITHUB_OUTPUT
+          fi
+
       - name: SonarCloud Scan
+        if: steps.check_sonar_token.outputs.skip != 'true'
         uses: SonarSource/sonarqube-scan-action@master
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -132,6 +143,16 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Check if Codacy token is set
+        id: check_codacy_token
+        run: |
+          if [ -z "${{ secrets.CODACY_PROJECT_TOKEN }}" ]; then
+            echo "CODACY_PROJECT_TOKEN is not set, running Codacy without upload"
+            echo "skip_upload=true" >> $GITHUB_OUTPUT
+          else
+            echo "skip_upload=false" >> $GITHUB_OUTPUT
+          fi
+
       - name: Run Codacy Analysis CLI
         uses: codacy/codacy-analysis-cli-action@5cc54a75f9ad8e86bb795a5d3d4f2f70c9baa1a7 # v4.3.0
         with:
@@ -147,6 +168,7 @@ jobs:
         continue-on-error: true
 
       - name: Upload SARIF results file
+        if: steps.check_codacy_token.outputs.skip_upload != 'true'
         uses: github/codeql-action/upload-sarif@cdcdbb579706841c47f7063dda365e292e5cad7a # v2.2.7
         with:
           sarif_file: results.sarif

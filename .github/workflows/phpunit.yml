@@ -57,6 +57,9 @@ jobs:
           echo "WordPress test suite installed successfully"
 
       - name: Run PHPUnit tests
+        env:
+          WP_PHPUNIT__DIR: /tmp/wordpress-tests-lib
+          WP_TESTS_DIR: /tmp/wordpress-tests-lib
         run: |
           if [ "${{ matrix.multisite }}" = "true" ]; then
             WP_MULTISITE=1 composer test
