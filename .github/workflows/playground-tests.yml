@@ -252,12 +252,15 @@ jobs:
     - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
 
     - name: WordPress Performance Tests
-      uses: swissspidy/wp-performance-action@b7e3ffcf0fc4a48b62492e021e0ebeb51430ff11 # v2.0.3
+      uses: swissspidy/wp-performance-action@v2.0.3
       with:
         plugins: |
           ./
         urls: |
           /
           /wp-admin/
+        blueprint: playground/blueprint.json
+        wp-version: 'latest'
         php-version: '8.0'
-        wp-version: '6.4'
+        iterations: 5
+        repetitions: 1
