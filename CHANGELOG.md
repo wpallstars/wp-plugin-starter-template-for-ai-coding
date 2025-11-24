@@ -1,5 +1,13 @@
 All notable changes to this project should be documented both here and in the main Readme files.
 
+#### [0.1.14] - 2025-11-24
+
+#### Changed
+
+- Renamed .ai-assistant.md to AGENTS.md
+- Renamed .ai-workflows directory to .agents
+- Updated all references in documentation and codebase
+
 #### [0.1.13] - 2023-04-23
 
 #### Improved

@@ -8,7 +8,7 @@ This document outlines the folder structure of the plugin and explains the purpo
 - **includes/** - Contains core plugin functionality and classes
 - **languages/** - Contains translation files
 - **scripts/** - Contains build and deployment scripts
-- **.ai-workflows/** - Contains documentation for AI assistants
+- **.agents/** - Contains documentation for AI assistants
 - **.github/** - Contains GitHub-specific files like workflows
 - **.wordpress-org/** - Contains WordPress.org assets like banners and screenshots
 

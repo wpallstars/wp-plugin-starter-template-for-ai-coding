@@ -16,7 +16,7 @@ git checkout -b feature/descriptive-name
 
 Use a descriptive name that clearly indicates what the feature is about. If there's an issue number, include it in the branch name (e.g., `feature/123-update-source-selector`).
 
-For more detailed git workflow guidelines, see **@.ai-workflows/git-workflow.md**.
+For more detailed git workflow guidelines, see **@.agents/git-workflow.md**.
 
 ### 2. Implement the Feature
 
@@ -44,7 +44,7 @@ Update relevant documentation to reflect the new feature:
   - Add screenshots or examples if applicable
 - Remember that any feature addition will require a version increment in all relevant files
 
-For detailed guidelines on maintaining wiki documentation, see **@.ai-workflows/wiki-documentation.md**.
+For detailed guidelines on maintaining wiki documentation, see **@.agents/wiki-documentation.md**.
 
 ### 4. Testing
 
@@ -100,7 +100,7 @@ git tag -a v{MAJOR}.{MINOR+1}.0-stable -m "Stable version {MAJOR}.{MINOR+1}.0"
 
 **IMPORTANT**: Don't update version numbers during initial development and testing. Only create a version branch and update version numbers when the feature is confirmed working.
 
-For detailed guidelines on time-efficient development and testing, see **@.ai-workflows/incremental-development.md**.
+For detailed guidelines on time-efficient development and testing, see **@.agents/incremental-development.md**.
 
 ### 7. Push to Remote (Optional for Collaboration)
 
@@ -173,7 +173,7 @@ When developing features in a workspace with multiple repositories:
    - Adapt the feature to fit the current repository's needs and architecture
    - Document the inspiration source in code comments
 
-For detailed guidelines on working in multi-repository workspaces, see **@.ai-workflows/multi-repo-workspace.md**.
+For detailed guidelines on working in multi-repository workspaces, see **@.agents/multi-repo-workspace.md**.
 
 ## Feature Types and Implementation Guidelines
 

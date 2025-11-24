@@ -186,7 +186,7 @@ When preparing for a release:
    - Update version numbers
    - Update changelogs
    - Create tag
-   - See **@.ai-workflows/release-process.md** for complete details
+   - See **@.agents/release-process.md** for complete details
 
 ## Contributing to External Repositories
 
@@ -233,7 +233,7 @@ Monitor the PR for feedback from maintainers and be prepared to make additional 
 - Review code thoroughly before approving
 - Test changes locally when possible
 - Provide constructive feedback
-- See **@.ai-workflows/code-review.md** for detailed code review guidelines
+- See **@.agents/code-review.md** for detailed code review guidelines
 
 ### Suggested Improvements
 

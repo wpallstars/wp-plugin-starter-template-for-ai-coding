@@ -147,7 +147,7 @@ I ran PHPCS and got the following errors. Can you help me fix them?
 [Paste error output here]
 ```
 
-For more AI assistance guidelines, see the [AI Assistant Guide](./../.ai-assistant.md).
+For more AI assistance guidelines, see the [AI Assistant Guide](./../AGENTS.md).
 
 ## Conclusion
 
