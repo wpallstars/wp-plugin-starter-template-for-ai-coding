@@ -1,12 +1,13 @@
 {
   "$schema": "https://playground.wordpress.net/blueprint-schema.json",
-  "landingPage": "/wp-admin/network/",
+  "landingPage": "/wp-admin/network/plugins.php",
   "login": true,
+  "preferredVersions": {
+    "php": "8.0",
+    "wp": "latest"
+  },
   "features": {
-    "networking": {
-      "type": "subdirectory"
-    },
-    "phpVersion": "7.4"
+    "networking": true
   },
   "steps": [
     {
@@ -14,7 +15,8 @@
       "consts": {
         "WP_DEBUG": true,
         "WP_DEBUG_LOG": true,
-        "WP_DEBUG_DISPLAY": true
+        "WP_DEBUG_DISPLAY": true,
+        "SCRIPT_DEBUG": true
       }
     },
     {
@@ -22,23 +24,29 @@
     },
     {
       "step": "wp-cli",
-      "command": "wp site create --slug=testsite"
+      "command": "wp site create --slug=testsite --title='Test Site'"
     },
     {
-      "step": "wp-cli",
-      "command": "wp plugin install plugin-toggle"
+      "step": "installPlugin",
+      "pluginData": {
+        "resource": "wordpress.org/plugins",
+        "slug": "plugin-toggle"
+      },
+      "options": {
+        "activate": true,
+        "networkActivate": true
+      }
     },
     {
-      "step": "wp-cli",
-      "command": "wp plugin install kadence-blocks"
-    },
-    {
-      "step": "wp-cli",
-      "command": "wp plugin activate plugin-toggle --network"
-    },
-    {
-      "step": "wp-cli",
-      "command": "wp plugin activate kadence-blocks --network"
+      "step": "installPlugin",
+      "pluginData": {
+        "resource": "wordpress.org/plugins",
+        "slug": "kadence-blocks"
+      },
+      "options": {
+        "activate": true,
+        "networkActivate": true
+      }
     }
   ]
 }

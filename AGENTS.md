@@ -93,6 +93,8 @@ Always run PHPCS and PHPCBF locally before committing code to ensure it meets th
 
 For detailed instructions on releases, features, bugs, and testing, see **@.agents/release-process.md**.
 
+For local testing with WordPress Playground, LocalWP, and wp-env, see **@.agents/local-testing-guide.md**.
+
 ## Avoiding Cross-Repository Confusion
 
 When working in a multi-repository workspace, follow these guidelines to avoid confusion:

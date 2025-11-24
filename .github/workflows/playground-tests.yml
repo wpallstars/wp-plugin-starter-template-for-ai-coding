@@ -77,11 +77,9 @@ jobs:
     - name: Install dependencies
       run: npm install --legacy-peer-deps
 
-    - name: Add WordPress Playground CLI to dependencies
+    - name: Verify WordPress Playground CLI
       run: |
-        echo "Installing WordPress Playground CLI..."
-        npm install --save-dev @wp-playground/cli @wp-playground/blueprints @wp-playground/client
-        echo "WordPress Playground CLI installed"
+        echo "WordPress Playground CLI version:"
         npx @wp-playground/cli --version
 
     - name: Create plugin zip
@@ -97,7 +95,7 @@ jobs:
         ls -la playground/
         cat playground/blueprint.json
 
-        # Start WordPress Playground with our blueprint
+        # Start WordPress Playground with our blueprint (using @wp-playground/cli 3.x syntax)
         echo "Starting WordPress Playground server..."
         npx @wp-playground/cli server --blueprint playground/blueprint.json --port 8888 --login &
         SERVER_PID=$!
@@ -157,11 +155,9 @@ jobs:
     - name: Install dependencies
       run: npm install --legacy-peer-deps
 
-    - name: Add WordPress Playground CLI to dependencies
+    - name: Verify WordPress Playground CLI
       run: |
-        echo "Installing WordPress Playground CLI..."
-        npm install --save-dev @wp-playground/cli @wp-playground/blueprints @wp-playground/client
-        echo "WordPress Playground CLI installed"
+        echo "WordPress Playground CLI version:"
         npx @wp-playground/cli --version
 
     - name: Create plugin zip
@@ -177,7 +173,7 @@ jobs:
         ls -la playground/
         cat playground/multisite-blueprint.json
 
-        # Start WordPress Playground with our blueprint
+        # Start WordPress Playground with our blueprint (using @wp-playground/cli 3.x syntax)
         # Use a different port for multisite to avoid conflicts with single site tests
         echo "Starting WordPress Playground server for multisite..."
         npx @wp-playground/cli server --blueprint playground/multisite-blueprint.json --port 8889 --login &
