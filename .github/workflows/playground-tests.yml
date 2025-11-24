@@ -1,27 +1,23 @@
 name: WordPress Playground Tests
 
-# DISABLED: WordPress Playground CLI doesn't work reliably in GitHub Actions CI environments
-# The server fails to start within timeout periods. These tests should be run locally instead.
-# See: https://wordpress.github.io/wordpress-playground/developers/local-development
+# Re-enabled with @wp-playground/cli v3.0.22 which has improved CI stability.
+# Tests use continue-on-error: true so they won't block PRs if flaky.
 #
 # To run locally:
-#   npm run test:playground:single
-#   npm run test:playground:multisite
+#   npm run playground:start
+#   npm run playground:start:multisite
 
 on:
-  # Disable automatic triggers - only run manually if needed for debugging
+  push:
+    branches: [ main, feature/* ]
+  pull_request:
+    branches: [ main ]
   workflow_dispatch:
     inputs:
       debug:
         description: 'Enable debug mode'
         required: false
         default: 'false'
-
-# Commented out triggers that cause CI noise:
-#  push:
-#    branches: [ main, feature/* ]
-#  pull_request:
-#    branches: [ main ]
 
 permissions:
   contents: read
@@ -88,26 +84,41 @@ jobs:
     - name: Run tests with WordPress Playground
       run: |
         # Set base URL for Cypress
-        export CYPRESS_BASE_URL=http://localhost:8888
+        export CYPRESS_BASE_URL=http://127.0.0.1:8888
 
         # Check if blueprint file exists
         echo "Checking blueprint file..."
         ls -la playground/
         cat playground/blueprint.json
 
-        # Start WordPress Playground with our blueprint (using @wp-playground/cli 3.x syntax)
+        # Start WordPress Playground with our blueprint (using @wp-playground/cli 3.x)
         echo "Starting WordPress Playground server..."
-        npx @wp-playground/cli server --blueprint playground/blueprint.json --port 8888 --login &
+        npx @wp-playground/cli server \
+          --blueprint playground/blueprint.json \
+          --port 8888 \
+          --login \
+          --php 8.0 \
+          --verbosity normal \
+          2>&1 | tee playground-server.log &
         SERVER_PID=$!
 
-        # Wait for WordPress Playground to be ready (increased timeout to 180s)
+        # Wait for WordPress Playground to be ready
         echo "Waiting for WordPress Playground to be ready..."
-        TIMEOUT=180
+        TIMEOUT=120
         ELAPSED=0
-        while ! curl -s http://localhost:8888 > /dev/null 2>&1; do
+        while ! curl -s -o /dev/null -w "%{http_code}" http://127.0.0.1:8888 2>/dev/null | grep -q "200\|302"; do
           if [ $ELAPSED -ge $TIMEOUT ]; then
             echo "Timeout waiting for WordPress Playground to start"
-            kill $SERVER_PID || true
+            echo "=== Server log ==="
+            cat playground-server.log || true
+            kill $SERVER_PID 2>/dev/null || true
+            exit 1
+          fi
+          # Check if server process is still running
+          if ! kill -0 $SERVER_PID 2>/dev/null; then
+            echo "Server process died unexpectedly"
+            echo "=== Server log ==="
+            cat playground-server.log || true
             exit 1
           fi
           echo "Waiting... ($ELAPSED/$TIMEOUT seconds)"
@@ -122,7 +133,7 @@ jobs:
         TEST_EXIT_CODE=$?
 
         # Kill the server process
-        kill $SERVER_PID || true
+        kill $SERVER_PID 2>/dev/null || true
 
         # Return the test exit code
         exit $TEST_EXIT_CODE
@@ -166,27 +177,42 @@ jobs:
     - name: Run tests with WordPress Playground
       run: |
         # Set base URL for Cypress
-        export CYPRESS_BASE_URL=http://localhost:8889
+        export CYPRESS_BASE_URL=http://127.0.0.1:8889
 
         # Check if blueprint file exists
         echo "Checking multisite blueprint file..."
         ls -la playground/
         cat playground/multisite-blueprint.json
 
-        # Start WordPress Playground with our blueprint (using @wp-playground/cli 3.x syntax)
+        # Start WordPress Playground with our blueprint (using @wp-playground/cli 3.x)
         # Use a different port for multisite to avoid conflicts with single site tests
         echo "Starting WordPress Playground server for multisite..."
-        npx @wp-playground/cli server --blueprint playground/multisite-blueprint.json --port 8889 --login &
+        npx @wp-playground/cli server \
+          --blueprint playground/multisite-blueprint.json \
+          --port 8889 \
+          --login \
+          --php 8.0 \
+          --verbosity normal \
+          2>&1 | tee playground-server.log &
         SERVER_PID=$!
 
-        # Wait for WordPress Playground to be ready (increased timeout to 180s)
+        # Wait for WordPress Playground to be ready
         echo "Waiting for WordPress Playground to be ready..."
-        TIMEOUT=180
+        TIMEOUT=120
         ELAPSED=0
-        while ! curl -s http://localhost:8889 > /dev/null 2>&1; do
+        while ! curl -s -o /dev/null -w "%{http_code}" http://127.0.0.1:8889 2>/dev/null | grep -q "200\|302"; do
           if [ $ELAPSED -ge $TIMEOUT ]; then
             echo "Timeout waiting for WordPress Playground to start"
-            kill $SERVER_PID || true
+            echo "=== Server log ==="
+            cat playground-server.log || true
+            kill $SERVER_PID 2>/dev/null || true
+            exit 1
+          fi
+          # Check if server process is still running
+          if ! kill -0 $SERVER_PID 2>/dev/null; then
+            echo "Server process died unexpectedly"
+            echo "=== Server log ==="
+            cat playground-server.log || true
             exit 1
           fi
           echo "Waiting... ($ELAPSED/$TIMEOUT seconds)"
@@ -201,7 +227,7 @@ jobs:
         TEST_EXIT_CODE=$?
 
         # Kill the server process
-        kill $SERVER_PID || true
+        kill $SERVER_PID 2>/dev/null || true
 
         # Return the test exit code
         exit $TEST_EXIT_CODE
