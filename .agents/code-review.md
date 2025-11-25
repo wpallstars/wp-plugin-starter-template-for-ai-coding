@@ -8,8 +8,13 @@ This document provides guidance for AI assistants to help with code review for t
 
 Before submitting code for review, test it with WordPress Playground:
 
-* [ ] Test in single site environment: [Open in WordPress Playground](https://playground.wordpress.net/?blueprint-url=https://raw.githubusercontent.com/wpallstars/wp-plugin-starter-template-for-ai-coding/main/playground/blueprint.json&_t=5)
-* [ ] Test in multisite environment: [Open in WordPress Playground](https://playground.wordpress.net/?blueprint-url=https://raw.githubusercontent.com/wpallstars/wp-plugin-starter-template-for-ai-coding/main/playground/multisite-blueprint.json&_t=18)
+* [ ] Test in single site environment:
+  [Open in WordPress Playground][playground-single]
+* [ ] Test in multisite environment:
+  [Open in WordPress Playground][playground-multisite]
+
+[playground-single]: https://playground.wordpress.net/?blueprint-url=https://raw.githubusercontent.com/wpallstars/wp-plugin-starter-template-for-ai-coding/main/playground/blueprint.json&_t=5
+[playground-multisite]: https://playground.wordpress.net/?blueprint-url=https://raw.githubusercontent.com/wpallstars/wp-plugin-starter-template-for-ai-coding/main/playground/multisite-blueprint.json&_t=18
 * [ ] Verify plugin functionality works in both environments
 * [ ] Check for any JavaScript errors in the browser console
 * [ ] Run Cypress tests locally: `npm run test:playground:single` and `npm run test:playground:multisite`
@@ -257,10 +262,20 @@ In function `handle_remove_reference()`:
 3. The success message should be translatable:
    ```php
    // Change this:
-   add_settings_error('fpden', 'fpden_removed', 'Plugin reference removed successfully.', 'updated');
+   add_settings_error(
+       'fpden',
+       'fpden_removed',
+       'Plugin reference removed successfully.',
+       'updated'
+   );
 
    // To this:
-   add_settings_error('fpden', 'fpden_removed', __('Plugin reference removed successfully.', 'fix-plugin-does-not-exist-notices'), 'updated');
+   add_settings_error(
+       'fpden',
+       'fpden_removed',
+       __( 'Plugin reference removed successfully.', 'fix-plugin-does-not-exist-notices' ),
+       'updated'
+   );
    ```
 ```
 

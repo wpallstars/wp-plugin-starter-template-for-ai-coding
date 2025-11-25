@@ -17,9 +17,12 @@ It uses WebAssembly, which means:
 
 The easiest way to test our plugin with WordPress Playground is to use the online version:
 
-1. Single site testing: [Open in WordPress Playground](https://playground.wordpress.net/?blueprint-url=https://raw.githubusercontent.com/wpallstars/wp-plugin-starter-template-for-ai-coding/main/playground/blueprint.json&_t=2)
+1. Single site testing: [Open in WordPress Playground][playground-single]
 
-2. Multisite testing: [Open in WordPress Playground](https://playground.wordpress.net/?blueprint-url=https://raw.githubusercontent.com/wpallstars/wp-plugin-starter-template-for-ai-coding/main/playground/multisite-blueprint.json&_t=2)
+2. Multisite testing: [Open in WordPress Playground][playground-multisite]
+
+[playground-single]: https://playground.wordpress.net/?blueprint-url=https://raw.githubusercontent.com/wpallstars/wp-plugin-starter-template-for-ai-coding/main/playground/blueprint.json&_t=2
+[playground-multisite]: https://playground.wordpress.net/?blueprint-url=https://raw.githubusercontent.com/wpallstars/wp-plugin-starter-template-for-ai-coding/main/playground/multisite-blueprint.json&_t=2
 
 These links automatically set up WordPress with multisite enabled and WP_DEBUG enabled.
 
@@ -117,8 +120,8 @@ We have two blueprints for testing:
 To run tests with WordPress Playground:
 
 1. Open the appropriate WordPress Playground link:
-   * [Single site](https://playground.wordpress.net/?blueprint-url=https://raw.githubusercontent.com/wpallstars/wp-plugin-starter-template-for-ai-coding/main/playground/blueprint.json&_t=2)
-   * [Multisite](https://playground.wordpress.net/?blueprint-url=https://raw.githubusercontent.com/wpallstars/wp-plugin-starter-template-for-ai-coding/main/playground/multisite-blueprint.json&_t=2)
+   * [Single site][playground-single]
+   * [Multisite][playground-multisite]
 
 2. Test the plugin manually in the browser
 
@@ -128,7 +131,8 @@ We've also included HTML files that embed WordPress Playground:
 
 1. Open `playground/index.html` in your browser for single site testing
 2. Open `playground/multisite.html` in your browser for multisite testing
-3. Open `playground/test.html` in your browser for a unified interface with buttons to switch between single site and multisite
+3. Open `playground/test.html` in your browser for a unified interface with buttons
+   to switch between single site and multisite
 
 You can serve these files locally with a simple HTTP server:
 
@@ -169,7 +173,9 @@ This will start a local WordPress instance with your plugin installed and activa
 
 You can customize the blueprints to suit your testing needs.
 
-See the [WordPress Playground Blueprints documentation](https://wordpress.github.io/wordpress-playground/blueprints/) for details.
+See the [WordPress Playground Blueprints documentation][blueprints-docs] for details.
+
+[blueprints-docs]: https://wordpress.github.io/wordpress-playground/blueprints/
 
 ## WordPress Playground JavaScript API
 

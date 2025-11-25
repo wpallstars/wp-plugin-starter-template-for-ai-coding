@@ -365,27 +365,13 @@ function get_plugin_version() { ... }
 ### Complete Feedback Loop System
 
 ```
-┌─────────────────┐     ┌─────────────────┐     ┌─────────────────┐
-│                 │     │                 │     │                 │
-│  Code Changes   │────▶│  Local Testing  │────▶│  GitHub Actions │
-│                 │     │                 │     │                 │
-└────────┬────────┘     └────────┬────────┘     └────────┬────────┘
-         │                       │                       │
-         │                       │                       │
-         │                       │                       │
-┌────────▼────────┐     ┌────────▼────────┐     ┌────────▼────────┐
-│                 │     │                 │     │                 │
-│  AI Assistant   │◀────│  Error Analysis │◀────│  Status Check   │
-│                 │     │                 │     │                 │
-└────────┬────────┘     └─────────────────┘     └─────────────────┘
-         │
-         │
-         │
-┌────────▼────────┐     ┌─────────────────┐
-│                 │     │                 │
-│  Fix Generation │────▶│  Human Review   │ (only when necessary)
-│                 │     │                 │
-└─────────────────┘     └─────────────────┘
+Code Changes ──► Local Testing ──► GitHub Actions
+     │                │                  │
+     ▼                ▼                  ▼
+AI Assistant ◀── Error Analysis ◀── Status Check
+     │
+     ▼
+Fix Generation ──► Human Review (only when necessary)
 ```
 
 ### Key Components

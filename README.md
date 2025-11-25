@@ -1,6 +1,33 @@
 # WordPress Plugin Starter Template for AI Coding
 
-[![License](https://img.shields.io/badge/license-GPL--2.0%2B-blue.svg)](https://www.gnu.org/licenses/gpl-2.0.html) [![Build Status](https://github.com/wpallstars/wp-plugin-starter-template-for-ai-coding/actions/workflows/tests.yml/badge.svg)](https://github.com/wpallstars/wp-plugin-starter-template-for-ai-coding/actions/workflows/tests.yml) [![Requires PHP](https://img.shields.io/badge/php-%3E%3D%207.4-blue.svg)](https://wordpress.org/about/requirements/) [![Requires WordPress](https://img.shields.io/badge/WordPress-%3E%3D%205.0-blue.svg)](https://wordpress.org/about/requirements/) [![Tested up to](https://img.shields.io/wordpress/plugin/tested/your-plugin-slug.svg)](https://wordpress.org/plugins/your-plugin-slug/) [![WordPress rating](https://img.shields.io/wordpress/plugin/r/your-plugin-slug.svg)](https://wordpress.org/plugins/your-plugin-slug/reviews/) [![WordPress downloads](https://img.shields.io/wordpress/plugin/dt/your-plugin-slug.svg)](https://wordpress.org/plugins/your-plugin-slug/) [![Latest Release](https://img.shields.io/github/v/release/wpallstars/wp-plugin-starter-template-for-ai-coding)](https://github.com/wpallstars/wp-plugin-starter-template-for-ai-coding/releases) [![GitHub issues](https://img.shields.io/github/issues/wpallstars/wp-plugin-starter-template-for-ai-coding)](https://github.com/wpallstars/wp-plugin-starter-template-for-ai-coding/issues) [![GitHub contributors](https://img.shields.io/github/contributors/wpallstars/wp-plugin-starter-template-for-ai-coding)](https://github.com/wpallstars/wp-plugin-starter-template-for-ai-coding/graphs/contributors) [![Wiki](https://img.shields.io/badge/documentation-wiki-blue.svg)](https://github.com/wpallstars/wp-plugin-starter-template-for-ai-coding/wiki) ![CodeRabbit Pull Request Reviews](https://img.shields.io/coderabbit/prs/github/wpallstars/wp-plugin-starter-template-for-ai-coding?utm_source=oss&utm_medium=github&utm_campaign=wpallstars%2Fwp-plugin-starter-template-for-ai-coding&labelColor=171717&color=FF570A&link=https%3A%2F%2Fcoderabbit.ai&label=CodeRabbit+Reviews) [![CodeFactor](https://www.codefactor.io/repository/github/wpallstars/wp-plugin-starter-template-for-ai-coding/badge)](https://www.codefactor.io/repository/github/wpallstars/wp-plugin-starter-template-for-ai-coding) [![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=wpallstars_wp-plugin-starter-template-for-ai-coding&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=wpallstars_wp-plugin-starter-template-for-ai-coding) [![Bugs](https://sonarcloud.io/api/project_badges/measure?project=wpallstars_wp-plugin-starter-template-for-ai-coding&metric=bugs)](https://sonarcloud.io/summary/new_code?id=wpallstars_wp-plugin-starter-template-for-ai-coding) [![Code Smells](https://sonarcloud.io/api/project_badges/measure?project=wpallstars_wp-plugin-starter-template-for-ai-coding&metric=code_smells)](https://sonarcloud.io/summary/new_code?id=wpallstars_wp-plugin-starter-template-for-ai-coding) [![Coverage](https://sonarcloud.io/api/project_badges/measure?project=wpallstars_wp-plugin-starter-template-for-ai-coding&metric=coverage)](https://sonarcloud.io/summary/new_code?id=wpallstars_wp-plugin-starter-template-for-ai-coding) [![Duplicated Lines (%)](https://sonarcloud.io/api/project_badges/measure?project=wpallstars_wp-plugin-starter-template-for-ai-coding&metric=duplicated_lines_density)](https://sonarcloud.io/summary/new_code?id=wpallstars_wp-plugin-starter-template-for-ai-coding) [![Codacy Badge](https://app.codacy.com/project/badge/Grade/905754fd010b481490b496fb800e6144)](https://app.codacy.com/gh/wpallstars/wp-plugin-starter-template-for-ai-coding/dashboard?utm_source=gh&utm_medium=referral&utm_content=&utm_campaign=Badge_grade)
+[![License][badge-license]][url-license]
+[![Build Status][badge-build]][url-build]
+[![Requires PHP][badge-php]][url-requirements]
+[![Requires WordPress][badge-wp]][url-requirements]
+[![Wiki][badge-wiki]][url-wiki]
+[![CodeRabbit Reviews][badge-coderabbit]][url-coderabbit]
+[![CodeFactor][badge-codefactor]][url-codefactor]
+[![Quality Gate Status][badge-sonar-gate]][url-sonar]
+[![Codacy Badge][badge-codacy]][url-codacy]
+
+[badge-license]: https://img.shields.io/badge/license-GPL--2.0%2B-blue.svg
+[badge-build]: https://github.com/wpallstars/wp-plugin-starter-template-for-ai-coding/actions/workflows/tests.yml/badge.svg
+[badge-php]: https://img.shields.io/badge/php-%3E%3D%207.4-blue.svg
+[badge-wp]: https://img.shields.io/badge/WordPress-%3E%3D%205.0-blue.svg
+[badge-wiki]: https://img.shields.io/badge/documentation-wiki-blue.svg
+[badge-coderabbit]: https://img.shields.io/coderabbit/prs/github/wpallstars/wp-plugin-starter-template-for-ai-coding?labelColor=171717&color=FF570A&label=CodeRabbit+Reviews
+[badge-codefactor]: https://www.codefactor.io/repository/github/wpallstars/wp-plugin-starter-template-for-ai-coding/badge
+[badge-sonar-gate]: https://sonarcloud.io/api/project_badges/measure?project=wpallstars_wp-plugin-starter-template-for-ai-coding&metric=alert_status
+[badge-codacy]: https://app.codacy.com/project/badge/Grade/905754fd010b481490b496fb800e6144
+
+[url-license]: https://www.gnu.org/licenses/gpl-2.0.html
+[url-build]: https://github.com/wpallstars/wp-plugin-starter-template-for-ai-coding/actions/workflows/tests.yml
+[url-requirements]: https://wordpress.org/about/requirements/
+[url-wiki]: https://github.com/wpallstars/wp-plugin-starter-template-for-ai-coding/wiki
+[url-coderabbit]: https://coderabbit.ai
+[url-codefactor]: https://www.codefactor.io/repository/github/wpallstars/wp-plugin-starter-template-for-ai-coding
+[url-sonar]: https://sonarcloud.io/summary/new_code?id=wpallstars_wp-plugin-starter-template-for-ai-coding
+[url-codacy]: https://app.codacy.com/gh/wpallstars/wp-plugin-starter-template-for-ai-coding/dashboard
 
 A comprehensive starter template for WordPress plugins with best practices for AI-assisted development.
 
@@ -111,9 +138,14 @@ The template includes multiple testing approaches:
 
 Test your plugin directly in the browser without any local setup:
 
-1. Single site testing: [Open in WordPress Playground](https://playground.wordpress.net/?blueprint-url=https://raw.githubusercontent.com/wpallstars/wp-plugin-starter-template-for-ai-coding/feature/testing-framework/playground/blueprint.json&_t=5)
+1. Single site testing:
+   [Open in WordPress Playground][playground-single-readme]
 
-2. Multisite testing: [Open in WordPress Playground](https://playground.wordpress.net/?blueprint-url=https://raw.githubusercontent.com/wpallstars/wp-plugin-starter-template-for-ai-coding/feature/testing-framework/playground/multisite-blueprint.json&_t=18)
+2. Multisite testing:
+   [Open in WordPress Playground][playground-multisite-readme]
+
+[playground-single-readme]: https://playground.wordpress.net/?blueprint-url=https://raw.githubusercontent.com/wpallstars/wp-plugin-starter-template-for-ai-coding/feature/testing-framework/playground/blueprint.json&_t=5
+[playground-multisite-readme]: https://playground.wordpress.net/?blueprint-url=https://raw.githubusercontent.com/wpallstars/wp-plugin-starter-template-for-ai-coding/feature/testing-framework/playground/multisite-blueprint.json&_t=18
 
 For more details, see the [Playground Testing](.wiki/Playground-Testing.md) documentation.
 

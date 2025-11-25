@@ -99,17 +99,23 @@ For local testing with WordPress Playground, LocalWP, and wp-env, see **@.agents
 
 When working in a multi-repository workspace, follow these guidelines to avoid confusion:
 
-1. **Verify Repository Context**: Always check which repository you're currently working in before making any changes or recommendations.
+1. **Verify Repository Context**: Always check which repository you're currently working in
+   before making any changes or recommendations.
 
-2. **Limit Code Search Scope**: When searching for code or functionality, explicitly limit your search to the current repository.
+2. **Limit Code Search Scope**: When searching for code or functionality,
+   explicitly limit your search to the current repository.
 
-3. **Don't Assume Features**: Never assume that features present in one repository should be implemented in another. Each repository has its own specific purpose and feature set.
+3. **Don't Assume Features**: Never assume that features present in one repository
+   should be implemented in another. Each repository has its own specific purpose and feature set.
 
-4. **Repository-Specific Documentation**: Documentation should only reflect the actual features and functionality of the current repository.
+4. **Repository-Specific Documentation**: Documentation should only reflect the actual features
+   and functionality of the current repository.
 
-5. **Cross-Repository Inspiration**: If you want to implement a feature inspired by another repository, explicitly mention that it's a new feature being added, not an existing one.
+5. **Cross-Repository Inspiration**: If you want to implement a feature inspired by another
+   repository, explicitly mention that it's a new feature being added, not an existing one.
 
-6. **Verify Before Implementation**: Before implementing or documenting a feature, verify that it actually exists in the current repository by checking the codebase.
+6. **Verify Before Implementation**: Before implementing or documenting a feature, verify that
+   it actually exists in the current repository by checking the codebase.
 
 7. **Consistent Markdown Formatting**: Always use asterisks (*) for bullet points in Markdown files, not hyphens (-).
 
@@ -161,7 +167,9 @@ When working with this repository, remember these preferences:
 3. Keep code modular and maintainable
 4. Reference these preferences in future interactions
 
-This ensures consistency across coding sessions and reduces the need for developers to repeatedly explain their preferences.
+This ensures consistency across coding sessions.
+
+It reduces the need for developers to repeatedly explain their preferences.
 
 ## Autonomous CI/CD and Error Handling
 
@@ -175,7 +183,8 @@ As an AI assistant, you should:
 4. **Verify Solutions**: Ensure fixes pass all tests and quality checks
 5. **Document Resolutions**: Update documentation with solutions for future reference
 
-For detailed instructions on establishing feedback loops and error checking processes, see **@.agents/error-checking-feedback-loops.md**.
+For detailed instructions on feedback loops and error checking, see
+**@.agents/error-checking-feedback-loops.md**.
 
 ### When to Consult Humans
 
