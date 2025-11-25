@@ -91,16 +91,18 @@ In most AI IDEs, you can pin these files to ensure they're considered in each me
 
 To get started with this template, follow these steps:
 
-1. In your terminal, navigate to the folder you keep you Git repositories (eg: `~/Git/`), then clone this repository to your local machine:
+1. Navigate to your Git repositories folder (e.g., `~/Git/`), then clone:
    ```bash
    git clone https://github.com/wpallstars/wp-plugin-starter-template-for-ai-coding.git
    ```
 
-2. Open the [Starter Prompt](.wiki/Starter-Prompt.md) file and follow the instructions to customize the template for your plugin.
+2. Open the [Starter Prompt](.wiki/Starter-Prompt.md) file and follow the instructions
+   to customize the template for your plugin.
 
 3. Add the AGENTS.md file and .agents/ directory to your AI IDE chat context.
 
-4. Use an AI assistant like GitHub Copilot, Claude, or ChatGPT to help you customize the template by providing the prompt from the Starter Prompt file.
+4. Use an AI assistant like GitHub Copilot, Claude, or ChatGPT to help customize
+   the template by providing the prompt from the Starter Prompt file.
 
 ### Development Environment
 
@@ -229,7 +231,11 @@ This template includes functionality that allows users to choose where they want
 
 ### How do I customize this template for my plugin?
 
-See the [Starter Prompt](.wiki/Starter-Prompt.md) file for detailed instructions on customizing this template for your specific plugin needs. Make sure to add the AGENTS.md file and .agents/ directory to your AI IDE chat context for the best results.
+See the [Starter Prompt](.wiki/Starter-Prompt.md) file for detailed instructions on
+customizing this template for your specific plugin needs.
+
+Make sure to add the AGENTS.md file and .agents/ directory to your AI IDE chat context
+for the best results.
 
 ### What files do I need to update with my plugin information?
 
@@ -261,7 +267,8 @@ This will create a ZIP file that you can install in WordPress.
 
 ### How do I add custom functionality to my plugin?
 
-Customize the includes/core.php file to implement your core functionality and the admin/lib/admin.php file for admin-specific functionality.
+Customize the `includes/core.php` file to implement your core functionality and the
+`admin/lib/admin.php` file for admin-specific functionality.
 
 ### Is this template compatible with WordPress multisite?
 
@@ -272,7 +279,7 @@ We have a testing framework that allows you to verify functionality in both envi
 You can test multisite compatibility in two ways:
 
 1. Using WordPress Playground (no Docker required):
-   * [Open Multisite in WordPress Playground](https://playground.wordpress.net/?blueprint-url=https://raw.githubusercontent.com/wpallstars/wp-plugin-starter-template-for-ai-coding/feature/testing-framework/playground/multisite-blueprint.json&_t=18)
+   * [Open Multisite in WordPress Playground][playground-multisite-readme]
 
 2. Using wp-env (requires Docker):
    ```bash
@@ -293,7 +300,10 @@ If you need help with this template, there are several ways to get support:
 
 Contributions are welcome! Please feel free to submit a Pull Request.
 
-1. Fork the repository on [GitHub](https://github.com/wpallstars/wp-plugin-starter-template-for-ai-coding/) or [Gitea](https://gitea.wpallstars.com/wpallstars/wp-plugin-starter-template-for-ai-coding/)
+1. Fork the repository on [GitHub][repo-github] or [Gitea][repo-gitea]
+
+[repo-github]: https://github.com/wpallstars/wp-plugin-starter-template-for-ai-coding/
+[repo-gitea]: https://gitea.wpallstars.com/wpallstars/wp-plugin-starter-template-for-ai-coding/
 2. Create your feature branch: `git checkout -b feature/amazing-feature`
 3. Commit your changes: `git commit -m 'Add some amazing feature'`
 4. Push to the branch: `git push origin feature/amazing-feature`
@@ -303,7 +313,10 @@ For more detailed information, see the [Contributing Guide](.wiki/Contributing.m
 
 ### Code Quality Tools
 
-This project uses several automated code quality tools to ensure high standards. These tools are free for public repositories and should be integrated into any new repositories based on this template:
+This project uses several automated code quality tools to ensure high standards.
+
+These tools are free for public repositories and should be integrated into any new
+repositories based on this template:
 
 1. **CodeRabbit**: AI-powered code review tool
    * [Website](https://www.coderabbit.ai/)
@@ -323,7 +336,9 @@ This project uses several automated code quality tools to ensure high standards.
      3. Go to your project settings > Integrations > Project API
      4. Generate a project API token
      5. Add the token as a secret named `CODACY_PROJECT_TOKEN` in your GitHub repository settings
-     6. Note: Codacy tokens are project-specific, so they need to be added at the repository level. However, you can use GitHub Actions to securely pass these tokens between repositories if needed.
+     6. Note: Codacy tokens are project-specific, so they need to be added at the
+        repository level. You can use GitHub Actions to securely pass tokens
+        between repositories if needed.
 
 4. **SonarCloud**: Code quality and security analysis
    * [Website](https://sonarcloud.io/)
@@ -334,7 +349,8 @@ This project uses several automated code quality tools to ensure high standards.
      2. Create a new organization or use an existing one
      3. Add your repository to SonarCloud
      4. Generate a token in SonarCloud (Account > Security > Tokens)
-     5. Add the token as a secret named `SONAR_TOKEN` in your GitHub repository or organization settings (see "GitHub Secrets Management" section below)
+     5. Add the token as a secret named `SONAR_TOKEN` in your GitHub repository or
+        organization settings (see "GitHub Secrets Management" section below)
 
 5. **PHP_CodeSniffer (PHPCS)**: PHP code style checker
    * Enforces WordPress Coding Standards
@@ -364,7 +380,8 @@ When you receive feedback from these code quality tools, you can use AI assistan
 4. Apply the suggested fixes
 5. Commit the changes and verify that the issues are resolved
 
-For more information on coding standards and how to pass code quality checks, see the [Coding Standards Guide](.wiki/Coding-Standards.md).
+For more information on coding standards and how to pass code quality checks,
+see the [Coding Standards Guide](.wiki/Coding-Standards.md).
 
 ### GitHub Secrets Management
 
@@ -382,7 +399,8 @@ GitHub offers three levels of secrets management, each with different scopes and
    * Available at: Repository > Settings > Secrets and variables > Actions
    * Scope: Limited to a single repository
    * Benefits: Repository-specific, higher isolation
-   * Recommended for: `CODACY_PROJECT_TOKEN` and other repository-specific credentials or tokens that shouldn't be shared
+   * Recommended for: `CODACY_PROJECT_TOKEN` and other repository-specific credentials
+     or tokens that shouldn't be shared
 
 3. **Environment Secrets**:
    * Available at: Repository > Settings > Environments > (select environment) > Environment secrets
@@ -390,7 +408,12 @@ GitHub offers three levels of secrets management, each with different scopes and
    * Benefits: Environment-specific, can have approval requirements
    * Recommended for: Deployment credentials that vary between environments
 
-For code quality tools like SonarCloud, organization secrets are recommended if you have multiple repositories that use these tools. This approach reduces management overhead and ensures consistent configuration across projects. For Codacy, since tokens are project-specific, they should be set at the repository level.
+For code quality tools like SonarCloud, organization secrets are recommended if you have
+multiple repositories that use these tools.
+
+This approach reduces management overhead and ensures consistent configuration across
+projects. For Codacy, since tokens are project-specific, they should be set at the
+repository level.
 
 ### Local Environment Setup for Code Quality Tools
 
@@ -496,13 +519,16 @@ To run code quality tools locally before committing to GitHub:
 
 For more detailed instructions, see the [Code Quality Setup Guide](docs/code-quality-setup.md).
 
-By running these tools locally, you can identify and fix issues before pushing your code to GitHub, ensuring smoother CI/CD workflows.
+By running these tools locally, you can identify and fix issues before pushing your code
+to GitHub, ensuring smoother CI/CD workflows.
 
 ## Developers
 
 ### AI-Powered Development
 
-This repository is configured to work with various AI-powered development tools. You can use any of the following AI IDEs to contribute to this project:
+This repository is configured to work with various AI-powered development tools.
+
+You can use any of the following AI IDEs to contribute to this project:
 
 * [Augment Code](https://www.augmentcode.com/) - AI-powered coding assistant
 * [Bolt](https://www.bolt.new/) - AI-powered code editor
@@ -519,9 +545,11 @@ The repository includes configuration files for all these tools to ensure a cons
 
 ### Git Updater Integration
 
-This template is designed to work seamlessly with the Git Updater plugin for updates from GitHub and Gitea. To ensure proper integration:
+This template is designed to work seamlessly with the Git Updater plugin for updates from
+GitHub and Gitea. To ensure proper integration:
 
-1. **Required Headers**: The plugin includes specific headers in the main plugin file that Git Updater uses to determine update sources and branches:
+1. **Required Headers**: The plugin includes specific headers in the main plugin file
+   that Git Updater uses to determine update sources and branches:
    ```php
    * GitHub Plugin URI: wpallstars/wp-plugin-starter-template-for-ai-coding
    * GitHub Branch: main
@@ -532,13 +560,17 @@ This template is designed to work seamlessly with the Git Updater plugin for upd
    * Gitea Branch: main
    ```
 
-2. **Tagging Releases**: When creating a new release, always tag it with the 'v' prefix (e.g., `v0.1.2`) to ensure GitHub Actions can create the proper release assets.
+2. **Tagging Releases**: When creating a new release, always tag it with the 'v' prefix
+   (e.g., `v0.1.2`) to ensure GitHub Actions can create the proper release assets.
 
-3. **GitHub Actions**: The repository includes a GitHub Actions workflow that automatically builds the plugin and creates a release with the .zip file when a new tag is pushed.
+3. **GitHub Actions**: The repository includes a GitHub Actions workflow that automatically
+   builds the plugin and creates a release with the .zip file when a new tag is pushed.
 
-4. **Update Source Selection**: The template includes a feature that allows users to choose their preferred update source (WordPress.org, GitHub, or Gitea).
+4. **Update Source Selection**: The template includes a feature that allows users to choose
+   their preferred update source (WordPress.org, GitHub, or Gitea).
 
-For more information on Git Updater integration, see the [Git Updater Required Headers documentation](https://git-updater.com/knowledge-base/required-headers/).
+For more information on Git Updater integration, see the
+[Git Updater Required Headers documentation](https://git-updater.com/knowledge-base/required-headers/).
 
 ## Changelog
 
@@ -635,4 +667,7 @@ This project is licensed under the GPL-2.0+ License - see the [LICENSE](LICENSE)
 
 ## Credits
 
-This template is based on the experience gained from developing the ["Fix 'Plugin file does not exist' Notices"](https://github.com/wpallstars/wp-fix-plugin-does-not-exist-notices) plugin by WPALLSTARS.
+This template is based on the experience gained from developing the
+["Fix 'Plugin file does not exist' Notices"][fix-plugin-notices] plugin by WPALLSTARS.
+
+[fix-plugin-notices]: https://github.com/wpallstars/wp-fix-plugin-does-not-exist-notices
