@@ -485,6 +485,74 @@ When consulting humans, provide:
 4. **Specific Questions**: Ask targeted questions rather than open-ended ones
 5. **Recommendations**: Suggest possible solutions for approval
 
+## Contributing to External Repositories
+
+When issues are caused by bugs or missing features in external dependencies or GitHub Actions,
+AI assistants can contribute fixes upstream.
+
+### Workflow for External Contributions
+
+1. **Clone the Repository Locally**:
+   ```bash
+   cd ~/Git
+   git clone https://github.com/owner/repo.git
+   cd repo
+   git checkout -b feature/descriptive-branch-name
+   ```
+
+2. **Make Changes and Commit**:
+   ```bash
+   # Make your changes
+   git add -A
+   git commit -m "Descriptive commit message
+
+   Detailed explanation of what the change does and why.
+
+   Fixes #issue-number"
+   ```
+
+3. **Fork and Push**:
+   ```bash
+   # Create a fork (if not already forked)
+   gh repo fork owner/repo --clone=false --remote=true
+
+   # Add fork as remote
+   git remote add fork https://github.com/your-username/repo.git
+
+   # Push to fork
+   git push fork feature/descriptive-branch-name
+   ```
+
+4. **Create Pull Request**:
+   ```bash
+   gh pr create \
+     --repo owner/repo \
+     --head your-username:feature/descriptive-branch-name \
+     --title "Clear, descriptive title" \
+     --body "## Summary
+
+   Description of changes...
+
+   Fixes #issue-number"
+   ```
+
+### Best Practices for External Contributions
+
+* Always clone to `~/Git/` for consistency
+* Check existing issues and PRs before starting work
+* Follow the project's contribution guidelines
+* Keep changes focused and minimal
+* Include tests if the project has a test suite
+* Reference the issue number in commits and PR description
+
+### Local Repository Management
+
+Keep cloned repositories in `~/Git/` organized:
+
+* `~/Git/wp-plugin-starter-template-for-ai-coding/` - Main project
+* `~/Git/wp-performance-action/` - Forked for contributions
+* Other cloned repos as needed
+
 ## Conclusion
 
 This error checking and feedback loop system creates a comprehensive framework for AI-driven development.
