@@ -1,0 +1,132 @@
+name: WordPress Tests
+
+# DISABLED: WordPress Playground CLI doesn't work reliably in GitHub Actions CI environments
+# The server fails to start within timeout periods. These tests should be run locally instead.
+
+on:
+  # Disable automatic triggers - only run manually if needed for debugging
+  workflow_dispatch:
+    inputs:
+      debug:
+        description: 'Enable debug mode'
+        required: false
+        default: 'false'
+
+# Commented out triggers that cause CI noise:
+#  push:
+#    branches: [ main, feature/* ]
+#  pull_request:
+#    branches: [ main ]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  code-quality:
+    name: Code Quality Check
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node-version: [20]
+
+    steps:
+    - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ matrix.node-version }}
+        cache: 'npm'
+
+    - name: Install dependencies
+      run: npm install --legacy-peer-deps
+
+    - name: Verify package.json and package-lock.json
+      run: |
+        echo "Verifying package.json and package-lock.json are in sync"
+        npm install --dry-run --legacy-peer-deps
+
+    - name: Lint JavaScript files
+      run: npm run lint:js
+
+    # Note about e2e tests
+    - name: Note about e2e tests
+      run: |
+        echo "Note: We now use WordPress Playground for e2e tests instead of Docker."
+        echo "Please run tests locally before submitting PRs using:"
+        echo "npm run test:playground:single"
+        echo "npm run test:playground:multisite"
+        echo "Or use the online WordPress Playground links in the documentation."
+
+  # Use WordPress Playground for e2e tests
+  e2e-test:
+    name: WordPress Playground Tests
+    runs-on: ubuntu-latest
+    needs: code-quality
+    # Allow failures since WordPress Playground CLI can be unreliable in CI environments
+    continue-on-error: true
+    steps:
+    - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+        cache: 'npm'
+
+    - name: Install dependencies
+      run: npm install --legacy-peer-deps
+
+    - name: Install WordPress Playground CLI
+      run: npm install --save-dev @wp-playground/cli
+
+    - name: Create plugin zip
+      uses: ./.github/actions/create-plugin-zip
+
+    - name: Run tests with WordPress Playground
+      run: |
+        # Set base URL for Cypress
+        export CYPRESS_BASE_URL=http://localhost:8888
+
+        # Start WordPress Playground with our blueprint
+        npx @wp-playground/cli server --blueprint playground/blueprint.json --port 8888 --login &
+        SERVER_PID=$!
+
+        # Wait for WordPress Playground to be ready (increased timeout to 180s)
+        echo "Waiting for WordPress Playground to be ready..."
+        TIMEOUT=180
+        ELAPSED=0
+        while ! curl -s http://localhost:8888 > /dev/null 2>&1; do
+          if [ $ELAPSED -ge $TIMEOUT ]; then
+            echo "Timeout waiting for WordPress Playground to start"
+            kill $SERVER_PID || true
+            exit 1
+          fi
+          echo "Waiting... ($ELAPSED/$TIMEOUT seconds)"
+          sleep 5
+          ELAPSED=$((ELAPSED + 5))
+        done
+        echo "WordPress Playground is ready after $ELAPSED seconds"
+
+        # Run tests against WordPress Playground
+        npx cypress run --spec "cypress/e2e/playground-single-site.cy.js"
+        TEST_EXIT_CODE=$?
+
+        # Kill the server process
+        kill $SERVER_PID || true
+
+        # Return the test exit code
+        exit $TEST_EXIT_CODE
+
+    - name: Upload Cypress artifacts
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: cypress-results
+        path: |
+          cypress/videos
+          cypress/screenshots

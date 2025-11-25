@@ -1,14 +1,43 @@
 # WordPress Plugin Starter Template for AI Coding
 
-[![License](https://img.shields.io/badge/license-GPL--2.0%2B-blue.svg)](https://www.gnu.org/licenses/gpl-2.0.html) [![Build Status](https://github.com/wpallstars/wp-plugin-starter-template-for-ai-coding/actions/workflows/tests.yml/badge.svg)](https://github.com/wpallstars/wp-plugin-starter-template-for-ai-coding/actions/workflows/tests.yml) [![Requires PHP](https://img.shields.io/badge/php-%3E%3D%207.4-blue.svg)](https://wordpress.org/about/requirements/) [![Requires WordPress](https://img.shields.io/badge/WordPress-%3E%3D%205.0-blue.svg)](https://wordpress.org/about/requirements/) [![Tested up to](https://img.shields.io/wordpress/plugin/tested/your-plugin-slug.svg)](https://wordpress.org/plugins/your-plugin-slug/) [![WordPress rating](https://img.shields.io/wordpress/plugin/r/your-plugin-slug.svg)](https://wordpress.org/plugins/your-plugin-slug/reviews/) [![WordPress downloads](https://img.shields.io/wordpress/plugin/dt/your-plugin-slug.svg)](https://wordpress.org/plugins/your-plugin-slug/) [![Latest Release](https://img.shields.io/github/v/release/wpallstars/wp-plugin-starter-template-for-ai-coding)](https://github.com/wpallstars/wp-plugin-starter-template-for-ai-coding/releases) [![GitHub issues](https://img.shields.io/github/issues/wpallstars/wp-plugin-starter-template-for-ai-coding)](https://github.com/wpallstars/wp-plugin-starter-template-for-ai-coding/issues) [![GitHub contributors](https://img.shields.io/github/contributors/wpallstars/wp-plugin-starter-template-for-ai-coding)](https://github.com/wpallstars/wp-plugin-starter-template-for-ai-coding/graphs/contributors) [![Wiki](https://img.shields.io/badge/documentation-wiki-blue.svg)](https://github.com/wpallstars/wp-plugin-starter-template-for-ai-coding/wiki) ![CodeRabbit Pull Request Reviews](https://img.shields.io/coderabbit/prs/github/wpallstars/wp-plugin-starter-template-for-ai-coding?utm_source=oss&utm_medium=github&utm_campaign=wpallstars%2Fwp-plugin-starter-template-for-ai-coding&labelColor=171717&color=FF570A&link=https%3A%2F%2Fcoderabbit.ai&label=CodeRabbit+Reviews) [![CodeFactor](https://www.codefactor.io/repository/github/wpallstars/wp-plugin-starter-template-for-ai-coding/badge)](https://www.codefactor.io/repository/github/wpallstars/wp-plugin-starter-template-for-ai-coding) [![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=wpallstars_wp-plugin-starter-template-for-ai-coding&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=wpallstars_wp-plugin-starter-template-for-ai-coding) [![Bugs](https://sonarcloud.io/api/project_badges/measure?project=wpallstars_wp-plugin-starter-template-for-ai-coding&metric=bugs)](https://sonarcloud.io/summary/new_code?id=wpallstars_wp-plugin-starter-template-for-ai-coding) [![Code Smells](https://sonarcloud.io/api/project_badges/measure?project=wpallstars_wp-plugin-starter-template-for-ai-coding&metric=code_smells)](https://sonarcloud.io/summary/new_code?id=wpallstars_wp-plugin-starter-template-for-ai-coding) [![Coverage](https://sonarcloud.io/api/project_badges/measure?project=wpallstars_wp-plugin-starter-template-for-ai-coding&metric=coverage)](https://sonarcloud.io/summary/new_code?id=wpallstars_wp-plugin-starter-template-for-ai-coding) [![Duplicated Lines (%)](https://sonarcloud.io/api/project_badges/measure?project=wpallstars_wp-plugin-starter-template-for-ai-coding&metric=duplicated_lines_density)](https://sonarcloud.io/summary/new_code?id=wpallstars_wp-plugin-starter-template-for-ai-coding) [![Codacy Badge](https://app.codacy.com/project/badge/Grade/905754fd010b481490b496fb800e6144)](https://app.codacy.com/gh/wpallstars/wp-plugin-starter-template-for-ai-coding/dashboard?utm_source=gh&utm_medium=referral&utm_content=&utm_campaign=Badge_grade)
+[![License][badge-license]][url-license]
+[![Build Status][badge-build]][url-build]
+[![Requires PHP][badge-php]][url-requirements]
+[![Requires WordPress][badge-wp]][url-requirements]
+[![Wiki][badge-wiki]][url-wiki]
+[![CodeRabbit Reviews][badge-coderabbit]][url-coderabbit]
+[![CodeFactor][badge-codefactor]][url-codefactor]
+[![Quality Gate Status][badge-sonar-gate]][url-sonar]
+[![Codacy Badge][badge-codacy]][url-codacy]
+
+[badge-license]: https://img.shields.io/badge/license-GPL--2.0%2B-blue.svg
+[badge-build]: https://github.com/wpallstars/wp-plugin-starter-template-for-ai-coding/actions/workflows/tests.yml/badge.svg
+[badge-php]: https://img.shields.io/badge/php-%3E%3D%207.4-blue.svg
+[badge-wp]: https://img.shields.io/badge/WordPress-%3E%3D%205.0-blue.svg
+[badge-wiki]: https://img.shields.io/badge/documentation-wiki-blue.svg
+[badge-coderabbit]: https://img.shields.io/coderabbit/prs/github/wpallstars/wp-plugin-starter-template-for-ai-coding?labelColor=171717&color=FF570A&label=CodeRabbit+Reviews
+[badge-codefactor]: https://www.codefactor.io/repository/github/wpallstars/wp-plugin-starter-template-for-ai-coding/badge
+[badge-sonar-gate]: https://sonarcloud.io/api/project_badges/measure?project=wpallstars_wp-plugin-starter-template-for-ai-coding&metric=alert_status
+[badge-codacy]: https://app.codacy.com/project/badge/Grade/905754fd010b481490b496fb800e6144
+
+[url-license]: https://www.gnu.org/licenses/gpl-2.0.html
+[url-build]: https://github.com/wpallstars/wp-plugin-starter-template-for-ai-coding/actions/workflows/tests.yml
+[url-requirements]: https://wordpress.org/about/requirements/
+[url-wiki]: https://github.com/wpallstars/wp-plugin-starter-template-for-ai-coding/wiki
+[url-coderabbit]: https://coderabbit.ai
+[url-codefactor]: https://www.codefactor.io/repository/github/wpallstars/wp-plugin-starter-template-for-ai-coding
+[url-sonar]: https://sonarcloud.io/summary/new_code?id=wpallstars_wp-plugin-starter-template-for-ai-coding
+[url-codacy]: https://app.codacy.com/gh/wpallstars/wp-plugin-starter-template-for-ai-coding/dashboard
 
 A comprehensive starter template for WordPress plugins with best practices for AI-assisted development.
 
 ## Description
 
-The WordPress Plugin Starter Template provides a solid foundation for developing WordPress plugins. It incorporates best practices, modern coding standards, and a comprehensive structure that makes it easy to get started with plugin development.
+The WordPress Plugin Starter Template provides a solid foundation for developing WordPress plugins.
 
-This template is based on the experience gained from developing the "Fix 'Plugin file does not exist' Notices" plugin and other successful WordPress plugins.
+It incorporates best practices, modern coding standards, and a comprehensive structure.
+
+This template is based on experience from developing successful WordPress plugins.
 
 ### Key Features
 
@@ -39,9 +68,11 @@ This template includes comprehensive documentation for AI-assisted development:
 
 * **AGENTS.md**: Guide for AI assistants to understand the project structure
 * **.agents/**: Detailed workflow documentation for common development tasks
-* **Starter Prompt**: Comprehensive prompt for AI tools to help customize the template (available in the [wiki](.wiki/Starter-Prompt.md))
+* **Starter Prompt**: Prompt for AI tools to customize the template ([wiki](.wiki/Starter-Prompt.md))
 
-**Important**: For the best AI assistance, add the AGENTS.md file and .agents/ directory to your AI IDE chat context. In most AI IDEs, you can pin these files to ensure they're considered in each message.
+**Important**: For the best AI assistance, add AGENTS.md and .agents/ to your AI IDE chat context.
+
+In most AI IDEs, you can pin these files to ensure they're considered in each message.
 
 ## Installation
 
@@ -60,16 +91,18 @@ This template includes comprehensive documentation for AI-assisted development:
 
 To get started with this template, follow these steps:
 
-1. In your terminal, navigate to the folder you keep you Git repositories (eg: `~/Git/`), then clone this repository to your local machine:
+1. Navigate to your Git repositories folder (e.g., `~/Git/`), then clone:
    ```bash
    git clone https://github.com/wpallstars/wp-plugin-starter-template-for-ai-coding.git
    ```
 
-2. Open the [Starter Prompt](.wiki/Starter-Prompt.md) file and follow the instructions to customize the template for your plugin.
+2. Open the [Starter Prompt](.wiki/Starter-Prompt.md) file and follow the instructions
+   to customize the template for your plugin.
 
 3. Add the AGENTS.md file and .agents/ directory to your AI IDE chat context.
 
-4. Use an AI assistant like GitHub Copilot, Claude, or ChatGPT to help you customize the template by providing the prompt from the Starter Prompt file.
+4. Use an AI assistant like GitHub Copilot, Claude, or ChatGPT to help customize
+   the template by providing the prompt from the Starter Prompt file.
 
 ### Development Environment
 
@@ -85,16 +118,38 @@ This template includes configuration for WordPress Environment (wp-env) to make 
    npm run start
    ```
 
-3. For multisite testing:
+3. For testing in different WordPress environments:
+
    ```bash
-   npm run multisite
+   # For single site testing
+   npm run setup:single
+
+   # For multisite testing
+   npm run setup:multisite
    ```
+
+   See [Testing Framework](.wiki/Testing-Framework.md) for more details on our testing approach.
 
 4. Access your local WordPress site at <http://localhost:8888> (admin credentials: admin/password)
 
 ### Testing
 
-The template includes both PHP unit tests and end-to-end tests:
+The template includes multiple testing approaches:
+
+#### WordPress Playground Testing (No Docker Required)
+
+Test your plugin directly in the browser without any local setup:
+
+1. Single site testing:
+   [Open in WordPress Playground][playground-single-readme]
+
+2. Multisite testing:
+   [Open in WordPress Playground][playground-multisite-readme]
+
+[playground-single-readme]: https://playground.wordpress.net/?blueprint-url=https://raw.githubusercontent.com/wpallstars/wp-plugin-starter-template-for-ai-coding/feature/testing-framework/playground/blueprint.json&_t=5
+[playground-multisite-readme]: https://playground.wordpress.net/?blueprint-url=https://raw.githubusercontent.com/wpallstars/wp-plugin-starter-template-for-ai-coding/feature/testing-framework/playground/multisite-blueprint.json&_t=18
+
+For more details, see the [Playground Testing](.wiki/Playground-Testing.md) documentation.
 
 #### PHP Unit Tests
 
@@ -176,7 +231,11 @@ This template includes functionality that allows users to choose where they want
 
 ### How do I customize this template for my plugin?
 
-See the [Starter Prompt](.wiki/Starter-Prompt.md) file for detailed instructions on customizing this template for your specific plugin needs. Make sure to add the AGENTS.md file and .agents/ directory to your AI IDE chat context for the best results.
+See the [Starter Prompt](.wiki/Starter-Prompt.md) file for detailed instructions on
+customizing this template for your specific plugin needs.
+
+Make sure to add the AGENTS.md file and .agents/ directory to your AI IDE chat context
+for the best results.
 
 ### What files do I need to update with my plugin information?
 
@@ -208,15 +267,27 @@ This will create a ZIP file that you can install in WordPress.
 
 ### How do I add custom functionality to my plugin?
 
-Customize the includes/core.php file to implement your core functionality and the admin/lib/admin.php file for admin-specific functionality.
+Customize the `includes/core.php` file to implement your core functionality and the
+`admin/lib/admin.php` file for admin-specific functionality.
 
 ### Is this template compatible with WordPress multisite?
 
-Yes, this template is fully compatible with WordPress multisite installations. You can test multisite compatibility by running:
+Yes, this template is fully compatible with WordPress multisite installations.
 
-```bash
-npm run multisite
-```
+We have a testing framework that allows you to verify functionality in both environments.
+
+You can test multisite compatibility in two ways:
+
+1. Using WordPress Playground (no Docker required):
+   * [Open Multisite in WordPress Playground][playground-multisite-readme]
+
+2. Using wp-env (requires Docker):
+   ```bash
+   npm run setup:multisite
+   ```
+
+For more details on our testing approach, see the [Testing Framework](.wiki/Testing-Framework.md)
+and [Playground Testing](.wiki/Playground-Testing.md) documentation.
 
 ## Support & Feedback
 
@@ -229,7 +300,10 @@ If you need help with this template, there are several ways to get support:
 
 Contributions are welcome! Please feel free to submit a Pull Request.
 
-1. Fork the repository on [GitHub](https://github.com/wpallstars/wp-plugin-starter-template-for-ai-coding/) or [Gitea](https://gitea.wpallstars.com/wpallstars/wp-plugin-starter-template-for-ai-coding/)
+1. Fork the repository on [GitHub][repo-github] or [Gitea][repo-gitea]
+
+[repo-github]: https://github.com/wpallstars/wp-plugin-starter-template-for-ai-coding/
+[repo-gitea]: https://gitea.wpallstars.com/wpallstars/wp-plugin-starter-template-for-ai-coding/
 2. Create your feature branch: `git checkout -b feature/amazing-feature`
 3. Commit your changes: `git commit -m 'Add some amazing feature'`
 4. Push to the branch: `git push origin feature/amazing-feature`
@@ -239,7 +313,10 @@ For more detailed information, see the [Contributing Guide](.wiki/Contributing.m
 
 ### Code Quality Tools
 
-This project uses several automated code quality tools to ensure high standards. These tools are free for public repositories and should be integrated into any new repositories based on this template:
+This project uses several automated code quality tools to ensure high standards.
+
+These tools are free for public repositories and should be integrated into any new
+repositories based on this template:
 
 1. **CodeRabbit**: AI-powered code review tool
    * [Website](https://www.coderabbit.ai/)
@@ -259,7 +336,9 @@ This project uses several automated code quality tools to ensure high standards.
      3. Go to your project settings > Integrations > Project API
      4. Generate a project API token
      5. Add the token as a secret named `CODACY_PROJECT_TOKEN` in your GitHub repository settings
-     6. Note: Codacy tokens are project-specific, so they need to be added at the repository level. However, you can use GitHub Actions to securely pass these tokens between repositories if needed.
+     6. Note: Codacy tokens are project-specific, so they need to be added at the
+        repository level. You can use GitHub Actions to securely pass tokens
+        between repositories if needed.
 
 4. **SonarCloud**: Code quality and security analysis
    * [Website](https://sonarcloud.io/)
@@ -270,7 +349,8 @@ This project uses several automated code quality tools to ensure high standards.
      2. Create a new organization or use an existing one
      3. Add your repository to SonarCloud
      4. Generate a token in SonarCloud (Account > Security > Tokens)
-     5. Add the token as a secret named `SONAR_TOKEN` in your GitHub repository or organization settings (see "GitHub Secrets Management" section below)
+     5. Add the token as a secret named `SONAR_TOKEN` in your GitHub repository or
+        organization settings (see "GitHub Secrets Management" section below)
 
 5. **PHP_CodeSniffer (PHPCS)**: PHP code style checker
    * Enforces WordPress Coding Standards
@@ -300,7 +380,8 @@ When you receive feedback from these code quality tools, you can use AI assistan
 4. Apply the suggested fixes
 5. Commit the changes and verify that the issues are resolved
 
-For more information on coding standards and how to pass code quality checks, see the [Coding Standards Guide](.wiki/Coding-Standards.md).
+For more information on coding standards and how to pass code quality checks,
+see the [Coding Standards Guide](.wiki/Coding-Standards.md).
 
 ### GitHub Secrets Management
 
@@ -318,7 +399,8 @@ GitHub offers three levels of secrets management, each with different scopes and
    * Available at: Repository > Settings > Secrets and variables > Actions
    * Scope: Limited to a single repository
    * Benefits: Repository-specific, higher isolation
-   * Recommended for: `CODACY_PROJECT_TOKEN` and other repository-specific credentials or tokens that shouldn't be shared
+   * Recommended for: `CODACY_PROJECT_TOKEN` and other repository-specific credentials
+     or tokens that shouldn't be shared
 
 3. **Environment Secrets**:
    * Available at: Repository > Settings > Environments > (select environment) > Environment secrets
@@ -326,7 +408,12 @@ GitHub offers three levels of secrets management, each with different scopes and
    * Benefits: Environment-specific, can have approval requirements
    * Recommended for: Deployment credentials that vary between environments
 
-For code quality tools like SonarCloud, organization secrets are recommended if you have multiple repositories that use these tools. This approach reduces management overhead and ensures consistent configuration across projects. For Codacy, since tokens are project-specific, they should be set at the repository level.
+For code quality tools like SonarCloud, organization secrets are recommended if you have
+multiple repositories that use these tools.
+
+This approach reduces management overhead and ensures consistent configuration across
+projects. For Codacy, since tokens are project-specific, they should be set at the
+repository level.
 
 ### Local Environment Setup for Code Quality Tools
 
@@ -432,13 +519,16 @@ To run code quality tools locally before committing to GitHub:
 
 For more detailed instructions, see the [Code Quality Setup Guide](docs/code-quality-setup.md).
 
-By running these tools locally, you can identify and fix issues before pushing your code to GitHub, ensuring smoother CI/CD workflows.
+By running these tools locally, you can identify and fix issues before pushing your code
+to GitHub, ensuring smoother CI/CD workflows.
 
 ## Developers
 
 ### AI-Powered Development
 
-This repository is configured to work with various AI-powered development tools. You can use any of the following AI IDEs to contribute to this project:
+This repository is configured to work with various AI-powered development tools.
+
+You can use any of the following AI IDEs to contribute to this project:
 
 * [Augment Code](https://www.augmentcode.com/) - AI-powered coding assistant
 * [Bolt](https://www.bolt.new/) - AI-powered code editor
@@ -455,9 +545,11 @@ The repository includes configuration files for all these tools to ensure a cons
 
 ### Git Updater Integration
 
-This template is designed to work seamlessly with the Git Updater plugin for updates from GitHub and Gitea. To ensure proper integration:
+This template is designed to work seamlessly with the Git Updater plugin for updates from
+GitHub and Gitea. To ensure proper integration:
 
-1. **Required Headers**: The plugin includes specific headers in the main plugin file that Git Updater uses to determine update sources and branches:
+1. **Required Headers**: The plugin includes specific headers in the main plugin file
+   that Git Updater uses to determine update sources and branches:
    ```php
    * GitHub Plugin URI: wpallstars/wp-plugin-starter-template-for-ai-coding
    * GitHub Branch: main
@@ -468,13 +560,17 @@ This template is designed to work seamlessly with the Git Updater plugin for upd
    * Gitea Branch: main
    ```
 
-2. **Tagging Releases**: When creating a new release, always tag it with the 'v' prefix (e.g., `v0.1.2`) to ensure GitHub Actions can create the proper release assets.
+2. **Tagging Releases**: When creating a new release, always tag it with the 'v' prefix
+   (e.g., `v0.1.2`) to ensure GitHub Actions can create the proper release assets.
 
-3. **GitHub Actions**: The repository includes a GitHub Actions workflow that automatically builds the plugin and creates a release with the .zip file when a new tag is pushed.
+3. **GitHub Actions**: The repository includes a GitHub Actions workflow that automatically
+   builds the plugin and creates a release with the .zip file when a new tag is pushed.
 
-4. **Update Source Selection**: The template includes a feature that allows users to choose their preferred update source (WordPress.org, GitHub, or Gitea).
+4. **Update Source Selection**: The template includes a feature that allows users to choose
+   their preferred update source (WordPress.org, GitHub, or Gitea).
 
-For more information on Git Updater integration, see the [Git Updater Required Headers documentation](https://git-updater.com/knowledge-base/required-headers/).
+For more information on Git Updater integration, see the
+[Git Updater Required Headers documentation](https://git-updater.com/knowledge-base/required-headers/).
 
 ## Changelog
 
@@ -571,4 +667,7 @@ This project is licensed under the GPL-2.0+ License - see the [LICENSE](LICENSE)
 
 ## Credits
 
-This template is based on the experience gained from developing the ["Fix 'Plugin file does not exist' Notices"](https://github.com/wpallstars/wp-fix-plugin-does-not-exist-notices) plugin by WPALLSTARS.
+This template is based on the experience gained from developing the
+["Fix 'Plugin file does not exist' Notices"][fix-plugin-notices] plugin by WPALLSTARS.
+
+[fix-plugin-notices]: https://github.com/wpallstars/wp-fix-plugin-does-not-exist-notices

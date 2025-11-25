@@ -1,0 +1,45 @@
+{
+  "$schema": "https://playground.wordpress.net/blueprint-schema.json",
+  "landingPage": "/wp-admin/plugins.php",
+  "login": true,
+  "preferredVersions": {
+    "php": "8.0",
+    "wp": "latest"
+  },
+  "features": {
+    "networking": true
+  },
+  "steps": [
+    {
+      "step": "defineWpConfigConsts",
+      "consts": {
+        "WP_DEBUG": true,
+        "WP_DEBUG_LOG": true,
+        "WP_DEBUG_DISPLAY": true,
+        "SCRIPT_DEBUG": true
+      }
+    },
+    {
+      "step": "installPlugin",
+      "pluginData": {
+        "resource": "wordpress.org/plugins",
+        "slug": "plugin-toggle"
+      }
+    },
+    {
+      "step": "installPlugin",
+      "pluginData": {
+        "resource": "wordpress.org/plugins",
+        "slug": "kadence-blocks"
+      }
+    },
+    {
+      "step": "activatePlugin",
+      "pluginPath": "plugin-toggle/plugin-toggle.php"
+    },
+    {
+      "step": "activatePlugin",
+      "pluginPath": "kadence-blocks/kadence-blocks.php"
+    }
+  ]
+}

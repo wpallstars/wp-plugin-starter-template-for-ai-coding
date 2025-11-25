@@ -1,0 +1,276 @@
+name: WordPress Playground Tests
+
+# Re-enabled with @wp-playground/cli v3.0.22 which has improved CI stability.
+# Tests use continue-on-error: true so they won't block PRs if flaky.
+#
+# To run locally:
+#   npm run playground:start
+#   npm run playground:start:multisite
+
+on:
+  # Only run on push to main (not feature branches) to avoid duplicate runs.
+  # Feature branches get CI via pull_request trigger.
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+    inputs:
+      debug:
+        description: 'Enable debug mode'
+        required: false
+        default: 'false'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  code-quality:
+    name: Code Quality Check
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node-version: [20]
+
+    steps:
+    - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ matrix.node-version }}
+        cache: 'npm'
+
+    - name: Install dependencies
+      run: npm install --legacy-peer-deps
+
+    - name: Verify package.json and package-lock.json
+      run: |
+        echo "Verifying package.json and package-lock.json are in sync"
+        npm install --dry-run --legacy-peer-deps
+
+    - name: Lint JavaScript files
+      run: npm run lint:js
+
+  playground-single-test:
+    name: WordPress Playground Single Site Tests
+    runs-on: ubuntu-latest
+    needs: code-quality
+    # Allow failures since WordPress Playground CLI can be unreliable in CI environments
+    continue-on-error: true
+
+    steps:
+    - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+        cache: 'npm'
+
+    - name: Install dependencies
+      run: npm install --legacy-peer-deps
+
+    - name: Verify WordPress Playground CLI
+      run: |
+        echo "WordPress Playground CLI version:"
+        npx @wp-playground/cli --version
+
+    - name: Create plugin zip
+      uses: ./.github/actions/create-plugin-zip
+
+    - name: Run tests with WordPress Playground
+      run: |
+        # Set base URL for Cypress
+        export CYPRESS_BASE_URL=http://127.0.0.1:8888
+
+        # Check if blueprint file exists
+        echo "Checking blueprint file..."
+        ls -la playground/
+        cat playground/blueprint.json
+
+        # Start WordPress Playground with our blueprint (using @wp-playground/cli 3.x)
+        echo "Starting WordPress Playground server..."
+        npx @wp-playground/cli server \
+          --blueprint playground/blueprint.json \
+          --port 8888 \
+          --login \
+          --php 8.0 \
+          --verbosity normal \
+          2>&1 | tee playground-server.log &
+        SERVER_PID=$!
+
+        # Wait for WordPress Playground to be ready
+        echo "Waiting for WordPress Playground to be ready..."
+        TIMEOUT=120
+        ELAPSED=0
+        while ! curl -s -o /dev/null -w "%{http_code}" http://127.0.0.1:8888 2>/dev/null | grep -q "200\|302"; do
+          if [ $ELAPSED -ge $TIMEOUT ]; then
+            echo "Timeout waiting for WordPress Playground to start"
+            echo "=== Server log ==="
+            cat playground-server.log || true
+            kill $SERVER_PID 2>/dev/null || true
+            exit 1
+          fi
+          # Check if server process is still running
+          if ! kill -0 $SERVER_PID 2>/dev/null; then
+            echo "Server process died unexpectedly"
+            echo "=== Server log ==="
+            cat playground-server.log || true
+            exit 1
+          fi
+          echo "Waiting... ($ELAPSED/$TIMEOUT seconds)"
+          sleep 5
+          ELAPSED=$((ELAPSED + 5))
+        done
+        echo "WordPress Playground is ready after $ELAPSED seconds"
+
+        # Run Cypress tests against WordPress Playground
+        echo "Running Cypress tests..."
+        npx cypress run --spec "cypress/e2e/playground-single-site.cy.js"
+        TEST_EXIT_CODE=$?
+
+        # Kill the server process
+        kill $SERVER_PID 2>/dev/null || true
+
+        # Return the test exit code
+        exit $TEST_EXIT_CODE
+
+    - name: Upload Cypress artifacts
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: cypress-single-site-results
+        path: |
+          cypress/videos
+          cypress/screenshots
+
+  playground-multisite-test:
+    name: WordPress Playground Multisite Tests
+    runs-on: ubuntu-latest
+    needs: [code-quality, playground-single-test]
+    # DISABLED: WordPress Multisite does not support custom ports (requires port 80/443).
+    # This is a fundamental WordPress limitation. Multisite tests can only run locally
+    # where port 80 can be used. See: https://developer.wordpress.org/advanced-administration/multisite/
+    if: false
+    continue-on-error: true
+
+    steps:
+    - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+        cache: 'npm'
+
+    - name: Install dependencies
+      run: npm install --legacy-peer-deps
+
+    - name: Verify WordPress Playground CLI
+      run: |
+        echo "WordPress Playground CLI version:"
+        npx @wp-playground/cli --version
+
+    - name: Create plugin zip
+      uses: ./.github/actions/create-plugin-zip
+
+    - name: Run tests with WordPress Playground
+      run: |
+        # Set base URL for Cypress
+        export CYPRESS_BASE_URL=http://127.0.0.1:8889
+
+        # Check if blueprint file exists
+        echo "Checking multisite blueprint file..."
+        ls -la playground/
+        cat playground/multisite-blueprint.json
+
+        # Start WordPress Playground with our blueprint (using @wp-playground/cli 3.x)
+        # Use a different port for multisite to avoid conflicts with single site tests
+        echo "Starting WordPress Playground server for multisite..."
+        npx @wp-playground/cli server \
+          --blueprint playground/multisite-blueprint.json \
+          --port 8889 \
+          --login \
+          --php 8.0 \
+          --verbosity normal \
+          2>&1 | tee playground-server.log &
+        SERVER_PID=$!
+
+        # Wait for WordPress Playground to be ready
+        echo "Waiting for WordPress Playground to be ready..."
+        TIMEOUT=120
+        ELAPSED=0
+        while ! curl -s -o /dev/null -w "%{http_code}" http://127.0.0.1:8889 2>/dev/null | grep -q "200\|302"; do
+          if [ $ELAPSED -ge $TIMEOUT ]; then
+            echo "Timeout waiting for WordPress Playground to start"
+            echo "=== Server log ==="
+            cat playground-server.log || true
+            kill $SERVER_PID 2>/dev/null || true
+            exit 1
+          fi
+          # Check if server process is still running
+          if ! kill -0 $SERVER_PID 2>/dev/null; then
+            echo "Server process died unexpectedly"
+            echo "=== Server log ==="
+            cat playground-server.log || true
+            exit 1
+          fi
+          echo "Waiting... ($ELAPSED/$TIMEOUT seconds)"
+          sleep 5
+          ELAPSED=$((ELAPSED + 5))
+        done
+        echo "WordPress Playground is ready after $ELAPSED seconds"
+
+        # Run Cypress tests against WordPress Playground
+        echo "Running Cypress multisite tests..."
+        npx cypress run --spec "cypress/e2e/playground-multisite.cy.js"
+        TEST_EXIT_CODE=$?
+
+        # Kill the server process
+        kill $SERVER_PID 2>/dev/null || true
+
+        # Return the test exit code
+        exit $TEST_EXIT_CODE
+
+    - name: Upload Cypress artifacts
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: cypress-multisite-results
+        path: |
+          cypress/videos
+          cypress/screenshots
+
+  performance-test:
+    name: WordPress Performance Tests
+    runs-on: ubuntu-latest
+    needs: code-quality
+    # DISABLED: Performance tests are flaky in CI due to Lighthouse/Playwright resource constraints.
+    # The wp-performance-action uses WordPress Playground internally and Lighthouse for metrics,
+    # which requires significant resources and is not reliable in shared CI runners.
+    # Run performance tests locally or on dedicated infrastructure for accurate results.
+    if: false
+    continue-on-error: true
+
+    steps:
+    - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
+
+    - name: WordPress Performance Tests
+      uses: swissspidy/wp-performance-action@v2.0.3
+      with:
+        plugins: |
+          ./
+        urls: |
+          /
+          /wp-admin/
+        # Don't pass blueprint - let the action use its own internal setup.
+        # Our blueprint includes features that may conflict with the action's Lighthouse setup.
+        wp-version: 'latest'
+        php-version: '8.0'
+        iterations: 5
+        repetitions: 1

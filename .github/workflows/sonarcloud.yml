@@ -1,0 +1,66 @@
+name: SonarCloud Analysis
+
+# DISABLED: Using SonarCloud Automatic Analysis instead of CI-based analysis.
+# Custom Quality Gates require a paid plan, which isn't suitable for FOSS projects.
+# The free Automatic Analysis provides code quality feedback without coverage requirements.
+#
+# To re-enable CI-based analysis:
+# 1. Uncomment the triggers below
+# 2. Disable Automatic Analysis on SonarCloud.io
+# 3. Consider upgrading to a paid plan for custom Quality Gate settings
+
+on:
+  # Disabled - using Automatic Analysis instead
+  # push:
+  #   branches: [ main, feature/* ]
+  # pull_request:
+  #   branches: [ main ]
+  #   types: [opened, synchronize, reopened]
+  workflow_dispatch:  # Keep manual trigger for testing
+
+permissions:
+  contents: read
+  pull-requests: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  sonarcloud:
+    name: SonarCloud
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
+        with:
+          fetch-depth: 0  # Shallow clones should be disabled for a better relevancy of analysis
+
+      - name: Check if SonarCloud token is set
+        id: check_token
+        run: |
+          if [ -z "${{ secrets.SONARCLOUD_GITHUB }}" ]; then
+            echo "SONARCLOUD_GITHUB is not set, skipping SonarCloud analysis"
+            echo "skip=true" >> $GITHUB_OUTPUT
+          else
+            echo "skip=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: SonarCloud Scan
+        if: steps.check_token.outputs.skip != 'true'
+        uses: SonarSource/sonarqube-scan-action@master
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SONAR_TOKEN: ${{ secrets.SONARCLOUD_GITHUB }}
+        with:
+          args: >
+            -Dsonar.projectKey=wpallstars_wp-plugin-starter-template-for-ai-coding
+            -Dsonar.organization=wpallstars
+            -Dsonar.sources=.
+            -Dsonar.tests=tests
+            -Dsonar.sourceEncoding=UTF-8
+            -Dsonar.cpd.exclusions=tests/**
+            -Dsonar.exclusions=vendor/**,node_modules/**,tests/**,bin/**,build/**,dist/**,.github/**,.git/**,cypress/**,playground/**,.wiki/**
+            -Dsonar.php.coverage.reportPaths=coverage.xml
+            -Dsonar.php.tests.reportPath=test-report.xml
