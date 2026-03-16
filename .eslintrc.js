@@ -19,6 +19,19 @@ module.exports = {
     'no-console': 'warn',
     'no-unused-vars': 'warn'
   },
+  overrides: [
+    {
+      // cypress.config.js uses CommonJS (require/module.exports).
+      // Override sourceType to 'script' so ESLint does not flag require as undefined.
+      files: ['cypress.config.js', 'cypress.config.cjs'],
+      parserOptions: {
+        sourceType: 'script'
+      },
+      env: {
+        node: true
+      }
+    }
+  ],
   globals: {
     cy: 'readonly',
     Cypress: 'readonly',
