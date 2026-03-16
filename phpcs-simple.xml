@@ -14,7 +14,7 @@
     <exclude-pattern>*/build/*</exclude-pattern>
     <exclude-pattern>*/dist/*</exclude-pattern>
 
-    <!-- Command line arguments -->
+    <!-- Command line arguments: combined short flags (-s shows sniff codes, -p shows progress) -->
     <arg value="sp"/>
     <arg name="extensions" value="php"/>
     <arg name="basepath" value="."/>

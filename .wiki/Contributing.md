@@ -106,7 +106,7 @@ When you receive feedback from these code quality tools, you can use AI assistan
 
 1. Copy the output from the code quality tool
 2. Paste it into your AI assistant chat
-3. Ask the AI to help you understand and resolve the issues
+3. Request the AI's assistance to interpret and resolve the reported issues
 4. Apply the suggested fixes
 5. Commit the changes and verify that the issues are resolved
 
@@ -143,7 +143,7 @@ To ensure your code meets the quality standards, run these commands before submi
 * Check JavaScript coding standards: `npm run lint:js`
 * Check CSS coding standards: `npm run lint:css`
 
-These checks will help identify and fix issues before they are caught by the automated code quality tools in the pull request process.
+These checks will assist in identifying and resolving issues before they are caught by the automated code quality tools in the pull request process.
 
 ## Documentation
 
