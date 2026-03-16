@@ -5,122 +5,138 @@ chmod +x "$0"
 
 # Check if environment type is provided
 if [ -z "$1" ]; then
-    echo "Usage: $0 [single|multisite|playground-single|playground-multisite]"
-    exit 1
+	echo "Usage: $0 [single|multisite|playground-single|playground-multisite]"
+	exit 1
 fi
 
 ENV_TYPE=$1
 
 # Function to check if a command exists
 command_exists() {
-    command -v "$1" &> /dev/null
+	command -v "$1" &>/dev/null
+	return $?
 }
+
+# PID of the background Python HTTP server (set when started).
+PYTHON_PID=""
+
+# Function to clean up resources on exit.
+cleanup() {
+	if [ -n "$PYTHON_PID" ]; then
+		echo "Stopping Python HTTP server (PID: $PYTHON_PID)..."
+		kill "$PYTHON_PID" 2>/dev/null || true
+	fi
+	return 0
+}
+
+# Trap EXIT, INT, and TERM so the server is always stopped on script exit.
+trap cleanup EXIT INT TERM
 
 # Function to install wp-env if needed
 install_wp_env() {
-    if ! command_exists wp-env; then
-        echo "wp-env is not installed. Installing..."
-        npm install -g @wordpress/env
-    fi
+	if ! command_exists wp-env; then
+		echo "wp-env is not installed. Installing..."
+		npm install -g @wordpress/env
+	fi
 }
 
 # Function to install wp-playground if needed
 install_wp_playground() {
-    # Check if we have a local installation
-    if [ ! -d "node_modules/@wp-playground" ]; then
-        echo "WordPress Playground is not installed locally. Installing..."
-        npm install --save-dev @wp-playground/client @wp-playground/blueprints
-    fi
+	# Check if we have a local installation
+	if [ ! -d "node_modules/@wp-playground" ]; then
+		echo "WordPress Playground is not installed locally. Installing..."
+		npm install --save-dev @wp-playground/client @wp-playground/blueprints
+	fi
 }
 
 if [ "$ENV_TYPE" == "single" ]; then
-    echo "Setting up single site environment..."
+	echo "Setting up single site environment..."
 
-    # Install wp-env if needed
-    install_wp_env
+	# Install wp-env if needed
+	install_wp_env
 
-    # Start the environment
-    wp-env start
+	# Start the environment
+	wp-env start
 
-    # Wait for WordPress to be ready with a timeout
-    MAX_ATTEMPTS=30
-    ATTEMPT=0
-    echo "Waiting for WordPress to be ready..."
-    until wp-env run cli wp core is-installed || [ $ATTEMPT -ge $MAX_ATTEMPTS ]; do
-        ATTEMPT=$((ATTEMPT+1))
-        echo "Attempt $ATTEMPT/$MAX_ATTEMPTS..."
-        sleep 2
-    done
+	# Wait for WordPress to be ready with a timeout
+	MAX_ATTEMPTS=30
+	ATTEMPT=0
+	echo "Waiting for WordPress to be ready..."
+	until wp-env run cli wp core is-installed || [ $ATTEMPT -ge $MAX_ATTEMPTS ]; do
+		ATTEMPT=$((ATTEMPT + 1))
+		echo "Attempt $ATTEMPT/$MAX_ATTEMPTS..."
+		sleep 2
+	done
 
-    if [ $ATTEMPT -ge $MAX_ATTEMPTS ]; then
-        echo "Timed out waiting for WordPress to be ready."
-        exit 1
-    fi
+	if [ $ATTEMPT -ge $MAX_ATTEMPTS ]; then
+		echo "Timed out waiting for WordPress to be ready."
+		exit 1
+	fi
 
-    # Activate our plugin
-    if ! wp-env run cli wp plugin activate wp-plugin-starter-template-for-ai-coding; then
-        echo "Failed to activate plugin. Exiting."
-        exit 1
-    fi
+	# Activate our plugin
+	if ! wp-env run cli wp plugin activate wp-plugin-starter-template-for-ai-coding; then
+		echo "Failed to activate plugin. Exiting."
+		exit 1
+	fi
 
-    echo "WordPress Single Site environment is ready!"
-    echo "Site: http://localhost:8888"
-    echo "Admin login: admin / password"
+	echo "WordPress Single Site environment is ready!"
+	echo "Site: http://localhost:8888"
+	echo "Admin login: admin / password"
 
 elif [ "$ENV_TYPE" == "multisite" ]; then
-    echo "Setting up multisite environment..."
+	echo "Setting up multisite environment..."
 
-    # Install wp-env if needed
-    install_wp_env
+	# Install wp-env if needed
+	install_wp_env
 
-    # Start the environment with multisite configuration
-    wp-env start --config=.wp-env.multisite.json
+	# Start the environment with multisite configuration
+	wp-env start --config=.wp-env.multisite.json
 
-    # Wait for WordPress to be ready with a timeout
-    MAX_ATTEMPTS=30
-    ATTEMPT=0
-    echo "Waiting for WordPress to be ready..."
-    until wp-env run cli wp core is-installed || [ $ATTEMPT -ge $MAX_ATTEMPTS ]; do
-        ATTEMPT=$((ATTEMPT+1))
-        echo "Attempt $ATTEMPT/$MAX_ATTEMPTS..."
-        sleep 2
-    done
+	# Wait for WordPress to be ready with a timeout
+	MAX_ATTEMPTS=30
+	ATTEMPT=0
+	echo "Waiting for WordPress to be ready..."
+	until wp-env run cli wp core is-installed || [ $ATTEMPT -ge $MAX_ATTEMPTS ]; do
+		ATTEMPT=$((ATTEMPT + 1))
+		echo "Attempt $ATTEMPT/$MAX_ATTEMPTS..."
+		sleep 2
+	done
 
-    if [ $ATTEMPT -ge $MAX_ATTEMPTS ]; then
-        echo "Timed out waiting for WordPress to be ready."
-        exit 1
-    fi
+	if [ $ATTEMPT -ge $MAX_ATTEMPTS ]; then
+		echo "Timed out waiting for WordPress to be ready."
+		exit 1
+	fi
 
-    # Create a test site
-    if ! wp-env run cli wp site create --slug=testsite --title="Test Site" --email=admin@example.com; then
-        echo "Failed to create test site. Exiting."
-        exit 1
-    fi
+	# Create a test site
+	if ! wp-env run cli wp site create --slug=testsite --title="Test Site" --email=admin@example.com; then
+		echo "Failed to create test site. Exiting."
+		exit 1
+	fi
 
-    # Network activate our plugin
-    if ! wp-env run cli wp plugin activate wp-plugin-starter-template-for-ai-coding --network; then
-        echo "Failed to activate plugin. Exiting."
-        exit 1
-    fi
+	# Network activate our plugin
+	if ! wp-env run cli wp plugin activate wp-plugin-starter-template-for-ai-coding --network; then
+		echo "Failed to activate plugin. Exiting."
+		exit 1
+	fi
 
-    echo "WordPress Multisite environment is ready!"
-    echo "Main site: http://localhost:8888"
-    echo "Test site: http://localhost:8888/testsite"
-    echo "Admin login: admin / password"
+	echo "WordPress Multisite environment is ready!"
+	echo "Main site: http://localhost:8888"
+	echo "Test site: http://localhost:8888/testsite"
+	echo "Admin login: admin / password"
 
 elif [ "$ENV_TYPE" == "playground-single" ]; then
-    echo "Setting up WordPress Playground single site environment..."
+	echo "Setting up WordPress Playground single site environment..."
 
-    # Install wp-playground if needed
-    install_wp_playground
+	# Install wp-playground if needed
+	install_wp_playground
 
-    # Create plugin zip
-    echo "Creating plugin zip..."
-    mkdir -p dist
-    zip -r dist/plugin.zip . -x "node_modules/*" "dist/*" ".git/*"
+	# Create plugin zip
+	echo "Creating plugin zip..."
+	mkdir -p dist
+	zip -r dist/plugin.zip . -x "node_modules/*" "dist/*" ".git/*"
 
-    # Update blueprint to use local plugin
-    cat > playground/blueprint.json << EOF
+	# Update blueprint to use local plugin
+	cat >playground/blueprint.json <<EOF
 {
   "landingPage": "/wp-admin/",
   "preferredVersions": {
@@ -148,46 +164,48 @@ elif [ "$ENV_TYPE" == "playground-single" ]; then
 }
 EOF
 
-    # Start WordPress Playground
-    echo "Starting WordPress Playground..."
-    if command_exists python3; then
-        python3 -m http.server 8888 --directory playground &
-        echo "Opening WordPress Playground in your browser..."
-        if command_exists open; then
-            open http://localhost:8888/index.html
-        elif command_exists xdg-open; then
-            xdg-open http://localhost:8888/index.html
-        elif command_exists start; then
-            start http://localhost:8888/index.html
-        else
-            echo "Please open http://localhost:8888/index.html in your browser"
-        fi
-    else
-        echo "Python3 is not installed. Please open playground/index.html in your browser."
-    fi
+	# Start WordPress Playground
+	echo "Starting WordPress Playground..."
+	if command_exists python3; then
+		python3 -m http.server 8888 --directory playground &
+		PYTHON_PID=$!
+		echo "Started Python HTTP server with PID: $PYTHON_PID"
+		echo "Opening WordPress Playground in your browser..."
+		if command_exists open; then
+			open http://localhost:8888/index.html
+		elif command_exists xdg-open; then
+			xdg-open http://localhost:8888/index.html
+		elif command_exists start; then
+			start http://localhost:8888/index.html
+		else
+			echo "Please open http://localhost:8888/index.html in your browser"
+		fi
+	else
+		echo "Python3 is not installed. Please open playground/index.html in your browser."
+	fi
 
-    # Wait for WordPress Playground to be ready
-    echo "Waiting for WordPress Playground to be ready..."
-    sleep 5
+	# Wait for WordPress Playground to be ready
+	echo "Waiting for WordPress Playground to be ready..."
+	sleep 5
 
-    echo "WordPress Playground Single Site environment is ready!"
-    echo "Site: http://localhost:8888"
-    echo "Admin login: admin / password"
-    echo "Press Ctrl+C to stop the server when done."
+	echo "WordPress Playground Single Site environment is ready!"
+	echo "Site: http://localhost:8888"
+	echo "Admin login: admin / password"
+	echo "Press Ctrl+C to stop the server when done."
 
 elif [ "$ENV_TYPE" == "playground-multisite" ]; then
-    echo "Setting up WordPress Playground multisite environment..."
+	echo "Setting up WordPress Playground multisite environment..."
 
-    # Install wp-playground if needed
-    install_wp_playground
+	# Install wp-playground if needed
+	install_wp_playground
 
-    # Create plugin zip
-    echo "Creating plugin zip..."
-    mkdir -p dist
-    zip -r dist/plugin.zip . -x "node_modules/*" "dist/*" ".git/*"
+	# Create plugin zip
+	echo "Creating plugin zip..."
+	mkdir -p dist
+	zip -r dist/plugin.zip . -x "node_modules/*" "dist/*" ".git/*"
 
-    # Update blueprint to use local plugin
-    cat > playground/multisite-blueprint.json << EOF
+	# Update blueprint to use local plugin
+	cat >playground/multisite-blueprint.json <<EOF
 {
   "landingPage": "/wp-admin/network/",
   "preferredVersions": {
@@ -255,35 +273,37 @@ elif [ "$ENV_TYPE" == "playground-multisite" ]; then
 }
 EOF
 
-    # Start WordPress Playground
-    echo "Starting WordPress Playground..."
-    if command_exists python3; then
-        python3 -m http.server 8888 --directory playground &
-        echo "Opening WordPress Playground in your browser..."
-        if command_exists open; then
-            open http://localhost:8888/multisite.html
-        elif command_exists xdg-open; then
-            xdg-open http://localhost:8888/multisite.html
-        elif command_exists start; then
-            start http://localhost:8888/multisite.html
-        else
-            echo "Please open http://localhost:8888/multisite.html in your browser"
-        fi
-    else
-        echo "Python3 is not installed. Please open playground/multisite.html in your browser."
-    fi
+	# Start WordPress Playground
+	echo "Starting WordPress Playground..."
+	if command_exists python3; then
+		python3 -m http.server 8888 --directory playground &
+		PYTHON_PID=$!
+		echo "Started Python HTTP server with PID: $PYTHON_PID"
+		echo "Opening WordPress Playground in your browser..."
+		if command_exists open; then
+			open http://localhost:8888/multisite.html
+		elif command_exists xdg-open; then
+			xdg-open http://localhost:8888/multisite.html
+		elif command_exists start; then
+			start http://localhost:8888/multisite.html
+		else
+			echo "Please open http://localhost:8888/multisite.html in your browser"
+		fi
+	else
+		echo "Python3 is not installed. Please open playground/multisite.html in your browser."
+	fi
 
-    # Wait for WordPress Playground to be ready
-    echo "Waiting for WordPress Playground to be ready..."
-    sleep 5
+	# Wait for WordPress Playground to be ready
+	echo "Waiting for WordPress Playground to be ready..."
+	sleep 5
 
-    echo "WordPress Playground Multisite environment is ready!"
-    echo "Main site: http://localhost:8888"
-    echo "Test site: http://localhost:8888/testsite"
-    echo "Admin login: admin / password"
-    echo "Press Ctrl+C to stop the server when done."
+	echo "WordPress Playground Multisite environment is ready!"
+	echo "Main site: http://localhost:8888"
+	echo "Test site: http://localhost:8888/testsite"
+	echo "Admin login: admin / password"
+	echo "Press Ctrl+C to stop the server when done."
 
 else
-    echo "Invalid environment type. Use 'single', 'multisite', 'playground-single', or 'playground-multisite'."
-    exit 1
+	echo "Invalid environment type. Use 'single', 'multisite', 'playground-single', or 'playground-multisite'."
+	exit 1
 fi
