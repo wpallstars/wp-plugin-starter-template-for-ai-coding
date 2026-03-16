@@ -153,8 +153,8 @@
     showMessage: function (type, message) {
       const $message = this.$modal.find( '.wpst-modal-message' );
 
-      // Set message content and type.
-      $message.html( message ).removeClass( 'success error' ).addClass( type ).show();
+      // Set message content and type (use .text() to prevent XSS from AJAX responses).
+      $message.text( message ).removeClass( 'success error' ).addClass( type ).show();
 
       // Hide message after a delay for success messages.
       if (type === 'success') {
