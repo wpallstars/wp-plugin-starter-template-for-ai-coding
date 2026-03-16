@@ -69,10 +69,12 @@ class Admin {
         // Get the plugin version.
         $plugin_version = $this->core->get_plugin_version();
 
+        $plugin_url = $this->get_plugin_base_url();
+
         // Enqueue styles.
         \wp_enqueue_style(
             'wpst-admin-styles',
-            plugin_dir_url( dirname( __DIR__ ) ) . 'admin/css/admin-styles.css',
+            $plugin_url . 'admin/css/admin-styles.css',
             array(), // Dependencies.
             $plugin_version // Version.
         );
@@ -80,7 +82,7 @@ class Admin {
         // Enqueue admin scripts.
         \wp_enqueue_script(
             'wpst-admin-script',
-            plugin_dir_url( dirname( __DIR__ ) ) . 'admin/js/admin-scripts.js',
+            $plugin_url . 'admin/js/admin-scripts.js',
             array( 'jquery' ),
             $plugin_version, // Version.
             true
@@ -98,5 +100,22 @@ class Admin {
             'wpst_admin_data',
             $data
         );
+    }
+
+    /**
+     * Get plugin base URL.
+     *
+     * @return string Plugin base URL with trailing slash.
+     */
+    private function get_plugin_base_url(): string {
+        if ( defined( 'WP_PLUGIN_STARTER_TEMPLATE_URL' ) ) {
+            return WP_PLUGIN_STARTER_TEMPLATE_URL;
+        }
+
+        if ( defined( 'WPST_PLUGIN_URL' ) ) {
+            return WPST_PLUGIN_URL;
+        }
+
+        return \plugin_dir_url( dirname( __DIR__, 2 ) );
     }
 }

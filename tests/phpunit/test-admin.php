@@ -101,17 +101,12 @@ class AdminTest extends \WP_Mock\Tools\TestCase {
             'return' => 'wp_plugin_starter_template_settings',
         ]);
 
-        // Mock WordPress functions used in the method
-        WP_Mock::userFunction('plugin_dir_url', [
-            'return' => 'http://example.com/wp-content/plugins/wp-plugin-starter-template/includes/Admin/',
-        ]);
-
         // Mock wp_enqueue_style
         WP_Mock::userFunction('wp_enqueue_style', [
             'times' => 1,
             'args' => [
                 'wpst-admin-styles',
-                'http://example.com/wp-content/plugins/wp-plugin-starter-template/includes/Admin/../../admin/css/admin-styles.css',
+                'http://example.org/wp-content/plugins/wp-plugin-starter-template/admin/css/admin-styles.css',
                 [],
                 '1.0.0',
             ],
@@ -122,7 +117,7 @@ class AdminTest extends \WP_Mock\Tools\TestCase {
             'times' => 1,
             'args' => [
                 'wpst-admin-script',
-                'http://example.com/wp-content/plugins/wp-plugin-starter-template/includes/Admin/../../admin/js/admin-scripts.js',
+                'http://example.org/wp-content/plugins/wp-plugin-starter-template/admin/js/admin-scripts.js',
                 ['jquery'],
                 '1.0.0',
                 true,

@@ -105,10 +105,16 @@
 		 * @param {string} message Notice message
 		 */
     showNotice: function (type, message) {
-      const $notice = $( '<div class="wpst-notice ' + type + '"><p>' + message + '</p></div>' );
+      const allowedTypes = [ 'success', 'error', 'warning' ];
+      const safeType     = allowedTypes.includes( type ) ? type : 'error';
+      const $p           = $( '<p>' );
+      const $notice      = $( '<div>' ).addClass( 'wpst-notice ' + safeType ).append( $p );
+
+      // Set message as plain text to prevent XSS.
+      $p.text( message );
 
       // Add notice to the page.
-      $( '.wpst-notices' ).html( $notice );
+      $( '.wpst-notices' ).empty().append( $notice );
 
       // Automatically remove notice after 5 seconds.
       setTimeout(
