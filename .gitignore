@@ -62,3 +62,4 @@ temp/
 # Test Coverage
 coverage/
 .phpunit.result.cache
+.agents/loop-state/
