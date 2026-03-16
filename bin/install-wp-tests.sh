@@ -44,14 +44,25 @@ elif [[ $WP_VERSION == 'nightly' || $WP_VERSION == 'trunk' ]]; then
 else
 	# http serves a single offer, whereas https serves multiple. we only want one
 	download http://api.wordpress.org/core/version-check/1.7/ /tmp/wp-latest.json
-	grep '[0-9]+\.[0-9]+(\.[0-9]+)?' /tmp/wp-latest.json
-	LATEST_VERSION=$(grep -o '"version":"[^"]*' /tmp/wp-latest.json | sed 's/"version":"//')
+	LATEST_VERSION=$(grep -o '"version":"[^"]*' /tmp/wp-latest.json | sed 's/"version":"//' | head -1)
 	if [[ -z "$LATEST_VERSION" ]]; then
 		echo "Latest WordPress version could not be found"
 		exit 1
 	fi
 	WP_TESTS_TAG="tags/$LATEST_VERSION"
 fi
+
+# Derive a git ref from WP_TESTS_TAG by stripping the SVN-style prefix.
+# WP_TESTS_TAG uses "tags/X.Y.Z", "branches/X.Y", or "trunk".
+# git clone --branch requires the bare ref name ("X.Y.Z", "X.Y", or "trunk").
+if [[ "$WP_TESTS_TAG" == tags/* ]]; then
+	GIT_REF="${WP_TESTS_TAG#tags/}"
+elif [[ "$WP_TESTS_TAG" == branches/* ]]; then
+	GIT_REF="${WP_TESTS_TAG#branches/}"
+else
+	GIT_REF="$WP_TESTS_TAG"
+fi
+
 set -ex
 
 install_wp() {
@@ -106,8 +117,8 @@ install_test_suite() {
 	# set up testing suite if it doesn't yet exist
 	if [ ! -d "$WP_TESTS_DIR" ]; then
 		mkdir -p "$WP_TESTS_DIR"
-		if ! git clone --quiet --depth=1 --branch "$WP_TESTS_TAG" https://github.com/WordPress/wordpress-develop.git /tmp/wordpress-develop; then
-			echo "Error: Failed to clone wordpress-develop at branch/tag $WP_TESTS_TAG" >&2
+		if ! git clone --quiet --depth=1 --branch "$GIT_REF" https://github.com/WordPress/wordpress-develop.git /tmp/wordpress-develop; then
+			echo "Error: Failed to clone wordpress-develop at branch/tag $GIT_REF" >&2
 			exit 1
 		fi
 		if [ -d /tmp/wordpress-develop/tests/phpunit/includes ]; then
