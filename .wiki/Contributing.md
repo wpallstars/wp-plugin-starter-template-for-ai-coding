@@ -6,11 +6,11 @@ Thank you for considering contributing to this project! This document provides g
 
 By participating in this project, you agree to abide by our code of conduct:
 
-- Be respectful and inclusive
-- Be patient and welcoming
-- Be considerate
-- Be collaborative
-- Be open-minded
+* Be respectful and inclusive
+* Be patient and welcoming
+* Be considerate
+* Be collaborative
+* Be open-minded
 
 ## How to Contribute
 
@@ -26,12 +26,12 @@ If you find a bug, please report it by creating an issue on GitHub:
 
 Please include:
 
-- A clear, descriptive title
-- Steps to reproduce the bug
-- Expected behavior
-- Actual behavior
-- Screenshots (if applicable)
-- Your environment (WordPress version, PHP version, browser, etc.)
+* A clear, descriptive title
+* Steps to reproduce the bug
+* Expected behavior
+* Actual behavior
+* Screenshots (if applicable)
+* Your environment (WordPress version, PHP version, browser, etc.)
 
 ### Suggesting Enhancements
 
@@ -45,10 +45,10 @@ If you have an idea for an enhancement:
 
 Please include:
 
-- A clear, descriptive title
-- A detailed description of the enhancement
-- Why this enhancement would be useful
-- Any relevant examples or mockups
+* A clear, descriptive title
+* A detailed description of the enhancement
+* Why this enhancement would be useful
+* Any relevant examples or mockups
 
 ### Pull Requests
 
@@ -72,33 +72,33 @@ If you want to contribute code:
 
 #### Pull Request Guidelines
 
-- Follow the coding standards (see [Coding Standards](Coding-Standards))
-- Write tests for your changes
-- Update documentation as needed
-- Keep pull requests focused on a single change
-- Write a clear, descriptive title and description
-- Reference any related issues
-- Ensure your code passes the automated code quality checks (see below)
+* Follow the coding standards (see [Coding Standards](Coding-Standards))
+* Write tests for your changes
+* Update documentation as needed
+* Keep pull requests focused on a single change
+* Write a clear, descriptive title and description
+* Reference any related issues
+* Ensure your code passes the automated code quality checks (see below)
 
 #### Code Quality Tools
 
 This project uses several automated code quality tools to ensure high standards. These tools are free for public repositories and will automatically analyze your code when you create a pull request:
 
 1. **CodeRabbit**: AI-powered code review tool
-   - [Website](https://www.coderabbit.ai/)
-   - Provides automated feedback on pull requests
+   * [Website](https://www.coderabbit.ai/)
+   * Provides automated feedback on pull requests
 
 2. **CodeFactor**: Continuous code quality monitoring
-   - [Website](https://www.codefactor.io/)
-   - Provides a grade for your codebase
+   * [Website](https://www.codefactor.io/)
+   * Provides a grade for your codebase
 
 3. **Codacy**: Code quality and static analysis
-   - [Website](https://www.codacy.com/)
-   - Identifies issues related to code style, security, and performance
+   * [Website](https://www.codacy.com/)
+   * Identifies issues related to code style, security, and performance
 
 4. **SonarCloud**: Code quality and security analysis
-   - [Website](https://sonarcloud.io/)
-   - Provides detailed analysis of code quality and security
+   * [Website](https://sonarcloud.io/)
+   * Provides detailed analysis of code quality and security
 
 #### Using AI Assistants with Code Quality Tools
 

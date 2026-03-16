@@ -67,7 +67,7 @@ if ($condition) {
 ### Documentation
 
 * All classes, methods, and functions should be documented using PHPDoc
-* Include a description, parameters, return values, and exceptions
+* Include a description of the parameters, return values, and possible exceptions
 
 ```php
 /**
