@@ -23,34 +23,39 @@ AI assistants can directly monitor GitHub Actions workflows using the GitHub API
 
 This helps identify failures and diagnose issues:
 
-```
+```text
 github-api /repos/{owner}/{repo}/actions/runs
 ```
 
 #### Step-by-Step Process
 
 1. **Get Recent Workflow Runs**:
-   ```
+
+   ```text
    github-api /repos/wpallstars/wp-plugin-starter-template-for-ai-coding/actions/runs
    ```
 
 2. **Filter for Failed Runs**:
-   ```
+
+   ```text
    github-api /repos/wpallstars/wp-plugin-starter-template-for-ai-coding/actions/runs?status=failure
    ```
 
 3. **Get Details for a Specific Run**:
-   ```
+
+   ```text
    github-api /repos/wpallstars/wp-plugin-starter-template-for-ai-coding/actions/runs/{run_id}
    ```
 
 4. **Get Jobs for a Workflow Run**:
-   ```
+
+   ```text
    github-api /repos/wpallstars/wp-plugin-starter-template-for-ai-coding/actions/runs/{run_id}/jobs
    ```
 
 5. **Analyze Job Logs** (if accessible via API):
-   ```
+
+   ```text
    github-api /repos/wpallstars/wp-plugin-starter-template-for-ai-coding/actions/jobs/{job_id}/logs
    ```
 
@@ -61,6 +66,7 @@ github-api /repos/{owner}/{repo}/actions/runs
 **Error**: `Missing download info for actions/upload-artifact@v3`
 
 **Solution**: Update to the latest version of the action:
+
 ```yaml
 uses: actions/upload-artifact@v4
 ```
@@ -70,6 +76,7 @@ uses: actions/upload-artifact@v4
 **Error**: `The current host is 127.0.0.1:8888, but WordPress multisites do not support custom ports.`
 
 **Solution**: Use port 80 for multisite environments:
+
 ```yaml
 npx @wp-playground/cli server --blueprint playground/multisite-blueprint.json --port 80 --login &
 ```
@@ -79,6 +86,7 @@ npx @wp-playground/cli server --blueprint playground/multisite-blueprint.json --
 **Error**: Invalid path syntax for artifacts
 
 **Solution**: Use multi-line format for better readability:
+
 ```yaml
 path: |
   cypress/videos
@@ -90,6 +98,7 @@ path: |
 **Problem**: Redundant workflow runs when multiple commits land quickly
 
 **Solution**: Add concurrency control to cancel in-progress runs:
+
 ```yaml
 concurrency:
   group: playground-tests-${{ github.ref }}
@@ -125,16 +134,19 @@ npm run test:playground:multisite
 ### Capturing and Analyzing Test Output
 
 1. **Run Tests with Output Capture**:
+
    ```bash
    npm run test:single > test-output.log 2>&1
    ```
 
 2. **Analyze Output for Errors**:
+
    ```bash
    cat test-output.log | grep -i 'error\|fail\|exception'
    ```
 
 3. **Parse Structured Test Results** (if available):
+
    ```bash
    cat cypress/results/results.json
    ```
@@ -146,6 +158,7 @@ npm run test:playground:multisite
 **Error**: `The current host is 127.0.0.1:8888, but WordPress multisites do not support custom ports.`
 
 **Solution**: Modify the port in the blueprint or test configuration:
+
 ```json
 {
   "features": {
@@ -159,6 +172,7 @@ npm run test:playground:multisite
 **Error**: `Timed out retrying after 4000ms: expected '<body...>' to have class 'wp-admin'`
 
 **Solution**: Update selectors to be more robust and handle login states:
+
 ```javascript
 cy.get('body').then(($body) => {
   if ($body.hasClass('login')) {
@@ -199,16 +213,19 @@ npm run lint:css
 ### Parsing Code Quality Tool Output
 
 1. **Run Code Quality Check**:
+
    ```bash
    composer run phpcs > phpcs-output.log 2>&1
    ```
 
 2. **Analyze Output for Errors**:
+
    ```bash
    cat phpcs-output.log | grep -i 'ERROR\|WARNING'
    ```
 
 3. **Automatically Fix Issues** (when possible):
+
    ```bash
    composer run phpcbf
    ```
@@ -221,13 +238,13 @@ AI assistants can check these comments to identify and address issues.
 
 #### Accessing PR Comments via GitHub API
 
-```
+```text
 github-api /repos/wpallstars/wp-plugin-starter-template-for-ai-coding/pulls/{pull_number}/comments
 ```
 
 #### Accessing PR Review Comments
 
-```
+```text
 github-api /repos/wpallstars/wp-plugin-starter-template-for-ai-coding/pulls/{pull_number}/reviews
 ```
 
@@ -236,7 +253,8 @@ github-api /repos/wpallstars/wp-plugin-starter-template-for-ai-coding/pulls/{pul
 CodeRabbit provides AI-powered code review comments via the GitHub API.
 
 1. **Get PR Comments**:
-   ```
+
+   ```text
    github-api /repos/wpallstars/wp-plugin-starter-template-for-ai-coding/pulls/{pull_number}/comments
    ```
 
@@ -254,12 +272,14 @@ CodeRabbit provides AI-powered code review comments via the GitHub API.
 These tools provide automated code quality checks and post results as PR comments.
 
 1. **Check PR Status Checks**:
-   ```
+
+   ```text
    github-api /repos/wpallstars/wp-plugin-starter-template-for-ai-coding/commits/{sha}/check-runs
    ```
 
 2. **Get Detailed Reports** (if available via API):
-   ```
+
+   ```text
    github-api /repos/wpallstars/wp-plugin-starter-template-for-ai-coding/commits/{sha}/check-runs/{id}
    ```
 
@@ -275,7 +295,8 @@ These tools provide automated code quality checks and post results as PR comment
 SonarCloud provides detailed code quality and security analysis.
 
 1. **Check SonarCloud Status**:
-   ```
+
+   ```text
    github-api /repos/wpallstars/wp-plugin-starter-template-for-ai-coding/commits/{sha}/check-runs?check_name=SonarCloud
    ```
 
@@ -293,6 +314,7 @@ SonarCloud provides detailed code quality and security analysis.
 **Error**: `ERROR: Expected snake_case for function name, but found camelCase`
 
 **Solution**: Rename functions to follow snake_case convention:
+
 ```php
 // Before
 function getPluginVersion() { ... }
@@ -306,6 +328,7 @@ function get_plugin_version() { ... }
 **Error**: `ERROR: Missing doc comment for function`
 
 **Solution**: Add proper docblocks:
+
 ```php
 /**
  * Get the plugin version.
@@ -332,7 +355,8 @@ function get_plugin_version() { ... }
 #### Extracting Actionable Items from PR Comments
 
 1. **Collect All Feedback**:
-   ```
+
+   ```text
    github-api /repos/wpallstars/wp-plugin-starter-template-for-ai-coding/pulls/{number}/comments
    github-api /repos/wpallstars/wp-plugin-starter-template-for-ai-coding/pulls/{number}/reviews
    ```
@@ -364,7 +388,7 @@ function get_plugin_version() { ... }
 
 ### Complete Feedback Loop System
 
-```
+```text
 Code Changes ──► Local Testing ──► GitHub Actions
      │                │                  │
      ▼                ▼                  ▼
@@ -395,7 +419,7 @@ These can be directly accessed and processed.
 
 #### Example CodeRabbit Feedback
 
-```
+```text
 coderabbitai bot left a comment
 Actionable comments posted: 1
 
@@ -424,14 +448,14 @@ These tools provide structured feedback that can be systematically addressed.
 
 #### Example SonarCloud Feedback
 
-```
+```text
 SonarCloud Quality Gate failed
 - 3 Bugs
 - 5 Code Smells
 - 1 Security Hotspot
 ```
 
-#### Processing Steps
+#### SonarCloud Processing Steps
 
 1. **Access Detailed Reports**:
    * Use the SonarCloud API or web interface
@@ -479,6 +503,7 @@ AI assistants can contribute fixes upstream.
 ### Workflow for External Contributions
 
 1. **Clone the Repository Locally**:
+
    ```bash
    cd ~/Git
    git clone https://github.com/owner/repo.git
@@ -487,6 +512,7 @@ AI assistants can contribute fixes upstream.
    ```
 
 2. **Make Changes and Commit**:
+
    ```bash
    # Make your changes
    git add -A
@@ -498,6 +524,7 @@ AI assistants can contribute fixes upstream.
    ```
 
 3. **Fork and Push**:
+
    ```bash
    # Create a fork (if not already forked)
    gh repo fork owner/repo --clone=false --remote=true
@@ -510,6 +537,7 @@ AI assistants can contribute fixes upstream.
    ```
 
 4. **Create Pull Request**:
+
    ```bash
    gh pr create \
      --repo owner/repo \
