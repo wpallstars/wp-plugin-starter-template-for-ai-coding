@@ -46,7 +46,7 @@ if ( getenv( 'WP_PHPUNIT__DIR' ) ) {
     // Include plugin files needed for tests.
     require_once WPST_PLUGIN_DIR . 'includes/class-core.php';
     require_once WPST_PLUGIN_DIR . 'includes/class-plugin.php';
-    if ( file_exists( WPST_PLUGIN_DIR . 'admin/lib/admin.php' ) ) {
-        require_once WPST_PLUGIN_DIR . 'admin/lib/admin.php';
+    if ( file_exists( WPST_PLUGIN_DIR . 'includes/Admin/class-admin.php' ) ) {
+        require_once WPST_PLUGIN_DIR . 'includes/Admin/class-admin.php';
     }
 }

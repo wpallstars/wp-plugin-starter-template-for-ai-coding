@@ -55,13 +55,19 @@ spl_autoload_register(
         // Get the relative class name.
         $relative_class = substr( $className, $len );
 
-        // Convert namespace to path.
-        $file = WP_PLUGIN_STARTER_TEMPLATE_PATH . 'includes/' . str_replace( '\\', '/', $relative_class ) . '.php';
+        // Build class file path using WordPress-style class file names.
+        $relative_path = str_replace( '\\', '/', $relative_class );
+        $path_parts = explode( '/', $relative_path );
+        $class_name = array_pop( $path_parts );
+        $directory = '';
 
-        // Convert class name format to file name format.
-        $file = str_replace( 'class-', '', $file );
-        $file = preg_replace( '/([a-z])([A-Z])/', '$1-$2', $file );
-        $file = strtolower( $file );
+        if ( ! empty( $path_parts ) ) {
+            $directory = implode( '/', $path_parts ) . '/';
+        }
+
+        $class_file = preg_replace( '/([a-z])([A-Z])/', '$1-$2', $class_name );
+        $class_file = 'class-' . strtolower( $class_file ) . '.php';
+        $file = WP_PLUGIN_STARTER_TEMPLATE_PATH . 'includes/' . $directory . $class_file;
 
         // If the file exists, require it.
         if ( file_exists( $file ) ) {
