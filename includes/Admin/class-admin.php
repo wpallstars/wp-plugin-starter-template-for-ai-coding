@@ -46,8 +46,8 @@ class Admin {
      */
     public function enqueue_admin_assets(): void {
 
-		// @phpcs:disable WordPress.Security.NonceVerification.Recommended
-		// @phpcs:disable WordPress.Security.NonceVerification.Missing
+        // @phpcs:disable WordPress.Security.NonceVerification.Recommended
+        // @phpcs:disable WordPress.Security.NonceVerification.Missing
         // For production, use filter_input.
         $page = '';
         if ( defined( 'PHPUNIT_RUNNING' ) && PHPUNIT_RUNNING ) {
@@ -64,7 +64,7 @@ class Admin {
         if ( ! $page || 'wp_plugin_starter_template_settings' !== $page ) {
             return;
         }
-		// @phpcs:enable
+        // @phpcs:enable
 
         // Get the plugin version.
         $plugin_version = $this->core->get_plugin_version();

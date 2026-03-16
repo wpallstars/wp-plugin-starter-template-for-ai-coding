@@ -15,6 +15,8 @@
         <exclude name="CamelCaseMethodName" />
         <exclude name="CamelCaseParameterName" />
         <exclude name="CamelCaseVariableName" />
+        <!-- WordPress plugins use filter_input() for production and $_GET for testing; Superglobals rule is not applicable. -->
+        <exclude name="Superglobals" />
     </rule>
     <rule ref="rulesets/design.xml" />
     <rule ref="rulesets/naming.xml">
