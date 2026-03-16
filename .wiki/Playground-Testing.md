@@ -24,9 +24,10 @@ The easiest way to test our plugin with WordPress Playground is to use the onlin
 [playground-single]: https://playground.wordpress.net/?blueprint-url=https://raw.githubusercontent.com/wpallstars/wp-plugin-starter-template-for-ai-coding/main/playground/blueprint.json&_t=2
 [playground-multisite]: https://playground.wordpress.net/?blueprint-url=https://raw.githubusercontent.com/wpallstars/wp-plugin-starter-template-for-ai-coding/main/playground/multisite-blueprint.json&_t=2
 
-These links automatically set up WordPress with multisite enabled and WP_DEBUG enabled.
+Both links automatically set up WordPress with WP_DEBUG enabled and the Plugin Toggle and
+Kadence Blocks plugins pre-installed and activated.
 
-Both the Plugin Toggle and Kadence Blocks plugins are pre-activated.
+The multisite link additionally enables WordPress multisite and network-activates both plugins.
 
 ## WP-CLI Commands for WordPress Playground
 
@@ -101,14 +102,14 @@ In a WordPress multisite environment, there are two ways to activate plugins:
 1. **Network Activation**: Activates a plugin for all sites in the network
    * In the WordPress admin, go to Network Admin > Plugins
    * Click "Network Activate" under the plugin
-   * Or use WP-CLI: `wp plugin install plugin-name --activate-network`
+   * Or use WP-CLI: `wp plugin activate plugin-name --network`
 
 2. **Per-Site Activation**: Activates a plugin for a specific site
    * In the WordPress admin, go to the specific site's admin area
    * Go to Plugins and activate the plugin for that site only
    * Or use WP-CLI: `wp plugin activate plugin-name --url=site-url`
 
-Our multisite blueprint uses network activation for the Plugin Toggle plugin as an example.
+Our multisite blueprint uses network activation for both the Plugin Toggle and Kadence Blocks plugins.
 
 ## Running Tests with WordPress Playground
 
