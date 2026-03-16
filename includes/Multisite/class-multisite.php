@@ -6,10 +6,10 @@
  * Extend this file or create additional classes in this directory
  * to implement multisite features for your plugin.
  *
- * @package WP_Plugin_Starter_Template_For_AI_Coding
+ * @package WPALLSTARS\PluginStarterTemplate
  */
 
-namespace WP_Plugin_Starter_Template_For_AI_Coding\Multisite;
+namespace WPALLSTARS\PluginStarterTemplate\Multisite;
 
 // Exit if accessed directly.
 if ( ! defined( 'ABSPATH' ) ) {
