@@ -16,6 +16,7 @@ module.exports = {
     sourceType: 'module'
   },
   rules: {
+    'comma-dangle': ['error', 'never'],
     'no-console': 'warn',
     'no-unused-vars': 'warn'
   },
