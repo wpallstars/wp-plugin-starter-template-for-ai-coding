@@ -29,6 +29,7 @@
     "test:phpunit:multisite": "WP_MULTISITE=1 composer test",
     "build": "./build.sh",
     "lint:js": "eslint cypress/",
+    "lint:css": "stylelint \"**/*.css\" --allow-empty-input",
     "lint:php": "composer run-script phpcs",
     "lint:php:simple": "composer run-script phpcs:simple",
     "lint:phpstan": "composer run-script phpstan",
@@ -38,7 +39,7 @@
     "test:php": "composer run-script test",
     "lint": "composer run-script lint",
     "fix": "composer run-script fix",
-    "quality": "npm run lint && npm run test:php"
+    "quality": "npm run lint && npm run lint:css && npm run test:php"
   },
   "repository": {
     "type": "git",
@@ -64,6 +65,8 @@
     "@wp-playground/cli": "^3.0.22",
     "cypress": "^13.17.0",
     "eslint": "^8.57.0",
-    "eslint-plugin-cypress": "^2.15.1"
+    "eslint-plugin-cypress": "^2.15.1",
+    "stylelint": "^16.0.0",
+    "stylelint-config-standard": "^36.0.0"
   }
 }
