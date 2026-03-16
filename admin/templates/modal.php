@@ -12,11 +12,22 @@ if ( ! defined( 'ABSPATH' ) ) {
 ?>
 
 <!-- Update Source Modal -->
-<div id="wpst-update-source-modal" class="wpst-modal" role="dialog" aria-modal="true" aria-labelledby="wpst-modal-title">
+<div
+    id="wpst-update-source-modal"
+    class="wpst-modal"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="wpst-update-source-modal-title"
+    tabindex="-1"
+>
     <div class="wpst-modal-content">
         <div class="wpst-modal-header">
-            <h2 id="wpst-modal-title" class="wpst-modal-title"><?php esc_html_e( 'Select Update Source', 'wp-plugin-starter-template' ); ?></h2>
-            <button type="button" class="wpst-modal-close" aria-label="<?php esc_attr_e( 'Close', 'wp-plugin-starter-template' ); ?>">&times;</button>
+            <h2 id="wpst-update-source-modal-title" class="wpst-modal-title"><?php esc_html_e( 'Select Update Source', 'wp-plugin-starter-template' ); ?></h2>
+            <button
+                type="button"
+                class="wpst-modal-close"
+                aria-label="<?php esc_attr_e( 'Close dialog', 'wp-plugin-starter-template' ); ?>"
+            >&times;</button>
         </div>
         
         <div class="wpst-modal-body">
