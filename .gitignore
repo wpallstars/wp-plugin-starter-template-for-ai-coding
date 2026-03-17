@@ -63,3 +63,6 @@ temp/
 coverage/
 .phpunit.result.cache
 .agents/loop-state/
+
+# Local tool configs
+.superset/
