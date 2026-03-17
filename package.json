@@ -39,7 +39,7 @@
     "test:php": "composer run-script test",
     "lint": "composer run-script lint",
     "fix": "composer run-script fix",
-    "quality": "npm run lint && npm run lint:css && npm run test:php"
+    "quality": "npm run lint && npm run lint:js && npm run lint:css && npm run test:php"
   },
   "repository": {
     "type": "git",
