@@ -117,6 +117,7 @@ install_test_suite() {
 	# set up testing suite if it doesn't yet exist
 	if [ ! -d "$WP_TESTS_DIR" ]; then
 		mkdir -p "$WP_TESTS_DIR"
+		rm -rf /tmp/wordpress-develop
 		if ! git clone --quiet --depth=1 --branch "$GIT_REF" https://github.com/WordPress/wordpress-develop.git /tmp/wordpress-develop; then
 			echo "Error: Failed to clone wordpress-develop at branch/tag $GIT_REF" >&2
 			exit 1
