@@ -147,17 +147,21 @@
     /**
 		 * Show a message in the modal
 		 *
-		 * @param {string} type Message type (success, error)
+		 * @param {string} type    Message type (success, error)
 		 * @param {string} message Message text
 		 */
     showMessage: function (type, message) {
       const $message = this.$modal.find( '.wpst-modal-message' );
 
-      // Set message as plain text to prevent XSS, then apply type class.
-      $message.text( message ).removeClass( 'success error' ).addClass( type ).show();
+      // Validate type against allow-list to prevent class injection vulnerabilities.
+      const allowedTypes = [ 'success', 'error' ];
+      const safeType = allowedTypes.includes( type ) ? type : 'error';
+
+      // Set message as plain text to prevent XSS, then apply validated type class.
+      $message.text( message ).removeClass( 'success error' ).addClass( safeType ).show();
 
       // Hide message after a delay for success messages.
-      if (type === 'success') {
+      if (safeType === 'success') {
         setTimeout(
           function () {
             $message.fadeOut( 300 );
