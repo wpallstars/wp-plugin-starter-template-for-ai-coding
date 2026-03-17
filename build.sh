@@ -71,7 +71,7 @@ if [ -d "vendor" ]; then
 	cp -R vendor "$BUILD_DIR/"
 fi
 
-# Create ZIP file
+# Create ZIP file.
 echo "Creating ZIP file..."
 cd build || exit 1
 zip -r "../$ZIP_FILE" "$PLUGIN_SLUG" -x "*.DS_Store" -x "*.git*" -x "*.github*"
@@ -87,7 +87,7 @@ if [ -f "$ZIP_FILE" ]; then
 		printf '\nDeploying to local WordPress installation...\n'
 		echo "Deploying to local WordPress installation..."
 
-		# Remove existing plugin directory
+		# Remove existing plugin directory.
 		rm -rf "${WP_LOCAL_PLUGIN_DIR:?}/$PLUGIN_SLUG"
 
 		# Copy files to local WordPress installation

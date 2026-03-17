@@ -29,11 +29,6 @@ jobs:
       - name: Install dependencies
         run: composer install --prefer-dist --no-progress
 
-      - name: Install WordPress Coding Standards
-        run: |
-          composer require --dev wp-coding-standards/wpcs dealerdirect/phpcodesniffer-composer-installer
-          vendor/bin/phpcs --config-set installed_paths vendor/wp-coding-standards/wpcs
-
       - name: Run PHPCS
         run: composer phpcs
         continue-on-error: true
@@ -60,9 +55,6 @@ jobs:
 
       - name: Install dependencies
         run: composer install --prefer-dist --no-progress
-
-      - name: Install PHPStan WordPress stubs
-        run: composer require --dev szepeviktor/phpstan-wordpress
 
       - name: Run PHPStan
         run: composer phpstan

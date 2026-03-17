@@ -67,7 +67,7 @@ if ($condition) {
 ### Documentation
 
 * All classes, methods, and functions should be documented using PHPDoc
-* Include a description of the parameters, return values, and possible exceptions
+* Include descriptions of parameters, return values, and any exceptions thrown
 
 ```php
 /**
@@ -271,7 +271,7 @@ To ensure your code passes the quality checks from these tools, follow these gui
 3. **Using AI Assistants with Code Quality Tools**
    * When you receive feedback from code quality tools, you can use AI assistants to help address the issues
    * Copy the output from the code quality tool and paste it into your AI assistant chat
-   * Ask the AI to help you understand and resolve the issues
+   * Request the AI's assistance to interpret and resolve the reported issues
    * Example prompt:
 
      ```text
