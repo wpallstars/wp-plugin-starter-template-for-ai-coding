@@ -83,8 +83,8 @@ if [ -f "$ZIP_FILE" ]; then
 	echo "File path: $(pwd)/$ZIP_FILE"
 
 	# Deploy to local WordPress installation if environment variable is set
-	if [ -n "$WP_LOCAL_PLUGIN_DIR" ]; then
-		printf '\nDeploying to local WordPress installation...\n'
+	if [ -n "${WP_LOCAL_PLUGIN_DIR:-}" ]; then
+		echo ""
 		echo "Deploying to local WordPress installation..."
 
 		# Remove existing plugin directory.
