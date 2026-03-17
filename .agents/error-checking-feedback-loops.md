@@ -77,7 +77,7 @@ uses: actions/upload-artifact@v4
 
 **Solution**: Use port 80 for multisite environments:
 
-```yaml
+```bash
 npx @wp-playground/cli server --blueprint playground/multisite-blueprint.json --port 80 --login &
 ```
 
@@ -142,7 +142,7 @@ npm run test:playground:multisite
 2. **Analyze Output for Errors**:
 
    ```bash
-   cat test-output.log | grep -i 'error\|fail\|exception'
+   grep -i 'error\|fail\|exception' test-output.log
    ```
 
 3. **Parse Structured Test Results** (if available):
@@ -221,7 +221,7 @@ npm run lint:css
 2. **Analyze Output for Errors**:
 
    ```bash
-   cat phpcs-output.log | grep -i 'ERROR\|WARNING'
+   grep -i 'ERROR\|WARNING' phpcs-output.log
    ```
 
 3. **Automatically Fix Issues** (when possible):
