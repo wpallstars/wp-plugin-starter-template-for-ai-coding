@@ -78,7 +78,7 @@
           data: {
             action: 'wpst_save_settings',
             nonce: wpstData.nonce,
-            formData: formData
+            formData: formData,
           },
           success: function (response) {
             if (response.success) {
@@ -93,8 +93,8 @@
           complete: function () {
             // Re-enable submit button and remove loading state.
             $submitButton.prop( 'disabled', false ).removeClass( 'loading' );
-          }
-        }
+          },
+        },
       );
     },
 
@@ -123,19 +123,19 @@
             300,
             function () {
               $( this ).remove();
-            }
+            },
           );
         },
-        5000
+        5000,
       );
-    }
+    },
   };
 
   // Initialize when document is ready.
   $( document ).ready(
     function () {
       WPSTAdmin.init();
-    }
+    },
   );
 
 })( jQuery );
