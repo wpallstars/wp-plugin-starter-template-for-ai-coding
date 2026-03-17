@@ -48,7 +48,7 @@
           if ($( e.target ).hasClass( 'wpst-modal' )) {
             WPSTUpdateSourceSelector.closeModal();
           }
-        }
+        },
       );
 
       // Select source option.
@@ -116,7 +116,7 @@
           data: {
             action: 'wpst_set_update_source', // AJAX action hook.
             nonce: wpstModalData.nonce, // Security nonce.
-            source: this.selectedSource
+            source: this.selectedSource,
           },
           success: function (response) {
             if (response.success) {
@@ -127,7 +127,7 @@
                 function () {
                   WPSTUpdateSourceSelector.closeModal();
                 },
-                1500
+                1500,
               );
             } else {
               WPSTUpdateSourceSelector.showMessage( 'error', response.data.message );
@@ -139,8 +139,8 @@
           complete: function () {
             // Reset button state.
             $saveButton.prop( 'disabled', false ).text( wpstModalData.i18n.confirm );
-          }
-        }
+          },
+        },
       );
     },
 
@@ -162,17 +162,17 @@
           function () {
             $message.fadeOut( 300 );
           },
-          3000
+          3000,
         );
       }
-    }
+    },
   };
 
   // Initialize when document is ready.
   $( document ).ready(
     function () {
       WPSTUpdateSourceSelector.init();
-    }
+    },
   );
 
 })( jQuery );
