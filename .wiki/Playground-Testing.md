@@ -102,7 +102,7 @@ In a WordPress multisite environment, there are two ways to activate plugins:
 1. **Network Activation**: Activates a plugin for all sites in the network
    * In the WordPress admin, go to Network Admin > Plugins
    * Click "Network Activate" under the plugin
-   * Or use WP-CLI: `wp plugin activate plugin-name --network`
+   * Or use WP-CLI: `wp plugin activate plugin-name --network` (for installed plugins), or `wp plugin install plugin-name --activate-network` (to install and activate)
 
 2. **Per-Site Activation**: Activates a plugin for a specific site
    * In the WordPress admin, go to the specific site's admin area
