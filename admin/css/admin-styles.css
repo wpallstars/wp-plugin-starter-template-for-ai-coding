@@ -123,8 +123,6 @@
     text-align: right;
 }
 
-/* Responsive Styles */
-
 /* 782px is the WordPress mobile admin breakpoint. */
 @media screen and (max-width: 782px) {
     .wpst-form-table th {
