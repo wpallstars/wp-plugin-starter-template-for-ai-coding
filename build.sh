@@ -46,9 +46,9 @@ cp -R README.md LICENSE CHANGELOG.md readme.txt composer.json "$BUILD_DIR/"
 # Copy directories
 echo "Copying directories..."
 mkdir -p "$BUILD_DIR/admin" "$BUILD_DIR/includes" "$BUILD_DIR/languages" "$BUILD_DIR/assets"
-cp -R admin/* "$BUILD_DIR/admin/"
-cp -R includes/* "$BUILD_DIR/includes/"
-cp -R languages/* "$BUILD_DIR/languages/"
+cp -R ./admin/* "$BUILD_DIR/admin/"
+cp -R ./includes/* "$BUILD_DIR/includes/"
+cp -R ./languages/* "$BUILD_DIR/languages/"
 
 # Create assets directory structure
 mkdir -p "$BUILD_DIR/assets/banner" "$BUILD_DIR/assets/icon" "$BUILD_DIR/assets/screenshots"
@@ -73,9 +73,10 @@ fi
 
 # Create ZIP file.
 echo "Creating ZIP file..."
-cd build || exit 1
-zip -r "../$ZIP_FILE" "$PLUGIN_SLUG" -x "*.DS_Store" -x "*.git*" -x "*.github*"
-cd ..
+(
+	cd build || exit 1
+	zip -r "../$ZIP_FILE" "$PLUGIN_SLUG" -x "*.DS_Store" -x "*.git*" -x "*.github*"
+)
 
 # Check if ZIP file was created successfully
 if [ -f "$ZIP_FILE" ]; then

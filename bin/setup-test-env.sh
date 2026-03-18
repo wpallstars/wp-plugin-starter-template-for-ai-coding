@@ -1,8 +1,5 @@
 #!/bin/bash
 
-# Make this script executable
-chmod +x "$0"
-
 # Check if environment type is provided
 if [ -z "$1" ]; then
 	echo "Usage: $0 [single|multisite|playground-single|playground-multisite]"
@@ -49,7 +46,7 @@ install_wp_playground() {
 	fi
 }
 
-if [ "$ENV_TYPE" == "single" ]; then
+if [ "$ENV_TYPE" = "single" ]; then
 	echo "Setting up single site environment..."
 
 	# Install wp-env if needed
@@ -83,7 +80,7 @@ if [ "$ENV_TYPE" == "single" ]; then
 	echo "Site: http://localhost:8888"
 	echo "Admin login: admin / password"
 
-elif [ "$ENV_TYPE" == "multisite" ]; then
+elif [ "$ENV_TYPE" = "multisite" ]; then
 	echo "Setting up multisite environment..."
 
 	# Install wp-env if needed
@@ -124,7 +121,7 @@ elif [ "$ENV_TYPE" == "multisite" ]; then
 	echo "Test site: http://localhost:8888/testsite"
 	echo "Admin login: admin / password"
 
-elif [ "$ENV_TYPE" == "playground-single" ]; then
+elif [ "$ENV_TYPE" = "playground-single" ]; then
 	echo "Setting up WordPress Playground single site environment..."
 
 	# Install wp-playground if needed
@@ -193,7 +190,7 @@ EOF
 	echo "Admin login: admin / password"
 	echo "Press Ctrl+C to stop the server when done."
 
-elif [ "$ENV_TYPE" == "playground-multisite" ]; then
+elif [ "$ENV_TYPE" = "playground-multisite" ]; then
 	echo "Setting up WordPress Playground multisite environment..."
 
 	# Install wp-playground if needed
@@ -205,6 +202,7 @@ elif [ "$ENV_TYPE" == "playground-multisite" ]; then
 	zip -r dist/plugin.zip . -x "node_modules/*" "dist/*" ".git/*"
 
 	# Update blueprint to use local plugin
+	# shellcheck disable=SC2154
 	cat >playground/multisite-blueprint.json <<EOF
 {
   "landingPage": "/wp-admin/network/",
