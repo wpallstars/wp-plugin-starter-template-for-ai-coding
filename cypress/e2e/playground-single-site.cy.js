@@ -17,14 +17,12 @@ describe('WordPress Playground Single Site Tests', () => {
     cy.loginAsAdmin();
     cy.visit('/wp-admin/plugins.php', { timeout: 30000 });
 
-    // Assert unconditionally: if the plugin is missing or inactive, the test must fail.
-    const starterPluginSelector = 'tr[data-slug="wp-plugin-starter-template-for-ai-coding"]';
-
-    cy.get(starterPluginSelector, { timeout: 15000 }).should(($row) => {
-      expect($row.find('.deactivate a')).to.have.length.greaterThan(0);
-    });
-
     cy.get('body', { timeout: 15000 }).then(($body) => {
+      expect(
+        $body.find('tr[data-slug="wp-plugin-starter-template-for-ai-coding"] .deactivate a').length,
+        'Starter template plugin should be present and active'
+      ).to.be.greaterThan(0);
+
       if ($body.text().includes('Plugin Toggle')) {
         cy.contains('tr', 'Plugin Toggle').should('exist');
         cy.contains('tr', 'Plugin Toggle').find('.deactivate').should('exist');
