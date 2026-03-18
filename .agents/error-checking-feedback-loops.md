@@ -142,7 +142,7 @@ npm run test:playground:multisite
 2. **Analyze Output for Errors**:
 
    ```bash
-   grep -i 'error\|fail\|exception' test-output.log
+   grep -E -i '\b(error|fail|exception)' test-output.log
    ```
 
 3. **Parse Structured Test Results** (if available):
@@ -221,7 +221,7 @@ npm run lint:css
 2. **Analyze Output for Errors**:
 
    ```bash
-   grep -i 'ERROR\|WARNING' phpcs-output.log
+   grep -E -i '\b(ERROR|WARNING)\b' phpcs-output.log
    ```
 
 3. **Automatically Fix Issues** (when possible):
