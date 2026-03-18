@@ -17,9 +17,11 @@ describe('WordPress Playground Single Site Tests', () => {
     cy.loginAsAdmin();
     cy.visit('/wp-admin/plugins.php', { timeout: 30000 });
 
-    // Assert unconditionally: if the plugin is missing, the test must fail.
-    cy.get('tr[data-slug="wp-plugin-starter-template-for-ai-coding"]', { timeout: 15000 }).within(() => {
-      cy.get('.deactivate a').should('exist');
+    // Assert unconditionally: if the plugin is missing or inactive, the test must fail.
+    const starterPluginSelector = 'tr[data-slug="wp-plugin-starter-template-for-ai-coding"]';
+
+    cy.get(starterPluginSelector, { timeout: 15000 }).should(($row) => {
+      expect($row.find('.deactivate a')).to.have.length.greaterThan(0);
     });
 
     cy.get('body', { timeout: 15000 }).then(($body) => {
