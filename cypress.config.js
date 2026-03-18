@@ -12,6 +12,6 @@ module.exports = defineConfig({
     },
     // Add configuration for WordPress Playground
     experimentalWebKitSupport: true,
-    chromeWebSecurity: false,
-  },
+    chromeWebSecurity: false
+  }
 });
