@@ -20,7 +20,7 @@ describe('WordPress Playground Single Site Tests', () => {
     cy.get('body', { timeout: 15000 }).then(($body) => {
       expect(
         $body.find('tr[data-slug="wp-plugin-starter-template-for-ai-coding"] .deactivate a').length,
-        'Starter template plugin should be present and active'
+        'Starter template plugin should be present and active',
       ).to.be.greaterThan(0);
 
       if ($body.text().includes('Plugin Toggle')) {
