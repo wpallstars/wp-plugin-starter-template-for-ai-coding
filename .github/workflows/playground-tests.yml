@@ -40,7 +40,7 @@ jobs:
     - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
 
     - name: Setup Node.js
-      uses: actions/setup-node@v4
+      uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
       with:
         node-version: ${{ matrix.node-version }}
         cache: 'npm'
@@ -67,7 +67,7 @@ jobs:
     - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
 
     - name: Setup Node.js
-      uses: actions/setup-node@v4
+      uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
       with:
         node-version: '20'
         cache: 'npm'
@@ -142,7 +142,7 @@ jobs:
 
     - name: Upload Cypress artifacts
       if: always()
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
       with:
         name: cypress-single-site-results
         path: |
@@ -163,7 +163,7 @@ jobs:
     - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
 
     - name: Setup Node.js
-      uses: actions/setup-node@v4
+      uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
       with:
         node-version: '20'
         cache: 'npm'
@@ -239,7 +239,7 @@ jobs:
 
     - name: Upload Cypress artifacts
       if: always()
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
       with:
         name: cypress-multisite-results
         path: |
@@ -261,7 +261,7 @@ jobs:
     - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
 
     - name: WordPress Performance Tests
-      uses: swissspidy/wp-performance-action@v2.0.3
+      uses: swissspidy/wp-performance-action@b7e3ffcf0fc4a48b62492e021e0ebeb51430ff11 # v2.0.3
       with:
         plugins: |
           ./
