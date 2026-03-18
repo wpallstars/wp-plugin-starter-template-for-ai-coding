@@ -85,8 +85,7 @@ if [ -f "$ZIP_FILE" ]; then
 
 	# Deploy to local WordPress installation if environment variable is set
 	if [ -n "${WP_LOCAL_PLUGIN_DIR:-}" ]; then
-		echo ""
-		echo "Deploying to local WordPress installation..."
+		printf '\nDeploying to local WordPress installation...\n'
 
 		# Remove existing plugin directory.
 		rm -rf "${WP_LOCAL_PLUGIN_DIR:?}/$PLUGIN_SLUG"
