@@ -28,7 +28,7 @@
     "test:phpunit": "composer test",
     "test:phpunit:multisite": "WP_MULTISITE=1 composer test",
     "build": "./build.sh",
-    "lint:js": "eslint cypress/",
+    "lint:js": "eslint cypress/ cypress.config.js",
     "lint:css": "stylelint \"**/*.css\" --allow-empty-input",
     "lint:php": "composer run-script phpcs",
     "lint:php:simple": "composer run-script phpcs:simple",
