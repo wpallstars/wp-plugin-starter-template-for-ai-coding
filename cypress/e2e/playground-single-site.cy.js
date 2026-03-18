@@ -18,14 +18,10 @@ describe('WordPress Playground Single Site Tests', () => {
     cy.visit('/wp-admin/plugins.php', { timeout: 30000 });
 
     cy.get('body', { timeout: 15000 }).then(($body) => {
-      // Verify the starter template plugin exists and is activated.
-      if ($body.find('tr[data-slug="wp-plugin-starter-template-for-ai-coding"]').length) {
-        cy.get('tr[data-slug="wp-plugin-starter-template-for-ai-coding"]').within(() => {
-          cy.get('.deactivate a').should('exist');
-        });
-      } else {
-        cy.log('Starter template plugin not found by slug, skipping check');
-      }
+      expect(
+        $body.find('tr[data-slug="wp-plugin-starter-template-for-ai-coding"] .deactivate a').length,
+        'Starter template plugin should be present and active'
+      ).to.be.greaterThan(0);
 
       if ($body.text().includes('Plugin Toggle')) {
         cy.contains('tr', 'Plugin Toggle').should('exist');
