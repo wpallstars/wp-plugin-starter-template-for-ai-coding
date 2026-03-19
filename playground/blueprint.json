@@ -40,21 +40,6 @@
     {
       "step": "activatePlugin",
       "pluginPath": "kadence-blocks/kadence-blocks.php"
-    },
-    {
-      "step": "installPlugin",
-      "pluginData": {
-        "resource": "url",
-        "url": "https://github.com/wpallstars/wp-plugin-starter-template-for-ai-coding/archive/refs/heads/main.zip"
-      }
-    },
-    {
-      "step": "wp-cli",
-      "command": "wp eval 'rename(WP_PLUGIN_DIR.\"/wp-plugin-starter-template-for-ai-coding-main\", WP_PLUGIN_DIR.\"/wp-plugin-starter-template-for-ai-coding\");'"
-    },
-    {
-      "step": "wp-cli",
-      "command": "wp plugin activate wp-plugin-starter-template-for-ai-coding"
     }
   ]
 }
