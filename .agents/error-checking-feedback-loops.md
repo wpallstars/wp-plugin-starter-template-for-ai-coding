@@ -221,7 +221,7 @@ npm run lint:css
 2. **Analyze Output for Errors**:
 
    ```bash
-   grep -E -i '\b(ERROR|WARNING)\b' phpcs-output.log
+   grep -E -i '\b(ERROR|WARNING)' phpcs-output.log
    ```
 
 3. **Automatically Fix Issues** (when possible):
