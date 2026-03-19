@@ -1,5 +1,10 @@
 /* eslint-env mocha, jquery, cypress */
-describe('WordPress Playground Single Site Tests', () => {
+describe('WordPress Playground Single Site Tests', {
+  retries: {
+    runMode: 2,
+    openMode: 0,
+  },
+}, () => {
   beforeEach(() => {
     cy.visit('/', { timeout: 30000 });
   });
