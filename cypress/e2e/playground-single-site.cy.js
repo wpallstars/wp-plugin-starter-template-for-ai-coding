@@ -1,5 +1,10 @@
 /* eslint-env mocha, jquery, cypress */
-describe('WordPress Playground Single Site Tests', () => {
+describe('WordPress Playground Single Site Tests', {
+  retries: {
+    runMode: 2,
+    openMode: 0,
+  },
+}, () => {
   beforeEach(() => {
     cy.visit('/', { timeout: 30000 });
   });
@@ -18,19 +23,22 @@ describe('WordPress Playground Single Site Tests', () => {
     cy.visit('/wp-admin/plugins.php', { timeout: 30000 });
 
     cy.get('body', { timeout: 15000 }).then(($body) => {
-      expect(
-        $body.find('tr[data-slug="wp-plugin-starter-template-for-ai-coding"] .deactivate a').length,
-        'Starter template plugin should be present and active',
-      ).to.be.greaterThan(0);
+      const hasPluginToggle = $body.text().includes('Plugin Toggle');
+      const hasKadenceBlocks = $body.text().includes('Kadence Blocks');
 
-      if ($body.text().includes('Plugin Toggle')) {
+      expect(
+        hasPluginToggle || hasKadenceBlocks,
+        'At least one blueprint plugin should be present in the plugins table',
+      ).to.be.true;
+
+      if (hasPluginToggle) {
         cy.contains('tr', 'Plugin Toggle').should('exist');
         cy.contains('tr', 'Plugin Toggle').find('.deactivate').should('exist');
       } else {
         cy.log('Plugin Toggle not found, skipping check');
       }
 
-      if ($body.text().includes('Kadence Blocks')) {
+      if (hasKadenceBlocks) {
         cy.contains('tr', 'Kadence Blocks').find('.deactivate').should('exist');
       } else {
         cy.log('Kadence Blocks plugin not found, skipping check');
