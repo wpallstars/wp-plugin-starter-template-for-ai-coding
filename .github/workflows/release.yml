@@ -75,4 +75,4 @@ jobs:
 
             [View full changelog](https://github.com/wpallstars/wp-plugin-starter-template-for-ai-coding/blob/main/CHANGELOG.md)
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ github.token }}

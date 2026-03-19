@@ -110,7 +110,7 @@ jobs:
   #     - name: Check if SonarCloud token is set
   #       id: check_sonar_token
   #       run: |
-  #         if [ -z "${{ secrets.SONAR_TOKEN }}" ]; then
+  #         if [ -z "$SONAR_TOKEN" ]; then
   #           echo "SONAR_TOKEN is not set, skipping SonarCloud analysis"
   #           echo "skip=true" >> $GITHUB_OUTPUT
   #         else
@@ -121,8 +121,8 @@ jobs:
   #       if: steps.check_sonar_token.outputs.skip != 'true'
   #       uses: SonarSource/sonarqube-scan-action@master
   #       env:
-  #         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-  #         SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+  #         GITHUB_TOKEN: ${{ github.token }}
+  #         SONAR_TOKEN: ${{ env.SONAR_TOKEN }}
   #       with:
   #         args: >
   #           -Dsonar.projectKey=wpallstars_wp-plugin-starter-template-for-ai-coding
@@ -135,6 +135,8 @@ jobs:
   codacy:
     name: Codacy Analysis
     runs-on: ubuntu-latest
+    env:
+      CODACY_PROJECT_TOKEN: ${{ secrets.CODACY_PROJECT_TOKEN }}
     steps:
       - name: Checkout code
         uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
@@ -143,8 +145,6 @@ jobs:
 
       - name: Check if Codacy token is set
         id: check_codacy_token
-        env:
-          CODACY_PROJECT_TOKEN: ${{ secrets.CODACY_PROJECT_TOKEN }}
         run: |
           if [ -z "$CODACY_PROJECT_TOKEN" ]; then
             echo "CODACY_PROJECT_TOKEN is not set, running Codacy without upload"
@@ -156,7 +156,7 @@ jobs:
       - name: Run Codacy Analysis CLI
         uses: codacy/codacy-analysis-cli-action@v4
         with:
-          project-token: ${{ secrets.CODACY_PROJECT_TOKEN }}
+          project-token: ${{ env.CODACY_PROJECT_TOKEN }}
           verbose: true
           output: results.sarif
           format: sarif
