@@ -101,6 +101,7 @@ jobs:
           --login \
           --php 8.0 \
           --verbosity normal \
+          --mount "$(pwd):/wordpress/wp-content/plugins/wp-plugin-starter-template-for-ai-coding" \
           2>&1 | tee playground-server.log &
         SERVER_PID=$!
 
