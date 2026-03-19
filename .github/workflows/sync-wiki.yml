@@ -27,6 +27,8 @@ jobs:
           git clone https://github.com/${{ github.repository }}.wiki.git wiki
 
       - name: Sync wiki content
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           # Remove all files from wiki repository except .git
           find wiki -mindepth 1 -maxdepth 1 -not -name '.git' -exec rm -rf {} \;
@@ -50,4 +52,4 @@ jobs:
           git commit -m "Sync wiki from source repository"
 
           # Push changes
-          git push https://${{ github.actor }}:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.wiki.git
+          git push https://${{ github.actor }}:$GITHUB_TOKEN@github.com/${{ github.repository }}.wiki.git
