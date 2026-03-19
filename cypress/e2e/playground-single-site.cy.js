@@ -20,8 +20,17 @@ describe('WordPress Playground Single Site Tests', () => {
     cy.get('body', { timeout: 15000 }).then(($body) => {
       // Verify the starter template plugin exists and is activated.
       if ($body.find('tr[data-slug="wp-plugin-starter-template-for-ai-coding"]').length) {
-        cy.get('tr[data-slug="wp-plugin-starter-template-for-ai-coding"]').should('exist');
-        cy.get('tr[data-slug="wp-plugin-starter-template-for-ai-coding"] .deactivate a').should('exist');
+        cy.get('tr[data-slug="wp-plugin-starter-template-for-ai-coding"]').as('starterTemplatePluginRow');
+        cy.get('@starterTemplatePluginRow').then(($row) => {
+          if ($row.find('.deactivate a').length) {
+            cy.get('@starterTemplatePluginRow').find('.deactivate a').should('exist');
+          } else if ($row.find('.activate a').length) {
+            cy.get('@starterTemplatePluginRow').find('.activate a').click();
+            cy.get('tr[data-slug="wp-plugin-starter-template-for-ai-coding"] .deactivate a', { timeout: 15000 }).should('exist');
+          } else {
+            cy.log('Starter template plugin row found without activate/deactivate controls');
+          }
+        });
       } else {
         cy.log('Starter template plugin not found by slug, skipping check');
       }

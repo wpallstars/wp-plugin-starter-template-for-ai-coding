@@ -40,6 +40,10 @@
     {
       "step": "activatePlugin",
       "pluginPath": "kadence-blocks/kadence-blocks.php"
+    },
+    {
+      "step": "activatePlugin",
+      "pluginPath": "wp-plugin-starter-template-for-ai-coding/wp-plugin-starter-template.php"
     }
   ]
 }

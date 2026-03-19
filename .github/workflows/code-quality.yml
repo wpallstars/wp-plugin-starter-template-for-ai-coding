@@ -135,28 +135,16 @@ jobs:
   codacy:
     name: Codacy Analysis
     runs-on: ubuntu-latest
-    env:
-      CODACY_PROJECT_TOKEN: ${{ secrets.CODACY_PROJECT_TOKEN }}
     steps:
       - name: Checkout code
         uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
         with:
           fetch-depth: 0
 
-      - name: Check if Codacy token is set
-        id: check_codacy_token
-        run: |
-          if [ -z "$CODACY_PROJECT_TOKEN" ]; then
-            echo "CODACY_PROJECT_TOKEN is not set, running Codacy without upload"
-            echo "skip_upload=true" >> $GITHUB_OUTPUT
-          else
-            echo "skip_upload=false" >> $GITHUB_OUTPUT
-          fi
-
       - name: Run Codacy Analysis CLI
         uses: codacy/codacy-analysis-cli-action@v4
         with:
-          project-token: ${{ env.CODACY_PROJECT_TOKEN }}
+          project-token: ${{ secrets.CODACY_PROJECT_TOKEN }}
           verbose: true
           output: results.sarif
           format: sarif
@@ -168,7 +156,6 @@ jobs:
         continue-on-error: true
 
       - name: Upload SARIF results file
-        if: steps.check_codacy_token.outputs.skip_upload != 'true'
         uses: github/codeql-action/upload-sarif@v3
         with:
           sarif_file: results.sarif

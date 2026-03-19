@@ -30,9 +30,6 @@ jobs:
   sonarcloud:
     name: SonarCloud
     runs-on: ubuntu-latest
-    env:
-      SONARCLOUD_GITHUB: ${{ secrets.SONARCLOUD_GITHUB }}
-      GITHUB_TOKEN: ${{ github.token }}
 
     steps:
       - name: Checkout code
@@ -40,22 +37,11 @@ jobs:
         with:
           fetch-depth: 0  # Shallow clones should be disabled for a better relevancy of analysis
 
-      - name: Check if SonarCloud token is set
-        id: check_token
-        run: |
-          if [ -z "$SONARCLOUD_GITHUB" ]; then
-            echo "SONARCLOUD_GITHUB is not set, skipping SonarCloud analysis"
-            echo "skip=true" >> $GITHUB_OUTPUT
-          else
-            echo "skip=false" >> $GITHUB_OUTPUT
-          fi
-
       - name: SonarCloud Scan
-        if: steps.check_token.outputs.skip != 'true'
         uses: SonarSource/sonarqube-scan-action@master
         env:
-          GITHUB_TOKEN: ${{ env.GITHUB_TOKEN }}
-          SONAR_TOKEN: ${{ env.SONARCLOUD_GITHUB }}
+          GITHUB_TOKEN: ${{ github.token }}
+          SONAR_TOKEN: ${{ secrets.SONARCLOUD_GITHUB }}
         with:
           args: >
             -Dsonar.projectKey=wpallstars_wp-plugin-starter-template-for-ai-coding
