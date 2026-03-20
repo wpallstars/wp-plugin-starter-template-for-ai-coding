@@ -50,4 +50,8 @@ jobs:
           git commit -m "Sync wiki from source repository"
 
           # Push changes
-          git push https://${{ github.actor }}:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.wiki.git
+          git push https://${WIKI_ACTOR}:${WIKI_TOKEN}@github.com/${WIKI_REPO}.wiki.git
+        env:
+          WIKI_ACTOR: ${{ github.actor }}
+          WIKI_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          WIKI_REPO: ${{ github.repository }}
