@@ -58,7 +58,8 @@ check_cli() {
         log_info "Run: npm install"
         exit 1
     fi
-    local version=$(npx @wp-playground/cli --version 2>/dev/null)
+    local version
+    version=$(npx @wp-playground/cli --version 2>/dev/null)
     log_info "Using @wp-playground/cli version: $version"
 }
 
@@ -112,7 +113,8 @@ start_playground() {
     
     # Check if already running
     if [ -f "$PID_FILE" ]; then
-        local old_pid=$(cat "$PID_FILE")
+        local old_pid
+        old_pid=$(cat "$PID_FILE")
         if kill -0 "$old_pid" 2>/dev/null; then
             log_warning "Playground is already running (PID: $old_pid)"
             log_info "Run 'npm run playground:stop' first to restart"
@@ -196,7 +198,8 @@ start_playground() {
 # Stop WordPress Playground
 stop_playground() {
     if [ -f "$PID_FILE" ]; then
-        local pid=$(cat "$PID_FILE")
+        local pid
+        pid=$(cat "$PID_FILE")
         if kill -0 "$pid" 2>/dev/null; then
             log_info "Stopping WordPress Playground (PID: $pid)..."
             kill "$pid" 2>/dev/null || true
@@ -226,7 +229,8 @@ stop_playground() {
     
     # Clean up any orphaned processes on common ports
     for port in $DEFAULT_PORT $MULTISITE_PORT; do
-        local orphan_pid=$(lsof -t -i ":$port" 2>/dev/null || true)
+        local orphan_pid
+        orphan_pid=$(lsof -t -i ":$port" 2>/dev/null || true)
         if [ -n "$orphan_pid" ]; then
             log_info "Found process on port $port (PID: $orphan_pid), stopping..."
             kill "$orphan_pid" 2>/dev/null || true
@@ -241,7 +245,8 @@ check_status() {
     echo "============================"
     
     if [ -f "$PID_FILE" ]; then
-        local pid=$(cat "$PID_FILE")
+        local pid
+        pid=$(cat "$PID_FILE")
         if kill -0 "$pid" 2>/dev/null; then
             log_success "Running (PID: $pid)"
         else
@@ -256,7 +261,8 @@ check_status() {
     echo "Port Status:"
     for port in $DEFAULT_PORT $MULTISITE_PORT; do
         if lsof -i ":$port" > /dev/null 2>&1; then
-            local port_pid=$(lsof -t -i ":$port" 2>/dev/null || echo "unknown")
+            local port_pid
+            port_pid=$(lsof -t -i ":$port" 2>/dev/null || echo "unknown")
             echo "  Port $port: ${GREEN}IN USE${NC} (PID: $port_pid)"
             
             # Test if it's responding
