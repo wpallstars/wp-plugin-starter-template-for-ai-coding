@@ -39,8 +39,10 @@ jobs:
 
       - name: Check if SonarCloud token is set
         id: check_token
+        env:
+          SONARCLOUD_GITHUB: ${{ secrets.SONARCLOUD_GITHUB }}
         run: |
-          if [ -z "${{ secrets.SONARCLOUD_GITHUB }}" ]; then
+          if [ -z "${SONARCLOUD_GITHUB}" ]; then
             echo "SONARCLOUD_GITHUB is not set, skipping SonarCloud analysis"
             echo "skip=true" >> $GITHUB_OUTPUT
           else
