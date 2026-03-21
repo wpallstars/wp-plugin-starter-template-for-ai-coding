@@ -143,8 +143,10 @@ jobs:
 
       - name: Check if Codacy token is set
         id: check_codacy_token
+        env:
+          CODACY_PROJECT_TOKEN: ${{ secrets.CODACY_PROJECT_TOKEN }}
         run: |
-          if [ -z "${{ secrets.CODACY_PROJECT_TOKEN }}" ]; then
+          if [ -z "${CODACY_PROJECT_TOKEN}" ]; then
             echo "CODACY_PROJECT_TOKEN is not set, running Codacy without upload"
             echo "skip_upload=true" >> $GITHUB_OUTPUT
           else
