@@ -3,4 +3,4 @@
 
 # Exclude vendor and third-party directories from ShellCheck analysis.
 # These directories contain code we do not maintain and should not be linted.
-exclude=vendor,node_modules
+exclude=vendor/,node_modules/
