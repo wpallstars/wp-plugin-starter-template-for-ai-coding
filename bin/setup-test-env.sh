@@ -1,16 +1,20 @@
 #!/bin/bash
 
 # Check if environment type is provided
-if [ -z "$1" ]; then
+if [[ -z "$1" ]]; then
 	echo "Usage: $0 [single|multisite|playground-single|playground-multisite]"
 	exit 1
 fi
 
 ENV_TYPE=$1
 
+# Admin credentials constant used in output messages.
+ADMIN_LOGIN_MSG="Admin login: admin / password"
+
 # Function to check if a command exists
 command_exists() {
-	command -v "$1" &>/dev/null
+	local cmd="$1"
+	command -v "$cmd" &>/dev/null
 	return $?
 }
 
@@ -19,7 +23,7 @@ PYTHON_PID=""
 
 # Function to clean up resources on exit.
 cleanup() {
-	if [ -n "$PYTHON_PID" ]; then
+	if [[ -n "$PYTHON_PID" ]]; then
 		echo "Stopping Python HTTP server (PID: $PYTHON_PID)..."
 		kill "$PYTHON_PID" 2>/dev/null || true
 	fi
@@ -35,18 +39,20 @@ install_wp_env() {
 		echo "wp-env is not installed. Installing..."
 		npm install -g @wordpress/env
 	fi
+	return 0
 }
 
 # Function to install wp-playground if needed
 install_wp_playground() {
 	# Check if we have a local installation
-	if [ ! -d "node_modules/@wp-playground" ]; then
+	if [[ ! -d "node_modules/@wp-playground" ]]; then
 		echo "WordPress Playground is not installed locally. Installing..."
 		npm install --save-dev @wp-playground/client @wp-playground/blueprints
 	fi
+	return 0
 }
 
-if [ "$ENV_TYPE" = "single" ]; then
+if [[ "$ENV_TYPE" = "single" ]]; then
 	echo "Setting up single site environment..."
 
 	# Install wp-env if needed
@@ -59,13 +65,13 @@ if [ "$ENV_TYPE" = "single" ]; then
 	MAX_ATTEMPTS=30
 	ATTEMPT=0
 	echo "Waiting for WordPress to be ready..."
-	until wp-env run cli wp core is-installed || [ $ATTEMPT -ge $MAX_ATTEMPTS ]; do
+	until wp-env run cli wp core is-installed || [[ $ATTEMPT -ge $MAX_ATTEMPTS ]]; do
 		ATTEMPT=$((ATTEMPT + 1))
 		echo "Attempt $ATTEMPT/$MAX_ATTEMPTS..."
 		sleep 2
 	done
 
-	if [ $ATTEMPT -ge $MAX_ATTEMPTS ]; then
+	if [[ $ATTEMPT -ge $MAX_ATTEMPTS ]]; then
 		echo "Timed out waiting for WordPress to be ready."
 		exit 1
 	fi
@@ -78,9 +84,9 @@ if [ "$ENV_TYPE" = "single" ]; then
 
 	echo "WordPress Single Site environment is ready!"
 	echo "Site: http://localhost:8888"
-	echo "Admin login: admin / password"
+	echo "$ADMIN_LOGIN_MSG"
 
-elif [ "$ENV_TYPE" = "multisite" ]; then
+elif [[ "$ENV_TYPE" = "multisite" ]]; then
 	echo "Setting up multisite environment..."
 
 	# Install wp-env if needed
@@ -93,13 +99,13 @@ elif [ "$ENV_TYPE" = "multisite" ]; then
 	MAX_ATTEMPTS=30
 	ATTEMPT=0
 	echo "Waiting for WordPress to be ready..."
-	until wp-env run cli wp core is-installed || [ $ATTEMPT -ge $MAX_ATTEMPTS ]; do
+	until wp-env run cli wp core is-installed || [[ $ATTEMPT -ge $MAX_ATTEMPTS ]]; do
 		ATTEMPT=$((ATTEMPT + 1))
 		echo "Attempt $ATTEMPT/$MAX_ATTEMPTS..."
 		sleep 2
 	done
 
-	if [ $ATTEMPT -ge $MAX_ATTEMPTS ]; then
+	if [[ $ATTEMPT -ge $MAX_ATTEMPTS ]]; then
 		echo "Timed out waiting for WordPress to be ready."
 		exit 1
 	fi
@@ -119,9 +125,9 @@ elif [ "$ENV_TYPE" = "multisite" ]; then
 	echo "WordPress Multisite environment is ready!"
 	echo "Main site: http://localhost:8888"
 	echo "Test site: http://localhost:8888/testsite"
-	echo "Admin login: admin / password"
+	echo "$ADMIN_LOGIN_MSG"
 
-elif [ "$ENV_TYPE" = "playground-single" ]; then
+elif [[ "$ENV_TYPE" = "playground-single" ]]; then
 	echo "Setting up WordPress Playground single site environment..."
 
 	# Install wp-playground if needed
@@ -187,10 +193,10 @@ EOF
 
 	echo "WordPress Playground Single Site environment is ready!"
 	echo "Site: http://localhost:8888"
-	echo "Admin login: admin / password"
+	echo "$ADMIN_LOGIN_MSG"
 	echo "Press Ctrl+C to stop the server when done."
 
-elif [ "$ENV_TYPE" = "playground-multisite" ]; then
+elif [[ "$ENV_TYPE" = "playground-multisite" ]]; then
 	echo "Setting up WordPress Playground multisite environment..."
 
 	# Install wp-playground if needed
@@ -298,7 +304,7 @@ EOF
 	echo "WordPress Playground Multisite environment is ready!"
 	echo "Main site: http://localhost:8888"
 	echo "Test site: http://localhost:8888/testsite"
-	echo "Admin login: admin / password"
+	echo "$ADMIN_LOGIN_MSG"
 	echo "Press Ctrl+C to stop the server when done."
 
 else

@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-if [ $# -lt 3 ]; then
+if [[ $# -lt 3 ]]; then
 	echo "usage: $0 <db-name> <db-user> <db-pass> [db-host] [wp-version] [skip-database-creation] [multisite]"
 	exit 1
 fi
@@ -17,14 +17,17 @@ WP_TESTS_DIR=${WP_TESTS_DIR-/tmp/wordpress-tests-lib}
 WP_CORE_DIR=${WP_CORE_DIR-/tmp/wordpress/}
 
 download() {
+	local url="$1"
+	local dest="$2"
 	if command -v curl >/dev/null 2>&1; then
-		curl -fsSL "$1" -o "$2"
+		curl -fsSL "$url" -o "$dest"
 	elif command -v wget >/dev/null 2>&1; then
-		wget -qO "$2" "$1"
+		wget -qO "$dest" "$url"
 	else
 		echo "Error: Neither curl nor wget is installed" >&2
 		exit 1
 	fi
+	return 0
 }
 
 if [[ $WP_VERSION =~ ^[0-9]+\.[0-9]+\-(beta|RC)[0-9]+$ ]]; then
@@ -67,8 +70,8 @@ set -ex
 
 install_wp() {
 
-	if [ -d "$WP_CORE_DIR" ]; then
-		return
+	if [[ -d "$WP_CORE_DIR" ]]; then
+		return 0
 	fi
 
 	mkdir -p "$WP_CORE_DIR"
@@ -79,8 +82,8 @@ install_wp() {
 		unzip -q "$WP_CORE_DIR/wordpress-nightly.zip" -d "$WP_CORE_DIR"
 		rm "$WP_CORE_DIR/wordpress-nightly.zip"
 	else
-		if [ "$WP_VERSION" == 'latest' ]; then
-			local ARCHIVE_NAME='latest'
+		if [[ "$WP_VERSION" == 'latest' ]]; then
+			local archive_name='latest'
 		elif [[ $WP_VERSION =~ [0-9]+\.[0-9]+ ]]; then
 			download https://api.wordpress.org/core/version-check/1.7/ "$WP_CORE_DIR/wp-latest.json"
 			if [[ $WP_VERSION =~ [0-9]+\.[0-9]+\.[0] ]]; then
@@ -91,19 +94,20 @@ install_wp() {
 				LATEST_VERSION=$(grep -o '"version":"'"$VERSION_ESCAPED"'[^"]*' "$WP_CORE_DIR/wp-latest.json" | sed 's/"version":"//' | head -1)
 			fi
 			if [[ -z "$LATEST_VERSION" ]]; then
-				local ARCHIVE_NAME="wordpress-$WP_VERSION"
+				local archive_name="wordpress-$WP_VERSION"
 			else
-				local ARCHIVE_NAME="wordpress-$LATEST_VERSION"
+				local archive_name="wordpress-$LATEST_VERSION"
 			fi
 		else
-			local ARCHIVE_NAME="wordpress-$WP_VERSION"
+			local archive_name="wordpress-$WP_VERSION"
 		fi
-		download https://wordpress.org/"${ARCHIVE_NAME}".tar.gz "$WP_CORE_DIR/wordpress.tar.gz"
+		download https://wordpress.org/"${archive_name}".tar.gz "$WP_CORE_DIR/wordpress.tar.gz"
 		tar --strip-components=1 -zxmf "$WP_CORE_DIR/wordpress.tar.gz" -C "$WP_CORE_DIR"
 		rm "$WP_CORE_DIR/wordpress.tar.gz"
 	fi
 
 	download https://raw.github.com/markoheijnen/wp-mysqli/master/db.php "$WP_CORE_DIR/wp-content/db.php"
+	return 0
 }
 
 install_test_suite() {
@@ -115,29 +119,25 @@ install_test_suite() {
 	fi
 
 	# set up testing suite if it doesn't yet exist
-	if [ ! -d "$WP_TESTS_DIR" ]; then
+	if [[ ! -d "$WP_TESTS_DIR" ]]; then
 		mkdir -p "$WP_TESTS_DIR"
 		rm -rf /tmp/wordpress-develop
 		if ! git clone --quiet --depth=1 --branch "$GIT_REF" https://github.com/WordPress/wordpress-develop.git /tmp/wordpress-develop; then
 			echo "Error: Failed to clone wordpress-develop at branch/tag $GIT_REF" >&2
 			exit 1
 		fi
-		if [ -d /tmp/wordpress-develop/tests/phpunit/includes ]; then
-			if ! cp -r /tmp/wordpress-develop/tests/phpunit/includes "$WP_TESTS_DIR/"; then
-				echo "Error: Failed to copy phpunit includes to $WP_TESTS_DIR" >&2
-				exit 1
-			fi
+		if [[ -d /tmp/wordpress-develop/tests/phpunit/includes ]] && ! cp -r /tmp/wordpress-develop/tests/phpunit/includes "$WP_TESTS_DIR/"; then
+			echo "Error: Failed to copy phpunit includes to $WP_TESTS_DIR" >&2
+			exit 1
 		fi
-		if [ -d /tmp/wordpress-develop/tests/phpunit/data ]; then
-			if ! cp -r /tmp/wordpress-develop/tests/phpunit/data "$WP_TESTS_DIR/"; then
-				echo "Error: Failed to copy phpunit data to $WP_TESTS_DIR" >&2
-				exit 1
-			fi
+		if [[ -d /tmp/wordpress-develop/tests/phpunit/data ]] && ! cp -r /tmp/wordpress-develop/tests/phpunit/data "$WP_TESTS_DIR/"; then
+			echo "Error: Failed to copy phpunit data to $WP_TESTS_DIR" >&2
+			exit 1
 		fi
 	fi
 
-	if [ ! -f wp-tests-config.php ]; then
-		if [ -f /tmp/wordpress-develop/wp-tests-config-sample.php ]; then
+	if [[ ! -f wp-tests-config.php ]]; then
+		if [[ -f /tmp/wordpress-develop/wp-tests-config-sample.php ]]; then
 			cp /tmp/wordpress-develop/wp-tests-config-sample.php "$WP_TESTS_DIR"/wp-tests-config.php
 		else
 			download https://raw.githubusercontent.com/WordPress/wordpress-develop/master/wp-tests-config-sample.php "$WP_TESTS_DIR"/wp-tests-config.php
@@ -149,36 +149,37 @@ install_test_suite() {
 		sed "$ioption" "s/yourpasswordhere/$DB_PASS/" "$WP_TESTS_DIR"/wp-tests-config.php
 		sed "$ioption" "s|localhost|${DB_HOST}|" "$WP_TESTS_DIR"/wp-tests-config.php
 
-		if [ "$MULTISITE" = "true" ]; then
+		if [[ "$MULTISITE" = "true" ]]; then
 			sed "$ioption" "s:// define( 'WP_TESTS_MULTISITE', true );:define( 'WP_TESTS_MULTISITE', true );:" "$WP_TESTS_DIR"/wp-tests-config.php
 		fi
 	fi
-
+	return 0
 }
 
 install_db() {
 
-	if [ "${SKIP_DB_CREATE}" = "true" ]; then
+	if [[ "${SKIP_DB_CREATE}" = "true" ]]; then
 		return 0
 	fi
 
-	local PARTS
-	IFS=':' read -ra PARTS <<<"$DB_HOST"
-	local DB_HOSTNAME=${PARTS[0]}
-	local DB_SOCK_OR_PORT=${PARTS[1]}
-	local EXTRA=""
+	local parts
+	IFS=':' read -ra parts <<<"$DB_HOST"
+	local db_hostname=${parts[0]}
+	local db_sock_or_port=${parts[1]}
+	local extra=""
 
-	if [ -n "$DB_HOSTNAME" ]; then
-		if [[ $DB_SOCK_OR_PORT =~ ^[0-9]+$ ]]; then
-			EXTRA=" --host=$DB_HOSTNAME --port=$DB_SOCK_OR_PORT --protocol=tcp"
-		elif [ -n "$DB_SOCK_OR_PORT" ]; then
-			EXTRA=" --socket=$DB_SOCK_OR_PORT"
-		elif [ -n "$DB_HOSTNAME" ]; then
-			EXTRA=" --host=$DB_HOSTNAME --protocol=tcp"
+	if [[ -n "$db_hostname" ]]; then
+		if [[ $db_sock_or_port =~ ^[0-9]+$ ]]; then
+			extra=" --host=$db_hostname --port=$db_sock_or_port --protocol=tcp"
+		elif [[ -n "$db_sock_or_port" ]]; then
+			extra=" --socket=$db_sock_or_port"
+		elif [[ -n "$db_hostname" ]]; then
+			extra=" --host=$db_hostname --protocol=tcp"
 		fi
 	fi
 
-	mysqladmin create "$DB_NAME" --user="$DB_USER" --password="$DB_PASS""$EXTRA" || true
+	mysqladmin create "$DB_NAME" --user="$DB_USER" --password="$DB_PASS""$extra" || true
+	return 0
 }
 
 install_wp
