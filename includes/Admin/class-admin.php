@@ -52,8 +52,8 @@ class Admin {
         $page = '';
         if ( defined( 'PHPUNIT_RUNNING' ) && PHPUNIT_RUNNING ) {
             // For testing, use $_GET directly.
-            // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- We're sanitizing with wp_unslash and validating later
-            $page = isset( $_GET['page'] ) ? \wp_unslash( $_GET['page'] ) : '';
+            // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Page slug only used for conditional asset loading; no state change occurs
+            $page = isset( $_GET['page'] ) ? sanitize_text_field( \wp_unslash( $_GET['page'] ) ) : '';
         }
 
         // Use filter_input for production environment.
