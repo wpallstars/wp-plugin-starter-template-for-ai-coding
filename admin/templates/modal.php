@@ -12,13 +12,10 @@ if ( ! defined( 'ABSPATH' ) ) {
 ?>
 
 <!-- Update Source Modal -->
-<div
+<dialog
     id="wpst-update-source-modal"
     class="wpst-modal"
-    role="dialog"
-    aria-modal="true"
     aria-labelledby="wpst-update-source-modal-title"
-    tabindex="-1"
 >
     <div class="wpst-modal-content">
         <div class="wpst-modal-header">
@@ -65,4 +62,4 @@ if ( ! defined( 'ABSPATH' ) ) {
             <button type="button" id="wpst-save-source" class="button button-primary"><?php esc_html_e( 'Save', 'wp-plugin-starter-template' ); ?></button>
         </div>
     </div>
-</div>
+</dialog>
