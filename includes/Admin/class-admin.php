@@ -53,7 +53,7 @@ class Admin {
         if ( defined( 'PHPUNIT_RUNNING' ) && PHPUNIT_RUNNING ) {
             // For testing, use $_GET directly.
             // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Page slug only used for conditional asset loading; no state change occurs
-            $page = isset( $_GET['page'] ) ? sanitize_text_field( \wp_unslash( $_GET['page'] ) ) : '';
+            $page = isset( $_GET['page'] ) ? \sanitize_text_field( \wp_unslash( $_GET['page'] ) ) : '';
         }
 
         // Use filter_input for production environment.
