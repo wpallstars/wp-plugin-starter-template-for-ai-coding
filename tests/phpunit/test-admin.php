@@ -101,6 +101,12 @@ class AdminTest extends \WP_Mock\Tools\TestCase {
             'return' => 'wp_plugin_starter_template_settings',
         ]);
 
+        // Mock sanitize_text_field function (added for SonarCloud vulnerability fix)
+        WP_Mock::userFunction('sanitize_text_field', [
+            'args' => ['wp_plugin_starter_template_settings'],
+            'return' => 'wp_plugin_starter_template_settings',
+        ]);
+
         // Mock wp_enqueue_style
         WP_Mock::userFunction('wp_enqueue_style', [
             'times' => 1,
