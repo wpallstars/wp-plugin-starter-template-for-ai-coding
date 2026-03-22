@@ -239,7 +239,7 @@ stop_playground() {
 	fi
 
 	# Clean up any orphaned processes on common ports
-	for port in $DEFAULT_PORT $MULTISITE_PORT; do
+	for port in ${DEFAULT_PORT:+"$DEFAULT_PORT"} ${MULTISITE_PORT:+"$MULTISITE_PORT"}; do
 		local orphan_pid
 		orphan_pid=$(lsof -t -i ":$port" 2>/dev/null || true)
 		if [[ -n "$orphan_pid" ]]; then
@@ -271,7 +271,7 @@ check_status() {
 
 	echo ""
 	echo "Port Status:"
-	for port in $DEFAULT_PORT $MULTISITE_PORT; do
+	for port in ${DEFAULT_PORT:+"$DEFAULT_PORT"} ${MULTISITE_PORT:+"$MULTISITE_PORT"}; do
 		if lsof -i ":$port" >/dev/null 2>&1; then
 			local port_pid
 			port_pid=$(lsof -t -i ":$port" 2>/dev/null || echo "unknown")
