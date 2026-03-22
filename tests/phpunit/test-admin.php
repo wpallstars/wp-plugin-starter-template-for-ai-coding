@@ -108,7 +108,7 @@ class AdminTest extends \WP_Mock\Tools\TestCase {
                 'wpst-admin-styles',
                 'http://example.org/wp-content/plugins/wp-plugin-starter-template/admin/css/admin-styles.css',
                 [],
-                '1.0.0',
+                TEST_VERSION,
             ],
         ]);
 
@@ -119,7 +119,7 @@ class AdminTest extends \WP_Mock\Tools\TestCase {
                 'wpst-admin-script',
                 'http://example.org/wp-content/plugins/wp-plugin-starter-template/admin/js/admin-scripts.js',
                 ['jquery'],
-                '1.0.0',
+                TEST_VERSION,
                 true,
             ],
         ]);

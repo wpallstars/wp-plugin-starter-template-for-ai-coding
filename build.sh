@@ -5,8 +5,8 @@ set -euo pipefail
 # This script creates a clean build of the plugin for distribution
 
 # Check if version is provided
-if [ -z "$1" ]; then
-	echo "❌ Error: Version number is required"
+if [[ -z "$1" ]]; then
+	echo "❌ Error: Version number is required" >&2
 	echo "Usage: ./build.sh <version>"
 	exit 1
 fi
@@ -54,20 +54,20 @@ cp -R ./languages/* "$BUILD_DIR/languages/"
 mkdir -p "$BUILD_DIR/assets/banner" "$BUILD_DIR/assets/icon" "$BUILD_DIR/assets/screenshots"
 
 # Copy assets if they exist
-if [ -d "assets/banner" ]; then
+if [[ -d "assets/banner" ]]; then
 	cp -R assets/banner/* "$BUILD_DIR/assets/banner/"
 fi
 
-if [ -d "assets/icon" ]; then
+if [[ -d "assets/icon" ]]; then
 	cp -R assets/icon/* "$BUILD_DIR/assets/icon/"
 fi
 
-if [ -d "assets/screenshots" ]; then
+if [[ -d "assets/screenshots" ]]; then
 	cp -R assets/screenshots/* "$BUILD_DIR/assets/screenshots/"
 fi
 
 # Copy vendor directory if it exists
-if [ -d "vendor" ]; then
+if [[ -d "vendor" ]]; then
 	cp -R vendor "$BUILD_DIR/"
 fi
 
@@ -79,12 +79,12 @@ echo "Creating ZIP file..."
 )
 
 # Check if ZIP file was created successfully
-if [ -f "$ZIP_FILE" ]; then
+if [[ -f "$ZIP_FILE" ]]; then
 	echo "✅ Build successful: $ZIP_FILE created"
 	echo "File path: $(pwd)/$ZIP_FILE"
 
 	# Deploy to local WordPress installation if environment variable is set
-	if [ -n "${WP_LOCAL_PLUGIN_DIR:-}" ]; then
+	if [[ -n "${WP_LOCAL_PLUGIN_DIR:-}" ]]; then
 		printf '\nDeploying to local WordPress installation...\n'
 
 		# Remove existing plugin directory.
@@ -106,6 +106,6 @@ if [ -f "$ZIP_FILE" ]; then
 		echo "Plugin deployed to: $WP_LOCAL_PLUGIN_DIR/$PLUGIN_SLUG"
 	fi
 else
-	echo "❌ Build failed: ZIP file was not created"
+	echo "❌ Build failed: ZIP file was not created" >&2
 	exit 1
 fi

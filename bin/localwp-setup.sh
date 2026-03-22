@@ -48,36 +48,49 @@ BLUE='\033[0;34m'
 CYAN='\033[0;36m'
 NC='\033[0m' # No Color
 
+# Separator constant used in output headers.
+SEPARATOR="============================================"
+
 # Helper functions
 log_info() {
-	echo -e "${BLUE}[INFO]${NC} $1"
+	local message="$1"
+	echo -e "${BLUE}[INFO]${NC} $message"
+	return 0
 }
 
 log_success() {
-	echo -e "${GREEN}[SUCCESS]${NC} $1"
+	local message="$1"
+	echo -e "${GREEN}[SUCCESS]${NC} $message"
+	return 0
 }
 
 log_warning() {
-	echo -e "${YELLOW}[WARNING]${NC} $1"
+	local message="$1"
+	echo -e "${YELLOW}[WARNING]${NC} $message"
+	return 0
 }
 
 log_error() {
-	echo -e "${RED}[ERROR]${NC} $1"
+	local message="$1"
+	echo -e "${RED}[ERROR]${NC} $message" >&2
+	return 0
 }
 
 log_step() {
-	echo -e "${CYAN}[STEP]${NC} $1"
+	local message="$1"
+	echo -e "${CYAN}[STEP]${NC} $message"
+	return 0
 }
 
 # Check if LocalWP is installed
 check_localwp() {
-	if [ ! -d "$LOCAL_APP" ]; then
+	if [[ ! -d "$LOCAL_APP" ]]; then
 		log_error "LocalWP is not installed at $LOCAL_APP"
 		log_info "Download from: https://localwp.com/"
 		exit 1
 	fi
 
-	if [ ! -f "$LOCAL_WP_CLI" ]; then
+	if [[ ! -f "$LOCAL_WP_CLI" ]]; then
 		log_error "WP-CLI not found in LocalWP installation"
 		exit 1
 	fi
@@ -85,12 +98,14 @@ check_localwp() {
 	local version
 	version=$("$LOCAL_WP_CLI" --version 2>/dev/null || echo "unknown")
 	log_info "LocalWP WP-CLI version: $version"
+	return 0
 }
 
 # Get site path
 get_site_path() {
 	local site_name="$1"
 	echo "$LOCAL_SITES_DIR/$site_name"
+	return 0
 }
 
 # Get WordPress path within site
@@ -101,6 +116,7 @@ get_wp_path() {
 
 	# LocalWP uses app/public for WordPress files
 	echo "$site_path/app/public"
+	return 0
 }
 
 # Check if site exists
@@ -108,7 +124,8 @@ site_exists() {
 	local site_name="$1"
 	local site_path
 	site_path=$(get_site_path "$site_name")
-	[ -d "$site_path" ]
+	[[ -d "$site_path" ]]
+	return $?
 }
 
 # Get plugin destination path
@@ -117,6 +134,7 @@ get_plugin_path() {
 	local wp_path
 	wp_path=$(get_wp_path "$site_name")
 	echo "$wp_path/wp-content/plugins/$PLUGIN_SLUG"
+	return 0
 }
 
 # Sync plugin files to LocalWP site
@@ -154,6 +172,7 @@ sync_plugin() {
 		"$PROJECT_DIR/" "$plugin_dest/"
 
 	log_success "Plugin synced to: $plugin_dest"
+	return 0
 }
 
 # Create a new LocalWP site
@@ -177,7 +196,7 @@ create_site() {
 	local domain="$SINGLE_SITE_DOMAIN"
 	local mode="single site"
 
-	if [ "$multisite" = true ]; then
+	if [[ "$multisite" = true ]]; then
 		site_name="$MULTISITE_NAME"
 		domain="$MULTISITE_DOMAIN"
 		mode="multisite"
@@ -195,9 +214,9 @@ create_site() {
 	fi
 
 	echo ""
-	echo "============================================"
+	echo "$SEPARATOR"
 	echo "  LocalWP Site Setup ($mode)"
-	echo "============================================"
+	echo "$SEPARATOR"
 	echo ""
 	echo "This script will guide you through creating a"
 	echo "LocalWP site for testing the plugin."
@@ -222,7 +241,7 @@ create_site() {
 	echo "   - Web server: nginx (preferred)"
 	echo "   - MySQL version: 8.0+"
 
-	if [ "$multisite" = true ]; then
+	if [[ "$multisite" = true ]]; then
 		echo ""
 		echo "4. After site creation, convert to multisite:"
 		echo "   - Open Site Shell in LocalWP"
@@ -250,6 +269,7 @@ create_site() {
 		log_info "Expected path: $site_path"
 		log_info "You can run 'npm run localwp:sync' later to sync files"
 	fi
+	return 0
 }
 
 # Install recommended plugins (matching Playground blueprint)
@@ -263,6 +283,7 @@ install_recommended_plugins() {
 	echo "  - Kadence Blocks (kadence-blocks)"
 	echo ""
 	log_info "You can install them via LocalWP's WP Admin or Site Shell"
+	return 0
 }
 
 # Show site information
@@ -277,18 +298,18 @@ show_site_info() {
 	plugin_path=$(get_plugin_path "$site_name")
 
 	echo ""
-	echo "============================================"
+	echo "$SEPARATOR"
 	echo "  LocalWP Site Ready"
-	echo "============================================"
+	echo "$SEPARATOR"
 	echo "  Site:        $site_name"
 	echo "  URL:         http://$domain"
 	echo "  Admin:       http://$domain/wp-admin/"
 	echo "  Plugin Path: $plugin_path"
-	echo "============================================"
+	echo "$SEPARATOR"
 
-	if [ "$multisite" = true ]; then
+	if [[ "$multisite" = true ]]; then
 		echo "  Network Admin: http://$domain/wp-admin/network/"
-		echo "============================================"
+		echo "$SEPARATOR"
 	fi
 
 	echo ""
@@ -297,6 +318,7 @@ show_site_info() {
 	echo "  2. Activate the plugin in WordPress admin"
 	echo "  3. Run 'npm run localwp:sync' after making changes"
 	echo ""
+	return 0
 }
 
 # Reset site to clean state
@@ -326,6 +348,7 @@ reset_site() {
 	else
 		log_info "Reset cancelled"
 	fi
+	return 0
 }
 
 # Sync all existing sites
@@ -339,12 +362,13 @@ sync_all() {
 		fi
 	done
 
-	if [ $synced -eq 0 ]; then
+	if [[ $synced -eq 0 ]]; then
 		log_warning "No LocalWP sites found for this plugin"
 		log_info "Run 'npm run localwp:create' to create one"
 	else
 		log_success "Synced $synced site(s)"
 	fi
+	return 0
 }
 
 # Show info about all sites
@@ -364,7 +388,7 @@ show_info() {
 
 			local plugin_path
 			plugin_path=$(get_plugin_path "$site_name")
-			if [ -d "$plugin_path" ]; then
+			if [[ -d "$plugin_path" ]]; then
 				echo "    Plugin: ${GREEN}Installed${NC}"
 			else
 				echo "    Plugin: ${YELLOW}Not synced${NC}"
@@ -382,6 +406,7 @@ show_info() {
 	echo "  npm run localwp:sync             Sync plugin files"
 	echo "  npm run localwp:reset            Reset plugin files"
 	echo ""
+	return 0
 }
 
 # Main command handler
