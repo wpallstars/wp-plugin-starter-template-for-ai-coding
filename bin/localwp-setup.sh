@@ -181,7 +181,8 @@ create_site() {
 
 	# Parse arguments
 	while [[ $# -gt 0 ]]; do
-		case "$1" in
+		local arg="$1"
+		case "$arg" in
 		--multisite)
 			multisite=true
 			shift
