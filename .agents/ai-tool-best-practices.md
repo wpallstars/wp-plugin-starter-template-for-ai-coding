@@ -18,7 +18,9 @@ Implementing these practices reduces wasted tokens, failed edits, and broken pip
 
 **Failure pattern**: `edit:not_read_first` — 71 occurrences across 3 models.
 
-**Root cause**: AI assistants attempt to use the Edit or Write tool on a file without first reading it with the Read tool. The Edit tool requires knowing the exact current content to construct a valid `oldString`/`newString` replacement.
+**Root cause**: AI assistants attempt to use the Edit or Write tool on a file without first reading it with the
+Read tool. The Edit tool requires knowing the exact current content to construct a valid
+`oldString`/`newString` replacement.
 
 ### Rules
 
@@ -44,7 +46,8 @@ Edit: includes/core.php (no prior Read in this session)
 
 **Failure pattern**: `edit:edit_stale_read` — 32 occurrences across 3 models.
 
-**Root cause**: After an Edit or Write tool call, the in-memory content of the file is immediately stale. A second Edit based on the pre-edit content will fail because `oldString` no longer matches the file on disk.
+**Root cause**: After an Edit or Write tool call, the in-memory content of the file is immediately stale.
+A second Edit based on the pre-edit content will fail because `oldString` no longer matches the file on disk.
 
 ### Rules
 
@@ -73,7 +76,8 @@ Edit: admin/lib/admin.php       (second change — oldString is stale, will fail
 
 **Failure pattern**: `read:file_not_found` — 23 occurrences across 4 models.
 
-**Root cause**: AI assistants attempt to read files at paths that do not exist — usually due to assumed paths, renamed files, or path confusion in a multi-worktree workspace.
+**Root cause**: AI assistants attempt to read files at paths that do not exist — usually due to assumed paths,
+renamed files, or path confusion in a multi-worktree workspace.
 
 ### Rules
 
@@ -106,13 +110,15 @@ See [Known File Paths in This Repository](#known-file-paths-in-this-repository) 
 
 **Failure pattern**: `bash:other` — 66 occurrences across 3 models.
 
-**Root cause**: Bash tool calls fail for multiple reasons — wrong working directory, missing prerequisite tools, incorrect paths, unquoted strings with spaces, and commands that exit non-zero unexpectedly.
+**Root cause**: Bash tool calls fail for multiple reasons — wrong working directory, missing prerequisite tools,
+incorrect paths, unquoted strings with spaces, and commands that exit non-zero unexpectedly.
 
 ### Rules
 
 1. **Verify working directory** — use `pwd` if uncertain before running path-dependent commands.
 2. **Check prerequisites** — verify `composer`, `npm`, `php`, `wp-cli`, etc. are available before using them.
-3. **Use `|| true` for acceptable failures** — if a command failing is expected or acceptable in a pipeline, append `|| true`.
+3. **Use `|| true` for acceptable failures** — if a command failing is expected or acceptable in a pipeline,
+   append `|| true`.
 4. **Quote paths with spaces** — always double-quote paths that may contain spaces.
 5. **Check exit codes explicitly** — for critical commands, test `$?` or use `set -e` in scripts.
 
