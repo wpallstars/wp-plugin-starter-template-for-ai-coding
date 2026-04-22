@@ -89,6 +89,39 @@ This project uses several automated code quality tools to ensure high standards:
 
 Always run PHPCS and PHPCBF locally before committing code to ensure it meets the project's coding standards.
 
+## AI Tool Discipline
+
+Recurring tool failures detected from real sessions in this repository. Follow these rules to avoid them.
+
+For detailed guidance, see **@.agents/ai-tool-best-practices.md**.
+
+### Read Before Edit (critical — 71 `edit:not_read_first` failures)
+
+* ALWAYS use the Read tool on a file before using Edit or Write on it.
+* Never assume file content — always read first, even for small changes.
+* If you already read the file earlier in the session, re-read it if any other tool has modified it since.
+
+### Re-Read After Edit (32 `edit:edit_stale_read` failures)
+
+* After editing a file, always re-read it before making additional edits to the same file.
+* In-memory content becomes stale immediately after any modification.
+* Pattern: Read → Edit → Re-read → Edit (never Read → Edit → Edit).
+
+### Verify File Paths Before Reading (23 `read:file_not_found` failures)
+
+* Before reading a file, verify it exists: `git ls-files '<pattern>'` for tracked files.
+* Key tracked paths in this repo: `wp-plugin-starter-template.php`, `includes/`, `admin/`, `languages/`, `.agents/`.
+* If a path is uncertain, use `git ls-files | grep <keyword>` to find the correct path.
+* Never assume a file exists — verify first.
+
+### Bash Command Hygiene (66 `bash:other` failures)
+
+* Verify the working directory before running commands — use `pwd` if uncertain.
+* Check prerequisites exist before using them (e.g., `composer`, `npm`, `php`).
+* Use `|| true` when a command failure is acceptable in a pipeline.
+* For commands that may fail, check exit codes explicitly.
+* Common root causes: wrong working directory, missing tool, incorrect path, shell syntax error.
+
 ## Common Tasks
 
 For detailed instructions on releases, features, bugs, and testing, see **@.agents/release-process.md**.
