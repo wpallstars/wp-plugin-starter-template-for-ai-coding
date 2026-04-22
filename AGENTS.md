@@ -152,10 +152,11 @@ echo esc_html__('This is a translatable string', 'wp-plugin-starter-template');
 
 ## Git Workflow
 
-* Create feature branches from `main`
+* Always keep the canonical repository on `main` — all development work goes on feature branches
+* Prefer Git worktrees for feature development (`git worktree add ../repo-feature-name feature/feature-name`); this avoids switching branches in the main directory
 * Use descriptive branch names (e.g., `feature/add-settings-page`)
 * Make atomic commits with clear messages
-* Create pull requests for review
+* Create pull requests (GitHub) or merge requests (GitLab/Gitea/Forgejo) for review — the workflow is platform-agnostic
 * Tag releases with version numbers (e.g., `v1.0.0`)
 
 ## Developer Preferences
