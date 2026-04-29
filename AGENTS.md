@@ -187,8 +187,8 @@ echo esc_html__('This is a translatable string', 'wp-plugin-starter-template');
 
 * Always keep the canonical repository on `main` — all development work goes on feature branches
 * Always use Git worktrees for feature development — no exceptions; this avoids switching branches in the main directory:
-    * New branch: `git worktree add -b feature/feature-name ../wp-plugin-starter-template-feature-name main`
-    * Existing branch: `git worktree add ../wp-plugin-starter-template-feature-name feature/feature-name`
+    * New branch: `git worktree add -b feature/add-settings-page ../wp-plugin-starter-template-add-settings-page main`
+    * Existing branch: `git worktree add ../wp-plugin-starter-template-add-settings-page feature/add-settings-page`
 * Use descriptive branch names (e.g., `feature/add-settings-page`)
 * Make atomic commits with clear messages
 * Create pull requests (GitHub) or merge requests (GitLab/Gitea/Forgejo) for review — the workflow is platform-agnostic
