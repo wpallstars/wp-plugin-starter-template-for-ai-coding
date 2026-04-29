@@ -62,7 +62,7 @@ jobs:
 
       - name: Create Release
         id: create_release
-        uses: softprops/action-gh-release@de2c0eb89ae2a093876385947365aca7b0e5f844 # v1
+        uses: softprops/action-gh-release@b4309332981a82ec1c5618f44dd2e27cc8bfbfda # v3.0.0
         with:
           files: wp-plugin-starter-template-for-ai-coding-${{ env.VERSION }}.zip
           name: v${{ env.VERSION }} - WordPress Plugin Starter Template
