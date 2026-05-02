@@ -1,5 +1,3 @@
-/* eslint-env node, mocha */
-
 const { defineConfig } = require('cypress');
 
 module.exports = defineConfig({
