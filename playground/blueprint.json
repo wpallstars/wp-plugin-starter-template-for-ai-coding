@@ -18,28 +18,6 @@
         "WP_DEBUG_DISPLAY": true,
         "SCRIPT_DEBUG": true
       }
-    },
-    {
-      "step": "installPlugin",
-      "pluginData": {
-        "resource": "wordpress.org/plugins",
-        "slug": "plugin-toggle"
-      }
-    },
-    {
-      "step": "installPlugin",
-      "pluginData": {
-        "resource": "wordpress.org/plugins",
-        "slug": "kadence-blocks"
-      }
-    },
-    {
-      "step": "activatePlugin",
-      "pluginPath": "plugin-toggle/plugin-toggle.php"
-    },
-    {
-      "step": "activatePlugin",
-      "pluginPath": "kadence-blocks/kadence-blocks.php"
     }
   ]
 }
