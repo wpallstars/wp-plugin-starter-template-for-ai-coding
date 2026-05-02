@@ -25,6 +25,28 @@
     {
       "step": "wp-cli",
       "command": "wp site create --slug=testsite --title='Test Site'"
+    },
+    {
+      "step": "installPlugin",
+      "pluginData": {
+        "resource": "wordpress.org/plugins",
+        "slug": "plugin-toggle"
+      }
+    },
+    {
+      "step": "installPlugin",
+      "pluginData": {
+        "resource": "wordpress.org/plugins",
+        "slug": "kadence-blocks"
+      }
+    },
+    {
+      "step": "wp-cli",
+      "command": "wp plugin activate plugin-toggle --network"
+    },
+    {
+      "step": "wp-cli",
+      "command": "wp plugin activate kadence-blocks --network"
     }
   ]
 }
