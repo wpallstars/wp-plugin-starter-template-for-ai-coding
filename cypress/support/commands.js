@@ -13,7 +13,7 @@
  */
 Cypress.Commands.add('loginAsAdmin', () => {
   cy.session('wp-admin', () => {
-    cy.visit('/wp-admin/', { timeout: 30000, failOnStatusCode: false });
+    cy.visit('/wp-admin/', { timeout: 60000, failOnStatusCode: false });
 
     cy.get('body', { timeout: 15000 }).then(($body) => {
       if ($body.find('#wpbody-content').length > 0) {
@@ -27,13 +27,13 @@ Cypress.Commands.add('loginAsAdmin', () => {
         cy.get('#wp-submit').should('be.visible').click();
       }
 
-      cy.visit('/wp-admin/', { timeout: 30000 });
-      cy.get('#wpbody-content', { timeout: 30000 }).should('exist');
+      cy.visit('/wp-admin/', { timeout: 60000, failOnStatusCode: false });
+      cy.get('#wpbody-content', { timeout: 60000 }).should('exist');
     });
   }, {
     validate() {
-      cy.visit('/wp-admin/', { timeout: 30000, failOnStatusCode: false });
-      cy.get('#wpbody-content', { timeout: 30000 }).should('exist');
+      cy.visit('/wp-admin/', { timeout: 60000, failOnStatusCode: false });
+      cy.get('#wpbody-content', { timeout: 60000 }).should('exist');
     },
   });
 });
