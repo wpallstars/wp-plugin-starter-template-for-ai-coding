@@ -12,7 +12,7 @@
  * Custom command to login as admin
  */
 Cypress.Commands.add('loginAsAdmin', () => {
-  cy.visit('/wp-login.php', { timeout: 30000, failOnStatusCode: false });
+  cy.visit('/wp-admin/', { timeout: 30000, failOnStatusCode: false });
 
   cy.get('body', { timeout: 15000 }).then(($body) => {
     if ($body.find('#wpadminbar').length > 0) {
@@ -26,7 +26,7 @@ Cypress.Commands.add('loginAsAdmin', () => {
       cy.get('#wp-submit').should('be.visible').click();
       cy.get('#wpadminbar', { timeout: 15000 }).should('exist');
     } else {
-      cy.log('Login form not found; checking whether WordPress redirected to admin.');
+      cy.log('Login form not found; checking whether WordPress loaded an authenticated admin page.');
       cy.visit('/wp-admin/', { timeout: 30000 });
       cy.get('body', { timeout: 15000 }).then(($adminBody) => {
         expect(
