@@ -1,4 +1,3 @@
-/* eslint-env mocha, jquery, cypress */
 describe( 'WordPress Single Site Tests', () => {
     it( 'Can access the site', () => {
         cy.visit( '/' );

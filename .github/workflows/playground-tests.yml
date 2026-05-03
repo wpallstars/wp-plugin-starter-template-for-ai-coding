@@ -36,7 +36,7 @@ jobs:
         node-version: [20]
 
     steps:
-    - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
+    - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
 
     - name: Setup Node.js
       uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
@@ -65,7 +65,7 @@ jobs:
     continue-on-error: true
 
     steps:
-    - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
+    - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
 
     - name: Setup Node.js
       uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
@@ -143,7 +143,7 @@ jobs:
 
     - name: Upload Cypress artifacts
       if: always()
-      uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+      uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
       with:
         name: cypress-single-site-results
         path: |
@@ -159,11 +159,11 @@ jobs:
     # DISABLED: WordPress Multisite does not support custom ports (requires port 80/443).
     # This is a fundamental WordPress limitation. Multisite tests can only run locally
     # where port 80 can be used. See: https://developer.wordpress.org/advanced-administration/multisite/
-    if: false
+    if: ${{ github.event_name == 'workflow_dispatch' && inputs.debug == 'run-disabled' }}
     continue-on-error: true
 
     steps:
-    - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
+    - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
 
     - name: Setup Node.js
       uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
@@ -242,7 +242,7 @@ jobs:
 
     - name: Upload Cypress artifacts
       if: always()
-      uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+      uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
       with:
         name: cypress-multisite-results
         path: |
@@ -259,11 +259,11 @@ jobs:
     # The wp-performance-action uses WordPress Playground internally and Lighthouse for metrics,
     # which requires significant resources and is not reliable in shared CI runners.
     # Run performance tests locally or on dedicated infrastructure for accurate results.
-    if: false
+    if: ${{ github.event_name == 'workflow_dispatch' && inputs.debug == 'run-disabled' }}
     continue-on-error: true
 
     steps:
-    - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
+    - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
 
     - name: WordPress Performance Tests
       uses: swissspidy/wp-performance-action@b7e3ffcf0fc4a48b62492e021e0ebeb51430ff11 # v2.0.3

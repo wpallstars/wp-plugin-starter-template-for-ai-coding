@@ -12,22 +12,29 @@
  * Custom command to login as admin
  */
 Cypress.Commands.add('loginAsAdmin', () => {
-  cy.visit('/wp-admin', { timeout: 30000 });
+  cy.session('wp-admin', () => {
+    cy.visit('/wp-admin/', { timeout: 30000, failOnStatusCode: false });
 
-  cy.get('body', { timeout: 15000 }).then(($body) => {
-    if ($body.find('#wpadminbar').length > 0) {
-      cy.log('Already logged in as admin');
-      return;
-    }
+    cy.get('body', { timeout: 15000 }).then(($body) => {
+      if ($body.find('#wpbody-content').length > 0) {
+        cy.log('Already logged in as admin');
+        return;
+      }
 
-    if ($body.find('#user_login').length > 0) {
-      cy.get('#user_login').should('be.visible').type('admin');
-      cy.get('#user_pass').should('be.visible').type('password');
-      cy.get('#wp-submit').should('be.visible').click();
-      cy.get('#wpadminbar', { timeout: 15000 }).should('exist');
-    } else {
-      cy.log('Login form not found, assuming already logged in');
-    }
+      if ($body.find('#user_login').length > 0) {
+        cy.get('#user_login').should('be.visible').type('admin');
+        cy.get('#user_pass').should('be.visible').type('password');
+        cy.get('#wp-submit').should('be.visible').click();
+      }
+
+      cy.visit('/wp-admin/', { timeout: 30000 });
+      cy.get('#wpbody-content', { timeout: 30000 }).should('exist');
+    });
+  }, {
+    validate() {
+      cy.visit('/wp-admin/', { timeout: 30000, failOnStatusCode: false });
+      cy.get('#wpbody-content', { timeout: 30000 }).should('exist');
+    },
   });
 });
 
