@@ -6,7 +6,7 @@ const browserGlobals = {
   jQuery: 'readonly',
   wp: 'readonly',
   wpstData: 'readonly',
-  wpstModalData: 'readonly'
+  wpstModalData: 'readonly',
 };
 
 const cypressGlobals = {
@@ -14,14 +14,14 @@ const cypressGlobals = {
   assert: 'readonly',
   chai: 'readonly',
   cy: 'readonly',
-  expect: 'readonly'
+  expect: 'readonly',
 };
 
 const cypressRecommendedRules = cypress.configs.recommended.rules;
 
 module.exports = [
   {
-    ignores: ['vendor/**', 'node_modules/**', 'build/**', 'dist/**', 'bin/**']
+    ignores: ['vendor/**', 'node_modules/**', 'build/**', 'dist/**', 'bin/**'],
   },
   js.configs.recommended,
   {
@@ -32,14 +32,14 @@ module.exports = [
       sourceType: 'module',
       globals: {
         ...globals.browser,
-        ...browserGlobals
-      }
+        ...browserGlobals,
+      },
     },
     rules: {
       'comma-dangle': ['error', 'always-multiline'],
       'no-console': 'warn',
-      'no-unused-vars': 'warn'
-    }
+      'no-unused-vars': 'warn',
+    },
   },
   {
     files: ['cypress/**/*.js'],
@@ -49,18 +49,18 @@ module.exports = [
         ...globals.browser,
         ...globals.mocha,
         ...browserGlobals,
-        ...cypressGlobals
-      }
+        ...cypressGlobals,
+      },
     },
     plugins: {
-      cypress
+      cypress,
     },
     rules: {
       ...cypressRecommendedRules,
       'comma-dangle': ['error', 'always-multiline'],
       'no-console': 'warn',
-      'no-unused-vars': 'warn'
-    }
+      'no-unused-vars': 'warn',
+    },
   },
   {
     files: ['cypress.config.js', 'cypress.config.cjs', 'cypress/eslint.config.js'],
@@ -68,8 +68,8 @@ module.exports = [
       sourceType: 'commonjs',
       globals: {
         ...globals.node,
-        exports: 'readonly'
-      }
-    }
-  }
+        exports: 'readonly',
+      },
+    },
+  },
 ];
