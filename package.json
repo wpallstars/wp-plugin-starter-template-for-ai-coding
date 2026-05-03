@@ -66,7 +66,7 @@
     "@wp-playground/blueprints": "^3.0.22",
     "@wp-playground/cli": "^3.1.21",
     "@wp-playground/client": "^3.1.21",
-    "cypress": "^13.17.0",
+    "cypress": "^15.14.2",
     "eslint": "^10.2.1",
     "eslint-plugin-cypress": "^6.4.0",
     "globals": "^17.5.0",
