@@ -24,14 +24,15 @@ Cypress.Commands.add('loginAsAdmin', () => {
       cy.get('#user_login').should('be.visible').type('admin');
       cy.get('#user_pass').should('be.visible').type('password');
       cy.get('#wp-submit').should('be.visible').click();
-      cy.get('#wpadminbar', { timeout: 15000 }).should('exist');
+      cy.visit('/wp-admin/', { timeout: 30000 });
+      cy.get('#wpbody-content', { timeout: 30000 }).should('exist');
     } else {
       cy.log('Login form not found; checking whether WordPress loaded an authenticated admin page.');
       cy.visit('/wp-admin/', { timeout: 30000 });
-      cy.get('body', { timeout: 15000 }).then(($adminBody) => {
+      cy.get('body', { timeout: 30000 }).then(($adminBody) => {
         expect(
-          $adminBody.find('#wpadminbar').length,
-          'admin bar should be present after login fallback',
+          $adminBody.find('#wpbody-content').length,
+          'admin content should be present after login fallback',
         ).to.be.greaterThan(0);
       });
     }
