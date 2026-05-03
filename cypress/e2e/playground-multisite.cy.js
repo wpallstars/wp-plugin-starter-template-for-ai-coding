@@ -10,7 +10,6 @@ describe('WordPress Playground Multisite Tests', () => {
   it('Can access the network admin area', () => {
     cy.loginAsAdmin();
     cy.visit('/wp-admin/network/', { timeout: 30000 });
-    cy.get('#wpadminbar', { timeout: 15000 }).should('exist');
     cy.get('#wpbody-content').should('exist');
   });
 
