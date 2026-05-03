@@ -1,4 +1,3 @@
-/* eslint-env mocha, jquery, cypress */
 describe('WordPress Playground Multisite Tests', () => {
   beforeEach(() => {
     cy.visit('/', { timeout: 30000 });

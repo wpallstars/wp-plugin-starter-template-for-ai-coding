@@ -1,4 +1,3 @@
-/* eslint-env mocha, jquery, cypress */
 describe('WordPress Playground Single Site Tests', {
   retries: {
     runMode: 2,
