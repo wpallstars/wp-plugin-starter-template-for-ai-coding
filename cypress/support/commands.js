@@ -27,13 +27,18 @@ Cypress.Commands.add('loginAsAdmin', () => {
         cy.get('#wp-submit').should('be.visible').click();
       }
 
-      cy.visit('/wp-admin/', { timeout: 60000, failOnStatusCode: false });
-      cy.get('#wpbody-content', { timeout: 60000 }).should('exist');
+      cy.get('#wpbody-content', { timeout: 30000 }).should('exist');
     });
   }, {
     validate() {
-      cy.visit('/wp-admin/', { timeout: 60000, failOnStatusCode: false });
-      cy.get('#wpbody-content', { timeout: 60000 }).should('exist');
+      cy.request({
+        url: '/wp-admin/',
+        followRedirect: false,
+        failOnStatusCode: false,
+      }).then((response) => {
+        expect(response.status).to.eq(200);
+        expect(response.redirectedToUrl || '').not.to.include('wp-login.php');
+      });
     },
   });
 
