@@ -63,7 +63,7 @@
   "devDependencies": {
     "@wordpress/env": "^11.4.0",
     "@wp-playground/blueprints": "^3.0.22",
-    "@wp-playground/cli": "^3.0.22",
+    "@wp-playground/cli": "^3.1.21",
     "@wp-playground/client": "^3.1.21",
     "cypress": "^13.17.0",
     "eslint": "^8.57.0",
@@ -78,7 +78,7 @@
     "tmp": "^0.2.4",
     "simple-git": "^3.36.0",
     "form-data": "^4.0.4",
-    "fast-xml-parser": "^5.7.0",
+    "fast-xml-parser": "^5.7.2",
     "minimatch": "^3.1.4",
     "jws": "^3.2.3",
     "js-yaml": "^3.14.2",
