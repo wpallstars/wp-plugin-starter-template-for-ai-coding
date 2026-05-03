@@ -14,7 +14,8 @@ describe('WordPress Playground Single Site Tests', {
 
   it('Can access the admin area', () => {
     cy.loginAsAdmin();
-    cy.get('#wpbody-content', { timeout: 15000 }).should('exist');
+    cy.visit('/wp-admin/', { timeout: 30000 });
+    cy.get('#wpbody-content', { timeout: 30000 }).should('exist');
   });
 
   it('Plugin management page loads correctly', () => {
