@@ -132,8 +132,10 @@ jobs:
 
         # Run Cypress tests against WordPress Playground
         echo "Running Cypress tests..."
+        set +e
         npx cypress run --spec "cypress/e2e/playground-single-site.cy.js"
         TEST_EXIT_CODE=$?
+        set -e
 
         # Kill the server process
         kill $SERVER_PID 2>/dev/null || true
