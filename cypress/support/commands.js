@@ -36,6 +36,9 @@ Cypress.Commands.add('loginAsAdmin', () => {
       cy.get('#wpbody-content', { timeout: 60000 }).should('exist');
     },
   });
+
+  cy.visit('/wp-admin/', { timeout: 60000, failOnStatusCode: false });
+  cy.get('#wpbody-content', { timeout: 60000 }).should('exist');
 });
 
 /**
