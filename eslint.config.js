@@ -14,7 +14,6 @@ const cypressGlobals = {
   assert: 'readonly',
   chai: 'readonly',
   cy: 'readonly',
-  expect: 'readonly',
 };
 
 const cypressRecommendedRules = cypress.configs.recommended.rules;
@@ -26,7 +25,7 @@ module.exports = [
   js.configs.recommended,
   {
     files: ['**/*.js'],
-    ignores: ['cypress/eslint.config.js'],
+    ignores: ['eslint.config.js'],
     languageOptions: {
       ecmaVersion: 'latest',
       sourceType: 'module',
@@ -43,7 +42,6 @@ module.exports = [
   },
   {
     files: ['cypress/**/*.js'],
-    ignores: ['cypress/eslint.config.js'],
     languageOptions: {
       globals: {
         ...globals.browser,
@@ -63,7 +61,7 @@ module.exports = [
     },
   },
   {
-    files: ['cypress.config.js', 'cypress.config.cjs', 'cypress/eslint.config.js'],
+    files: ['cypress.config.js', 'cypress.config.cjs', 'eslint.config.js'],
     languageOptions: {
       sourceType: 'commonjs',
       globals: {
