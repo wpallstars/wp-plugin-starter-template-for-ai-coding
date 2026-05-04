@@ -14,6 +14,7 @@ const cypressGlobals = {
   assert: 'readonly',
   chai: 'readonly',
   cy: 'readonly',
+  expect: 'readonly',
 };
 
 const cypressRecommendedRules = cypress.configs.recommended.rules;
