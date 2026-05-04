@@ -63,9 +63,9 @@
   "devDependencies": {
     "@eslint/js": "^10.0.1",
     "@wordpress/env": "^11.4.0",
-    "@wp-playground/blueprints": "^3.0.22",
-    "@wp-playground/cli": "^3.1.21",
-    "@wp-playground/client": "^3.1.21",
+    "@wp-playground/blueprints": "^3.1.26",
+    "@wp-playground/cli": "^3.1.26",
+    "@wp-playground/client": "^3.1.26",
     "cypress": "^15.14.2",
     "eslint": "^10.2.1",
     "eslint-plugin-cypress": "^6.4.0",
