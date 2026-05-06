@@ -4,7 +4,7 @@
     "alpha-value-notation": "percentage",
     "color-function-notation": "modern",
     "font-weight-notation": "numeric",
-    "media-feature-range-notation": "context"
+    "media-feature-range-notation": "prefix"
   },
   "ignoreFiles": [
     "vendor/**",

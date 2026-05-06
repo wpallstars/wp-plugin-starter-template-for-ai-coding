@@ -123,7 +123,7 @@
     text-align: right;
 }
 
-/* 782px is the WordPress mobile admin breakpoint. */
+/* Use max-width for Safari/iOS 15 compatibility at the WordPress mobile admin breakpoint. */
 @media screen and (max-width: 782px) {
     .wpst-form-table th {
         width: 100%;
