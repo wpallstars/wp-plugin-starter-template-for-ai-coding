@@ -20,7 +20,8 @@ repository holds the master copy of it and of every core file
 
 User docs: `README.md` (developers, and the Read Me tab) and `readme.txt`.
 Development: `DEVELOPMENT.md`. Releases: `RELEASING.md`; launch state:
-`LAUNCH.md`.
+`LAUNCH.md`. Keep this file a short map: guidance for one kind of task goes
+in `docs/` (`STANDARDS.md` → Agent docs); the starter has none yet.
 
 ## What belongs here
 

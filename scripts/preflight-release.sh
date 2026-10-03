@@ -20,10 +20,12 @@ set -euo pipefail
 
 readonly UPDATER_HEADERS='GitHub Plugin URI|Primary Branch|Release Asset'
 # Development files that must never be in a release zip (paths inside the slug folder).
-readonly DEV_FILES='^[^/]+/(\.git|\.agents|\.wordpress-org|\.distignore|\.distignore-wporg|\.gitattributes|\.gitignore|\.woodpecker\.yml|\.github|\.editorconfig|\.gitleaks\.toml|\.aidevops\.json|composer\.(json|lock)|phpcs\.xml(\.dist)?|phpstan(-baseline|-plugin)?\.neon(\.dist)?|vendor|AGENTS\.md|CONTRIBUTING\.md|DEVELOPMENT\.md|LAUNCH\.md|SECURITY\.md|STANDARDS\.md|RELEASING\.md|ROADMAP\.md|STABILITY\.md|TESTING\.md|scripts|dist|node_modules|reference-plugins|project-documents)(/|$)|(^|/)(\.DS_Store|__MACOSX|Thumbs\.db)(/|$)|\.(bak|log|orig|swp)$'
+readonly DEV_FILES='^[^/]+/(\.git|\.agents|\.wordpress-org|\.distignore|\.distignore-wporg|\.gitattributes|\.gitignore|\.woodpecker\.yml|\.github|\.editorconfig|\.gitleaks\.toml|\.aidevops\.json|composer\.(json|lock)|phpcs\.xml(\.dist)?|phpstan(-baseline|-plugin)?\.neon(\.dist)?|vendor|AGENTS\.md|CONTRIBUTING\.md|DEVELOPMENT\.md|LAUNCH\.md|SECURITY\.md|STANDARDS\.md|RELEASING\.md|ROADMAP\.md|STABILITY\.md|TESTING\.md|docs|scripts|dist|node_modules|reference-plugins|project-documents)(/|$)|(^|/)(\.DS_Store|__MACOSX|Thumbs\.db)(/|$)|\.(bak|log|orig|swp)$'
 readonly README_MAX_BYTES=10240
 readonly SHORT_DESC_MAX=150
 readonly MAX_TAGS=5
+# AGENTS.md is read in every agent session; longer guidance goes in docs/.
+readonly AGENTS_MD_MAX_LINES=150
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 readonly SCRIPT_DIR
 # shellcheck source=scripts/lib/plugin.sh disable=SC1091 # followed only with -x
@@ -488,6 +490,43 @@ check_core_files() {
 	return 0
 }
 
+# AGENTS.md stays a short map (STANDARDS.md → Agent docs): under
+# AGENTS_MD_MAX_LINES lines, and it names every docs/*.md and only ones that
+# exist, so agents find each task doc. Warnings: only a person can judge
+# what moves.
+check_agent_docs() {
+	local sha="$1"
+	section "Agent docs"
+	local agents
+	if ! agents="$(git show "$sha:AGENTS.md" 2>/dev/null)"; then
+		warn "AGENTS.md missing: agents need the plugin's names and its own rules"
+		return 0
+	fi
+	local lines problems=0
+	lines="$(printf '%s\n' "$agents" | wc -l | tr -d ' ')"
+	if [ "$lines" -gt "$AGENTS_MD_MAX_LINES" ]; then
+		warn "AGENTS.md is $lines lines (most $AGENTS_MD_MAX_LINES): move sections only one kind of task needs to docs/, with one line saying when to read each"
+		problems=1
+	fi
+	local doc
+	while IFS= read -r doc; do
+		[ -n "$doc" ] || continue
+		if ! printf '%s\n' "$agents" | grep -qF "$doc"; then
+			warn "$doc is not named in AGENTS.md, so agents will not find it"
+			problems=1
+		fi
+	done < <(git ls-tree -r --name-only "$sha" -- docs | grep '\.md$' || true)
+	while IFS= read -r doc; do
+		[ -n "$doc" ] || continue
+		if ! git cat-file -e "$sha:$doc" 2>/dev/null; then
+			warn "AGENTS.md names $doc, which does not exist"
+			problems=1
+		fi
+	done < <(printf '%s\n' "$agents" | grep -oE 'docs/[A-Za-z0-9._/-]+\.md' | sort -u || true)
+	[ "$problems" -eq 1 ] || ok "AGENTS.md is $lines lines and names every doc in docs/"
+	return 0
+}
+
 check_git() {
 	local ref="$1"
 	local sha="$2"
@@ -568,6 +607,7 @@ main() {
 	if [ -f "$SCRIPT_DIR/sync-core.sh" ]; then
 		check_core_files
 	fi
+	check_agent_docs "$sha"
 	check_git "$ref" "$sha" "$VERSION"
 
 	printf '\n%s error(s), %s warning(s).\n' "$ERRORS" "$WARNINGS"

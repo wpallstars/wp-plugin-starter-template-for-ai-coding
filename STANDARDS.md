@@ -4,7 +4,7 @@ Rules every plugin made from the wpallstars starter plugin follows. This file
 is the same in each of them: the starter holds the master copy, so a lesson
 learned in one plugin goes into the starter's copy and then to every plugin
 (`scripts/sync-core.sh` shows the differences). Never put rules for one
-plugin here; they go in its `AGENTS.md`.
+  plugin here; they go in its `AGENTS.md` or its `docs/` (Agent docs below).
 
 Names below are placeholders. Each plugin's `AGENTS.md` gives its values:
 
@@ -73,6 +73,34 @@ How changes are made and checked: `DEVELOPMENT.md`. Releases: `RELEASING.md`.
 - `.distignore` lists files kept out of the release zip. Add new
   development-only files there (the preflight fails when a known one gets in),
   then check the build with Plugin Check.
+
+## Agent docs
+
+AI agents read `AGENTS.md` in every session, whatever the task, so every
+line there costs every session. Keep it a short map; put the detail where
+only the task that needs it reads it. This works the same for a small
+plugin and a large one: a small plugin has only `AGENTS.md`, a large one
+adds docs as it grows.
+
+- `AGENTS.md` holds the plugin's names (the placeholder table), the rules
+  for this plugin that apply to any change (a line or two each, such as
+  features the owner asked to be on), and one line for each doc saying when
+  to read it.
+- Guidance for one kind of task (a procedure, a checklist, a data format,
+  a list of choices) goes in `docs/{topic}.md`, named for the task
+  (`docs/presets.md`). `AGENTS.md` names it with when to read it: "Adding
+  or changing a preset: read `docs/presets.md` first." Move a section there
+  when only some tasks need it or it grows past about 15 lines.
+- Rules every plugin shares go in this file, in the starter; workflows every
+  plugin shares go in `DEVELOPMENT.md` and `RELEASING.md`. Never copy them
+  into a plugin's `AGENTS.md` or `docs/`.
+- `docs/` is for people working on the plugin and never ships (`.distignore`).
+  Users' docs stay in `README.md` and `readme.txt`.
+- No agent definitions (subagents) in the plugin by default: each AI tool
+  has its own format, and a doc serves every tool. Add one only when agents
+  keep getting a task wrong even with its doc, and have it read that doc.
+- `scripts/preflight-release.sh` warns when `AGENTS.md` is over 150 lines,
+  names a doc that does not exist, or leaves out one in `docs/`.
 
 ## Code rules
 
