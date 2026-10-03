@@ -7,7 +7,7 @@
 #   --check     Change nothing; list core files that differ from the starter's
 #               and exit 1 if any do (scripts/preflight-release.sh warns).
 #   --from DIR  A checkout of the starter (default: <PREFIX>_STARTER_DIR, then
-#               wp-plugin-starter-template-for-ai-coding next to this repository).
+#               <STARTER_REPO_DIR> next to this repository).
 #   --ref REF   Starter commit, branch or tag to copy from (default: HEAD of
 #               that checkout; use origin/main after a git fetch there).
 #
@@ -22,7 +22,8 @@ readonly SCRIPT_DIR
 # shellcheck source=scripts/lib/plugin.sh disable=SC1091 # followed only with -x
 . "$SCRIPT_DIR/lib/plugin.sh"
 
-readonly STARTER_REPO_DIR="wp-plugin-starter-template-for-ai-coding"
+# Split the starter slug so plugin_map leaves its repository name unchanged.
+readonly STARTER_REPO_DIR="wp-plugin-""starter-template-for-ai-coding"
 
 die() {
 	local message="$1"
@@ -38,7 +39,7 @@ cleanup() {
 }
 
 usage() {
-	sed -n '2,17p' "$0" | sed 's/^# \{0,1\}//'
+	sed -n '2,17p' "$0" | sed -e 's/^# \{0,1\}//' -e "s/<STARTER_REPO_DIR>/$STARTER_REPO_DIR/"
 	return 0
 }
 
