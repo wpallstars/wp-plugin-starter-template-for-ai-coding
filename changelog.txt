@@ -2,7 +2,10 @@
 
 Every change to WP Plugin Starter. readme.txt lists the latest version in short.
 
-= Unreleased =
+= 1.0.1 =
+* Fix: a select or multi-select setting whose options list fails (its callback throws, for example when another plugin's tables are missing) no longer stops every page after an update. That list is treated as empty, so the settings upgrade finishes; open fields keep their saved values and closed fields fall back to their default.
+* Fix: scripts/sync-core.sh in a plugin made from the starter looks for the starter in wp-plugin-starter-template-for-ai-coding next to it again; renaming the plugin had renamed that folder name too, so it only worked with --from.
+* Fix: release zips leave out DESIGN.md.
 * Fix: the shared GitHub updater (copy 1.0.1) could not update from private repositories on sites where another plugin raises every request's redirection count (HTTP Requests Manager in a blocking mode sets it to 1): GitHub's redirect was followed, so the signed download address was lost and the token went along to the download host. Its requests to GitHub now never follow redirects, whatever other plugins set. Public repositories' release checks had the same problem.
 * Fix: the shared GitHub updater's private downloads survive updaters that reset upgrader_pre_download (GPLVault Updater).
 * Fix: a replaced plugin's Deactivate link on the settings screen did nothing on sites with Freesoul Deactivate Plugins: it saves its own copy of the active plugins list over any change not made from the Plugins screen. The link now checks the change was saved and, if not, saves just that change. Other code can use the same check: WPStarter_Replaced_Plugins::save_plugin_state().

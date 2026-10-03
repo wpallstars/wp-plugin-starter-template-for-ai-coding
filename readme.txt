@@ -5,7 +5,7 @@ Tags: starter, boilerplate, settings, developer, template
 Requires at least: 6.2
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 1.0.0
+Stable tag: 1.0.1
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -43,10 +43,15 @@ No. The WordPress.org build contacts nothing outside WordPress.
 
 == Changelog ==
 
-= 1.0.0 =
-* A fresh start, made from the parts every wpallstars plugin needs: settings screen, Read Me tab, features as classes, release and check scripts. Earlier versions are retired; start again from this one.
+= 1.0.1 =
+* Fix: one setting whose options list fails no longer stops every page after an update.
+* Fix: updates from GitHub work when other plugins change how requests follow redirects or reset downloads.
+* Fix: a replaced plugin's Deactivate link works with Freesoul Deactivate Plugins.
+* Fix: scripts/sync-core.sh finds the starter next to a renamed plugin again.
+
+Every change: changelog.txt.
 
 == Upgrade Notice ==
 
-= 1.0.0 =
-A fresh start. Earlier versions of the starter are retired; start a new plugin from this one.
+= 1.0.1 =
+Fixes: a failing options list can no longer stop every page after an update, and GitHub updates are more reliable.
