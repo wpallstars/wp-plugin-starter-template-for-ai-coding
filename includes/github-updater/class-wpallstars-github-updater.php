@@ -212,11 +212,38 @@ final class WPAllStars_GitHub_Updater {
             $headers['Authorization'] = 'Bearer ' . $token;
         }
         // No redirects: the token must never travel to another address.
-        return wp_safe_remote_get('https://api.github.com/repos/' . $repo . $path, array(
-            'timeout'     => 10,
-            'redirection' => 0,
-            'headers'     => $headers,
+        return self::remote_no_redirect('GET', 'https://api.github.com/repos/' . $repo . $path, array(
+            'timeout' => 10,
+            'headers' => $headers,
         ));
+    }
+
+    /**
+     * A request that never follows a redirect, so the answer's Location can
+     * be read and a token never travels to another address.
+     *
+     * Some plugins raise every request's redirection count (HTTP Requests
+     * Manager sets it to 1), which would follow GitHub's redirect: the token
+     * would go along and the Location would be lost. Only this request is
+     * held at 0, after every other filter.
+     *
+     * @param string $method GET or HEAD.
+     * @param string $url    Address.
+     * @param array  $args   Request arguments.
+     * @return array|WP_Error
+     */
+    private static function remote_no_redirect($method, $url, array $args) {
+        $args['redirection'] = 0;
+        $hold                = function ($parsed_args, $request_url) use ($url) {
+            if ($request_url === $url && is_array($parsed_args)) {
+                $parsed_args['redirection'] = 0;
+            }
+            return $parsed_args;
+        };
+        add_filter('http_request_args', $hold, PHP_INT_MAX, 2);
+        $response = 'HEAD' === $method ? wp_safe_remote_head($url, $args) : wp_safe_remote_get($url, $args);
+        remove_filter('http_request_args', $hold, PHP_INT_MAX);
+        return $response;
     }
 
     /**
@@ -316,10 +343,7 @@ final class WPAllStars_GitHub_Updater {
      */
     private static function fetch_web($repo, $folder, $main) {
         // Redirects to the newest release that is not a draft or pre-release.
-        $response = wp_safe_remote_head('https://github.com/' . $repo . '/releases/latest', array(
-            'timeout'     => 10,
-            'redirection' => 0,
-        ));
+        $response = self::remote_no_redirect('HEAD', 'https://github.com/' . $repo . '/releases/latest', array('timeout' => 10));
         if (is_wp_error($response)) {
             return $response;
         }
@@ -346,7 +370,7 @@ final class WPAllStars_GitHub_Updater {
         // The release zip, by its usual name: {folder}-{version}.zip.
         $asset    = null;
         $download = 'https://github.com/' . $repo . '/releases/download/' . rawurlencode($tag) . '/' . rawurlencode($folder . '-' . $version . '.zip');
-        $head     = wp_safe_remote_head($download, array('timeout' => 10, 'redirection' => 0));
+        $head     = self::remote_no_redirect('HEAD', $download, array('timeout' => 10));
         if (is_wp_error($head)) {
             return $head;
         }
@@ -747,10 +771,9 @@ final class WPAllStars_GitHub_Updater {
             return null;
         }
 
-        $response = wp_safe_remote_get($package, array(
-            'timeout'     => 30,
-            'redirection' => 0,
-            'headers'     => array(
+        $response = self::remote_no_redirect('GET', $package, array(
+            'timeout' => 30,
+            'headers' => array(
                 'Accept'        => false !== strpos($package, '/releases/assets/') ? 'application/octet-stream' : 'application/vnd.github+json',
                 'Authorization' => 'Bearer ' . $token,
             ),
