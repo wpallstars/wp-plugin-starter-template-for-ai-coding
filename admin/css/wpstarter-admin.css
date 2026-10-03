@@ -1,0 +1,848 @@
+/**
+ * WP Plugin Starter admin screen.
+ *
+ * Scoped to .wps-wrap. Uses core admin tokens so the screen follows the
+ * active admin colour scheme; core buttons, notices and plugin cards keep
+ * their native styles. Logical properties keep RTL working without a
+ * separate stylesheet.
+ */
+
+.wps-wrap {
+	--wps-accent: var(--wp-admin-theme-color, #2271b1);
+	--wps-accent-dark: var(--wp-admin-theme-color-darker-10, #135e96);
+	--wps-text: #1d2327;
+	--wps-muted: #646970;
+	--wps-border: #dcdcde;
+	--wps-surface: #fff;
+	--wps-subtle: #f6f7f7;
+	--wps-success: #008a20;
+	--wps-error: #d63638;
+	--wps-radius: 8px;
+	--wps-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+	--wps-focus: 0 0 0 2px var(--wps-surface), 0 0 0 4px var(--wps-accent);
+
+	margin-block-start: 0;
+	margin-inline-start: -20px;
+	margin-inline-end: 0;
+	color: var(--wps-text);
+	/* Start below the Screen Options / Notices tabs, so they never narrow the header. */
+	clear: both;
+}
+
+.wps-wrap *,
+.wps-wrap *::before,
+.wps-wrap *::after {
+	box-sizing: border-box;
+}
+
+/* Header ------------------------------------------------------------- */
+
+.wps-header {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 12px 24px;
+	padding: 14px 24px;
+	background: var(--wps-surface);
+	border-block-end: 1px solid var(--wps-border);
+}
+
+.wps-header__brand {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+}
+
+.wps-header__logo {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: 32px;
+	height: 32px;
+	font-size: 20px;
+	color: #fff;
+	background: var(--wps-accent);
+	border-radius: 6px;
+}
+
+.wps-wrap .wps-header__title {
+	margin: 0;
+	padding: 0;
+	font-size: 20px;
+	font-weight: 600;
+	line-height: 1.3;
+}
+
+.wps-header__actions {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 8px;
+	margin-inline-start: auto;
+}
+
+.wps-wrap .wps-header__support {
+	display: inline-flex;
+	align-items: center;
+	gap: 4px;
+}
+
+/* line-height: 1 stops the icon taking the button's taller line height,
+   which draws the glyph below the middle of its box. */
+.wps-wrap .wps-header__support .dashicons {
+	width: 18px;
+	height: 18px;
+	font-size: 18px;
+	line-height: 1;
+}
+
+/* Search ------------------------------------------------------------- */
+
+/* Stretch, so the field always matches the button's height, whatever
+   size the admin colour scheme or WordPress version gives buttons. */
+.wps-search {
+	display: flex;
+	align-items: stretch;
+	gap: 6px;
+}
+
+.wps-search__field {
+	position: relative;
+	display: flex;
+	align-items: stretch;
+}
+
+.wps-wrap .wps-search__icon {
+	position: absolute;
+	inset-block: 0;
+	inset-inline-start: 9px;
+	margin-block: auto;
+	color: var(--wps-muted);
+	pointer-events: none;
+}
+
+.wps-wrap .wps-search__input {
+	width: 260px;
+	max-width: 100%;
+	height: auto;
+	min-height: 30px;
+	margin: 0;
+	padding-block: 0;
+	padding-inline: 34px 10px;
+	font-size: 14px;
+	line-height: normal;
+	color: var(--wps-text);
+	background: var(--wps-surface);
+	/* Border and corners stay core's, so they match core buttons in each version. */
+	box-shadow: none;
+	transition: border-color 0.1s ease-in-out, box-shadow 0.1s ease-in-out;
+}
+
+.wps-wrap .wps-search__input::placeholder {
+	color: var(--wps-muted);
+	opacity: 1;
+}
+
+.wps-wrap .wps-search__input:hover {
+	border-color: var(--wps-accent);
+}
+
+.wps-wrap .wps-search__input:focus {
+	border-color: var(--wps-accent);
+	box-shadow: 0 0 0 1px var(--wps-accent);
+	outline: 2px solid transparent;
+}
+
+.wps-wrap .wps-search__field:focus-within .wps-search__icon {
+	color: var(--wps-accent);
+}
+
+.wps-wrap .wps-search__button {
+	margin: 0;
+}
+
+.wps-wrap .wps-search__group {
+	margin: 24px 0 8px;
+	font-size: 14px;
+	font-weight: 600;
+}
+
+.wps-wrap .wps-search__group:first-of-type {
+	margin-block-start: 8px;
+}
+
+/* Navigation --------------------------------------------------------- */
+
+.wps-nav {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: stretch;
+	padding-inline: 12px;
+	background: var(--wps-surface);
+	border-block-end: 1px solid var(--wps-border);
+	overflow-x: auto;
+}
+
+.wps-nav__group {
+	display: flex;
+	align-items: stretch;
+}
+
+.wps-nav__group + .wps-nav__group {
+	margin-inline-start: 8px;
+	padding-inline-start: 8px;
+	border-inline-start: 1px solid var(--wps-border);
+}
+
+.wps-nav__tab {
+	display: inline-flex;
+	align-items: center;
+	padding: 14px 12px 11px;
+	font-size: 14px;
+	font-weight: 500;
+	color: var(--wps-muted);
+	text-decoration: none;
+	white-space: nowrap;
+	border-block-end: 3px solid transparent;
+	transition: color 0.1s ease, border-color 0.1s ease;
+}
+
+.wps-nav__tab:hover {
+	color: var(--wps-text);
+}
+
+.wps-nav__tab:focus {
+	outline: none;
+	box-shadow: none;
+}
+
+.wps-nav__tab:focus-visible {
+	outline: 2px solid var(--wps-accent);
+	outline-offset: -4px;
+	border-radius: 4px;
+}
+
+.wps-nav__tab.is-active {
+	color: var(--wps-text);
+	font-weight: 600;
+	border-block-end-color: var(--wps-accent);
+}
+
+/* Main --------------------------------------------------------------- */
+
+.wps-wrap > .notice,
+.wps-wrap > div.updated,
+.wps-wrap > div.error {
+	margin: 16px 24px 0;
+}
+
+.wps-main {
+	max-width: 1200px;
+	padding: 24px;
+}
+
+.wps-section {
+	max-width: 860px;
+}
+
+.wps-section__intro {
+	margin-block-end: 16px;
+}
+
+.wps-wrap .wps-section__title {
+	margin: 0 0 4px;
+	font-size: 18px;
+	font-weight: 600;
+}
+
+.wps-section__desc,
+.wps-section__hint {
+	margin: 0;
+	color: var(--wps-muted);
+}
+
+.wps-section__hint {
+	margin-block-start: 4px;
+	font-size: 12px;
+}
+
+/* Cards -------------------------------------------------------------- */
+
+.wps-card {
+	background: var(--wps-surface);
+	border: 1px solid var(--wps-border);
+	border-radius: var(--wps-radius);
+	box-shadow: var(--wps-shadow);
+}
+
+.wps-cards {
+	display: grid;
+	gap: 12px;
+}
+
+/* A settings tab with nothing in it yet. */
+.wps-empty {
+	padding: 16px 20px;
+	color: var(--wps-muted);
+}
+
+.wps-empty p {
+	margin: 0;
+}
+
+.wps-badge {
+	display: inline-block;
+	padding: 2px 8px;
+	font-size: 11px;
+	font-weight: 500;
+	line-height: 1.6;
+	color: var(--wps-muted);
+	vertical-align: middle;
+	background: var(--wps-subtle);
+	border: 1px solid var(--wps-border);
+	border-radius: 999px;
+}
+
+.wps-badge--success {
+	color: #00450c;
+	background: #edfaef;
+	border-color: #b8e6bf;
+}
+
+/* Setting cards ------------------------------------------------------ */
+
+/* Clip the header hover and panel backgrounds to the rounded corners. */
+.wps-setting {
+	position: relative;
+	overflow: hidden;
+}
+
+/* "On" stripe drawn above the header/panel backgrounds so hover never hides it. */
+.wps-setting::before {
+	content: "";
+	position: absolute;
+	z-index: 1;
+	inset-block: 0;
+	inset-inline-start: 0;
+	width: 3px;
+	background: var(--wps-accent);
+	opacity: 0;
+	pointer-events: none;
+	transition: opacity 0.15s ease;
+}
+
+.wps-setting.is-on::before {
+	opacity: 1;
+}
+
+.wps-setting__header {
+	display: grid;
+	grid-template-columns: auto 1fr auto;
+	align-items: center;
+	gap: 16px;
+	padding: 16px 20px;
+}
+
+.wps-setting.has-panel .wps-setting__header {
+	cursor: pointer;
+}
+
+.wps-setting.has-panel .wps-setting__header:hover {
+	background: #fcfcfc;
+}
+
+.wps-setting__text {
+	min-width: 0;
+}
+
+/* Status sits beside the title so showing/hiding it never reflows the description. */
+.wps-setting__title-row {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 4px 10px;
+	min-height: 20px;
+}
+
+.wps-setting__title {
+	font-size: 14px;
+	font-weight: 600;
+}
+
+.wps-setting__desc {
+	margin: 2px 0 0;
+	color: var(--wps-muted);
+}
+
+.wps-replaces {
+	margin: 4px 0 0;
+	font-size: 12px;
+	color: var(--wps-muted);
+}
+
+.wps-replaces__active {
+	color: #996800;
+}
+
+.wps-wrap .wps-setting__expand {
+	display: inline-flex;
+	align-items: center;
+	gap: 4px;
+	padding: 6px 8px;
+	color: var(--wps-accent);
+	text-decoration: none;
+	border-radius: 4px;
+}
+
+.wps-wrap .wps-setting__expand:hover {
+	background: var(--wps-subtle);
+}
+
+.wps-wrap .wps-setting__expand:focus-visible {
+	outline: none;
+	box-shadow: var(--wps-focus);
+}
+
+.wps-setting__expand .dashicons {
+	transition: transform 0.15s ease;
+}
+
+.wps-setting__expand[aria-expanded="true"] .dashicons {
+	transform: rotate(180deg);
+}
+
+.wps-setting__panel {
+	padding: 4px 20px 8px;
+	border-block-start: 1px solid var(--wps-border);
+	background: #fcfcfc;
+}
+
+.wps-setting__panel[hidden] {
+	display: none;
+}
+
+/* Status a feature prints above its options (wpstarter_setting_panel). */
+.wps-panel-note {
+	padding: 12px 0;
+	border-block-end: 1px solid #f0f0f1;
+	color: var(--wps-muted);
+}
+
+.wps-panel-note p {
+	margin: 0 0 6px;
+}
+
+.wps-panel-note p:last-child {
+	margin-block-end: 0;
+}
+
+.wps-panel-note--warning {
+	color: #1d2327;
+}
+
+.wps-panel-note--warning p::before {
+	content: "\f534";
+	margin-inline-end: 6px;
+	font: 16px/1 dashicons;
+	vertical-align: -3px;
+	color: #dba617;
+}
+
+.wps-media__preview {
+	flex: none;
+	width: 64px;
+	height: 64px;
+	object-fit: contain;
+	background: repeating-conic-gradient(#f0f0f1 0% 25%, #fff 0% 50%) 0 0 / 16px 16px;
+	border: 1px solid var(--wps-border);
+	border-radius: 4px;
+}
+
+.wps-code {
+	max-width: 100%;
+	margin: 6px 0 0;
+	padding: 10px 12px;
+	overflow-x: auto;
+	font-size: 12px;
+	line-height: 1.5;
+	color: #1d2327;
+	background: #f6f7f7;
+	border: 1px solid var(--wps-border);
+	border-radius: 4px;
+	white-space: pre;
+}
+
+/* Fields ------------------------------------------------------------- */
+
+.wps-field {
+	display: grid;
+	grid-template-columns: 200px 1fr;
+	gap: 8px 24px;
+	padding: 16px 0;
+}
+
+.wps-field + .wps-field {
+	border-block-start: 1px solid #f0f0f1;
+}
+
+.wps-field__label {
+	padding-block-start: 6px;
+	font-weight: 600;
+}
+
+.wps-field__control .description {
+	margin-block-start: 6px;
+}
+
+.wps-field__unit {
+	color: var(--wps-muted);
+}
+
+.wps-field__control textarea.large-text {
+	max-width: 480px;
+}
+
+.wps-media {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 8px 12px;
+	align-items: center;
+}
+
+.wps-media__preview[hidden],
+.wps-media__remove[hidden] {
+	display: none;
+}
+
+.wps-checkboxes {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 6px 20px;
+	margin: 0;
+	padding: 6px 0 0;
+	border: 0;
+}
+
+.wps-checkbox {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+}
+
+/* Long lists, such as every active plugin: columns that scroll. */
+.wps-checkboxes.is-long {
+	display: block;
+	max-height: 320px;
+	overflow-y: auto;
+	columns: 16em auto;
+	column-gap: 20px;
+	padding: 6px 8px;
+	border: 1px solid #dcdcde;
+	border-radius: 4px;
+}
+
+.wps-checkboxes.is-long .wps-checkbox {
+	display: flex;
+	align-items: flex-start;
+	margin-block-end: 6px;
+	break-inside: avoid;
+}
+
+.wps-checkboxes.is-long .wps-checkbox input {
+	margin-block-start: 2px;
+}
+
+.wps-checkboxes__all {
+	display: block;
+	margin-block-end: 4px;
+}
+
+.wps-tokens {
+	display: block;
+	margin-block-start: 6px;
+}
+
+.wps-wrap .wps-token {
+	margin: 2px 4px 2px 0;
+	padding: 0;
+	cursor: pointer;
+	background: none;
+	border: 0;
+}
+
+.wps-token code {
+	display: inline-block;
+	padding: 1px 6px;
+	font-size: 12px;
+	background: var(--wps-subtle);
+	border: 1px solid var(--wps-border);
+	border-radius: 4px;
+}
+
+.wps-token:hover code,
+.wps-token:focus-visible code {
+	color: var(--wps-accent);
+	border-color: var(--wps-accent);
+}
+
+.wps-token:focus {
+	outline: none;
+}
+
+/* Switch ------------------------------------------------------------- */
+
+.wps-switch {
+	position: relative;
+	display: inline-block;
+	flex: none;
+	width: 36px;
+	height: 20px;
+	vertical-align: middle;
+}
+
+.wps-wrap .wps-switch__input {
+	position: absolute;
+	inset: 0;
+	z-index: 1;
+	width: 100%;
+	height: 100%;
+	margin: 0;
+	cursor: pointer;
+	opacity: 0;
+}
+
+.wps-switch__track {
+	position: absolute;
+	inset: 0;
+	background: #fff;
+	border: 1px solid #1e1e1e;
+	border-radius: 999px;
+	transition: background-color 0.15s ease, border-color 0.15s ease;
+}
+
+.wps-switch__track::after {
+	content: "";
+	position: absolute;
+	inset-block-start: 3px;
+	inset-inline-start: 3px;
+	width: 12px;
+	height: 12px;
+	background: #1e1e1e;
+	border-radius: 50%;
+	transition: transform 0.15s ease, background-color 0.15s ease;
+}
+
+.wps-switch__input:checked + .wps-switch__track {
+	background: var(--wps-accent);
+	border-color: var(--wps-accent);
+}
+
+.wps-switch__input:checked + .wps-switch__track::after {
+	background: #fff;
+	transform: translateX(16px);
+}
+
+[dir="rtl"] .wps-switch__input:checked + .wps-switch__track::after {
+	transform: translateX(-16px);
+}
+
+.wps-switch__input:focus-visible + .wps-switch__track {
+	box-shadow: var(--wps-focus);
+}
+
+.wps-switch__input:disabled + .wps-switch__track {
+	opacity: 0.5;
+}
+
+/* Save status -------------------------------------------------------- */
+
+.wps-status {
+	display: inline-flex;
+	align-items: center;
+	gap: 4px;
+	min-height: 20px;
+	font-size: 12px;
+	color: var(--wps-muted);
+	white-space: nowrap;
+}
+
+.wps-field__control .wps-status {
+	margin-inline-start: 8px;
+}
+
+.wps-status.is-saving::before {
+	content: "";
+	width: 12px;
+	height: 12px;
+	border: 2px solid var(--wps-border);
+	border-block-start-color: var(--wps-accent);
+	border-radius: 50%;
+	animation: wps-spin 0.8s linear infinite;
+}
+
+.wps-status.is-saved {
+	color: var(--wps-success);
+}
+
+.wps-status.is-saved::before {
+	content: "\f147";
+	font: normal 18px/1 dashicons;
+}
+
+.wps-status.is-error {
+	color: var(--wps-error);
+	white-space: normal;
+}
+
+@keyframes wps-spin {
+	to {
+		transform: rotate(360deg);
+	}
+}
+
+/* Read Me ------------------------------------------------------------ */
+
+.wps-readme {
+	max-width: 820px;
+	padding: 24px 32px;
+	font-size: 14px;
+	line-height: 1.65;
+}
+
+.wps-readme-image {
+	margin: 0 0 16px;
+}
+
+.wps-readme-image img {
+	display: block;
+	max-width: 100%;
+	height: auto;
+	border-radius: var(--wps-radius);
+}
+
+/* The banner at the top of README.md fills the top of the card. */
+.wps-readme > .wps-readme-image:first-child {
+	margin: -24px -32px 24px;
+}
+
+.wps-readme > .wps-readme-image:first-child img {
+	width: 100%;
+	border-radius: calc(var(--wps-radius) - 1px) calc(var(--wps-radius) - 1px) 0 0;
+}
+
+.wps-wrap .wps-readme h2 {
+	margin: 0 0 8px;
+	font-size: 22px;
+}
+
+.wps-wrap .wps-readme h3 {
+	margin: 24px 0 8px;
+	padding-block-start: 16px;
+	font-size: 16px;
+	border-block-start: 1px solid #f0f0f1;
+}
+
+.wps-wrap .wps-readme h4 {
+	margin: 16px 0 6px;
+	font-size: 14px;
+}
+
+.wps-readme ul,
+.wps-readme ol {
+	margin: 8px 0 12px;
+	padding-inline-start: 22px;
+}
+
+.wps-readme ul {
+	list-style: disc;
+}
+
+.wps-readme ol {
+	list-style: decimal;
+}
+
+.wps-readme-table {
+	margin: 8px 0 16px;
+	overflow-x: auto;
+}
+
+.wps-readme table {
+	border-collapse: collapse;
+	font-size: 13px;
+	line-height: 1.5;
+}
+
+.wps-readme th,
+.wps-readme td {
+	padding: 6px 10px;
+	text-align: start;
+	vertical-align: top;
+	border: 1px solid rgba(127, 127, 127, 0.25);
+}
+
+.wps-readme th {
+	background: rgba(127, 127, 127, 0.08);
+}
+
+/* Responsive --------------------------------------------------------- */
+
+@media screen and (max-width: 782px) {
+	.wps-wrap {
+		margin-inline-start: -10px;
+	}
+
+	.wps-header,
+	.wps-main {
+		padding-inline: 12px;
+	}
+
+	.wps-nav {
+		flex-wrap: nowrap;
+	}
+
+	/* Brand and website link on the first row, search across the second. */
+	.wps-search {
+		order: 1;
+		flex: 1 1 100%;
+		min-width: 0;
+	}
+
+	.wps-search__field {
+		flex: 1 1 0;
+		min-width: 0;
+	}
+
+	.wps-wrap .wps-search__input {
+		flex: 1 1 0;
+		width: auto;
+		min-width: 0;
+		min-height: 40px;
+		font-size: 16px;
+	}
+
+	.wps-search .button {
+		flex-shrink: 0;
+	}
+
+	.wps-setting__header {
+		grid-template-columns: auto 1fr;
+	}
+
+	.wps-setting__expand {
+		grid-column: 2;
+		justify-self: start;
+	}
+
+	.wps-field {
+		grid-template-columns: 1fr;
+	}
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.wps-wrap *,
+	.wps-wrap *::before,
+	.wps-wrap *::after {
+		transition: none !important;
+		animation: none !important;
+	}
+}

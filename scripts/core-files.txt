@@ -1,0 +1,55 @@
+# Core files: the same in every plugin made from the starter, apart from the
+# names (STANDARDS.md → Structure). scripts/sync-core.sh copies them from
+# the starter with the plugin's names, and --check lists any that differ.
+# Paths use the starter's names; a trailing / means every file below.
+# Change a core file in the starter first, then sync each plugin.
+
+# Bootstrap, feature registry, base feature and settings store.
+includes/class-wpstarter.php
+includes/class-wpstarter-feature.php
+includes/class-wpstarter-settings.php
+
+# Shared GitHub updater: only the newest copy on a site runs.
+includes/github-updater/
+
+# Admin screen, Read Me tab and the Plugins screen notes for replaced plugins.
+admin/settings.php
+admin/data/readme.php
+admin/includes/class-admin-manager.php
+admin/includes/class-settings-manager.php
+admin/includes/class-readme-manager.php
+admin/includes/class-replaced-plugins.php
+admin/css/wpstarter-admin.css
+admin/js/wpstarter-admin.js
+
+# Build, check, release and preview scripts.
+scripts/build-banner.sh
+scripts/build-release.sh
+scripts/core-files.txt
+scripts/lib/plugin.sh
+scripts/lint.sh
+scripts/phpstan-bootstrap.php
+scripts/plugin-check.sh
+scripts/preflight-release.sh
+scripts/preview-site.sh
+scripts/rename-plugin.sh
+scripts/replaced-plugins.php
+scripts/smoke-test.sh
+scripts/sync-core.sh
+
+# CI and tool configuration.
+.github/
+.distignore
+.gitattributes
+.gitignore
+.gitleaks.toml
+composer.json
+phpcs.xml.dist
+phpstan.neon.dist
+
+# Shared docs.
+STANDARDS.md
+DEVELOPMENT.md
+RELEASING.md
+CONTRIBUTING.md
+SECURITY.md

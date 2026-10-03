@@ -1,0 +1,27 @@
+name: Feature request
+description: Suggest a feature or an improvement.
+labels: ["enhancement"]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: The problem
+      description: What is slow, missing or annoying today, and for whom.
+    validations:
+      required: true
+  - type: textarea
+    id: idea
+    attributes:
+      label: What WP Plugin Starter could do
+      description: What it would do on its own, without new settings where possible.
+    validations:
+      required: true
+  - type: input
+    id: replaces
+    attributes:
+      label: Plugin it would replace
+      description: If another plugin does this now, its name and WordPress.org page.
+  - type: textarea
+    id: more
+    attributes:
+      label: Anything else

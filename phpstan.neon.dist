@@ -1,0 +1,36 @@
+# PHPStan: finds calls to functions, methods and classes that do not exist,
+# wrong argument counts and types, and code that cannot run, using the
+# WordPress stubs (szepeviktor/phpstan-wordpress) and PHP 7.4's functions.
+#
+# phpstan-baseline.neon is empty: every finding fails the check. Fix the
+# code. Where PHPStan or the stubs are wrong, add an entry under
+# ignoreErrors with the identifier, the file and the reason: here for the
+# files every plugin made from the starter shares, in phpstan-plugin.neon
+# for this plugin's own files and paths. Never put findings in the baseline
+# to get a change through.
+includes:
+	- phpstan-baseline.neon
+	- phpstan-plugin.neon
+
+parameters:
+	level: 5
+	phpVersion: 70400
+	# Result cache, kept between CI runs so only changed files are analysed again.
+	tmpDir: .cache/phpstan
+	paths:
+		- wp-plugin-starter-template.php
+		- uninstall.php
+		- includes
+		- admin
+	bootstrapFiles:
+		- scripts/phpstan-bootstrap.php
+	reportUnmatchedIgnoredErrors: true
+	treatPhpDocTypesAsCertain: false
+	ignoreErrors:
+		# Closures that change variables passed by reference (use (&$x)):
+		# PHPStan does not see the changes, so it reads them as never set.
+		-
+			identifiers:
+				- if.alwaysFalse
+				- identical.alwaysFalse
+			path: admin/includes/class-readme-manager.php

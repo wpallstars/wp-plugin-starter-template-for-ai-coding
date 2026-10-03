@@ -1,0 +1,7 @@
+== Changelog ==
+
+Every change to WP Plugin Starter. readme.txt lists the latest version in short.
+
+= 1.0.0 =
+* A fresh start, made from the parts every wpallstars plugin needs, taken from plugins in daily use: the settings screen with search, the Read Me tab, features as classes, replaced plugins, the shared GitHub updater, the release and check scripts, CI and the shared rules (STANDARDS.md, DEVELOPMENT.md, RELEASING.md). Earlier versions of this starter are retired; start again from this one.
+* New: scripts/rename-plugin.sh gives a copy of the starter its own names, and scripts/sync-core.sh keeps a plugin's core files the same as the starter's.

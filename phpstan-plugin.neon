@@ -1,0 +1,22 @@
+# PHPStan settings for WP Plugin Starter's own files, added to phpstan.neon.dist
+# (which holds the settings every plugin made from the starter shares).
+# Add the plugin's own folders under paths (for example blocks) and each
+# ignore with the identifier, the file and the reason.
+parameters:
+	ignoreErrors:
+		# The starter has no features, tabs to rename or helpers yet:
+		# WPStarter_Setup's lists are empty and its methods do nothing, so
+		# PHPStan reads the core code that uses them as having no effect.
+		# A plugin made from the starter fills them and drops these ignores.
+		-
+			identifiers:
+				- foreach.emptyArray
+				- staticMethod.resultUnused
+			path: includes/class-wpstarter.php
+		-
+			identifier: staticMethod.resultUnused
+			path: admin/settings.php
+		-
+			identifier: function.impossibleType
+			message: '#array_key_exists\(\) with mixed and array\{\}#'
+			path: includes/class-wpstarter-settings.php

@@ -1,0 +1,62 @@
+name: Bug report
+description: Something in WP Plugin Starter does not work as it should.
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Security problems: please do not report them here. See SECURITY.md.
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened
+      description: What you saw, and what you expected instead.
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      description: The feature involved, its settings, and what you clicked.
+      placeholder: |
+        1. Turn on …
+        2. Open …
+        3. See …
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: WP Plugin Starter version
+      description: Shown on the Plugins screen.
+    validations:
+      required: true
+  - type: dropdown
+    id: source
+    attributes:
+      label: Installed from
+      options:
+        - GitHub release
+        - WordPress.org
+        - Other
+    validations:
+      required: true
+  - type: input
+    id: environment
+    attributes:
+      label: WordPress and PHP versions
+      description: Tools → Site Health → Info shows both.
+      placeholder: WordPress 6.8, PHP 8.3
+    validations:
+      required: true
+  - type: textarea
+    id: log
+    attributes:
+      label: Messages in debug.log
+      description: Lines from wp-content/debug.log that mention wpstarter, if any. Remove anything private first.
+      render: text
+  - type: textarea
+    id: more
+    attributes:
+      label: Anything else
+      description: Theme, other plugins involved, multisite, screenshots.

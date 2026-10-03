@@ -1,0 +1,13 @@
+# gitleaks: secret scan of the Git history (DEVELOPMENT.md → Secrets in history).
+# Keep gitleaks' own rules; list only checked false positives here, each with
+# its reason and as narrow as possible.
+
+[extend]
+useDefault = true
+
+[[allowlists]]
+description = "Fluent Forms field keys (el_ and a uniqid()) in starter forms, not secrets"
+condition = "AND"
+paths = ['''^starters/fluentform\.json$''']
+regexTarget = "line"
+regexes = ['''"uniqElKey": "el_[0-9.]+"''']

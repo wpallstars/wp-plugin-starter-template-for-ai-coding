@@ -1,0 +1,15 @@
+# Opt out of AI model training
+* ai-training=false
+
+# Keep development files out of release archives (git archive).
+/.distignore       export-ignore
+/.distignore-wporg export-ignore
+/.gitattributes    export-ignore
+/.gitignore        export-ignore
+/.woodpecker.yml   export-ignore
+/DEVELOPMENT.md    export-ignore
+/RELEASING.md      export-ignore
+/ROADMAP.md        export-ignore
+/STABILITY.md      export-ignore
+/TESTING.md        export-ignore
+/scripts           export-ignore

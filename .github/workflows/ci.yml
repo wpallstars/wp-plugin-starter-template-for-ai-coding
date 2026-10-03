@@ -1,0 +1,138 @@
+# Checks for every pull request and every push to main. Run the same checks
+# locally with scripts/lint.sh, scripts/preflight-release.sh,
+# scripts/plugin-check.sh and scripts/smoke-test.sh (DEVELOPMENT.md).
+#
+# Lint runs on every push. The release and smoke-test jobs take longer, so
+# draft pull requests skip them until they are marked ready for review.
+# Actions are pinned to commit SHAs; Dependabot keeps them up to date.
+name: CI
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  lint:
+    name: Lint (PHP 7.4)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: shivammathur/setup-php@f3e473d116dcccaddc5834248c87452386958240 # 2.37.2
+        with:
+          php-version: "7.4"
+          coverage: none
+          tools: composer:v2
+
+      - name: Composer cache folder
+        id: composer-cache
+        run: echo "dir=$(composer config cache-files-dir)" >> "$GITHUB_OUTPUT"
+
+      - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ${{ steps.composer-cache.outputs.dir }}
+          key: composer-${{ hashFiles('composer.lock') }}
+          restore-keys: composer-
+
+      - name: Install development tools
+        run: composer install --no-interaction --no-progress --prefer-dist
+
+      # PHPStan's result cache: the latest run's is restored, so only files
+      # changed since then are analysed again.
+      - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: .cache/phpstan
+          key: phpstan-${{ github.run_id }}
+          restore-keys: phpstan-
+
+      - name: PHP syntax (7.4), JavaScript syntax, ShellCheck, PHPCS, PHPStan
+        run: scripts/lint.sh php js shell phpcs phpstan
+
+      - name: actionlint
+        run: docker run --rm -v "$PWD:/repo" --workdir /repo rhysd/actionlint:1.7.12 -color
+
+  release:
+    name: Release build, preflight and Plugin Check
+    needs: lint
+    if: github.event_name != 'pull_request' || !github.event.pull_request.draft
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - uses: shivammathur/setup-php@f3e473d116dcccaddc5834248c87452386958240 # 2.37.2
+        with:
+          php-version: "7.4"
+          coverage: none
+          tools: none
+
+      - name: Preflight
+        run: scripts/preflight-release.sh --offline --no-docker
+
+      - name: Build both zips
+        run: scripts/build-release.sh --out dist
+
+      - name: Plugin Check
+        run: |
+          args=()
+          for zip in dist/*.zip; do
+            args+=(--zip "$zip")
+          done
+          scripts/plugin-check.sh "${args[@]}" --keep-output dist/plugin-check
+
+      - name: Keep the zips and reports for testing
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: ${{ github.event.repository.name }}-build-${{ github.sha }}
+          path: dist/
+          retention-days: 7
+          if-no-files-found: ignore
+
+  smoke:
+    name: Smoke test (WordPress ${{ matrix.wp }}, PHP ${{ matrix.php }})
+    needs: lint
+    if: github.event_name != 'pull_request' || !github.event.pull_request.draft
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # Minimums (readme.txt, plugin header).
+          - wp: "6.2"
+            php: "7.4"
+          - wp: latest
+            php: "8.3"
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Smoke test
+        run: scripts/smoke-test.sh --wp "${{ matrix.wp }}" --php "${{ matrix.php }}" --keep-log debug.log
+
+      - name: Keep debug.log
+        if: failure()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: debug-log-wp${{ matrix.wp }}-php${{ matrix.php }}
+          path: debug.log
+          retention-days: 7
+          if-no-files-found: ignore

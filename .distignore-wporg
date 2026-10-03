@@ -1,0 +1,8 @@
+# Files left out of the WordPress.org build, on top of .distignore
+# (rsync exclude patterns; a leading / anchors to the plugin folder).
+# Plugins hosted on WordPress.org may not install or update code from
+# anywhere else, so updates from GitHub stay in GitHub releases only.
+# scripts/build-release.sh also removes the Git Updater header lines
+# (GitHub Plugin URI, Primary Branch, Release Asset) from wp-plugin-starter-template.php.
+/includes/github-updater/
+# Keep README.md: the admin Read Me tab shows it (admin/data/readme.php).

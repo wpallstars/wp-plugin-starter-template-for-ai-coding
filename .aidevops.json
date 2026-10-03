@@ -1,0 +1,14 @@
+{
+  "root_files": {
+    "allow": [
+      "readme.txt",
+      "changelog.txt",
+      "STANDARDS.md",
+      "DEVELOPMENT.md",
+      "RELEASING.md",
+      "LAUNCH.md",
+      "TESTING.md",
+      "STABILITY.md"
+    ]
+  }
+}

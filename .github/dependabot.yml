@@ -1,0 +1,21 @@
+# Weekly updates for the pinned GitHub Actions and the Composer development
+# tools (composer.json; the plugin itself has no Composer dependencies).
+# Each ecosystem's updates come grouped in one pull request.
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    groups:
+      actions:
+        patterns: ["*"]
+
+  - package-ecosystem: composer
+    directory: /
+    schedule:
+      interval: weekly
+    versioning-strategy: lockfile-only
+    groups:
+      dev-tools:
+        patterns: ["*"]

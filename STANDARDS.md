@@ -1,0 +1,278 @@
+# Plugin standards
+
+Rules every plugin made from the wpallstars starter plugin follows. This file
+is the same in each of them: the starter holds the master copy, so a lesson
+learned in one plugin goes into the starter's copy and then to every plugin
+(`scripts/sync-core.sh` shows the differences). Never put rules for one
+plugin here; they go in its `AGENTS.md`.
+
+Names below are placeholders. Each plugin's `AGENTS.md` gives its values:
+
+| Placeholder | Meaning | Example |
+|---|---|---|
+| `{slug}` | Folder, main file and text domain | `my-plugin` |
+| `{prefix}` | Option, hook, function and file prefix: `{PREFIX}` in lower case | `myplugin` |
+| `{Prefix}` | Class prefix (`@package`) | `MyPlugin` |
+| `{PREFIX}` | Constant prefix | `MYPLUGIN` |
+| `{Name}` | Plugin name | My Plugin |
+| `{css}` | CSS class and data attribute prefix (`{css}-card`, `data-{css}-setting`) | `mp` |
+
+Minimums: **WordPress 6.2, PHP 7.4** (`readme.txt`, plugin header).
+How changes are made and checked: `DEVELOPMENT.md`. Releases: `RELEASING.md`.
+
+## Structure
+
+- Core files are listed in `scripts/core-files.txt`: the feature registry
+  (`includes/class-{prefix}.php`), the base feature
+  (`includes/class-{prefix}-feature.php`), the settings store
+  (`includes/class-{prefix}-settings.php`), the admin screen and Read Me tab
+  (`admin/`), the shared GitHub updater (`includes/github-updater/`), the
+  scripts, the CI workflow and tool configuration, and the shared docs (this
+  file, `DEVELOPMENT.md`, `RELEASING.md`, `CONTRIBUTING.md`, `SECURITY.md`).
+  A plugin's copy differs from the starter's only in the names above. They
+  hold no code for one plugin: they read `{Prefix}_Setup`
+  (`includes/class-{prefix}-setup.php`: features, settings tabs, header
+  links, settings version and history, the plugin's own helpers and admin
+  parts) or use hooks (`{prefix}_admin_tabs` for tabs,
+  `{prefix}_admin_enqueue` for the plugin's own admin CSS and JS,
+  `scripts/preflight-plugin.sh` for its own release checks). Anything only
+  one plugin needs goes there, in a feature, or in its own file loaded from
+  there. To change a core file, change the starter first, then run
+  `scripts/sync-core.sh` in each plugin; `scripts/sync-core.sh --check` lists
+  core files that differ. A new plugin starts as a copy of the starter
+  renamed with `scripts/rename-plugin.sh`.
+- One class per feature in `includes/features/`, extending `{Prefix}_Feature`,
+  registered in `{Prefix}_Setup::FEATURES`. Features some builds leave out
+  go in `{Prefix}_Setup::OPTIONAL_FEATURES` and load only when present.
+- `settings()` declares the schema; the admin screen renders, searches and
+  saves it with no extra code. Field types and keys: `README.md` → Developers.
+- `boot()` returns early unless `self::enabled()`. Features are **off by
+  default**; the plugin's `AGENTS.md` lists any the owner asked to be on.
+  Turning another feature on by default needs the owner's say.
+- A feature that replaces another plugin sets `'replaces' => array(slug => name)`
+  and imports that plugin's settings in `migrate()` with
+  `self::import_setting()` (fills only unset keys). It never writes or
+  deletes the other plugin's options. While that plugin is active the
+  feature waits, and the Plugins screen suggests deactivating and deleting
+  it (`admin/includes/class-replaced-plugins.php`) with no extra code.
+- Migrations run once per `{Prefix}_Setup::DB_VERSION`. After a release, a
+  new or changed import needs a version bump and a line in its docblock.
+- New options, post meta, user meta, transients, cron hooks and files must be
+  removed in `uninstall.php`.
+- `README.md` is also the plugin's Read Me tab
+  (`admin/includes/class-readme-manager.php`), which renders headings, lists,
+  tables, bold, italic, inline code, links (http(s) and `#heading` links,
+  with GitHub-style heading IDs) and images from the plugin folder on a line
+  of their own (`![alt](admin/images/banner.svg)`). Use only that Markdown,
+  or extend the renderer in the same change.
+- Update `README.md` (feature section, hooks, changelog), `changelog.txt`
+  (the user-facing changelog entry) and `readme.txt` in the same change.
+  `readme.txt` must stay under 10 KB for WordPress.org: one short line per
+  feature, every service the plugin contacts under External services, and
+  only the newest version's changelog, in short. Details go in `README.md`.
+- `.distignore` lists files kept out of the release zip. Add new
+  development-only files there (the preflight fails when a known one gets in),
+  then check the build with Plugin Check.
+
+## Code rules
+
+- PHP 7.4 syntax and WordPress 6.2 APIs. Guard newer core APIs with
+  `function_exists()` or `method_exists()`.
+- Capability and nonce checks on every admin action and AJAX handler; escape on
+  output; sanitise through the schema.
+- Prefix everything global with `{prefix}_`, `{Prefix}_` or `{PREFIX}_`. The
+  shared GitHub updater is the one exception: its `wpallstars_` names are the
+  same in every plugin, so that one copy can stand in for the others.
+- Admin copy: short, plain words, sentence case, no jargon.
+- Decide for the user. Within a feature, the plugin makes the choices
+  (which plugins, screens or items it applies to) from what it can detect.
+  Settings are there to bypass something that causes a problem, not choices
+  people need to understand first. A new setting must earn its place;
+  prefer detecting the right behaviour plus a short bypass list.
+- Site owner in control, performance first: the owner decides what their site
+  sends, contacts and shows. Calls to outside services are opt-in where they
+  are not the point of the feature, made only as often and for as long as
+  needed (cache answers, never on every page load), and never block a
+  visitor's page when they can run later. Features that rein in other
+  plugins hand the choice to the owner instead of deciding for them.
+  WordPress update checks and downloads are the exception: leave them alone
+  (next rule).
+- Do not change WordPress update behaviour (update transients, `auto_update_*`
+  filters, update checks) outside the shared GitHub updater. Plugin Check
+  reports `plugin_updater_detected` as an error, and WordPress.org asks plugins
+  not to interfere with the updater.
+- Leave no PHP errors, warnings, notices or deprecations behind. Fix any that
+  the plugin causes as you find them, in the same change when it is small,
+  or as a tracked issue. That includes ones in other plugins that only happen
+  because of this one. Messages that other plugins cause on their own are
+  theirs: mention them, do not hide them.
+
+## Updates from GitHub
+
+The one exception to the update rule, at the owner's request (for speed,
+reliability and site owners' control, and because the plugins are released
+on GitHub first): the shared GitHub updater in `includes/github-updater/`.
+It replaces Git Updater.
+
+- Every plugin made from the starter carries a copy. Each copy registers its
+  version from `load.php` when its plugin loads; on `plugins_loaded` only the
+  newest copy loads, once, and serves every installed plugin with a
+  `GitHub Plugin URI` header. One update check covers them all.
+- It adds GitHub releases of those plugins to core's own update check and
+  `plugins_api`, and leaves the download, install, auto-updates and rollback
+  to core. It only adds entries for those plugins; it never removes or blocks
+  other updates.
+- It is the same in every plugin apart from its text domain and `@package`.
+  Change it in the starter, raise the version in its `load.php`, and copy it
+  to each plugin. Plugins change what it does only through its filters
+  (`wpallstars_github_updater_enabled`, `wpallstars_github_updater_early`,
+  `wpallstars_github_plugins`, `wpallstars_github_token`), never by calling
+  its class: another plugin's copy may be the one that runs.
+- Keep anything that installs or updates code from outside WordPress.org in
+  that folder (and in a feature listed in `.distignore-wporg`, when a plugin
+  has a setting for it), because the WordPress.org build leaves them out.
+- Never add an `Update URI` header. Tokens for private repositories come only
+  from `wp-config.php` (`WPALLSTARS_GITHUB_TOKEN`) or the filter, go only to
+  api.github.com and are never stored.
+
+## Releases
+
+GitHub releases are the early channel; WordPress.org gets settled versions.
+Sites install the latest GitHub release whose tag is a plain version and the
+asset whose name starts with the plugin folder (the shared updater; Git
+Updater, where still active, reads `Version:` on `main` instead), so:
+
+- Publish the GitHub release (tag `vX.Y.Z`, asset `{slug}-X.Y.Z.zip` with a
+  `{slug}/` folder, built with `.distignore`) straight after the version
+  change reaches `main`.
+- Never put a pre-release version (`-beta1`, `-rc1`) in `Version:` on `main`;
+  mark test releases as pre-releases on GitHub.
+- The WordPress.org build is the release build without the files in
+  `.distignore-wporg` (the GitHub updater) and the `GitHub Plugin URI`,
+  `Primary Branch` and `Release Asset` header lines. Its zip is named
+  `wordpress-org-{slug}-X.Y.Z.zip` so no updater picks it; never attach it
+  to a GitHub release.
+- Any plugin released on GitHub (made from the starter or not) follows the
+  same pattern: a `GitHub Plugin URI: owner/repo` header (and
+  `Release Asset: true`), plain version tags, and a `{folder}-X.Y.Z.zip`
+  asset with a `{folder}/` inside.
+- Build both zips with `scripts/build-release.sh`, check them with
+  `scripts/preflight-release.sh` and `scripts/plugin-check.sh`. None of them
+  tags, publishes or uploads anything.
+- Releasing and submitting to WordPress.org need the owner's say. A private
+  repository cannot be read by sites without a token
+  (`WPALLSTARS_GITHUB_TOKEN`).
+
+Details: `RELEASING.md`; the plugin's own submission state: `LAUNCH.md`.
+
+## Front-end styling and dark mode
+
+Block, shortcode and other front-end styles must work with the Kadence Pro
+dark mode switcher (and themes that switch palettes the same way).
+
+- How it switches: Kadence adds `color-switch-dark` or `color-switch-light` to
+  `<body>`. The dark class sets `color-scheme: dark` and redefines
+  `--global-palette1`…`15` and `--wp--preset--color--theme-palette-N` **on
+  `<body>`**. `<html>` stays `color-scheme: light`. Palette 3 is the strongest
+  text and palette 9 the page background in light mode; dark mode swaps them.
+- Use `currentColor`, `inherit`, translucent neutrals (for example
+  `rgba(127, 127, 127, 0.12)`) or palette variables, never fixed light or dark
+  colours for text, backgrounds or borders.
+- Do not use `@media (prefers-color-scheme)` to follow the site: it tracks the
+  visitor's system, not the switcher.
+- Do not define custom properties on `:root` from palette variables; they
+  resolve above `<body>` and keep the light values. Read palette variables
+  where they are used, or define derived ones on the block.
+- Preset references (`var:preset|color|theme-palette3`) become CSS variables
+  with kebab-cased slugs, as core does: `--wp--preset--color--theme-palette-3`.
+  Use `_wp_to_kebab_case()` in PHP and the same rule in editor JS (a hyphen
+  between letters and digits, lower case).
+- Embedded pages (iframes) do not follow the switcher: they see the visitor's
+  system setting, and the browser paints their own background behind them, so
+  they stay readable in both modes. Do not make iframes transparent or tint them.
+- Test light and dark with the Kadence theme by toggling the body class (see
+  Testing, step 5).
+
+## Testing
+
+CI (`.github/workflows/ci.yml`) runs the code checks, the release preflight,
+Plugin Check and a smoke test on every pull request; details and local
+commands: `DEVELOPMENT.md`.
+
+While a repository is private, CI and review apps only advise: nothing is
+required to merge, for speed. Fix failures your change causes before merging;
+open an issue for any other failure and merge anyway. Do not turn on branch
+protection, required checks or paid reviewers. At public launch (owner's say),
+run the full sweep in `DEVELOPMENT.md` → At public launch, which makes the
+checks required.
+
+The checks catch errors, not wrong behaviour, so also verify on real
+WordPress:
+
+1. `scripts/lint.sh` (syntax, ShellCheck, PHPCS, PHPStan; run
+   `composer install` once). Fix findings in the code; never grow
+   `phpstan-baseline.neon` or add a `phpcs:ignore` without a reason.
+2. The user reviews on one local test site per plugin, shared by every
+   session and worktree. It shows a **combined preview**: `origin/main` plus
+   every open pull request from the repository, merged together. Update it
+   only with the script, from any worktree:
+
+   ```bash
+   scripts/preview-site.sh             # the first run on a clone takes the site: scripts/preview-site.sh "<site>"
+   scripts/preview-site.sh --dry-run   # report what would be included, copy nothing
+   ```
+
+   It fetches `origin`, merges each open PR's branch onto `origin/main` in PR
+   order without touching any checkout, leaves out branches that conflict
+   (and lists them), copies the result with `.distignore` applied (exactly
+   what a release build contains), and writes
+   `<site>/wp-content/{slug}-synced-from.txt` listing what is included.
+   A lock stops two runs at once. Because every run includes everyone's
+   pushed work, no session hides another's.
+
+   - **Never** `rsync` your worktree into the shared site: it hides every
+     other session's work until the next run. Do not use Git hooks either:
+     they are shared by every worktree and would deploy the wrong checkout.
+   - Only pushed work with an open PR is included. Before asking the user to
+     look at unmerged work, push the branch and open a draft PR, then run the
+     script. It says so if the branch you run it from is missing or has
+     commits that are not pushed.
+   - After merging a PR, run the script again, then check that the stamp
+     lists your merge in `main` before telling the user to look.
+   - Conflicts only in `changelog.txt`, `readme.txt` or `README.md` do not
+     leave a branch out: every PR adds lines at the top of the same
+     changelogs, so each merge to `main` would otherwise drop every other
+     open PR. The preview keeps both sides' lines there and says so in the
+     stamp; still merge `origin/main` into your branch before it merges.
+   - If your branch is left out because it conflicts in other files, merge
+     `origin/main` into it (or wait for the other PR), push and run the
+     script again. Tell the user which PRs are left out.
+   - To check your branch on its own, or for checks the user will not look
+     at, use a throwaway site of your own (step 4's Docker image on a free
+     port), which no one else overwrites:
+     `rsync -a --delete --delete-excluded --exclude-from=.distignore ./ "<site>/wp-content/plugins/{slug}/"`.
+   - Size every test site, shared or throwaway, as `DEVELOPMENT.md` → Test
+     site resources says. PHP's defaults fill up and the slowdowns look like
+     bugs.
+
+3. Exercise the changed feature through the admin UI or HTTP, and check
+   the debug log for new messages mentioning `{slug}` or a plugin it affects
+   (`wp-content/debug.log`, or the file Debug Log Manager writes in
+   `wp-content/uploads/debug-log-manager/` when it is active). For settings
+   imports, seed the replaced plugin's options and delete `{prefix}_options`
+   and `{prefix}_db_version` while the plugin is inactive, then activate it.
+4. For changes that touch core APIs, also smoke-test on WordPress 6.2 with
+   PHP 7.4 (`scripts/smoke-test.sh --wp 6.2 --php 7.4`, or the
+   `wordpress:php7.4-apache` Docker image with
+   `wp core download --version=6.2 --force`).
+5. For front-end styling, view the page with the Kadence theme in light and
+   dark mode. Without Kadence Pro, simulate the switcher: print a
+   `body.color-switch-dark { color-scheme: dark; --global-palette1: …; }`
+   rule with a dark palette (palette 3 light, palette 9 dark, and the matching
+   `--wp--preset--color--theme-palette-N: var(--global-paletteN)` lines), then
+   swap the body class between `color-switch-light` and `color-switch-dark`.
+   Check text, backgrounds, borders and palette colours chosen in block
+   settings in both.
+
+Note: since WordPress 5.6, posts restored from the Bin become drafts. Republish
+test posts after bulk-trash tests.

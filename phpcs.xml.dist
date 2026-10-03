@@ -1,0 +1,109 @@
+<?xml version="1.0"?>
+<ruleset xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" name="WPStarter" xsi:noNamespaceSchemaLocation="vendor/squizlabs/php_codesniffer/phpcs.xsd">
+	<description>
+		WP Plugin Starter: what WordPress.org reviewers and Plugin Check look for
+		(security, the database, internationalisation, deprecated and
+		discouraged APIs, prefixes) plus compatibility with PHP 7.4 and
+		WordPress 6.2. Whitespace and formatting follow the code's own style
+		(4 spaces, no padding inside parentheses) and are not checked here.
+
+		Every finding fails the check. When code is right as it is, say why
+		on the line: // phpcs:ignore Sniff.Name -- reason.
+		Run: composer phpcs, or scripts/lint.sh.
+	</description>
+
+	<file>.</file>
+	<exclude-pattern>/vendor/*</exclude-pattern>
+	<exclude-pattern>/.cache/*</exclude-pattern>
+	<exclude-pattern>/node_modules/*</exclude-pattern>
+	<exclude-pattern>/dist/*</exclude-pattern>
+	<exclude-pattern>/reference-plugins/*</exclude-pattern>
+	<exclude-pattern>/project-documents/*</exclude-pattern>
+
+	<arg name="extensions" value="php"/>
+	<arg name="parallel" value="8"/>
+	<arg value="sp"/>
+	<arg name="colors"/>
+
+	<!-- Minimum versions (wp-plugin-starter-template.php and readme.txt). -->
+	<config name="testVersion" value="7.4-"/>
+	<config name="minimum_wp_version" value="6.2"/>
+
+	<!-- PHP 7.4 syntax and functions, knowing WordPress's polyfills. Everywhere, scripts included. -->
+	<rule ref="PHPCompatibilityWP"/>
+
+	<!--
+	WordPress rules apply to the plugin, not to scripts/*.php: those run with
+	the PHP CLI on a developer's machine or in CI, never in WordPress, and are
+	not in the release zips.
+	-->
+
+	<!-- Security: escape output, verify nonces, sanitise input, safe redirects. -->
+	<rule ref="WordPress.Security">
+		<exclude-pattern>/scripts/*</exclude-pattern>
+	</rule>
+
+	<!-- Database: prepared queries, WordPress's database layer. -->
+	<rule ref="WordPress.DB">
+		<exclude-pattern>/scripts/*</exclude-pattern>
+	</rule>
+
+	<!-- WordPress APIs: deprecated, discouraged, alternatives, i18n, enqueues. -->
+	<rule ref="WordPress.WP">
+		<exclude-pattern>/scripts/*</exclude-pattern>
+		<!-- Capabilities from other plugins are checked in review. -->
+		<exclude name="WordPress.WP.Capabilities.Unknown"/>
+		<!-- Copy is checked in review; "WordPress" in slugs and URLs is not a typo. -->
+		<exclude name="WordPress.WP.CapitalPDangit"/>
+	</rule>
+	<rule ref="WordPress.WP.I18n">
+		<properties>
+			<property name="text_domain" type="array">
+				<element value="wp-plugin-starter-template"/>
+			</property>
+		</properties>
+	</rule>
+	<rule ref="WordPress.DateTime">
+		<exclude-pattern>/scripts/*</exclude-pattern>
+	</rule>
+	<rule ref="WordPress.PHP">
+		<exclude-pattern>/scripts/*</exclude-pattern>
+		<!-- Yoda conditions are a formatting preference. -->
+		<exclude name="WordPress.PHP.YodaConditions"/>
+	</rule>
+	<rule ref="WordPress.CodeAnalysis">
+		<exclude-pattern>/scripts/*</exclude-pattern>
+	</rule>
+
+	<!-- Everything global is prefixed, so it cannot clash with other plugins. -->
+	<rule ref="WordPress.NamingConventions.PrefixAllGlobals">
+		<exclude-pattern>/scripts/*</exclude-pattern>
+		<properties>
+			<property name="prefixes" type="array">
+				<element value="wpstarter"/>
+				<element value="WPStarter"/>
+				<!-- The shared GitHub updater (includes/github-updater/), the same in every plugin. -->
+				<element value="wpallstars"/>
+				<element value="WPAllStars"/>
+			</property>
+		</properties>
+	</rule>
+	<rule ref="WordPress.NamingConventions.ValidHookName">
+		<exclude-pattern>/scripts/*</exclude-pattern>
+		<!-- Some plugins name their hooks with slashes; firing theirs needs their names. -->
+		<exclude name="WordPress.NamingConventions.ValidHookName.UseUnderscores"/>
+	</rule>
+
+	<!-- PHP that WordPress.org does not allow, or code that cannot be right. -->
+	<rule ref="Generic.PHP.BacktickOperator"/>
+	<rule ref="Generic.PHP.DisallowShortOpenTag"/>
+	<rule ref="Generic.PHP.DisallowAlternativePHPTags"/>
+	<rule ref="Generic.PHP.DiscourageGoto"/>
+	<rule ref="Generic.Files.ByteOrderMark"/>
+	<rule ref="Generic.Files.LineEndings"/>
+	<rule ref="Generic.CodeAnalysis.EmptyStatement"/>
+	<rule ref="Generic.CodeAnalysis.UnconditionalIfStatement"/>
+	<rule ref="Generic.CodeAnalysis.JumbledIncrementer"/>
+	<rule ref="Squiz.PHP.NonExecutableCode"/>
+	<rule ref="Squiz.PHP.Eval"/>
+</ruleset>
