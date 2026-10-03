@@ -5,6 +5,7 @@ Every change to WP Plugin Starter. readme.txt lists the latest version in short.
 = Unreleased =
 * Fix: the shared GitHub updater (copy 1.0.1) could not update from private repositories on sites where another plugin raises every request's redirection count (HTTP Requests Manager in a blocking mode sets it to 1): GitHub's redirect was followed, so the signed download address was lost and the token went along to the download host. Its requests to GitHub now never follow redirects, whatever other plugins set. Public repositories' release checks had the same problem.
 * Fix: the shared GitHub updater's private downloads survive updaters that reset upgrader_pre_download (GPLVault Updater).
+* Fix: a replaced plugin's Deactivate link on the settings screen did nothing on sites with Freesoul Deactivate Plugins: it saves its own copy of the active plugins list over any change not made from the Plugins screen. The link now checks the change was saved and, if not, saves just that change. Other code can use the same check: WPStarter_Replaced_Plugins::save_plugin_state().
 
 = 1.0.0 =
 * A fresh start, made from the parts every wpallstars plugin needs, taken from plugins in daily use: the settings screen with search, the Read Me tab, features as classes, replaced plugins, the shared GitHub updater, the release and check scripts, CI and the shared rules (STANDARDS.md, DEVELOPMENT.md, RELEASING.md). Earlier versions of this starter are retired; start again from this one.

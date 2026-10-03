@@ -128,13 +128,85 @@ class WPStarter_Replaced_Plugins {
         $back = wp_get_referer();
         $back = $back ? $back : admin_url('plugins.php');
         // Network-wide plugins are deactivated in the network admin.
-        if (is_plugin_active($file) && !is_plugin_active_for_network($file)) {
+        if (in_array($file, self::stored_plugins(), true) && !is_plugin_active_for_network($file)) {
             deactivate_plugins($file);
-            update_option('recently_activated', array($file => time()) + (array) get_option('recently_activated'), false);
-            $back = add_query_arg(self::DONE, 1, $back);
+            if (self::save_plugin_state($file, false)) {
+                update_option('recently_activated', array($file => time()) + (array) get_option('recently_activated'), false);
+                $back = add_query_arg(self::DONE, 1, $back);
+            }
         }
         wp_safe_redirect($back);
         exit;
+    }
+
+    /**
+     * Make sure a plugin's new state is saved, after core's activate_plugin()
+     * or deactivate_plugins() has run its hooks.
+     *
+     * Plugins that load fewer plugins on some requests guard saves of
+     * `active_plugins`. Freesoul Deactivate Plugins, for one, saves the full
+     * list it read when the page loaded instead of the new one, unless the
+     * request is the Plugins screen's own action, so a change made anywhere
+     * else is lost without a word. When the stored list does not have the
+     * change, save that one change to it, with those filters paused.
+     *
+     * @param string $file   Plugin file.
+     * @param bool   $active Whether it should be active on this site.
+     * @return bool Whether the stored list now has it that way.
+     */
+    public static function save_plugin_state($file, $active) {
+        $stored = self::stored_plugins();
+        if (in_array($file, $stored, true) === $active) {
+            return true;
+        }
+        if ($active) {
+            $stored[] = $file;
+            sort($stored);
+        } else {
+            $stored = array_values(array_diff($stored, array($file)));
+        }
+        self::without_list_filters(function () use ($stored) {
+            update_option('active_plugins', $stored);
+        });
+        return in_array($file, self::stored_plugins(), true) === $active;
+    }
+
+    /**
+     * Plugins stored as active on this site, as saved: not as other plugins
+     * filter the list for the current request.
+     *
+     * @return string[] Plugin files.
+     */
+    public static function stored_plugins() {
+        $stored = self::without_list_filters(function () {
+            return get_option('active_plugins', array());
+        });
+        return is_array($stored) ? array_values(array_filter($stored, 'is_string')) : array();
+    }
+
+    /**
+     * Run a callback with the filters on reading and saving `active_plugins`
+     * paused, then put them back.
+     *
+     * @param callable $callback Callback.
+     * @return mixed What the callback returns.
+     */
+    private static function without_list_filters(callable $callback) {
+        global $wp_filter;
+        $paused = array();
+        foreach (array('pre_option_active_plugins', 'option_active_plugins', 'pre_update_option_active_plugins') as $hook) {
+            if (isset($wp_filter[$hook])) {
+                $paused[$hook] = $wp_filter[$hook];
+                unset($wp_filter[$hook]);
+            }
+        }
+        try {
+            return $callback();
+        } finally {
+            foreach ($paused as $hook => $filters) {
+                $wp_filter[$hook] = $filters; // phpcs:ignore WordPress.WP.GlobalVariablesOverride.Prohibited -- puts back what was paused above.
+            }
+        }
     }
 
     /**
