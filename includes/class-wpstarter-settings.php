@@ -148,7 +148,12 @@ class WPStarter_Settings {
         if (empty($field['options'])) {
             return array();
         }
-        $options = is_callable($field['options']) ? call_user_func($field['options']) : $field['options'];
+        try {
+            $options = is_callable($field['options']) ? call_user_func($field['options']) : $field['options'];
+        } catch (\Throwable $e) {
+            // A broken option source must not stop settings migrations or page loads.
+            return array();
+        }
         return is_array($options) ? $options : array();
     }
 
