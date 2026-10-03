@@ -5,7 +5,7 @@ Tags: starter, boilerplate, settings, developer, template
 Requires at least: 6.2
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 1.0.1
+Stable tag: 1.0.2
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -43,11 +43,8 @@ No. The WordPress.org build contacts nothing outside WordPress.
 
 == Changelog ==
 
-= 1.0.1 =
-* Fix: one setting whose options list fails no longer stops every page after an update.
-* Fix: updates from GitHub work when other plugins change how requests follow redirects or reset downloads.
-* Fix: a replaced plugin's Deactivate link works with Freesoul Deactivate Plugins.
-* Fix: scripts/sync-core.sh finds the starter next to a renamed plugin again.
+= 1.0.2 =
+* Developers: AGENTS.md stays a short map, with task guidance in docs/ (STANDARDS.md → Agent docs); the release preflight checks it. Nothing changes for users.
 
 Every change: changelog.txt.
 
