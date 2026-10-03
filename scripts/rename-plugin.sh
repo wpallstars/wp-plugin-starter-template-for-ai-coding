@@ -5,6 +5,9 @@
 #
 # Usage: scripts/rename-plugin.sh --slug SLUG --name NAME --prefix Prefix
 #                                 [--const PREFIX] [--css CSS] [--repo OWNER/REPO]
+#                                 [--description TEXT] [--author NAME]
+#                                 [--author-uri URL] [--plugin-uri URL]
+#                                 [--contributors USERS] [--donate URL|none]
 #   --slug    Plugin folder, main file and text domain (my-plugin).
 #   --name    Plugin Name (My Plugin).
 #   --prefix  Class prefix (MyPlugin: MyPlugin_Settings).
@@ -13,6 +16,16 @@
 #   --css     CSS class and data attribute prefix (default: the lower-case
 #             prefix; a short one such as mp keeps the markup readable).
 #   --repo    GitHub repository, owner/repo (default: wpallstars/SLUG).
+# The rest are the maker's details; each one left out keeps the starter's:
+#   --description   One line, up to 150 characters: the Description header,
+#                   the readme.txt short description and the line under
+#                   README.md's title.
+#   --author        Author header.
+#   --author-uri    Author URI header and the settings screen's website button.
+#   --plugin-uri    Plugin URI header (default: the GitHub repository page).
+#   --contributors  readme.txt Contributors, WordPress.org usernames (a, b).
+#   --donate        readme.txt Donate link and the settings screen's donate
+#                   button; none takes both out.
 #
 # Needs a clean working tree. Then update README.md, readme.txt,
 # changelog.txt, AGENTS.md and the banner (STANDARDS.md and DEVELOPMENT.md say how).
@@ -38,7 +51,7 @@ cleanup() {
 }
 
 usage() {
-	sed -n '2,19p' "$0" | sed 's/^# \{0,1\}//'
+	sed -n '2,31p' "$0" | sed 's/^# \{0,1\}//'
 	return 0
 }
 
@@ -51,13 +64,130 @@ need() {
 	return 0
 }
 
+# Like need, for a flag that may be left out.
+allow() {
+	local flag="$1"
+	local value="$2"
+	local pattern="$3"
+	[ -z "$value" ] || need "$flag" "$value" "$pattern"
+	return 0
+}
+
+# Swap in $TMP_FILE by rename, never in place: bash reads a running script as
+# it goes, and this file is one of those changed.
+replace_with_tmp() {
+	local file="$1"
+	cmp -s "$TMP_FILE" "$file" && return 1
+	cp "$TMP_FILE" "$file.rename-new"
+	if [ -x "$file" ]; then chmod 755 "$file.rename-new"; else chmod 644 "$file.rename-new"; fi
+	mv -f "$file.rename-new" "$file"
+	return 0
+}
+
+# Set the value of the first "Field: value" line (a plugin or readme.txt
+# header), keeping what comes before the value; with no value, drop the line.
+set_field() {
+	local file="$1"
+	local field="$2"
+	local value="$3"
+	[ -f "$file" ] || return 0
+	FIELD="$field" VALUE="$value" awk '
+		!done && match($0, "^[ \t*#/]*" ENVIRON["FIELD"] ":[ \t]*") {
+			done = 1
+			if (ENVIRON["VALUE"] != "") print substr($0, 1, RLENGTH) ENVIRON["VALUE"]
+			next
+		}
+		{ print }' "$file" >"$TMP_FILE"
+	replace_with_tmp "$file" || true
+	return 0
+}
+
+# Replace the first line that is exactly OLD with NEW.
+set_line() {
+	local file="$1"
+	local old="$2"
+	local new="$3"
+	[ -f "$file" ] || return 0
+	OLD="$old" NEW="$new" awk '
+		!done && $0 == ENVIRON["OLD"] { print ENVIRON["NEW"]; done = 1; next }
+		{ print }' "$file" >"$TMP_FILE"
+	replace_with_tmp "$file" || true
+	return 0
+}
+
+# Set one 'key' => 'URL' header link in the Setup class; with no URL, drop it.
+set_link() {
+	local file="$1"
+	local key="$2"
+	local url="$3"
+	[ -f "$file" ] || return 0
+	Q="'" KEY="$key" URL="$url" awk '
+		BEGIN { q = ENVIRON["Q"] }
+		!done && match($0, "^[ \t]*" q ENVIRON["KEY"] q "[ \t]*=>[ \t]*" q) {
+			done = 1
+			if (ENVIRON["URL"] != "") print substr($0, 1, RLENGTH) ENVIRON["URL"] q ","
+			next
+		}
+		{ print }' "$file" >"$TMP_FILE"
+	replace_with_tmp "$file" || true
+	return 0
+}
+
+# Put the maker's details in, after the renaming. Empty ones stay as they are.
+set_identity() {
+	local main_file="$1"
+	local setup_file="$2"
+	local old_description="$3"
+	if [ -n "$DESCRIPTION" ]; then
+		set_field "$main_file" "Description" "$DESCRIPTION"
+		set_line readme.txt "$old_description" "$DESCRIPTION"
+		set_line README.md "$old_description" "$DESCRIPTION"
+	fi
+	[ -z "$AUTHOR" ] || set_field "$main_file" "Author" "$AUTHOR"
+	if [ -n "$AUTHOR_URI" ]; then
+		set_field "$main_file" "Author URI" "$AUTHOR_URI"
+		set_link "$setup_file" website "$AUTHOR_URI"
+	fi
+	[ -z "$PLUGIN_URI" ] || set_field "$main_file" "Plugin URI" "$PLUGIN_URI"
+	[ -z "$CONTRIBUTORS" ] || set_field readme.txt "Contributors" "$CONTRIBUTORS"
+	if [ "$DONATE" = none ]; then
+		set_field readme.txt "Donate link" ""
+		set_link "$setup_file" donate ""
+	elif [ -n "$DONATE" ]; then
+		set_field readme.txt "Donate link" "$DONATE"
+		set_link "$setup_file" donate "$DONATE"
+	fi
+	return 0
+}
+
+DESCRIPTION=""
+AUTHOR=""
+AUTHOR_URI=""
+PLUGIN_URI=""
+CONTRIBUTORS=""
+DONATE=""
+
+check_identity() {
+	local url='^https?://[^[:space:]<>"'\'']+$'
+	case "$DESCRIPTION$AUTHOR" in
+	*$'\n'* | *'*/'*) die "--description and --author are one line, without */" ;;
+	esac
+	[ "${#DESCRIPTION}" -le 150 ] || die "--description is ${#DESCRIPTION} characters; WordPress.org allows 150"
+	allow --author "$AUTHOR" '^[^<>]+$'
+	allow --author-uri "$AUTHOR_URI" "$url"
+	allow --plugin-uri "$PLUGIN_URI" "$url"
+	allow --contributors "$CONTRIBUTORS" '^[A-Za-z0-9_.@-]+(, ?[A-Za-z0-9_.@-]+)*$'
+	[ "$DONATE" = none ] || allow --donate "$DONATE" "$url"
+	return 0
+}
+
 main() {
 	local slug="" name="" prefix="" const="" css="" repo=""
 	while [ $# -gt 0 ]; do
 		local arg="$1"
 		local value="${2:-}"
 		case "$arg" in
-		--slug | --name | --prefix | --const | --css | --repo)
+		--slug | --name | --prefix | --const | --css | --repo | --description | --author | --author-uri | --plugin-uri | --contributors | --donate)
 			[ $# -ge 2 ] || die "$arg needs a value"
 			case "$arg" in
 			--slug) slug="$value" ;;
@@ -66,6 +196,12 @@ main() {
 			--const) const="$value" ;;
 			--css) css="$value" ;;
 			--repo) repo="$value" ;;
+			--description) DESCRIPTION="$value" ;;
+			--author) AUTHOR="$value" ;;
+			--author-uri) AUTHOR_URI="$value" ;;
+			--plugin-uri) PLUGIN_URI="$value" ;;
+			--contributors) CONTRIBUTORS="$value" ;;
+			--donate) DONATE="$value" ;;
 			esac
 			shift
 			;;
@@ -87,6 +223,7 @@ main() {
 	need --const "$const" '^[A-Z][A-Z0-9]*$'
 	need --css "$css" '^[a-z][a-z0-9]*$'
 	need --repo "$repo" '^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$'
+	check_identity
 
 	local root
 	root="$(git rev-parse --show-toplevel)" || die "run this inside a checkout of the plugin"
@@ -112,12 +249,7 @@ main() {
 		# Text files only (pictures and other binaries keep their bytes).
 		if grep -Iq . "$file"; then
 			plugin_map <"$file" >"$tmp"
-			if ! cmp -s "$tmp" "$file"; then
-				# Replace by rename, never in place: bash reads a running script
-				# as it goes, and this file is one of those renamed.
-				cp "$tmp" "$file.rename-new"
-				if [ -x "$file" ]; then chmod 755 "$file.rename-new"; else chmod 644 "$file.rename-new"; fi
-				mv -f "$file.rename-new" "$file"
+			if replace_with_tmp "$file"; then
 				changed=$((changed + 1))
 			fi
 		fi
@@ -128,6 +260,10 @@ main() {
 			moved=$((moved + 1))
 		fi
 	done < <(git ls-files)
+
+	local old_description
+	old_description="$(plugin_header_field "$(head -c 8192 "$slug.php")" "Description")"
+	set_identity "$slug.php" "includes/class-$TO_PREFIX-setup.php" "$old_description"
 
 	printf '%d files changed, %d renamed. Run composer update --lock (the package name changed), review with git diff and git status, then commit.\n' "$changed" "$moved"
 	return 0
