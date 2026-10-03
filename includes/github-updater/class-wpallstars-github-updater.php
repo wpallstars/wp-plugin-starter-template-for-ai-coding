@@ -82,6 +82,7 @@ final class WPAllStars_GitHub_Updater {
         // Update checks run in the admin, in cron and in WP-CLI.
         add_filter('pre_set_site_transient_update_plugins', array(__CLASS__, 'add_updates'));
         add_filter('plugins_api', array(__CLASS__, 'plugin_information'), 20, 3);
+        add_filter('upgrader_package_options', array(__CLASS__, 'private_package'));
         add_filter('upgrader_pre_download', array(__CLASS__, 'private_download'), 10, 3);
         add_filter('upgrader_source_selection', array(__CLASS__, 'fix_folder'), 10, 4);
     }
@@ -474,7 +475,7 @@ final class WPAllStars_GitHub_Updater {
     private static function package($repo, array $release, $asset_only) {
         $private = '' !== self::token($repo);
         if (!empty($release['asset'])) {
-            // Assets of private repositories download through the API (see private_download()).
+            // Assets of private repositories download through the API (see private_package()).
             return $private && $release['asset']['api'] ? $release['asset']['api'] : $release['asset']['public'];
         }
         return $asset_only ? '' : (string) $release['zipball'];
@@ -678,8 +679,34 @@ final class WPAllStars_GitHub_Updater {
     }
 
     /**
-     * Downloads from private repositories: ask the API with the token, then
-     * fetch the file from where GitHub sends us without it.
+     * Downloads from private repositories: before WordPress downloads, swap
+     * the API address for the signed, short-lived address GitHub sends the
+     * token holder to, so WordPress downloads it itself without the token.
+     *
+     * This runs before upgrader_pre_download on purpose: some plugins' own
+     * updaters return false there for every package (GPLVault Updater does,
+     * at priority 999999999), which throws away a file already downloaded
+     * and leaves WordPress fetching the API address without the token
+     * (GitHub answers 404).
+     *
+     * @param array $options Upgrader options; 'package' is the address.
+     * @return array
+     */
+    public static function private_package($options) {
+        if (!is_array($options) || !isset($options['package'])) {
+            return $options;
+        }
+        $address = self::signed_address($options['package']);
+        if (is_string($address)) {
+            $options['package'] = $address;
+        }
+        return $options;
+    }
+
+    /**
+     * Fallback for downloads that skip upgrader_package_options: ask the API
+     * with the token, then fetch the file from where GitHub sends us without
+     * it.
      *
      * @param mixed       $reply    False to let WordPress download.
      * @param string      $package  Download address.
@@ -687,8 +714,28 @@ final class WPAllStars_GitHub_Updater {
      * @return mixed File path, WP_Error or $reply.
      */
     public static function private_download($reply, $package, $upgrader) {
-        if (false !== $reply || !is_string($package) || !preg_match('#^https://api\.github\.com/repos/([^/]+/[^/]+)/(?:releases/assets/[0-9]+|zipball/[^/?]+)$#', $package, $match)) {
+        if (false !== $reply) {
             return $reply;
+        }
+        $address = self::signed_address($package);
+        if (null === $address) {
+            return $reply;
+        }
+        return is_wp_error($address) ? $address : download_url($address, 300);
+    }
+
+    /**
+     * The signed, short-lived download address of a private repository's
+     * release asset or source zip, asked for with the token. No token is
+     * needed (or wanted) there.
+     *
+     * @param mixed $package Download address.
+     * @return string|WP_Error|null Address; error; null when the address is
+     *                              not one of ours or there is no token.
+     */
+    private static function signed_address($package) {
+        if (!is_string($package) || !preg_match('#^https://api\.github\.com/repos/([^/]+/[^/]+)/(?:releases/assets/[0-9]+|zipball/[^/?]+)$#', $package, $match)) {
+            return null;
         }
         $repo  = $match[1];
         $known = false;
@@ -697,7 +744,7 @@ final class WPAllStars_GitHub_Updater {
         }
         $token = self::token($repo);
         if (!$known || '' === $token) {
-            return $reply;
+            return null;
         }
 
         $response = wp_safe_remote_get($package, array(
@@ -715,8 +762,7 @@ final class WPAllStars_GitHub_Updater {
         if ('' === $location || !in_array((int) wp_remote_retrieve_response_code($response), array(301, 302, 303, 307, 308), true)) {
             return new WP_Error('wpallstars_github_download', __('GitHub did not give a download address. Check the token’s access to the repository.', 'wp-plugin-starter-template'));
         }
-        // A signed, short-lived address: no token needed (or wanted) there.
-        return download_url($location, 300);
+        return $location;
     }
 
     /**
