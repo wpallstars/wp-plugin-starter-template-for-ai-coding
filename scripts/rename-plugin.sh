@@ -113,7 +113,11 @@ main() {
 		if grep -Iq . "$file"; then
 			plugin_map <"$file" >"$tmp"
 			if ! cmp -s "$tmp" "$file"; then
-				cat "$tmp" >"$file"
+				# Replace by rename, never in place: bash reads a running script
+				# as it goes, and this file is one of those renamed.
+				cp "$tmp" "$file.rename-new"
+				if [ -x "$file" ]; then chmod 755 "$file.rename-new"; else chmod 644 "$file.rename-new"; fi
+				mv -f "$file.rename-new" "$file"
 				changed=$((changed + 1))
 			fi
 		fi

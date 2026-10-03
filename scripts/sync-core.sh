@@ -127,9 +127,12 @@ main() {
 			continue
 		fi
 		mkdir -p "$(dirname "$target")"
-		cp "$tmp" "$target"
+		# Replace by rename, never in place: bash reads a running script as it
+		# goes, so rewriting scripts/sync-core.sh itself would break this run.
+		cp "$tmp" "$target.sync-core-new"
 		mode="$(git -C "$from" ls-tree "$ref" -- "$path" | awk '{ print $1 }')"
-		if [ "$mode" = "100755" ]; then chmod +x "$target"; else chmod -x "$target"; fi
+		if [ "$mode" = "100755" ]; then chmod 755 "$target.sync-core-new"; else chmod 644 "$target.sync-core-new"; fi
+		mv -f "$target.sync-core-new" "$target"
 		printf '  updated  %s\n' "$target"
 	done < <(core_paths "$from" "$ref")
 
