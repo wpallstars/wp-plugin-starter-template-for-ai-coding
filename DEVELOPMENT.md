@@ -119,11 +119,35 @@ when the test fails.
 `.github/workflows/sonarcloud.yml` runs the SonarCloud scan on pull
 requests and pushes to `main`, with `sonar-project.properties`. That file
 ignores four rules WordPress coding standards contradict (snake_case method
-and field names, `Prefix_Name` classes, early returns); the free plan cannot
-give a project its own Quality Profile. For a new plugin: import the
+and field names, `Prefix_Name` classes, early returns), since the free plan
+cannot give a project its own Quality Profile; ignores a few findings that
+are by design, each scoped to its files with the reason; and leaves
+coverage out, as the smoke test, not unit tests, checks the plugin. Fix
+other findings in the code. For a new plugin: import the
 repository in SonarCloud, turn off **Automatic Analysis** (Administration →
 Analysis Method; it ignores the file), and add a SonarCloud token as the
 `SONAR_TOKEN` Actions secret. Without the secret the job is skipped.
+
+### Starter sync
+
+`.github/workflows/starter-sync.yml` runs every Monday (and from the
+Actions tab, **Run workflow**). It checks out the starter's default branch
+next to the plugin and runs the starter's `scripts/sync-core.sh --check`,
+so the newest check is used. When core files differ it opens one issue
+labelled `starter-sync`, or updates the open one, with the files and the
+steps; when they match it closes that issue. It needs no setup: the
+workflow's own token reads the public starter and writes the issue. To
+follow another starter (a fork), set the repository variable
+`STARTER_REPO` to its `owner/repo`. In the starter itself it does nothing.
+
+To sync by hand, with the starter cloned next to the plugin (the issue
+gives its folder name):
+
+```bash
+git -C ../<starter> pull
+scripts/sync-core.sh --check   # list what differs
+scripts/sync-core.sh           # copy the starter's core files, renamed
+```
 
 ## Test site resources
 

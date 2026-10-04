@@ -99,7 +99,7 @@ jobs:
           cat >"$body" <<EOF
           ## What
 
-          Core files differ from the starter at [$STARTER_REPO@$short](https://github.com/$STARTER_REPO/commit/$sha). Core files are the same in every plugin made from the starter, apart from the names (STANDARDS.md → Structure). $summary
+          Compared with the starter at [$STARTER_REPO@$short](https://github.com/$STARTER_REPO/commit/$sha): $summary Core files are the same in every plugin made from the starter, apart from the names (STANDARDS.md → Structure).
 
           $files
 
