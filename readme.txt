@@ -58,7 +58,7 @@ No. The WordPress.org build contacts nothing outside WordPress.
 == Changelog ==
 
 = Unreleased =
-* New: screenshots. Developers: README.md parts between github-only markers stay on GitHub, out of the Read Me tab.
+* New: screenshots. Developers: README.md parts between github-only markers stay on GitHub, out of the Read Me tab; scripts/rename-plugin.sh adds no CodeFactor badge until CodeFactor has the repository.
 
 = 1.0.12 =
 * Fixed: Updates from GitHub handles repeated Location headers, and the settings screen's file versions and text splitting are sturdier.
