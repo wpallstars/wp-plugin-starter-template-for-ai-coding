@@ -56,6 +56,9 @@ No. The WordPress.org build contacts nothing outside WordPress.
 
 == Changelog ==
 
+= Unreleased =
+* Developers: scripts/rename-plugin.sh adds no CodeFactor badge until CodeFactor has the repository.
+
 = 1.0.13 =
 * New: screenshots. The settings screen's header buttons are Source code, Support and Buy me a coffee, on one row.
 

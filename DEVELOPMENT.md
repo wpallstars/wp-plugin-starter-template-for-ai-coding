@@ -205,7 +205,7 @@ projects up to 50,000 lines of code for the whole organization, so a
 private plugin can take step 1 if the organization has room. Codacy
 analyses private repositories only on a paid plan, so step 2 waits for
 public launch (below). Branch rulesets need a paid GitHub plan on private
-repositories, so step 3 waits too. Until then the SonarCloud job skips
+repositories, so step 4 waits too. Until then the SonarCloud job skips
 without its secret, and nothing fails.
 
 1. **SonarCloud** (SonarQube Cloud), for `.github/workflows/sonarcloud.yml`:
@@ -228,7 +228,15 @@ without its secret, and nothing fails.
    Check: the next pull request gets a **Codacy Static Code Analysis**
    check. Then add the repository's Codacy badge to the badges block in
    `README.md` (`STANDARDS.md` → Structure).
-3. **`SYNC_PAT`**, only once `main` is protected by a branch ruleset.
+3. **CodeFactor**: its GitHub app is installed for the whole organization,
+   but CodeFactor analyses a repository, and serves its badge, only once
+   the repository is added on codefactor.io (signed in with GitHub).
+   Check: `https://www.codefactor.io/repository/github/{owner}/{repo}/badge`
+   returns an image instead of a 404 page. Then add
+   `[![CodeFactor](https://www.codefactor.io/repository/github/{owner}/{repo}/badge)](https://www.codefactor.io/repository/github/{owner}/{repo})`
+   to the badges block after the SonarCloud badge. Until then the block
+   leaves it out, so GitHub shows no broken image.
+4. **`SYNC_PAT`**, only once `main` is protected by a branch ruleset.
    `.github/workflows/repo-metrics.yml` commits `docs/metrics/` to `main`;
    with protection and no `SYNC_PAT` it warns "SYNC_PAT not present" and
    leaves the metrics out of date. Make a fine-grained personal access token
@@ -237,13 +245,13 @@ without its secret, and nothing fails.
    limited to this repository, with **Contents: Read and write**. Store it:
    `gh secret set SYNC_PAT --repo {owner}/{repo}`. Check: the next
    **Repository metrics** run logs "SYNC_PAT present".
-4. **Starter sync**: Actions → **Starter sync** → **Run workflow**, once,
+5. **Starter sync**: Actions → **Starter sync** → **Run workflow**, once,
    to see that it runs. It needs no secret. Set the repository variable
    `STARTER_REPO` only to follow a fork of the starter.
 
 `gh secret list --repo {owner}/{repo}` shows which secrets are set (names
-only). CodeRabbit, CodeFactor, Socket and qlty are GitHub apps installed
-for the whole organization; they need nothing per repository.
+only). CodeRabbit, Socket and qlty are GitHub apps installed for the whole
+organization; they need nothing per repository. CodeFactor needs step 3.
 
 ## Test site resources
 

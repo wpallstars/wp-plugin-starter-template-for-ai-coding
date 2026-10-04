@@ -196,8 +196,10 @@ Every change: changelog.txt."
 }
 
 # Rebuild README.md's GitHub badges block for the new repository. The
-# SonarCloud key is owner_repo; the Codacy badge has a per-project ID, so it
-# is left out until the new repository's own Codacy badge is added.
+# SonarCloud key is owner_repo. The Codacy badge has a per-project ID, and
+# CodeFactor's badge is a broken image until the repository is added on
+# codefactor.io, so both are left out until that service has the new
+# repository (DEVELOPMENT.md → Services setup).
 set_badges() {
 	local repo="$1"
 	local url="https://github.com/$repo"
@@ -206,7 +208,6 @@ set_badges() {
 	BADGES="<!-- On GitHub only: the Read Me tab skips this block. scripts/rename-plugin.sh rewrites it. -->
 [![CI]($url/actions/workflows/ci.yml/badge.svg?branch=main)]($url/actions/workflows/ci.yml)
 [![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=$key&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=$key)
-[![CodeFactor](https://www.codefactor.io/repository/github/$repo/badge)](https://www.codefactor.io/repository/github/$repo)
 [![License: GPL v2 or later](https://img.shields.io/badge/License-GPL%20v2%20or%20later-blue.svg)](LICENSE)
 [![Latest release](https://img.shields.io/github/v/release/$repo)]($url/releases)
 

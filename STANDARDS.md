@@ -79,8 +79,10 @@ How changes are made and checked: `DEVELOPMENT.md`. Releases: `RELEASING.md`.
   Codacy, CodeFactor, license, latest release, and the repository facts in
   `docs/metrics/` that `.github/workflows/repo-metrics.yml` keeps up to date.
   `scripts/rename-plugin.sh` rebuilds the block for the new repository; add
-  the new Codacy badge once Codacy has the repository. It also leaves out
-  anything between `<!-- github-only:start -->` and `<!-- github-only:end -->`,
+  the new Codacy and CodeFactor badges once those services have the
+  repository (`DEVELOPMENT.md` → Services setup), never before: a badge for
+  a repository they don't have is a broken image. The Read Me tab also
+  leaves out anything between `<!-- github-only:start -->` and `<!-- github-only:end -->`,
   for GitHub-only parts such as the screenshots section: screenshots are
   `.wordpress-org/screenshot-N.png` (WordPress.org's `assets/` names, captions
   in `readme.txt` → Screenshots), which the release zip leaves out. They show
