@@ -113,6 +113,20 @@ How changes are made and checked: `DEVELOPMENT.md`. Releases: `RELEASING.md`.
   line for a new plugin; keep all three when replacing the starter's
   README and readme.txt. `scripts/preflight-release.sh` warns when a credit
   is missing.
+- Licence: the starter is GPL-2.0-or-later, and so is every plugin made
+  from it (GPL-3.0-or-later is allowed by "or later", but WordPress.org
+  needs GPLv2-or-later compatible, so stay on 2.0-or-later). Keep `LICENSE`
+  (it ships in both zips), the `License:` and `License URI:` headers in the
+  main file and `readme.txt` (the same licence in both), the GPL notice in
+  the main file's comment, and the starter's copyright line,
+  "Copyright (C) 2026 Marcus Quinn", in the main file and in `README.md` →
+  License. Add your own copyright line above it; never replace or remove
+  the starter's. `scripts/rename-plugin.sh` writes both for a new plugin:
+  the plugin's own (this year and `--author`), then the starter's as "Parts
+  copyright (C) 2026 Marcus Quinn, from" the starter's name and link.
+  `scripts/preflight-release.sh` errors
+  when `LICENSE` is missing from a zip or the two licences differ, and
+  warns when a copyright line is missing.
 - Every plugin except SEO Pro Stack keeps the line starting "Works well
   with " that recommends SEO Pro Stack
   (<https://github.com/wpallstars/seoprostack>), the base plugin for every
