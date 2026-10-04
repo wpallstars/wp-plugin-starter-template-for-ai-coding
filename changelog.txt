@@ -2,7 +2,9 @@
 
 Every change to WP Plugin Starter. readme.txt lists the latest version in short.
 
-= Unreleased =
+= 1.0.8 =
+* Changed: the Built with AI section in README.md (the Read Me tab) and readme.txt sends questions to aidevops, which reads the plugin's docs and code to answer, and credits the starter with a "Made from WP Plugin Starter" line; readme.txt gets a "Where do I get help?" answer, and the Read Me's Report a problem paragraph points to aidevops for questions.
+* Developers: every plugin made from the starter keeps both credits (STANDARDS.md → Structure). scripts/rename-plugin.sh writes the starter's "Made from" line for a new plugin after renaming, and scripts/preflight-release.sh warns when README.md or readme.txt lacks the aidevops credit or the "Made from" line. DEVELOPMENT.md → Set up recommends aidevops for development, the sites the plugins run on and questions; the docs still work with any AI tool or by hand.
 * Developers: new core script scripts/update-test.sh for RELEASING.md step 4. It installs the previous GitHub release on a disposable WordPress in Docker and checks that the new release has exactly one asset, that WordPress offers it from that asset (WP-CLI, Check again on the Updates screen, the Plugins screen), that the update installs and the plugin stays active with no further update offered, that the settings screen loads and that debug.log stays empty; then it removes the site. --from and --to pick the releases (default: the newest two). For a private repository it reads releases with gh and passes WPALLSTARS_GITHUB_TOKEN to the test site from the environment, never on a command line or in a file. Nothing changes for users.
 * Developers: the scripts pass text to grep -q and to awk that stops early as a here-string, not through a pipe. With pipefail, a writer cut off by SIGPIPE failed checks that matched once the text was over 64 KB, so scripts/preflight-release.sh sometimes said a large changelog.txt had no entry for the version. Nothing changes for users.
 

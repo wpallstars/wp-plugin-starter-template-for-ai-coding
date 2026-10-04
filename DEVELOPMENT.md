@@ -30,6 +30,13 @@ it.
 composer install
 ```
 
+Recommended: [aidevops](https://aidevops.sh), the open-source AI harness
+these plugins are built and maintained with, for development, the sites
+they run on, and questions. It reads `AGENTS.md`, `STANDARDS.md` and these
+docs, so it follows the same workflow, runs the checks and releases, and
+answers questions about the plugin from its docs and code. The docs work
+with any AI tool or by hand; nothing here needs aidevops.
+
 `composer.json` lists development tools only. The plugin has no Composer
 dependencies, and `vendor/`, `composer.*`, the tool configuration and
 `.github/` are left out of release zips (`.distignore`; the preflight fails

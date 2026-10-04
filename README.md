@@ -53,7 +53,7 @@ Go to **Settings → WP Plugin Starter**. The screen has two groups of tabs:
 - **Settings**: General, empty until features add settings. Changes save instantly; there is no Save button. **Search features** (next to the plugin name) finds settings on every tab.
 - **About**: this Read Me.
 
-**Report a problem**, at the top right of the screen, opens the plugin’s [GitHub issues](https://github.com/wpallstars/wp-plugin-starter-template-for-ai-coding/issues) in a new tab. Say what you did, what you expected and what happened, with the versions of WordPress, PHP and WP Plugin Starter. Leave out passwords, licence keys and personal data, since issues are public. **Buy me a coffee**, next to it, opens the maker’s [Buy Me a Coffee](https://buymeacoffee.com/marcusquinn) page in a new tab.
+**Report a problem**, at the top right of the screen, opens the plugin’s [GitHub issues](https://github.com/wpallstars/wp-plugin-starter-template-for-ai-coding/issues) in a new tab. Say what you did, what you expected and what happened, with the versions of WordPress, PHP and WP Plugin Starter. Leave out passwords, licence keys and personal data, since issues are public. For questions, ask [aidevops](https://aidevops.sh) (Built with AI below). **Buy me a coffee**, next to it, opens the maker’s [Buy Me a Coffee](https://buymeacoffee.com/marcusquinn) page in a new tab.
 
 ## Requirements
 
@@ -109,6 +109,13 @@ Deleting the plugin removes its settings, its cached data, who hid lines of the 
 
 ## Changelog
 
+### 1.0.8
+
+- Changed: the Built with AI section sends questions to [aidevops](https://aidevops.sh), which reads the plugin's docs and code to answer and can report a problem for you, and credits the starter with a "Made from WP Plugin Starter" line. `readme.txt` gets a "Where do I get help?" answer.
+- Developers: every plugin made from the starter keeps both credits (`STANDARDS.md` → Structure). `scripts/rename-plugin.sh` writes the "Made from" line for a new plugin, and `scripts/preflight-release.sh` warns when a credit is missing. `DEVELOPMENT.md` → Set up recommends aidevops for development, the sites the plugins run on and questions.
+- Developers: new core script `scripts/update-test.sh` for `RELEASING.md` step 4: it installs the previous GitHub release on a disposable WordPress in Docker and checks that the new release is offered from its one asset (WP-CLI, **Check again**, the Plugins screen), installs and keeps the plugin working. `--from`/`--to` pick the releases; a private repository works with `gh` and `WPALLSTARS_GITHUB_TOKEN` from the environment.
+- Developers: the scripts pass text to `grep -q` and early-exit `awk` as here-strings, not pipes, so `pipefail` no longer fails a check on text over 64 KB (the preflight sometimes missed a large `changelog.txt` entry). Nothing changes for sites.
+
 ### 1.0.7
 
 - Developers: `DEVELOPMENT.md` → Services setup gives the steps, with a check for each, to connect a new plugin's repository to SonarCloud (import, Automatic Analysis off, `SONAR_TOKEN`) and Codacy, to add `SYNC_PAT` once `main` is protected, and to run Starter sync once, with which steps wait for public launch in a private repository. The steps that need the owner's accounts or make secrets are left to the owner.
@@ -160,6 +167,10 @@ Deleting the plugin removes its settings, its cached data, who hid lines of the 
 ## Built with AI
 
 WP Plugin Starter is built and maintained with [aidevops](https://aidevops.sh), the same developer's open-source AI harness for creating and managing anything online with AI, plugins like this one included. It is free on [GitHub](https://github.com/marcusquinn/aidevops).
+
+Questions about using, changing or building on WP Plugin Starter: ask aidevops. Open this repository, or the site it runs on, with aidevops and ask; it reads the plugin's docs and code to answer, and can report a problem for you.
+
+Made from [WP Plugin Starter](https://github.com/wpallstars/wp-plugin-starter-template-for-ai-coding), the wpallstars starter plugin. Its shared standards and the weekly Starter sync keep this plugin up to date.
 
 ## License
 

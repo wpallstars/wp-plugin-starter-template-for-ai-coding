@@ -42,8 +42,11 @@ in `docs/` (`STANDARDS.md` → Agent docs); the starter has none yet.
   `scripts/build-banner.sh`.
 - This repository is public. Never name private repositories, their
   issues, or local paths in it (commits, docs, comments or examples).
-- Every plugin made from the starter keeps the **Built with AI** credit to
-  aidevops (<https://aidevops.sh>) in `README.md` and `readme.txt`.
+- Every plugin made from the starter keeps its credits in `README.md` and
+  `readme.txt`: **Built with AI** to aidevops (<https://aidevops.sh>), which
+  is also where users take questions, and the "Made from" line crediting the
+  starter (`STANDARDS.md` → Structure). `scripts/rename-plugin.sh` writes
+  that line from split strings; keep them split.
 
 ## Test sites
 

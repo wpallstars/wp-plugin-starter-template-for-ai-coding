@@ -5,7 +5,7 @@ Tags: starter, boilerplate, settings, developer, template
 Requires at least: 6.2
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 1.0.7
+Stable tag: 1.0.8
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -26,6 +26,10 @@ Start a plugin from it on GitHub (wpallstars/wp-plugin-starter-template-for-ai-c
 
 WP Plugin Starter is built and maintained with aidevops (https://aidevops.sh), the same developer's open-source AI harness for creating and managing anything online with AI.
 
+Questions about using or changing WP Plugin Starter: ask aidevops. It reads the plugin's docs and code to answer, and can report a problem for you.
+
+Made from WP Plugin Starter (https://github.com/wpallstars/wp-plugin-starter-template-for-ai-coding), the wpallstars starter plugin.
+
 == Installation ==
 
 1. Upload the `wp-plugin-starter-template` folder to `/wp-content/plugins/`, or install the zip from Plugins → Add New → Upload Plugin.
@@ -37,14 +41,19 @@ WP Plugin Starter is built and maintained with aidevops (https://aidevops.sh), t
 
 No. It adds an empty settings screen and a Read Me tab, ready for a plugin's features.
 
+= Where do I get help? =
+
+Ask aidevops (https://aidevops.sh): open the plugin's repository, or your site, with it and ask. To report a problem, use the Report a problem link on the settings screen.
+
 = Does it contact other services? =
 
 No. The WordPress.org build contacts nothing outside WordPress.
 
 == Changelog ==
 
-= 1.0.7 =
-* Developers: DEVELOPMENT.md lists the step-by-step services setup for a new plugin (SonarCloud, Codacy, SYNC_PAT, Starter sync), and STANDARDS.md tells AI agents to keep each plugin at the starter's standard. Nothing changes for users.
+= 1.0.8 =
+* Changed: for questions, ask aidevops, which reads the plugin's docs and code to answer (Built with AI and the FAQ). The plugin also credits WP Plugin Starter, the starter it is made from.
+* Developers: scripts/update-test.sh checks a release updates from the previous one, and the preflight warns when a plugin's credits are missing.
 
 Every change: changelog.txt.
 

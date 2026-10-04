@@ -219,6 +219,29 @@ set_badges() {
 	return 0
 }
 
+# The starter's credit, kept in every plugin made from it (STANDARDS.md →
+# Structure): the renaming above turned the starter's name and repository in
+# it into the new plugin's, so write the line again. The strings are split so
+# that renaming this script leaves them alone.
+set_credit() {
+	local name="WP Plugin ""Starter"
+	local url="https://github.com/wpallstars/wp-plugin-""starter-template-for-ai-coding"
+	local file line
+	for file in README.md readme.txt; do
+		[[ -f "$file" ]] || continue
+		if [[ "$file" = README.md ]]; then
+			line="Made from [$name]($url), the wpallstars starter plugin. Its shared standards and the weekly Starter sync keep this plugin up to date."
+		else
+			line="Made from $name ($url), the wpallstars starter plugin."
+		fi
+		LINE="$line" awk '
+			!done && index($0, "Made from ") == 1 { print ENVIRON["LINE"]; done = 1; next }
+			{ print }' "$file" >"$TMP_FILE"
+		replace_with_tmp "$file" || true
+	done
+	return 0
+}
+
 # Put the maker's details in, after the renaming. Empty ones stay as they are.
 set_identity() {
 	local main_file="$1"
@@ -380,6 +403,7 @@ main() {
 	set_identity "$slug.php" "includes/class-$TO_PREFIX-setup.php" "$old_description"
 	set_version "$slug.php" "$starter_version"
 	set_badges "$repo"
+	set_credit
 	check_php
 
 	printf '%d files changed, %d renamed. Run composer update --lock (the package name changed), review with git diff and git status, then commit.\n' "$changed" "$moved"
