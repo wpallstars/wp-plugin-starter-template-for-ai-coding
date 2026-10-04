@@ -730,16 +730,27 @@ check_licence() {
 		warn "no ATTRIBUTION.txt (the licence's additional terms; scripts/sync-core.sh copies the starter's)"
 		problems=1
 	fi
-	# Every source file names its licence and copyright in its first lines
-	# (the main file's copyright is in its "Copyright (C)" lines).
-	local missing=()
+	# Every source file has three lines in its header: the licence
+	# (SPDX-License-Identifier), the copyright (SPDX-FileCopyrightText; the
+	# main file's is in its "Copyright (C)" lines) and the pointer to
+	# ATTRIBUTION.txt. Each is checked on its own.
+	local head no_licence=() no_copyright=() no_pointer=()
 	while IFS= read -r file; do
-		if ! git show "$sha:$file" | sed -n 1,60p | grep -Eq 'SPDX-FileCopyrightText:|Copyright \(C\) '; then
-			missing+=("$file")
-		fi
+		head="$(git show "$sha:$file" | sed -n 1,60p)"
+		grep -qF 'SPDX-License-Identifier:' <<<"$head" || no_licence+=("$file")
+		grep -Eq 'SPDX-FileCopyrightText:|Copyright \(C\) ' <<<"$head" || no_copyright+=("$file")
+		grep -qF 'ATTRIBUTION.txt' <<<"$head" || no_pointer+=("$file")
 	done < <(git ls-tree -r --name-only "$sha" | grep -E '\.(php|js|css|sh)$' | grep -Ev '^(vendor|node_modules|dist)/|\.min\.(js|css)$')
-	if [[ "${#missing[@]}" -gt 0 ]]; then
-		warn "${#missing[@]} source file(s) without a copyright line (SPDX-FileCopyrightText) at the top: ${missing[*]}"
+	if [[ "${#no_licence[@]}" -gt 0 ]]; then
+		warn "${#no_licence[@]} source file(s) without SPDX-License-Identifier at the top: ${no_licence[*]}"
+		problems=1
+	fi
+	if [[ "${#no_copyright[@]}" -gt 0 ]]; then
+		warn "${#no_copyright[@]} source file(s) without a copyright line (SPDX-FileCopyrightText) at the top: ${no_copyright[*]}"
+		problems=1
+	fi
+	if [[ "${#no_pointer[@]}" -gt 0 ]]; then
+		warn "${#no_pointer[@]} source file(s) without the pointer to ATTRIBUTION.txt at the top: ${no_pointer[*]}"
 		problems=1
 	fi
 	text="$(git show "$sha:$MAIN_FILE")"
