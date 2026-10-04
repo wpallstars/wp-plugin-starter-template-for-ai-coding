@@ -5,7 +5,7 @@ Tags: starter, boilerplate, settings, developer, template
 Requires at least: 6.2
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 1.0.17
+Stable tag: 1.0.18
 License: GPLv3 or later
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 
@@ -51,7 +51,7 @@ No. The WordPress.org build contacts nothing outside WordPress.
 
 = When do versions reach WordPress.org? =
 
-GitHub releases are the stable beta channel: each version comes out there first. WordPress.org gets it 90 days later, except security releases, which come out on both at once.
+GitHub releases are the stable beta channel: each version comes out there first. WordPress.org gets it 30 days later, except security releases, which come out on both at once.
 
 == Screenshots ==
 
@@ -60,8 +60,8 @@ GitHub releases are the stable beta channel: each version comes out there first.
 
 == Changelog ==
 
-= 1.0.17 =
-* Developers: four rules in STANDARDS.md for plugins made from the starter (changed defaults, SQL identifiers, one-off notices, NOSONAR reasons). Nothing changes on sites.
+= 1.0.18 =
+* Changed: WordPress.org gets each version 30 days after its GitHub release, not 90. Security releases still come out on both at once.
 
 Every change: changelog.txt.
 
