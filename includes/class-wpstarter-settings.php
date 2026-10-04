@@ -667,13 +667,25 @@ class WPStarter_Settings {
     private static function time_of(array $match) {
         $hour   = (int) $match[1];
         $minute = isset($match[2]) && '' !== $match[2] ? (int) $match[2] : 0;
-        $suffix = isset($match[3]) ? strtolower($match[3]) : '';
-        if ('pm' === $suffix && $hour < 12) {
-            $hour += 12;
-        } elseif ('am' === $suffix && 12 === $hour) {
-            $hour = 0;
-        }
+        $hour   = self::hour_24($hour, isset($match[3]) ? strtolower($match[3]) : '');
         return $hour > 23 || $minute > 59 ? '' : sprintf('%02d:%02d', $hour, $minute);
+    }
+
+    /**
+     * An hour on the 24-hour clock: 9 pm is 21, 12 am is 0.
+     *
+     * @param int    $hour   Hour as written.
+     * @param string $suffix 'am', 'pm' or ''.
+     * @return int
+     */
+    private static function hour_24($hour, $suffix) {
+        if ('pm' === $suffix && $hour < 12) {
+            return $hour + 12;
+        }
+        if ('am' === $suffix && 12 === $hour) {
+            return 0;
+        }
+        return $hour;
     }
 
     /**
