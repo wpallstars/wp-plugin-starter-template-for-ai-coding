@@ -43,7 +43,6 @@ scripts/sync-core.sh
 .gitattributes
 .gitignore
 .gitleaks.toml
-.sonarcloud.properties
 .codacy.yml
 composer.json
 phpcs.xml.dist
