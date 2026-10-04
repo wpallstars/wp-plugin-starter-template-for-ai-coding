@@ -15,6 +15,7 @@ None of the scripts below tags, publishes, uploads or commits anything.
 | `scripts/build-release.sh [--ref REF] [--out DIR]` | Builds both zips from a Git ref (default `HEAD`) into `dist/` (gitignored), with `SHA256SUMS`. Files come from Git, never the working tree. |
 | `scripts/preflight-release.sh [--ref REF] [--strict] [--offline]` | Checks versions, headers, readme, both zips (layout, development files, PHP 7.4 and JS syntax, updater code), remote assets, presets and starter data where the plugin has them, and the Git tag. Errors stop a release; `--strict` also fails on warnings, for a WordPress.org submission. |
 | `scripts/plugin-check.sh [--ref REF] [--zip FILE]` | Runs Plugin Check on both zips in a disposable WordPress in Docker, then removes it. |
+| `scripts/update-test.sh [--from X.Y.Z] [--to X.Y.Z] [--wp VERSION] [--php VERSION] [--keep-log FILE]` | After a release: installs the previous GitHub release (default: the one before the newest) on a disposable WordPress in Docker and checks that it is offered the new one from its asset (WP-CLI, **Check again** on the Updates screen, the Plugins screen), that the update installs and the plugin stays active, and that `debug.log` stays empty. Then removes the site. Reads releases with `gh`. |
 
 The two builds of each version:
 
@@ -62,9 +63,12 @@ expected there and fails on the updater findings in the WordPress.org zip.
    Sites with the shared updater see the release when they next check.
    Sites still on Git Updater are offered the `Version:` on `main` before the
    release exists, so do this in the same sitting as the merge.
-4. Check the release has exactly one asset, `{slug}-X.Y.Z.zip`, and on a
-   site with the previous version that **Check again** on the Updates screen
-   shows the update and that it installs.
+4. Run `scripts/update-test.sh`. It checks the release has exactly one
+   asset, `{slug}-X.Y.Z.zip`, and that a site with the previous version
+   sees the update with **Check again** on the Updates screen and installs
+   it. For a private repository, export a read-only token as
+   `WPALLSTARS_GITHUB_TOKEN` first (below); the test site reads it from the
+   environment. Without Docker, check the same by hand on a test site.
 
 Sites read the repository without signing in, so it must be public for sites
 to get updates. While it is private, a test site can use a read-only token
