@@ -3,7 +3,7 @@
 Every change to WP Plugin Starter. readme.txt lists the latest version in short.
 
 = 1.0.7 =
-* Developers: DEVELOPMENT.md → Services setup: the once-per-repository steps for a new plugin, each with a check: SonarCloud (import with the project key {owner}_{repo}, Automatic Analysis off, SONAR_TOKEN), Codacy (Manage repositories → Add, then the README badge), SYNC_PAT for repo-metrics once main is protected, and one Starter sync run. DEVELOPMENT.md → SonarCloud points to it. Agents list these steps for the owner instead of doing them.
+* Developers: DEVELOPMENT.md → Services setup: the once-per-repository steps for a new plugin, each with a check: SonarCloud (import with the project key {owner}_{repo}, Automatic Analysis off, SONAR_TOKEN), Codacy (Manage repositories → Add, then the README badge), SYNC_PAT for repo-metrics once main is protected, and one Starter sync run. It says which steps wait for public launch in a private repository (Codacy and branch rulesets need paid plans; SonarCloud's free plan covers private projects up to 50,000 lines per organization). DEVELOPMENT.md → SonarCloud points to it. Agents list these steps for the owner instead of doing them.
 * Developers: STANDARDS.md → Agent docs: agents keep a plugin at the starter's standard. They check for an open starter-sync issue before work, read the starter's copy of any core file or rule the task touches while one is open, never change a core file only in the plugin (a change every plugin needs goes to the starter first), and leave account and secret steps to the owner. scripts/preflight-release.sh warns when AGENTS.md does not name STANDARDS.md. Nothing changes for users.
 
 = 1.0.6 =

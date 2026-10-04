@@ -111,7 +111,7 @@ Deleting the plugin removes its settings, its cached data, who hid lines of the 
 
 ### 1.0.7
 
-- Developers: `DEVELOPMENT.md` → Services setup gives the steps, with a check for each, to connect a new plugin's repository to SonarCloud (import, Automatic Analysis off, `SONAR_TOKEN`) and Codacy, to add `SYNC_PAT` once `main` is protected, and to run Starter sync once. The steps that need the owner's accounts or make secrets are left to the owner.
+- Developers: `DEVELOPMENT.md` → Services setup gives the steps, with a check for each, to connect a new plugin's repository to SonarCloud (import, Automatic Analysis off, `SONAR_TOKEN`) and Codacy, to add `SYNC_PAT` once `main` is protected, and to run Starter sync once, with which steps wait for public launch in a private repository. The steps that need the owner's accounts or make secrets are left to the owner.
 - Developers: `STANDARDS.md` → Agent docs tells AI agents to keep a plugin at the starter's standard: check for an open `starter-sync` issue first, read the starter's copy of any core file or rule the task touches, and make a change every plugin needs in the starter first. `scripts/preflight-release.sh` warns when `AGENTS.md` does not name `STANDARDS.md`. Nothing changes for users.
 
 ### 1.0.6

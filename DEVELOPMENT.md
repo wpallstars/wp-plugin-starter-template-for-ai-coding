@@ -155,6 +155,14 @@ secret, so an agent lists the missing ones for the owner (with this
 section) instead of doing them. `{owner}/{repo}` is the plugin's GitHub
 repository.
 
+While the repository is private: SonarCloud's free plan analyses private
+projects up to 50,000 lines of code for the whole organization, so a
+private plugin can take step 1 if the organization has room. Codacy
+analyses private repositories only on a paid plan, so step 2 waits for
+public launch (below). Branch rulesets need a paid GitHub plan on private
+repositories, so step 3 waits too. Until then the SonarCloud job skips
+without its secret, and nothing fails.
+
 1. **SonarCloud** (SonarQube Cloud), for `.github/workflows/sonarcloud.yml`:
    1. Import the repository into the `{owner}` organization: in its GitHub
       import screen, select the repository and choose **Analyze 1
@@ -264,7 +272,8 @@ it at that standard:
    and qlty, plus GitHub's CodeQL (JavaScript and GitHub Actions; it has
    no PHP support, so PHPStan, SonarCloud and Codacy cover the PHP),
    Dependabot security alerts, secret scanning with push protection, and
-   OpenSSF Scorecard. Socket keeps checking dependencies.
+   OpenSSF Scorecard. Socket keeps checking dependencies. Connect any
+   service still missing with Services setup above.
 2. Fix what they find in the code, in small pull requests by area
    (security first). Each finding is either fixed, explained in an inline
    comment, or marked as a false positive in that service with the reason.
