@@ -3,6 +3,7 @@
 Every change to WP Plugin Starter. readme.txt lists the latest version in short.
 
 = Unreleased =
+* Developers: scripts/rename-plugin.sh takes plugin names with quotes, $ and & (such as Owner's "Best" Plugin): the new name is escaped for where it lands (PHP strings, JSON, XML), and the renamed PHP is checked with php -l. Names with / \ < > % or control characters, and URLs with quotes or \, are refused before any file changes. scripts/sync-core.sh escapes the same way. scripts/replaced-plugins.php quotes the name in its README pattern. README.md's languages badge has a line of its own. Nothing changes for users.
 * Developers: README.md shows badges on GitHub (CI, SonarCloud, Codacy, CodeFactor, license, latest release) and repository facts (lines of code, languages, dependencies) that .github/workflows/repo-metrics.yml keeps up to date in docs/metrics/. The Read Me tab leaves out the badges block and HTML comments, so it still loads nothing from other sites. scripts/rename-plugin.sh rebuilds the badges for the new repository. Nothing changes for users.
 * Developers: scripts/smoke-test.sh keeps its local-only HTTP install command on one line, so SonarCloud reads its NOSONAR note. Nothing changes for users.
 * Fixed: a site on the GitHub build could be offered an unrelated WordPress.org plugin that has the same folder name. The GitHub zip's main file now carries an Update URI header on github.com (added by scripts/build-release.sh; the WordPress.org zip has none), and the updater (1.1.0) never takes WordPress.org's answer for such a build.

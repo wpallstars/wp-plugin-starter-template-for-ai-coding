@@ -112,11 +112,54 @@ plugin_names_as() {
 # CSS prefix, in that order. When the source plugin's slug is also its prefix
 # (myplugin), the slug is only the quoted word ('myplugin': text domain,
 # admin page) and the main file name; everywhere else it is the prefix.
+#
+# With FILE (the path the text belongs to), the new name is escaped for where
+# it lands: inside PHP string literals ('…' or "…") in .php files, in JSON
+# strings in .json files, and as XML text in .xml, .dist and .svg files.
+# Comments, Markdown and plain text get it as it is.
 plugin_map() {
-	perl -pe '
-		BEGIN { %e = map { $_ => $ENV{$_} // "" } grep { /^(FROM|TO)_/ } keys %ENV; }
+	local file="${1:-}"
+	MAP_FILE="$file" perl -pe '
+		BEGIN {
+			%e = map { $_ => $ENV{$_} // "" } grep { /^(FROM|TO)_/ } keys %ENV;
+			$f = $ENV{MAP_FILE} // "";
+			$kind = $f =~ /\.php$/ ? "php" : $f =~ /\.json$/ ? "json" : $f =~ /\.(xml|dist|svg)$/ ? "xml" : "";
+			($sq = $e{TO_NAME}) =~ s/([\\\x27])/\\$1/g;
+			($dq = $e{TO_NAME}) =~ s/([\\"\$])/\\$1/g;
+			($xml = $e{TO_NAME}) =~ s/&/&amp;/g;
+			$xml =~ s/</&lt;/g; $xml =~ s/>/&gt;/g; $xml =~ s/"/&quot;/g;
+			$from = quotemeta $e{FROM_NAME};
+		}
+		# PHP: only string literals need escaping; lines that are comments
+		# (docblocks, // and #) and the rest of a line after a comment do not.
+		# One pass, so a new name that contains the old one is not renamed twice.
+		sub php_name {
+			my ($text) = @_;
+			return $text =~ s/$from/$e{TO_NAME}/gr if $text =~ m{^\s*(\*|/\*|//|#)};
+			return $text =~ s{(?<t>\x27(?:[^\x27\\]|\\.)*\x27|"(?:[^"\\]|\\.)*"|(?://|#).*|/\*.*?(?:\*/|$)|$from)}{
+				my $t = $+{t};
+				$t =~ /^\x27/ ? $t =~ s/$from/$sq/gr : $t =~ /^"/ ? $t =~ s/$from/$dq/gr : $t =~ s/$from/$e{TO_NAME}/gr
+			}gre;
+		}
+		# Only code between <?php (or <?=) and ?> is PHP; the rest is HTML.
+		sub php_line {
+			my ($line) = @_;
+			my $out = "";
+			for my $piece (split m{(<\?(?:php\b|=)|\?>)}, $line) {
+				if ($piece =~ m{^<\?(?:php|=)$}) { $in_php = 1; $out .= $piece; }
+				elsif ($piece eq "?>") { $in_php = 0; $out .= $piece; }
+				elsif ($in_php) { $out .= php_name($piece); }
+				else { $out .= $piece =~ s/$from/$e{TO_NAME}/gr; }
+			}
+			return $out;
+		}
 		s{\Q$e{FROM_REPO}\E}{$e{TO_REPO}}g if $e{FROM_REPO} ne "" && $e{TO_REPO} ne "";
-		s{\Q$e{FROM_NAME}\E}{$e{TO_NAME}}g;
+		if ($e{FROM_NAME} eq "") { }
+		elsif ($kind eq "php") { $_ = php_line($_); }
+		elsif (!/$from/) { }
+		elsif ($kind eq "json") { ($j = $e{TO_NAME}) =~ s/([\\"])/\\$1/g; s/$from/$j/g; }
+		elsif ($kind eq "xml") { s/$from/$xml/g; }
+		else { s/$from/$e{TO_NAME}/g; }
 		s{\Q$e{FROM_PACKAGE}\E}{$e{TO_PACKAGE}}g;
 		s{\Q$e{FROM_CONST}\E}{$e{TO_CONST}}g;
 		if ($e{FROM_SLUG} eq $e{FROM_PREFIX}) {

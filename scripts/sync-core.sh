@@ -112,7 +112,7 @@ main() {
 	local tmp="$TMP_FILE"
 	while IFS= read -r path; do
 		target="$(printf '%s' "$path" | plugin_map)"
-		git -C "$from" show "$ref:$path" | plugin_map >"$tmp"
+		git -C "$from" show "$ref:$path" | plugin_map "$target" >"$tmp"
 		count=$((count + 1))
 		if [ -f "$target" ] && cmp -s "$tmp" "$target"; then
 			continue

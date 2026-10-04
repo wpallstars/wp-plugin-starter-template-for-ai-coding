@@ -209,6 +209,7 @@ set_badges() {
 
 [![Lines of code](docs/metrics/badges/loc.svg)](docs/metrics/repo-metrics.md)
 [![Dependencies](docs/metrics/badges/dependencies.svg)](docs/metrics/repo-metrics.md)
+
 [![Languages by lines of code](docs/metrics/badges/languages.svg)](docs/metrics/repo-metrics.md)" awk '
 		$0 == "<!-- aidevops:badges:end -->" { skip = 0 }
 		skip { next }
@@ -254,9 +255,9 @@ DONATE=""
 VERSION="0.1.0"
 
 check_identity() {
-	local url='^https?://[^[:space:]<>"'\'']+$'
+	local url='^https?://[^[:space:]<>"'\''\\]+$'
 	case "$DESCRIPTION$AUTHOR" in
-	*$'\n'* | *'*/'*) die "--description and --author are one line, without */" ;;
+	*[[:cntrl:]]* | *'*/'*) die "--description and --author are one line, without */ or control characters" ;;
 	esac
 	[ "${#DESCRIPTION}" -le 150 ] || die "--description is ${#DESCRIPTION} characters; WordPress.org allows 150"
 	allow --author "$AUTHOR" '^[^<>]+$'
@@ -265,6 +266,24 @@ check_identity() {
 	allow --contributors "$CONTRIBUTORS" '^[A-Za-z0-9_.@-]+(, ?[A-Za-z0-9_.@-]+)*$'
 	[ "$DONATE" = none ] || allow --donate "$DONATE" "$url"
 	need --version "$VERSION" '^[0-9]+\.[0-9]+\.[0-9]+$'
+	return 0
+}
+
+# Stop if a renamed PHP file no longer parses (the changes stay for git diff).
+check_php() {
+	command -v php >/dev/null 2>&1 || {
+		printf 'rename-plugin: php not found; run php -l on the changed files yourself\n' >&2
+		return 0
+	}
+	local file bad=0
+	while IFS= read -r file; do
+		[ -f "$file" ] || continue
+		php -l "$file" >/dev/null 2>&1 || {
+			php -l "$file" >&2 || true
+			bad=1
+		}
+	done < <(git ls-files '*.php')
+	[ "$bad" -eq 0 ] || die "the renamed PHP above does not parse; see git diff"
 	return 0
 }
 
@@ -306,7 +325,9 @@ main() {
 	[ -n "$css" ] || css="$(printf '%s' "$const" | tr '[:upper:]' '[:lower:]')"
 	[ -n "$repo" ] || repo="wpallstars/$slug"
 	need --slug "$slug" '^[a-z][a-z0-9-]*[a-z0-9]$'
-	need --name "$name" '^[^/\\]+$'
+	# Quotes and $ are escaped where the name lands in code (plugin_map); /, \,
+	# <, > and % are not allowed: paths, comments, HTML and sprintf formats.
+	need --name "$name" '^[^/\\<>%[:cntrl:]]+$'
 	need --prefix "$prefix" '^[A-Z][A-Za-z0-9]*$'
 	need --const "$const" '^[A-Z][A-Z0-9]*$'
 	need --css "$css" '^[a-z][a-z0-9]*$'
@@ -328,7 +349,7 @@ main() {
 
 	printf 'Renaming %s to %s: %s / %s / %s / %s / %s / %s\n' "$FROM_NAME" "$name" "$slug" "$TO_PREFIX" "$prefix" "$const" "$css" "$repo"
 
-	local file target changed=0 moved=0
+	local file kind target changed=0 moved=0
 	trap cleanup EXIT
 	TMP_FILE="$(mktemp "${TMPDIR:-/tmp}/rename-plugin.XXXXXX")"
 	local tmp="$TMP_FILE"
@@ -336,7 +357,9 @@ main() {
 		[ -f "$file" ] || continue
 		# Text files only (pictures and other binaries keep their bytes).
 		if grep -Iq . "$file"; then
-			plugin_map <"$file" >"$tmp"
+			# The path only tells plugin_map how to escape the name.
+			kind="$file"
+			plugin_map "$kind" <"$file" >"$tmp"
 			if replace_with_tmp "$file"; then
 				changed=$((changed + 1))
 			fi
@@ -355,6 +378,7 @@ main() {
 	set_identity "$slug.php" "includes/class-$TO_PREFIX-setup.php" "$old_description"
 	set_version "$slug.php" "$starter_version"
 	set_badges "$repo"
+	check_php
 
 	printf '%d files changed, %d renamed. Run composer update --lock (the package name changed), review with git diff and git status, then commit.\n' "$changed" "$moved"
 	return 0
