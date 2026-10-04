@@ -23,6 +23,10 @@ class WPStarter_Admin_Manager {
     /** Hook suffix returned by add_options_page(). */
     const HOOK = 'settings_page_' . self::PAGE;
 
+    /** Admin stylesheet and script, relative to the plugin folder. */
+    const CSS_FILE = 'admin/css/wpstarter-admin.css';
+    const JS_FILE  = 'admin/js/wpstarter-admin.js';
+
     /**
      * Register hooks (once).
      */
@@ -178,10 +182,10 @@ class WPStarter_Admin_Manager {
         }
 
         $tab = self::get_active_tab();
-        $css = file_exists(WPSTARTER_DIR . 'admin/css/wpstarter-admin.css') ? filemtime(WPSTARTER_DIR . 'admin/css/wpstarter-admin.css') : WPSTARTER_VERSION;
-        $js  = file_exists(WPSTARTER_DIR . 'admin/js/wpstarter-admin.js') ? filemtime(WPSTARTER_DIR . 'admin/js/wpstarter-admin.js') : WPSTARTER_VERSION;
+        $css = file_exists(WPSTARTER_DIR . self::CSS_FILE) ? filemtime(WPSTARTER_DIR . self::CSS_FILE) : WPSTARTER_VERSION;
+        $js  = file_exists(WPSTARTER_DIR . self::JS_FILE) ? filemtime(WPSTARTER_DIR . self::JS_FILE) : WPSTARTER_VERSION;
 
-        wp_enqueue_style('wpstarter-admin', WPSTARTER_URL . 'admin/css/wpstarter-admin.css', array('dashicons'), $css);
+        wp_enqueue_style('wpstarter-admin', WPSTARTER_URL . self::CSS_FILE, array('dashicons'), $css);
 
         /**
          * Filter the admin script's dependencies; enqueue what a tab needs.
@@ -195,7 +199,7 @@ class WPStarter_Admin_Manager {
             wp_enqueue_media();
         }
 
-        wp_enqueue_script('wpstarter-admin', WPSTARTER_URL . 'admin/js/wpstarter-admin.js', $deps, $js, true);
+        wp_enqueue_script('wpstarter-admin', WPSTARTER_URL . self::JS_FILE, $deps, $js, true);
         wp_set_script_translations('wpstarter-admin', 'wp-plugin-starter-template');
 
         /**
@@ -264,11 +268,6 @@ class WPStarter_Admin_Manager {
         $tabs   = self::get_tabs();
         $active = self::get_active_tab();
         $links  = WPStarter_Setup::header_links();
-        $groups = array(
-            'settings' => __('Settings', 'wp-plugin-starter-template'),
-            'discover' => __('Discover', 'wp-plugin-starter-template'),
-            'about'    => __('About', 'wp-plugin-starter-template'),
-        );
         ?>
         <div class="wrap wps-wrap">
             <header class="wps-header">
@@ -317,27 +316,7 @@ class WPStarter_Admin_Manager {
                 </div>
             </header>
 
-            <nav class="wps-nav" aria-label="<?php esc_attr_e('WP Plugin Starter sections', 'wp-plugin-starter-template'); ?>">
-                <?php foreach ($groups as $group => $group_label) : ?>
-                    <?php
-                    $group_tabs = array_filter($tabs, function ($tab) use ($group) {
-                        return isset($tab['group']) && $tab['group'] === $group;
-                    });
-                    if (!$group_tabs) {
-                        continue;
-                    }
-                    ?>
-                    <div class="wps-nav__group" role="group" aria-label="<?php echo esc_attr($group_label); ?>">
-                        <?php foreach ($group_tabs as $slug => $tab) : ?>
-                            <a href="<?php echo esc_url(self::tab_url($slug)); ?>"
-                               class="wps-nav__tab<?php echo $slug === $active ? ' is-active' : ''; ?>"
-                               <?php echo $slug === $active ? 'aria-current="page"' : ''; ?>>
-                                <?php echo esc_html($tab['label']); ?>
-                            </a>
-                        <?php endforeach; ?>
-                    </div>
-                <?php endforeach; ?>
-            </nav>
+            <?php self::render_nav($tabs, $active); ?>
 
             <?php // Core moves admin notices after this marker instead of into the header. ?>
             <hr class="wp-header-end" />
@@ -354,6 +333,57 @@ class WPStarter_Admin_Manager {
                 }
                 ?>
             </div>
+        </div>
+        <?php
+    }
+
+    /**
+     * Render the tab navigation: one labelled group of links per section
+     * that has tabs.
+     *
+     * @param array  $tabs   Tabs (get_tabs()).
+     * @param string $active Active tab slug.
+     */
+    private static function render_nav(array $tabs, $active) {
+        $groups = array(
+            'settings' => __('Settings', 'wp-plugin-starter-template'),
+            'discover' => __('Discover', 'wp-plugin-starter-template'),
+            'about'    => __('About', 'wp-plugin-starter-template'),
+        );
+        ?>
+        <nav class="wps-nav" aria-label="<?php esc_attr_e('WP Plugin Starter sections', 'wp-plugin-starter-template'); ?>">
+            <?php
+            foreach ($groups as $group => $group_label) {
+                $group_tabs = array_filter($tabs, function ($tab) use ($group) {
+                    return isset($tab['group']) && $tab['group'] === $group;
+                });
+                if ($group_tabs) {
+                    self::render_nav_group($group_label, $group_tabs, $active);
+                }
+            }
+            ?>
+        </nav>
+        <?php
+    }
+
+    /**
+     * Render one navigation group. A group of links, not form controls, so
+     * role="group" with a label rather than <fieldset>.
+     *
+     * @param string $label  Group label.
+     * @param array  $tabs   The group's tabs.
+     * @param string $active Active tab slug.
+     */
+    private static function render_nav_group($label, array $tabs, $active) {
+        ?>
+        <div class="wps-nav__group" role="group" aria-label="<?php echo esc_attr($label); ?>">
+            <?php foreach ($tabs as $slug => $tab) : ?>
+                <a href="<?php echo esc_url(self::tab_url($slug)); ?>"
+                   class="wps-nav__tab<?php echo $slug === $active ? ' is-active' : ''; ?>"
+                   <?php echo $slug === $active ? 'aria-current="page"' : ''; ?>>
+                    <?php echo esc_html($tab['label']); ?>
+                </a>
+            <?php endforeach; ?>
         </div>
         <?php
     }

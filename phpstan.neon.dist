@@ -26,11 +26,3 @@ parameters:
 		- scripts/phpstan-bootstrap.php
 	reportUnmatchedIgnoredErrors: true
 	treatPhpDocTypesAsCertain: false
-	ignoreErrors:
-		# Closures that change variables passed by reference (use (&$x)):
-		# PHPStan does not see the changes, so it reads them as never set.
-		-
-			identifiers:
-				- if.alwaysFalse
-				- identical.alwaysFalse
-			path: admin/includes/class-readme-manager.php

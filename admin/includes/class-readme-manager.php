@@ -42,85 +42,108 @@ class WPStarter_Readme_Manager {
         // GitHub-only parts: the badges block (remote images) and HTML comments.
         $markdown = (string) preg_replace('/^<!-- aidevops:badges:start -->$.*?^<!-- aidevops:badges:end -->$/ms', '', $markdown);
         $markdown = (string) preg_replace('/^[ \t]*<!--(?:(?!-->).)*-->[ \t]*$/ms', '', $markdown);
-        $lines    = preg_split('/\r\n|\r|\n/', $markdown);
-        $html     = '';
-        $list     = '';
-        $table    = ''; // '', 'head' (header row written) or 'body'.
-        $ids      = array();
 
-        $close_list = function () use (&$html, &$list, &$table) {
-            if ($list) {
-                $html .= '</' . $list . '>';
-                $list  = '';
-            }
-            if ($table) {
-                $html .= ('head' === $table ? '</thead>' : '</tbody>') . '</table></div>';
-                $table = '';
-            }
-        };
-
-        foreach ($lines as $line) {
-            $trim = trim($line);
-
-            if ('' === $trim || '#' === $trim) {
-                $close_list();
-                continue;
-            }
-
-            // An image on a line of its own, from the plugin's own folder.
-            if (preg_match('/^!\[([^\]]*)\]\(([^)\s]+)\)$/', $trim, $m)) {
-                $close_list();
-                $html .= self::image($m[2], $m[1]);
-                continue;
-            }
-
-            if (preg_match('/^(#{1,4})\s+(.+)$/', $trim, $m)) {
-                $close_list();
-                $level = min(4, strlen($m[1]) + 1); // h1 is reserved for the page title.
-                $html .= sprintf('<h%1$d id="%2$s">%3$s</h%1$d>', $level, esc_attr(self::anchor($m[2], $ids)), self::inline($m[2]));
-                continue;
-            }
-
-            // Tables: a header row, a |---| separator, then body rows.
-            if (strlen($trim) > 1 && '|' === $trim[0] && '|' === substr($trim, -1)) {
-                if ('head' === $table && preg_match('/^\|[\s:|-]+\|$/', $trim)) {
-                    $html .= '</thead><tbody>';
-                    $table = 'body';
-                    continue;
-                }
-                if (!$table) {
-                    $close_list();
-                    $html .= '<div class="wps-readme-table"><table><thead>';
-                    $table = 'head';
-                }
-                $tag   = 'head' === $table ? 'th' : 'td';
-                $html .= '<tr>';
-                foreach (explode('|', substr($trim, 1, -1)) as $cell) {
-                    $html .= '<' . $tag . '>' . self::inline(trim($cell)) . '</' . $tag . '>';
-                }
-                $html .= '</tr>';
-                continue;
-            }
-
-            if (preg_match('/^[-*]\s+(.+)$/', $trim, $m) || preg_match('/^\d+\.\s+(.+)$/', $trim, $n)) {
-                $type = isset($n[1]) ? 'ol' : 'ul';
-                $text = isset($n[1]) ? $n[1] : $m[1];
-                if ($list !== $type) {
-                    $close_list();
-                    $html .= '<' . $type . '>';
-                    $list  = $type;
-                }
-                $html .= '<li>' . self::inline($text) . '</li>';
-                unset($n);
-                continue;
-            }
-
-            $close_list();
-            $html .= '<p>' . self::inline($trim) . '</p>';
+        // The open list ('ul' or 'ol'), table ('head' after the header row,
+        // then 'body') and the heading IDs used so far.
+        $state = array('list' => '', 'table' => '', 'ids' => array());
+        $html  = '';
+        foreach (preg_split('/\r\n|\r|\n/', $markdown) as $line) {
+            $html .= self::block(trim($line), $state);
         }
-        $close_list();
 
+        return $html . self::close_blocks($state);
+    }
+
+    /**
+     * HTML for one trimmed line.
+     *
+     * @param string $trim  Line without surrounding whitespace.
+     * @param array  $state Open list and table, heading IDs (updated).
+     * @return string HTML.
+     */
+    private static function block($trim, array &$state) {
+        if ('' === $trim || '#' === $trim) {
+            return self::close_blocks($state);
+        }
+        // An image on a line of its own, from the plugin's own folder.
+        if (preg_match('/^!\[([^\]]*)\]\(([^)\s]+)\)$/', $trim, $m)) {
+            return self::close_blocks($state) . self::image($m[2], $m[1]);
+        }
+        if (preg_match('/^(#{1,4})\s+(.+)$/', $trim, $m)) {
+            $level = min(4, strlen($m[1]) + 1); // h1 is reserved for the page title.
+            return self::close_blocks($state) . sprintf('<h%1$d id="%2$s">%3$s</h%1$d>', $level, esc_attr(self::anchor($m[2], $state['ids'])), self::inline($m[2]));
+        }
+        if (strlen($trim) > 1 && '|' === $trim[0] && '|' === substr($trim, -1)) {
+            return self::table_row($trim, $state);
+        }
+        if (preg_match('/^[-*]\s+(.+)$/', $trim, $m)) {
+            return self::list_item('ul', $m[1], $state);
+        }
+        if (preg_match('/^\d+\.\s+(.+)$/', $trim, $m)) {
+            return self::list_item('ol', $m[1], $state);
+        }
+        return self::close_blocks($state) . '<p>' . self::inline($trim) . '</p>';
+    }
+
+    /**
+     * Close the open list or table.
+     *
+     * @param array $state Open list and table (updated).
+     * @return string HTML.
+     */
+    private static function close_blocks(array &$state) {
+        $html = '';
+        if ($state['list']) {
+            $html         .= '</' . $state['list'] . '>';
+            $state['list'] = '';
+        }
+        if ($state['table']) {
+            $html          .= ('head' === $state['table'] ? '</thead>' : '</tbody>') . '</table></div>';
+            $state['table'] = '';
+        }
         return $html;
+    }
+
+    /**
+     * A table line: a header row, a |---| separator, then body rows.
+     *
+     * @param string $trim  Line starting and ending with |.
+     * @param array  $state Open list and table (updated).
+     * @return string HTML.
+     */
+    private static function table_row($trim, array &$state) {
+        if ('head' === $state['table'] && preg_match('/^\|[\s:|-]+\|$/', $trim)) {
+            $state['table'] = 'body';
+            return '</thead><tbody>';
+        }
+        $html = '';
+        if (!$state['table']) {
+            $html           = self::close_blocks($state) . '<div class="wps-readme-table"><table><thead>';
+            $state['table'] = 'head';
+        }
+        $tag   = 'head' === $state['table'] ? 'th' : 'td';
+        $html .= '<tr>';
+        foreach (explode('|', substr($trim, 1, -1)) as $cell) {
+            $html .= '<' . $tag . '>' . self::inline(trim($cell)) . '</' . $tag . '>';
+        }
+        return $html . '</tr>';
+    }
+
+    /**
+     * A list item, opening its list (and closing another) when needed.
+     *
+     * @param string $type  'ul' or 'ol'.
+     * @param string $text  Item Markdown.
+     * @param array  $state Open list and table (updated).
+     * @return string HTML.
+     */
+    private static function list_item($type, $text, array &$state) {
+        $html = '';
+        if ($state['list'] !== $type) {
+            $html          = self::close_blocks($state) . '<' . $type . '>';
+            $state['list'] = $type;
+        }
+        return $html . '<li>' . self::inline($text) . '</li>';
     }
 
     /**
@@ -158,7 +181,7 @@ class WPStarter_Readme_Manager {
      * @return string HTML, or '' for anything else.
      */
     private static function image($path, $alt) {
-        if (!preg_match('#^[A-Za-z0-9_-]+(?:/[A-Za-z0-9_-]+)*\.(?:svg|png|jpe?g|gif|webp)$#i', $path)) {
+        if (!preg_match('#^[a-z0-9_-]+(?:/[a-z0-9_-]+)*\.(?:svg|png|jpe?g|gif|webp)$#i', $path)) {
             return '';
         }
         $file = WPSTARTER_DIR . $path;

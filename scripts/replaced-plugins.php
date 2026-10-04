@@ -132,20 +132,29 @@ final class Replaces_Reader {
                 $this->vars[$tok[1]] = $i + 2;
             } elseif (T_CONSTANT_ENCAPSED_STRING === $tok[0] && "'replaces'" === $tok[1] && isset($t[$i + 1]) && T_DOUBLE_ARROW === $t[$i + 1][0]) {
                 $this->i = $i + 2;
-                $value   = $this->expr();
-                if (!is_array($value)) {
-                    $this->error('replaces is not an array');
-                }
-                foreach ($value as $slug => $name) {
-                    if (!is_string($name)) {
-                        $this->error("replaces[$slug] is not a name");
-                    }
-                    if (!isset($this->plugins[$slug])) {
-                        $this->plugins[$slug] = $name;
-                    }
-                    $this->where[$slug][] = substr($file, strlen($dir) + 1) . ':' . $tok[2];
-                }
+                $this->add_replaces(substr($file, strlen($dir) + 1) . ':' . $tok[2]);
             }
+        }
+    }
+
+    /**
+     * Read the 'replaces' value at the current position and record it.
+     *
+     * @param string $where "file:line" of the 'replaces' key.
+     */
+    private function add_replaces($where) {
+        $value = $this->expr();
+        if (!is_array($value)) {
+            $this->error('replaces is not an array');
+        }
+        foreach ($value as $slug => $name) {
+            if (!is_string($name)) {
+                $this->error("replaces[$slug] is not a name");
+            }
+            if (!isset($this->plugins[$slug])) {
+                $this->plugins[$slug] = $name;
+            }
+            $this->where[$slug][] = $where;
         }
     }
 
@@ -300,16 +309,27 @@ function zip_size($slug) {
         return $bytes;
     }
     if (isset(GITHUB_SOURCES[$slug])) {
-        $json = fetch('https://api.github.com/repos/' . GITHUB_SOURCES[$slug] . '/releases/latest');
-        $data = null === $json ? null : json_decode($json, true);
-        foreach (is_array($data) && isset($data['assets']) ? $data['assets'] : array() as $asset) {
-            if (0 === strpos($asset['name'], $slug) && '.zip' === substr($asset['name'], -4)) {
-                return (int) $asset['size'];
-            }
-        }
-        fail('no release zip for ' . GITHUB_SOURCES[$slug]);
+        return github_zip_size($slug, GITHUB_SOURCES[$slug]);
     }
     return null; // Pro editions and plugins closed on WordPress.org.
+}
+
+/**
+ * Size of the zip in a plugin's latest GitHub release.
+ *
+ * @param string $slug Plugin folder (the zip name starts with it).
+ * @param string $repo owner/repo.
+ * @return int Bytes.
+ */
+function github_zip_size($slug, $repo) {
+    $json = fetch('https://api.github.com/repos/' . $repo . '/releases/latest');
+    $data = null === $json ? null : json_decode($json, true);
+    foreach (is_array($data) && isset($data['assets']) ? $data['assets'] : array() as $asset) {
+        if (0 === strpos($asset['name'], $slug) && '.zip' === substr($asset['name'], -4)) {
+            return (int) $asset['size'];
+        }
+    }
+    fail("no release zip for $repo");
 }
 
 /**

@@ -324,59 +324,35 @@ class WPStarter_Replaced_Plugins {
      */
     private static function states() {
         static $states = null;
-        if (null !== $states) {
-            return $states;
+        if (null === $states) {
+            $states = self::find_states();
         }
-        if (!function_exists('get_plugins')) {
-            require_once ABSPATH . 'wp-admin/includes/plugin.php';
-        }
-        $installed = array();
-        foreach (array_keys(get_plugins()) as $file) {
-            $slug = dirname($file);
-            if ('.' !== $slug) {
-                $installed[$slug] = $file;
-            }
-        }
+        return $states;
+    }
 
-        $network = is_multisite() && is_network_admin();
+    /**
+     * Work out states() (uncached).
+     *
+     * @return array<string,array{slug:string,file:string,name:string,step:string,settings:array<string,string>,extras:string[]}>
+     */
+    private static function find_states() {
+        $installed = self::installed_plugins();
         // Active where this screen can deactivate it: network-wide in the
         // network admin, on this site otherwise. Stored lists, so plugins
         // skipped on this screen still count.
-        $here = $network
+        $here = is_multisite() && is_network_admin()
             ? array_keys((array) get_site_option('active_sitewide_plugins', array()))
             : WPStarter_Feature::stored_active_plugins();
         $all  = WPStarter_Feature::active_plugins();
 
         $items = array();
         foreach (self::replaced() as $slug => $plugin) {
-            if (!isset($installed[$slug])) {
+            $file = isset($installed[$slug]) ? $installed[$slug] : '';
+            $step = '' === $file ? '' : self::step($file, (string) $slug, $plugin['settings'], $here, $all);
+            if ('' === $step) {
                 continue;
             }
-            $file   = $installed[$slug];
-            $all_on = true;
-            foreach (array_keys($plugin['settings']) as $key) {
-                $all_on = $all_on && (bool) WPStarter_Settings::get($key);
-            }
-
-            if (in_array($file, $here, true)) {
-                $step = $all_on ? 'deactivate' : 'switch_on';
-            } elseif (!isset($all[$slug]) && !is_multisite()) {
-                $step = $all_on ? 'delete' : 'switch_on_inactive';
-            } else {
-                continue;
-            }
-            $extras = array();
-            if ('deactivate' === $step || 'switch_on' === $step) {
-                /**
-                 * What a replaced plugin does on this site that WP Plugin Starter,
-                 * as set up, does not. When there is any, the notice lists it
-                 * instead of saying the plugin can go.
-                 *
-                 * @param string[] $extras Plain names.
-                 * @param string   $slug   Plugin folder.
-                 */
-                $extras = array_values(array_filter(array_map('strval', (array) apply_filters('wpstarter_replaced_plugin_extras', array(), (string) $slug))));
-            }
+            $extras = self::extras($step, (string) $slug);
             if ($extras) {
                 $step = 'deactivate' === $step ? 'partial' : 'switch_on_partial';
             }
@@ -389,8 +365,74 @@ class WPStarter_Replaced_Plugins {
                 'extras'   => $extras,
             );
         }
-        $states = $items;
-        return $states;
+        return $items;
+    }
+
+    /**
+     * Installed plugins in a folder, keyed by folder name.
+     *
+     * @return array<string,string> slug => plugin file.
+     */
+    private static function installed_plugins() {
+        if (!function_exists('get_plugins')) {
+            require_once ABSPATH . 'wp-admin/includes/plugin.php';
+        }
+        $installed = array();
+        foreach (array_keys(get_plugins()) as $file) {
+            $slug = dirname($file);
+            if ('.' !== $slug) {
+                $installed[$slug] = $file;
+            }
+        }
+        return $installed;
+    }
+
+    /**
+     * The step an installed replaced plugin needs, before extras: deactivate
+     * or switch_on when active here, delete or switch_on_inactive when
+     * inactive everywhere on a single site, '' for none.
+     *
+     * @param string               $file     Plugin file.
+     * @param string               $slug     Plugin folder.
+     * @param array<string,string> $settings Setting key => label of the settings that replace it.
+     * @param string[]             $here     Plugin files active where this screen can deactivate them.
+     * @param array<string,mixed>  $all      Active plugins, keyed by folder.
+     * @return string
+     */
+    private static function step($file, $slug, array $settings, array $here, array $all) {
+        $all_on = true;
+        foreach (array_keys($settings) as $key) {
+            $all_on = $all_on && (bool) WPStarter_Settings::get($key);
+        }
+        if (in_array($file, $here, true)) {
+            return $all_on ? 'deactivate' : 'switch_on';
+        }
+        if (!isset($all[$slug]) && !is_multisite()) {
+            return $all_on ? 'delete' : 'switch_on_inactive';
+        }
+        return '';
+    }
+
+    /**
+     * What an active replaced plugin does that WP Plugin Starter does not.
+     *
+     * @param string $step Step from step().
+     * @param string $slug Plugin folder.
+     * @return string[]
+     */
+    private static function extras($step, $slug) {
+        if ('deactivate' !== $step && 'switch_on' !== $step) {
+            return array();
+        }
+        /**
+         * What a replaced plugin does on this site that WP Plugin Starter,
+         * as set up, does not. When there is any, the notice lists it
+         * instead of saying the plugin can go.
+         *
+         * @param string[] $extras Plain names.
+         * @param string   $slug   Plugin folder.
+         */
+        return array_values(array_filter(array_map('strval', (array) apply_filters('wpstarter_replaced_plugin_extras', array(), $slug))));
     }
 
     /**
