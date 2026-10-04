@@ -5,7 +5,7 @@ Tags: starter, boilerplate, settings, developer, template
 Requires at least: 6.2
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 1.0.3
+Stable tag: 1.0.4
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -43,8 +43,8 @@ No. The WordPress.org build contacts nothing outside WordPress.
 
 == Changelog ==
 
-= 1.0.3 =
-* Developers: scripts/rename-plugin.sh can set the new plugin's description, author, author URI, plugin URI, contributors and donate link. Nothing changes for users.
+= 1.0.4 =
+* Developers: scripts/rename-plugin.sh starts a new plugin at version 0.1.0 with its own changelog, and a feature's switch can open an Options panel for the feature's own controls. Nothing changes for users.
 
 Every change: changelog.txt.
 
