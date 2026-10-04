@@ -2,9 +2,11 @@
 
 Every change to WP Plugin Starter. readme.txt lists the latest version in short.
 
-= Unreleased =
-* New: screenshots at the top of README.md on GitHub and in readme.txt → Screenshots, saved as .wordpress-org/screenshot-N.png (WordPress.org's assets/ names; not in the release zip).
+= 1.0.13 =
+* New: screenshots at the top of README.md on GitHub and in readme.txt → Screenshots, saved as .wordpress-org/screenshot-N.png (WordPress.org's assets/ names; not in the release zip). The Updates from GitHub one is GitHub-only, in docs/images/, since the WordPress.org build has no GitHub updater.
+* Changed: the settings screen's header buttons are Source code (the GitHub repository) and Support (GitHub issues), with Buy me a coffee, on one row. Developers: {Prefix}_Setup::header_links() takes a source link; an older website link still shows as Visit website when there is no source.
 * Developers: the Read Me tab leaves out anything between <!-- github-only:start --> and <!-- github-only:end -->, like the badges block, for parts of README.md that only make sense on GitHub.
+* Developers: README.md's Version: line holds the version itself, so GitHub shows it; scripts/preflight-release.sh checks it and scripts/rename-plugin.sh sets it.
 
 = 1.0.12 =
 * Fixed: Updates from GitHub reads the last Location header when GitHub sends more than one, instead of the text "Array" and a PHP warning, when it looks up the latest release and a private release's download.

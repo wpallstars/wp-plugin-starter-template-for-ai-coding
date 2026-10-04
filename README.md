@@ -24,12 +24,12 @@ WP Plugin Starter is what wpallstars plugins are made from. It has no features o
 
 If this saves you time, headaches and costs, feel free to [buy me a coffee](https://buymeacoffee.com/marcusquinn), or whatever you like, to invest in making more things open-source.
 
-Version: {WPSTARTER_VERSION}
+Version: 1.0.13
 
 <!-- github-only:start -->
 ## Screenshots
 
-**Settings → WP Plugin Starter**: the General tab, empty until features add settings, with search and the Report a problem link.
+**Settings → WP Plugin Starter**: the General tab, empty until features add settings, with search and the Source code, Support and Buy me a coffee links.
 
 ![The WP Plugin Starter settings screen on the General tab](.wordpress-org/screenshot-1.png)
 
@@ -37,9 +37,9 @@ Version: {WPSTARTER_VERSION}
 
 ![The Read Me tab showing README.md](.wordpress-org/screenshot-2.png)
 
-**Updates from GitHub**: each GitHub release is offered on the Plugins screen as a normal WordPress update.
+**Updates from GitHub** (GitHub build): each GitHub release is offered on the Plugins screen as a normal WordPress update.
 
-![The Plugins screen offering WP Plugin Starter 1.0.12 from GitHub](.wordpress-org/screenshot-3.png)
+![The Plugins screen offering WP Plugin Starter 1.0.12 from GitHub](docs/images/github-update.png)
 <!-- github-only:end -->
 
 ## What you get
@@ -57,7 +57,7 @@ Version: {WPSTARTER_VERSION}
 
 1. On GitHub, choose **Use this template** to make your repository, and clone it.
 2. Give it its names: `scripts/rename-plugin.sh --slug my-plugin --name "My Plugin" --prefix MyPlugin`. Add `--css mp` for a short CSS prefix and `--repo owner/repo` if it is not under wpallstars. Put in your own details too, or the plugin keeps the starter's: `--description`, `--author`, `--author-uri`, `--contributors` (WordPress.org usernames) and `--donate` (a link, or `none`); `--help` lists them all. The new plugin starts at version 0.1.0 (`--version` for another) with a changelog of its own. Review with `git diff`, then commit.
-3. Replace this README, `readme.txt`, `changelog.txt` and `AGENTS.md` with your plugin's own, and its banner (`.wordpress-org/banner.svg`, then `scripts/build-banner.sh`) and screenshots (`.wordpress-org/screenshot-N.png`, captions in `readme.txt`).
+3. Replace this README, `readme.txt`, `changelog.txt` and `AGENTS.md` with your plugin's own, and its banner (`.wordpress-org/banner.svg`, then `scripts/build-banner.sh`) and screenshots (`.wordpress-org/screenshot-N.png` with captions in `readme.txt`, and GitHub-only ones in `docs/images/`).
 4. Add features: a class in `includes/features/` listed in `MyPlugin_Setup::FEATURES` (see Developers below and `STANDARDS.md`).
 5. Keep the shared parts up to date: change them in the starter first, then run `scripts/sync-core.sh` in each plugin (`--check` lists what differs).
 
@@ -70,7 +70,7 @@ Go to **Settings → WP Plugin Starter**. The screen has two groups of tabs:
 - **Settings**: General, empty until features add settings. Changes save instantly; there is no Save button. **Search features** (next to the plugin name) finds settings on every tab.
 - **About**: this Read Me.
 
-**Report a problem**, at the top right of the screen, opens the plugin’s [GitHub issues](https://github.com/wpallstars/wp-plugin-starter-template-for-ai-coding/issues) in a new tab. Say what you did, what you expected and what happened, with the versions of WordPress, PHP and WP Plugin Starter. Leave out passwords, licence keys and personal data, since issues are public. For questions, ask [aidevops](https://aidevops.sh) (Built with AI below). **Buy me a coffee**, next to it, opens the maker’s [Buy Me a Coffee](https://buymeacoffee.com/marcusquinn) page in a new tab.
+At the top right of the screen, **Source code** opens the plugin’s [GitHub repository](https://github.com/wpallstars/wp-plugin-starter-template-for-ai-coding) in a new tab, and **Support** opens its [GitHub issues](https://github.com/wpallstars/wp-plugin-starter-template-for-ai-coding/issues) in a new tab. Say what you did, what you expected and what happened, with the versions of WordPress, PHP and WP Plugin Starter. Leave out passwords, licence keys and personal data, since issues are public. For questions, ask [aidevops](https://aidevops.sh) (Built with AI below). **Buy me a coffee**, next to it, opens the maker’s [Buy Me a Coffee](https://buymeacoffee.com/marcusquinn) page in a new tab.
 
 ## Requirements
 
@@ -88,7 +88,7 @@ The updater waits while Git Updater is active, so the two never both update a pl
 
 Releasing on GitHub:
 
-1. Merge the version change (`Version:` and `WPSTARTER_VERSION` in `wp-plugin-starter-template.php`, `Stable tag:` in `readme.txt`) to `main`.
+1. Merge the version change (`Version:` and `WPSTARTER_VERSION` in `wp-plugin-starter-template.php`, `Stable tag:` in `readme.txt`, `Version:` near the top of this file) to `main`.
 2. Straight away, tag that commit `vX.Y.Z` and push the tag. The Release workflow (`.github/workflows/release.yml`) builds `wp-plugin-starter-template-X.Y.Z.zip` from the tag with `scripts/build-release.sh` (`.distignore` applied, everything inside a `wp-plugin-starter-template/` folder), checks it with `scripts/preflight-release.sh` and publishes the GitHub release with it attached; in a public repository it also attaches signed build provenance, which `gh attestation verify` checks. Sites pick the latest release whose tag is a plain version number and the asset named exactly `wp-plugin-starter-template-X.Y.Z.zip`, so never attach the WordPress.org zip. Full steps: `RELEASING.md`.
 3. Sites offer the update when they next check (within 12 hours, or at once with **Check again** on the Updates screen).
 
@@ -126,10 +126,12 @@ Deleting the plugin removes its settings, its cached data, who hid lines of the 
 
 ## Changelog
 
-### Unreleased
+### 1.0.13
 
-- New: screenshots at the top of this README on GitHub and in `readme.txt` → Screenshots, saved as `.wordpress-org/screenshot-N.png` (WordPress.org's `assets/` names; not in the release zip).
+- New: screenshots at the top of this README on GitHub and in `readme.txt` → Screenshots, saved as `.wordpress-org/screenshot-N.png` (WordPress.org's `assets/` names; not in the release zip). The Updates from GitHub one is GitHub-only, in `docs/images/`, since the WordPress.org build has no GitHub updater.
+- Changed: the settings screen's header buttons are **Source code** (the GitHub repository) and **Support** (GitHub issues), with **Buy me a coffee**, on one row. Developers: `{Prefix}_Setup::header_links()` takes a `source` link; an older `website` link still shows as Visit website when there is no `source`.
 - Developers: the Read Me tab leaves out anything between `<!-- github-only:start -->` and `<!-- github-only:end -->`, like the badges block, for parts of `README.md` that only make sense on GitHub.
+- Developers: `README.md`'s `Version:` line holds the version itself, so GitHub shows it; `scripts/preflight-release.sh` checks it and `scripts/rename-plugin.sh` sets it.
 
 ### 1.0.12
 

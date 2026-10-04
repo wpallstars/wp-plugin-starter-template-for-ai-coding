@@ -136,6 +136,27 @@ http_status() {
 	return 0
 }
 
+# README.md's "Version: X.Y.Z" line under the intro, shown on GitHub and in
+# the Read Me tab, must match the plugin's Version. A {PREFIX}_VERSION
+# placeholder still works in the Read Me tab, but GitHub shows it as written.
+check_readme_version() {
+	local sha="$1"
+	local version="$2"
+	git cat-file -e "$sha:README.md" 2>/dev/null || return 0
+	local line
+	line="$(git show "$sha:README.md" | sed -nE '/^Version:/{s/^Version:[[:space:]]*//p;q;}')"
+	if [[ -z "$line" ]]; then
+		return 0
+	elif [[ "$line" = "$version" ]]; then
+		ok "README.md Version: matches"
+	elif [[ "$line" = "{${VERSION_CONSTANT}}" ]]; then
+		warn "README.md shows 'Version: $line' on GitHub; write the version ($version) instead"
+	else
+		err "README.md Version: is '$line', Version: is '$version'"
+	fi
+	return 0
+}
+
 check_versions() {
 	local plugin_header="$1"
 	local readme="$2"
@@ -672,6 +693,7 @@ main() {
 	printf '%s preflight: %s (%s)\n' "$PLUGIN_NAME" "$ref" "${sha:0:12}"
 	VERSION=""
 	check_versions "$plugin_header" "$readme" "$main_php"
+	check_readme_version "$sha" "$VERSION"
 	check_readme "$readme" "$plugin_header" "$VERSION"
 	check_wporg "$readme" "$plugin_header"
 
