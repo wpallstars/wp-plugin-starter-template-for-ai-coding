@@ -5,7 +5,7 @@ Tags: starter, boilerplate, settings, developer, template
 Requires at least: 6.2
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 1.0.6
+Stable tag: 1.0.7
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -43,9 +43,8 @@ No. The WordPress.org build contacts nothing outside WordPress.
 
 == Changelog ==
 
-= 1.0.6 =
-* Developers: plugins made from the starter get a weekly Starter sync check that opens an issue when their shared files fall behind the starter.
-* Developers: SonarCloud runs from GitHub Actions with sonar-project.properties, and the Read Me, settings navigation and replaced-plugin code is split into smaller methods with the same output. Nothing changes for users.
+= 1.0.7 =
+* Developers: DEVELOPMENT.md lists the step-by-step services setup for a new plugin (SonarCloud, Codacy, SYNC_PAT, Starter sync), and STANDARDS.md tells AI agents to keep each plugin at the starter's standard. Nothing changes for users.
 
 Every change: changelog.txt.
 

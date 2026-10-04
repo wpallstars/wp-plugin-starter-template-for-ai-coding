@@ -497,8 +497,9 @@ check_core_files() {
 }
 
 # AGENTS.md stays a short map (STANDARDS.md → Agent docs): under
-# AGENTS_MD_MAX_LINES lines, and it names every docs/*.md (top level) and only ones that
-# exist, so agents find each task doc. Warnings: only a person can judge
+# AGENTS_MD_MAX_LINES lines, it sends agents to STANDARDS.md, and it names
+# every docs/*.md (top level) and only ones that exist, so agents find each
+# task doc. Warnings: only a person can judge
 # what moves.
 check_agent_docs() {
 	local sha="$1"
@@ -512,6 +513,10 @@ check_agent_docs() {
 	lines="$(printf '%s\n' "$agents" | wc -l | tr -d ' ')"
 	if [[ "$lines" -gt "$AGENTS_MD_MAX_LINES" ]]; then
 		warn "AGENTS.md is $lines lines (most $AGENTS_MD_MAX_LINES): move sections only one kind of task needs to docs/, with one line saying when to read each"
+		problems=1
+	fi
+	if ! printf '%s\n' "$agents" | grep -qF 'STANDARDS.md'; then
+		warn "AGENTS.md does not send agents to STANDARDS.md, so they miss the rules every plugin shares"
 		problems=1
 	fi
 	local doc

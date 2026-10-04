@@ -99,7 +99,23 @@ adds docs as it grows.
 - `AGENTS.md` holds the plugin's names (the placeholder table), the rules
   for this plugin that apply to any change (a line or two each, such as
   features the owner asked to be on), and one line for each doc saying when
-  to read it.
+  to read it. Near the top it tells agents to read this file before any
+  change.
+- Agents keep the plugin at the starter's standard; the starter is where
+  the standard is set, not the plugin's copy of it:
+  - Before work, look for an open `starter-sync` issue. If one is open,
+    the plugin's core files, this file included, are behind: read the
+    starter's copy of any core file or rule the task touches, and do that
+    issue first when the task changes the same files.
+  - Never change a core file only in the plugin. A fix or rule every
+    plugin needs goes to the starter first, as a pull request or an issue
+    there with the plugin's case, then comes back with
+    `scripts/sync-core.sh`. Only the plugin's own files (`{Prefix}_Setup`,
+    features, `phpstan-plugin.neon`, `scripts/preflight-plugin.sh`,
+    `AGENTS.md`, `docs/`) take changes for this plugin alone.
+  - Steps that need the owner's accounts or make secrets (SonarCloud,
+    Codacy, `SYNC_PAT`: `DEVELOPMENT.md` → Services setup) are listed for
+    the owner, not done by an agent.
 - Guidance for one kind of task (a procedure, a checklist, a data format,
   a list of choices) goes in `docs/{topic}.md`, named for the task
   (`docs/presets.md`). `AGENTS.md` names it with when to read it: "Adding
@@ -114,7 +130,8 @@ adds docs as it grows.
   has its own format, and a doc serves every tool. Add one only when agents
   keep getting a task wrong even with its doc, and have it read that doc.
 - `scripts/preflight-release.sh` warns when `AGENTS.md` is over 150 lines,
-  names a doc that does not exist, or leaves out one in `docs/`.
+  does not name `STANDARDS.md`, names a doc that does not exist, or leaves
+  out one in `docs/`.
 
 ## Code rules
 
