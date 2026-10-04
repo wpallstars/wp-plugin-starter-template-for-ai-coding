@@ -8,6 +8,7 @@
 #                                 [--description TEXT] [--author NAME]
 #                                 [--author-uri URL] [--plugin-uri URL]
 #                                 [--contributors USERS] [--donate URL|none]
+#                                 [--version X.Y.Z]
 #   --slug    Plugin folder, main file and text domain (my-plugin).
 #   --name    Plugin Name (My Plugin).
 #   --prefix  Class prefix (MyPlugin: MyPlugin_Settings).
@@ -16,6 +17,8 @@
 #   --css     CSS class and data attribute prefix (default: the lower-case
 #             prefix; a short one such as mp keeps the markup readable).
 #   --repo    GitHub repository, owner/repo (default: wpallstars/SLUG).
+#   --version The new plugin's first version (default: 0.1.0). The changelogs
+#             in README.md, readme.txt and changelog.txt start again with it.
 # The rest are the maker's details; each one left out keeps the starter's:
 #   --description   One line, up to 150 characters: the Description header,
 #                   the readme.txt short description and the line under
@@ -51,7 +54,7 @@ cleanup() {
 }
 
 usage() {
-	sed -n '2,31p' "$0" | sed 's/^# \{0,1\}//'
+	sed -n '2,34p' "$0" | sed 's/^# \{0,1\}//'
 	return 0
 }
 
@@ -133,6 +136,61 @@ set_link() {
 	return 0
 }
 
+# Replace what follows the line that is exactly HEADING, up to the next line
+# matching NEXT (or the end), with BODY; with no BODY, drop the heading too.
+set_section() {
+	local file="$1"
+	local heading="$2"
+	local next="$3"
+	local body="$4"
+	[ -f "$file" ] || return 0
+	HEADING="$heading" NEXT="$next" BODY="$body" awk '
+		skip && $0 ~ ENVIRON["NEXT"] {
+			skip = 0
+			if (ENVIRON["BODY"] != "") print ""
+		}
+		skip { next }
+		!done && $0 == ENVIRON["HEADING"] {
+			done = 1
+			skip = 1
+			if (ENVIRON["BODY"] != "") print $0 "\n\n" ENVIRON["BODY"]
+			next
+		}
+		{ print }' "$file" >"$TMP_FILE"
+	replace_with_tmp "$file" || true
+	return 0
+}
+
+# Start the new plugin at its own version, with a changelog of its own.
+set_version() {
+	local main_file="$1"
+	local starter="$2"
+	local first="First version, made from $FROM_NAME $starter."
+	set_field "$main_file" "Version" "$VERSION"
+	set_field readme.txt "Stable tag" "$VERSION"
+	CONST="${TO_CONST}_VERSION" VALUE="$VERSION" awk '
+		!done && match($0, "^define\\(\047" ENVIRON["CONST"] "\047,[ \t]*\047") {
+			done = 1
+			print substr($0, 1, RLENGTH) ENVIRON["VALUE"] "\047);"
+			next
+		}
+		{ print }' "$main_file" >"$TMP_FILE"
+	replace_with_tmp "$main_file" || true
+	set_section readme.txt "== Upgrade Notice ==" '^== ' ""
+	set_section readme.txt "== Changelog ==" '^== ' "= $VERSION =
+* $first
+
+Every change: changelog.txt."
+	set_section changelog.txt "== Changelog ==" 'a^' "Every change to $TO_NAME. readme.txt lists the latest version in short.
+
+= $VERSION =
+* $first"
+	set_section README.md "## Changelog" '^## ' "### $VERSION
+
+- $first"
+	return 0
+}
+
 # Put the maker's details in, after the renaming. Empty ones stay as they are.
 set_identity() {
 	local main_file="$1"
@@ -166,6 +224,7 @@ AUTHOR_URI=""
 PLUGIN_URI=""
 CONTRIBUTORS=""
 DONATE=""
+VERSION="0.1.0"
 
 check_identity() {
 	local url='^https?://[^[:space:]<>"'\'']+$'
@@ -178,6 +237,7 @@ check_identity() {
 	allow --plugin-uri "$PLUGIN_URI" "$url"
 	allow --contributors "$CONTRIBUTORS" '^[A-Za-z0-9_.@-]+(, ?[A-Za-z0-9_.@-]+)*$'
 	[ "$DONATE" = none ] || allow --donate "$DONATE" "$url"
+	need --version "$VERSION" '^[0-9]+\.[0-9]+\.[0-9]+$'
 	return 0
 }
 
@@ -187,7 +247,7 @@ main() {
 		local arg="$1"
 		local value="${2:-}"
 		case "$arg" in
-		--slug | --name | --prefix | --const | --css | --repo | --description | --author | --author-uri | --plugin-uri | --contributors | --donate)
+		--slug | --name | --prefix | --const | --css | --repo | --description | --author | --author-uri | --plugin-uri | --contributors | --donate | --version)
 			[ $# -ge 2 ] || die "$arg needs a value"
 			case "$arg" in
 			--slug) slug="$value" ;;
@@ -202,6 +262,7 @@ main() {
 			--plugin-uri) PLUGIN_URI="$value" ;;
 			--contributors) CONTRIBUTORS="$value" ;;
 			--donate) DONATE="$value" ;;
+			--version) VERSION="$value" ;;
 			esac
 			shift
 			;;
@@ -261,9 +322,11 @@ main() {
 		fi
 	done < <(git ls-files)
 
-	local old_description
+	local old_description starter_version
 	old_description="$(plugin_header_field "$(head -c 8192 "$slug.php")" "Description")"
+	starter_version="$(plugin_header_field "$(head -c 8192 "$slug.php")" "Version")"
 	set_identity "$slug.php" "includes/class-$TO_PREFIX-setup.php" "$old_description"
+	set_version "$slug.php" "$starter_version"
 
 	printf '%d files changed, %d renamed. Run composer update --lock (the package name changed), review with git diff and git status, then commit.\n' "$changed" "$moved"
 	return 0
