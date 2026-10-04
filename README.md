@@ -129,6 +129,7 @@ Deleting the plugin removes its settings, its cached data, who hid lines of the 
 ### Unreleased
 
 - Developers: `scripts/rename-plugin.sh` no longer adds a CodeFactor badge to a new plugin's README. CodeFactor serves a badge only once the repository is added on codefactor.io, so it showed as a broken image on GitHub. `DEVELOPMENT.md` → Services setup has a new step 3 for CodeFactor, with the badge to add afterwards. Nothing changes for users.
+- Developers: `scripts/preflight-release.sh` no longer stops without a message (exit 141) when `README.md` is over 64 KB: the `Version:` check read only up to the first match, so `git show` was cut off.
 
 ### 1.0.13
 

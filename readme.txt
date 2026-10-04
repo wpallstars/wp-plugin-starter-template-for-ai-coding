@@ -58,6 +58,7 @@ No. The WordPress.org build contacts nothing outside WordPress.
 
 = Unreleased =
 * Developers: scripts/rename-plugin.sh adds no CodeFactor badge until CodeFactor has the repository.
+* Developers: scripts/preflight-release.sh no longer stops early on a README.md over 64 KB.
 
 = 1.0.13 =
 * New: screenshots. The settings screen's header buttons are Source code, Support and Buy me a coffee, on one row.
