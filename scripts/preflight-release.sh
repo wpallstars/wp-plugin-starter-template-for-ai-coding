@@ -497,7 +497,7 @@ check_core_files() {
 }
 
 # AGENTS.md stays a short map (STANDARDS.md → Agent docs): under
-# AGENTS_MD_MAX_LINES lines, and it names every docs/*.md and only ones that
+# AGENTS_MD_MAX_LINES lines, and it names every docs/*.md (top level) and only ones that
 # exist, so agents find each task doc. Warnings: only a person can judge
 # what moves.
 check_agent_docs() {
@@ -521,7 +521,9 @@ check_agent_docs() {
 			warn "$doc is not named in AGENTS.md, so agents will not find it"
 			problems=1
 		fi
-	done < <(git ls-tree -r --name-only "$sha" -- docs | grep '\.md$' || true)
+	# Agent docs are docs/{topic}.md; subfolders such as docs/metrics/ hold
+	# generated data, not guidance.
+	done < <(git ls-tree --name-only "$sha" -- docs/ | grep -E '^docs/[^/]+\.md$' || true)
 	while IFS= read -r doc; do
 		[[ -n "$doc" ]] || continue
 		if ! git cat-file -e "$sha:$doc" 2>/dev/null; then
