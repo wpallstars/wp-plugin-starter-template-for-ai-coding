@@ -42,7 +42,8 @@ expected there and fails on the updater findings in the WordPress.org zip.
 ## GitHub release
 
 1. In a pull request, set the version in `{slug}.php` (`Version:` and
-   `{PREFIX}_VERSION`) and `readme.txt` (`Stable tag:`), rename the
+   `{PREFIX}_VERSION`), `readme.txt` (`Stable tag:`) and `README.md` (the
+   `Version:` line under the intro, which GitHub shows as written), rename the
    changelog's Unreleased section to the version in `readme.txt`,
    `changelog.txt` and `README.md`, and add an upgrade notice if people need
    to act. `readme.txt` keeps only the newest version, in short, and must stay
