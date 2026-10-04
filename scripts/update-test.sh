@@ -46,6 +46,9 @@ DB_PASSWORD=""
 ADMIN_PASSWORD=""
 FAILED=0
 TOKEN_ARGS=()
+# The new release asset's API address: with a token, the shared updater
+# offers this one, as private repositories need it.
+ASSET_API=""
 
 die() {
 	local message="$1"
@@ -147,6 +150,8 @@ check_assets() {
 	else
 		fail "v$TO assets are not exactly $SLUG-$TO.zip: $(printf '%s' "$assets" | tr '\n' ' ')"
 	fi
+	ASSET_API="$(gh release view "v$TO" --repo "$REPO" --json assets \
+		--jq '.assets[] | select(.name == "'"$SLUG-$TO.zip"'") | .apiUrl')"
 	gh release download "v$FROM" --repo "$REPO" --pattern "$SLUG-$FROM.zip" --dir "$TMP_DIR/zips" ||
 		die "v$FROM has no asset $SLUG-$FROM.zip"
 	chmod 644 "$TMP_DIR/zips/$SLUG-$FROM.zip"
@@ -238,6 +243,8 @@ check_offer() {
 	printf '  offer: %s\n' "$offer"
 	if [[ "$offer" == "$TO https://"*"/$SLUG-$TO.zip"* ]]; then
 		ok "offers $TO from the release asset"
+	elif [[ "${#TOKEN_ARGS[@]}" -gt 0 && -n "$ASSET_API" && "$offer" == "$TO $ASSET_API" ]]; then
+		ok "offers $TO from the release asset (its API address, with the token)"
 	elif [[ "${#TOKEN_ARGS[@]}" -gt 0 ]]; then
 		fail "no offer of $TO from $SLUG-$TO.zip (check that $TOKEN_NAME can read $REPO)"
 	else

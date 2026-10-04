@@ -2,6 +2,9 @@
 
 Every change to WP Plugin Starter. readme.txt lists the latest version in short.
 
+= Unreleased =
+* Developers: scripts/update-test.sh no longer fails the WP-CLI update check with WPALLSTARS_GITHUB_TOKEN set. With a token, the shared updater offers the release asset's API address (api.github.com/repos/{owner}/{repo}/releases/assets/{id}), which private repositories need; the test now accepts exactly that asset's address, read with gh, as well as the public {slug}-X.Y.Z.zip address. Nothing changes for users.
+
 = 1.0.8 =
 * Changed: the Built with AI section in README.md (the Read Me tab) and readme.txt sends questions to aidevops, which reads the plugin's docs and code to answer, and credits the starter with a "Made from WP Plugin Starter" line; readme.txt gets a "Where do I get help?" answer, and the Read Me's Report a problem paragraph points to aidevops for questions.
 * Developers: every plugin made from the starter keeps both credits (STANDARDS.md → Structure). scripts/rename-plugin.sh writes the starter's "Made from" line for a new plugin after renaming, and scripts/preflight-release.sh warns when README.md or readme.txt lacks the aidevops credit or the "Made from" line. DEVELOPMENT.md → Set up recommends aidevops for development, the sites the plugins run on and questions; the docs still work with any AI tool or by hand.
