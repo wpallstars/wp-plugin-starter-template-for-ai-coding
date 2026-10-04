@@ -130,6 +130,7 @@ Deleting the plugin removes its settings, its cached data, who hid lines of the 
 
 - New: screenshots at the top of this README on GitHub and in `readme.txt` → Screenshots, saved as `.wordpress-org/screenshot-N.png` (WordPress.org's `assets/` names; not in the release zip).
 - Developers: the Read Me tab leaves out anything between `<!-- github-only:start -->` and `<!-- github-only:end -->`, like the badges block, for parts of `README.md` that only make sense on GitHub.
+- Developers: `scripts/rename-plugin.sh` no longer adds a CodeFactor badge to a new plugin's README. CodeFactor serves a badge only once the repository is added on codefactor.io, so it showed as a broken image on GitHub. `DEVELOPMENT.md` → Services setup has a new step 3 for CodeFactor, with the badge to add afterwards. Nothing changes for users.
 
 ### 1.0.12
 
