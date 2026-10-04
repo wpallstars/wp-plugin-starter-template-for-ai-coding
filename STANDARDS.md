@@ -82,11 +82,18 @@ How changes are made and checked: `DEVELOPMENT.md`. Releases: `RELEASING.md`.
   the new Codacy and CodeFactor badges once those services have the
   repository (`DEVELOPMENT.md` → Services setup), never before: a badge for
   a repository they don't have is a broken image. The Read Me tab also
-  leaves out anything between `<!-- github-only:start -->` and
-  `<!-- github-only:end -->`, for GitHub-only parts such as the screenshots
-  section: screenshots are `.wordpress-org/screenshot-N.png` (WordPress.org's
-  `assets/` names, captions in `readme.txt` → Screenshots), which the
-  release zip leaves out.
+  leaves out anything between `<!-- github-only:start -->` and `<!-- github-only:end -->`,
+  for GitHub-only parts such as the screenshots section: screenshots are
+  `.wordpress-org/screenshot-N.png` (WordPress.org's `assets/` names, captions
+  in `readme.txt` → Screenshots), which the release zip leaves out. They show
+  only what the WordPress.org build shows; GitHub-only pictures, such as
+  Updates from GitHub, go in `docs/images/` with no caption in `readme.txt`.
+  The `Version: X.Y.Z` line under the intro holds the version itself (GitHub
+  shows it as written) and changes with every release (`RELEASING.md`).
+- The settings screen's header links come from `{Prefix}_Setup::header_links()`:
+  `source` (the GitHub repository, **Source code**), `support` (its issues,
+  **Support**) and `donate` (**Buy me a coffee**); leave one out for no
+  button. Keep the labels short so the buttons fit on one row.
 - Update `README.md` (feature section, hooks, changelog), `changelog.txt`
   (the user-facing changelog entry) and `readme.txt` in the same change.
   `readme.txt` must stay under 10 KB for WordPress.org: one short line per

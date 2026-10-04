@@ -296,7 +296,14 @@ class WPStarter_Admin_Manager {
                     <button type="submit" class="button wps-search__button"><?php esc_html_e('Search', 'wp-plugin-starter-template'); ?></button>
                 </form>
                 <div class="wps-header__actions">
-                    <?php if (!empty($links['website'])) : ?>
+                    <?php if (!empty($links['source'])) : ?>
+                        <a class="button wps-header__support" href="<?php echo esc_url($links['source']); ?>" target="_blank" rel="noopener noreferrer">
+                            <span class="dashicons dashicons-editor-code" aria-hidden="true"></span>
+                            <?php esc_html_e('Source code', 'wp-plugin-starter-template'); ?>
+                            <span class="screen-reader-text"><?php esc_html_e('(opens in a new tab)', 'wp-plugin-starter-template'); ?></span>
+                        </a>
+                    <?php elseif (!empty($links['website'])) : ?>
+                        <?php // Older {Prefix}_Setup classes link the maker's website instead. ?>
                         <a class="button" href="<?php echo esc_url($links['website']); ?>" target="_blank" rel="noopener noreferrer">
                             <?php esc_html_e('Visit website', 'wp-plugin-starter-template'); ?>
                             <span class="screen-reader-text"><?php esc_html_e('(opens in a new tab)', 'wp-plugin-starter-template'); ?></span>
@@ -305,7 +312,7 @@ class WPStarter_Admin_Manager {
                     <?php if (!empty($links['support'])) : ?>
                         <a class="button wps-header__support" href="<?php echo esc_url($links['support']); ?>" target="_blank" rel="noopener noreferrer">
                             <span class="dashicons dashicons-sos" aria-hidden="true"></span>
-                            <?php esc_html_e('Report a problem', 'wp-plugin-starter-template'); ?>
+                            <?php esc_html_e('Support', 'wp-plugin-starter-template'); ?>
                             <span class="screen-reader-text"><?php esc_html_e('(opens in a new tab)', 'wp-plugin-starter-template'); ?></span>
                         </a>
                     <?php endif; ?>

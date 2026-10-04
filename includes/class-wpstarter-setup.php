@@ -54,7 +54,7 @@ final class WPStarter_Setup {
     /**
      * Links in the settings screen header; leave one out for no button.
      *
-     * - website: the maker's website
+     * - source:  the plugin's code (its GitHub repository)
      * - support: where people report problems (the plugin's GitHub issues)
      * - donate:  where people can support the maker
      *
@@ -62,7 +62,7 @@ final class WPStarter_Setup {
      */
     public static function header_links() {
         return array(
-            'website' => 'https://www.wpallstars.com/',
+            'source'  => 'https://github.com/wpallstars/wp-plugin-starter-template-for-ai-coding',
             'support' => 'https://github.com/wpallstars/wp-plugin-starter-template-for-ai-coding/issues',
             'donate'  => 'https://buymeacoffee.com/marcusquinn',
         );

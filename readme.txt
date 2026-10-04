@@ -5,7 +5,7 @@ Tags: starter, boilerplate, settings, developer, template
 Requires at least: 6.2
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 1.0.12
+Stable tag: 1.0.13
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -43,7 +43,7 @@ No. It adds an empty settings screen and a Read Me tab, ready for a plugin's fea
 
 = Where do I get help? =
 
-Ask aidevops (https://aidevops.sh): open the plugin's repository, or your site, with it and ask. To report a problem, use the Report a problem link on the settings screen.
+Ask aidevops (https://aidevops.sh): open the plugin's repository, or your site, with it and ask. To report a problem, use the Support link on the settings screen.
 
 = Does it contact other services? =
 
@@ -53,15 +53,14 @@ No. The WordPress.org build contacts nothing outside WordPress.
 
 1. The settings screen (Settings → WP Plugin Starter) on the General tab, empty until features add settings.
 2. The Read Me tab, showing the plugin's README.md inside WordPress.
-3. The Plugins screen offering a new version from GitHub (GitHub build).
 
 == Changelog ==
 
 = Unreleased =
-* New: screenshots. Developers: README.md parts between github-only markers stay on GitHub, out of the Read Me tab; scripts/rename-plugin.sh adds no CodeFactor badge until CodeFactor has the repository.
+* Developers: scripts/rename-plugin.sh adds no CodeFactor badge until CodeFactor has the repository.
 
-= 1.0.12 =
-* Fixed: Updates from GitHub handles repeated Location headers, and the settings screen's file versions and text splitting are sturdier.
+= 1.0.13 =
+* New: screenshots. The settings screen's header buttons are Source code, Support and Buy me a coffee, on one row.
 
 Every change: changelog.txt.
 
