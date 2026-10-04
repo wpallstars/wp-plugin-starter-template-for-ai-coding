@@ -127,14 +127,16 @@ class WPStarter_Settings_Manager {
         $children = array_filter(WPStarter_Settings::children_of($key), function ($child) {
             return empty($child['hidden']);
         });
-        $value    = WPStarter_Settings::get($key);
-        $id       = 'wps-' . $key;
-        $panel_id = $id . '-panel';
-        $is_bool  = 'bool' === $field['type'];
+        // A feature may render its whole panel itself (wpstarter_setting_panel).
+        $has_panel = $children || !empty($field['panel']);
+        $value     = WPStarter_Settings::get($key);
+        $id        = 'wps-' . $key;
+        $panel_id  = $id . '-panel';
+        $is_bool   = 'bool' === $field['type'];
         ?>
-        <section class="wps-card wps-setting<?php echo ($is_bool && $value) ? ' is-on' : ''; ?><?php echo $children ? ' has-panel' : ''; ?>" data-setting-card="<?php echo esc_attr($key); ?>">
+        <section class="wps-card wps-setting<?php echo ($is_bool && $value) ? ' is-on' : ''; ?><?php echo $has_panel ? ' has-panel' : ''; ?>" data-setting-card="<?php echo esc_attr($key); ?>">
             <?php // Clicking the header (outside the switch) opens the options; only the switch changes the value. ?>
-            <div class="wps-setting__header"<?php echo $children ? ' data-wps-panel-toggle' : ''; ?>>
+            <div class="wps-setting__header"<?php echo $has_panel ? ' data-wps-panel-toggle' : ''; ?>>
                 <?php if ($is_bool) : ?>
                     <span class="wps-switch">
                         <input type="checkbox"
@@ -160,7 +162,7 @@ class WPStarter_Settings_Manager {
                     <?php self::render_replaces($field); ?>
                 </div>
 
-                <?php if ($children) : ?>
+                <?php if ($has_panel) : ?>
                     <button type="button"
                             class="wps-setting__expand button-link"
                             aria-expanded="false"
@@ -172,7 +174,7 @@ class WPStarter_Settings_Manager {
                 <?php endif; ?>
             </div>
 
-            <?php if ($children) : ?>
+            <?php if ($has_panel) : ?>
                 <div class="wps-setting__panel" id="<?php echo esc_attr($panel_id); ?>" hidden>
                     <?php
                     /**
