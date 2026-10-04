@@ -93,7 +93,10 @@ jobs:
 
           gh label create "$label" --color FBCA04 --description "Core files differ from the starter" --force
           name="${STARTER_REPO#*/}"
-          files="$(printf '%s\n' "$report" | sed -nE 's/^  (differs|missing)  (.*)$/- `\2` (\1)/p')"
+          files=""
+          while read -r kind path; do
+            files+="- \`$path\` ($kind)"$'\n'
+          done < <(printf '%s\n' "$report" | sed -nE 's/^  (differs|missing)  (.*)$/\1 \2/p')
           summary="$(printf '%s\n' "$report" | tail -n 1)"
           body="$RUNNER_TEMP/starter-sync.md"
           cat >"$body" <<EOF
