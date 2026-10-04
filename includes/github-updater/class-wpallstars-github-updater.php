@@ -22,13 +22,19 @@
  *   releases/latest redirect, the asset's download address and the main
  *   file on raw.githubusercontent.com), not the API: without a token the API
  *   allows 60 requests an hour per server address, shared by every site on
- *   a host. The asset must be named {folder}-{version}.zip.
+ *   a host. The asset must be named {folder}-{version}.zip, with or without
+ *   a token.
  * - Private repositories need a GitHub token in wp-config.php
  *   (WPALLSTARS_GITHUB_TOKEN) or from the `wpallstars_github_token` filter,
  *   and are read through the API. The token is sent only to api.github.com,
  *   never stored and never shown.
- * - Plugins also on WordPress.org keep updating from there unless the
- *   `wpallstars_github_updater_early` filter returns true.
+ * - The GitHub build's main file has an `Update URI` header on github.com
+ *   (scripts/build-release.sh adds it; the WordPress.org build has none).
+ *   WordPress.org then never offers its own plugin of the same slug for it,
+ *   and this file never takes WordPress.org's answer for it.
+ * - Other plugins also on WordPress.org (builds without that header) keep
+ *   updating from there unless the `wpallstars_github_updater_early` filter
+ *   returns true.
  * - While Git Updater is active, this waits and Git Updater does the job.
  *   The `wpallstars_github_updater_enabled` filter can turn it off too.
  *
@@ -52,12 +58,29 @@ final class WPAllStars_GitHub_Updater {
     /** Update IDs this file adds, so its own entries can be told apart. */
     const ID_PREFIX = 'github.com/';
 
+    /** GitHub addresses. */
+    const GITHUB    = 'https://github.com/';
+    const API_REPOS = 'https://api.github.com/repos/';
+
+    /** A finished version: numbers and dots only. */
+    const VERSION_PATTERN = '/^\d+(\.\d+)*$/';
+
+    /** Hosts GitHub sends signed downloads from. */
+    const DOWNLOAD_HOSTS = '/^(?:github\.com|codeload\.github\.com|[a-z0-9-]+\.githubusercontent\.com)$/';
+
     /**
      * Release answers read this request.
      *
      * @var array|null
      */
     private static $cache = null;
+
+    /**
+     * Signed download addresses (or errors) found this request, by package.
+     *
+     * @var array<string,string|WP_Error>
+     */
+    private static $signed = array();
 
     /**
      * Register hooks (plugins_loaded). Whether to run is decided on init,
@@ -108,7 +131,10 @@ final class WPAllStars_GitHub_Updater {
     /**
      * Installed plugins that name a GitHub repository.
      *
-     * @return array<string,array{repo:string,asset_only:bool,version:string,name:string}> Plugin file => details.
+     * 'github_only' is true for a build whose `Update URI` header points
+     * anywhere but WordPress.org: WordPress.org's answers are never its own.
+     *
+     * @return array<string,array{repo:string,asset_only:bool,github_only:bool,version:string,name:string}> Plugin file => details.
      */
     public static function plugins() {
         static $found = null;
@@ -121,46 +147,74 @@ final class WPAllStars_GitHub_Updater {
 
         $found = array();
         foreach (get_plugins() as $file => $data) {
-            // Plugins in a folder only: an update replaces the whole folder.
-            if ('.' === dirname($file)) {
-                continue;
+            $plugin = self::from_headers($file, $data);
+            if ($plugin) {
+                $found[$file] = $plugin;
             }
-            $headers = get_file_data(WP_PLUGIN_DIR . '/' . $file, array(
-                'repo'  => 'GitHub Plugin URI',
-                'asset' => 'Release Asset',
-            ));
-            $repo = self::repo_name($headers['repo']);
-            if ('' === $repo) {
-                continue;
-            }
-            $found[$file] = array(
-                'repo'       => $repo,
-                'asset_only' => in_array(strtolower(trim($headers['asset'])), array('true', 'yes', '1'), true),
-                'version'    => isset($data['Version']) ? (string) $data['Version'] : '',
-                'name'       => isset($data['Name']) ? (string) $data['Name'] : $file,
-            );
         }
 
         /**
          * Filter the plugins updated from GitHub releases.
          *
-         * @param array $found Plugin file => array(repo, asset_only, version, name).
+         * @param array $found Plugin file => array(repo, asset_only, github_only, version, name).
          */
         $filtered = (array) apply_filters('wpallstars_github_plugins', $found);
         $found    = array();
         foreach ($filtered as $file => $plugin) {
-            $repo = is_array($plugin) && isset($plugin['repo']) ? self::repo_name($plugin['repo']) : '';
-            if ('' === $repo || '.' === dirname((string) $file)) {
-                continue;
+            $plugin = self::clean_plugin((string) $file, $plugin);
+            if ($plugin) {
+                $found[(string) $file] = $plugin;
             }
-            $found[(string) $file] = array(
-                'repo'       => $repo,
-                'asset_only' => !empty($plugin['asset_only']),
-                'version'    => isset($plugin['version']) ? (string) $plugin['version'] : '',
-                'name'       => isset($plugin['name']) ? (string) $plugin['name'] : (string) $file,
-            );
         }
         return $found;
+    }
+
+    /**
+     * A plugin's details from its headers, if it names a GitHub repository.
+     *
+     * @param string $file Plugin file.
+     * @param array  $data get_plugins() data.
+     * @return array|null
+     */
+    private static function from_headers($file, array $data) {
+        // Plugins in a folder only: an update replaces the whole folder.
+        if ('.' === dirname($file)) {
+            return null;
+        }
+        $headers = get_file_data(WP_PLUGIN_DIR . '/' . $file, array(
+            'repo'  => 'GitHub Plugin URI',
+            'asset' => 'Release Asset',
+        ));
+        $update_host = isset($data['UpdateURI']) ? (string) wp_parse_url((string) $data['UpdateURI'], PHP_URL_HOST) : '';
+        return self::clean_plugin($file, array(
+            'repo'        => $headers['repo'],
+            'asset_only'  => in_array(strtolower(trim($headers['asset'])), array('true', 'yes', '1'), true),
+            'github_only' => '' !== $update_host && !in_array(strtolower($update_host), array('w.org', 'wordpress.org'), true),
+            'version'     => isset($data['Version']) ? $data['Version'] : '',
+            'name'        => isset($data['Name']) ? $data['Name'] : $file,
+        ));
+    }
+
+    /**
+     * One plugin's details in the expected shape, or null when it has no
+     * usable repository or is not in a folder.
+     *
+     * @param string $file   Plugin file.
+     * @param mixed  $plugin Details.
+     * @return array|null
+     */
+    private static function clean_plugin($file, $plugin) {
+        $repo = is_array($plugin) && isset($plugin['repo']) ? self::repo_name($plugin['repo']) : '';
+        if ('' === $repo || '.' === dirname($file)) {
+            return null;
+        }
+        return array(
+            'repo'        => $repo,
+            'asset_only'  => !empty($plugin['asset_only']),
+            'github_only' => !empty($plugin['github_only']),
+            'version'     => isset($plugin['version']) ? (string) $plugin['version'] : '',
+            'name'        => isset($plugin['name']) ? (string) $plugin['name'] : $file,
+        );
     }
 
     /**
@@ -173,7 +227,7 @@ final class WPAllStars_GitHub_Updater {
         $value = trim((string) $value);
         $value = preg_replace('#^(?:https?://)?(?:www\.)?github\.com/#i', '', $value);
         $value = preg_replace('#(?:\.git)?/*$#', '', (string) $value);
-        return preg_match('#^[A-Za-z0-9](?:[A-Za-z0-9-]{0,38})/[A-Za-z0-9._-]{1,100}$#', (string) $value) ? (string) $value : '';
+        return preg_match('#^[A-Za-z0-9][A-Za-z0-9-]{0,38}/[A-Za-z0-9._-]{1,100}$#', (string) $value) ? (string) $value : '';
     }
 
     /**
@@ -212,7 +266,7 @@ final class WPAllStars_GitHub_Updater {
             $headers['Authorization'] = 'Bearer ' . $token;
         }
         // No redirects: the token must never travel to another address.
-        return self::remote_no_redirect('GET', 'https://api.github.com/repos/' . $repo . $path, array(
+        return self::remote_no_redirect('GET', self::API_REPOS . $repo . $path, array(
             'timeout' => 10,
             'headers' => $headers,
         ));
@@ -282,11 +336,9 @@ final class WPAllStars_GitHub_Updater {
         $cache = self::cache();
         // The asset and requirements depend on the plugin, not only the repository.
         $key   = $repo . '|' . $folder . '/' . $main;
-        $entry = isset($cache[$key]) && is_array($cache[$key]) ? $cache[$key] : null;
-        $age   = $entry && isset($entry['checked']) ? time() - (int) $entry['checked'] : PHP_INT_MAX;
-        $keep  = $entry && !empty($entry['failed']) ? self::RETRY : self::FRESH;
+        $entry = isset($cache[$key]) && is_array($cache[$key]) ? $cache[$key] : array();
 
-        if ($entry && $age < $keep && !(self::forced() && $age > self::RECENT)) {
+        if (self::still_fresh($entry)) {
             return isset($entry['release']) ? $entry['release'] : null;
         }
 
@@ -296,7 +348,7 @@ final class WPAllStars_GitHub_Updater {
             $entry = array(
                 'checked' => time(),
                 'failed'  => $release->get_error_message(),
-                'release' => $entry && isset($entry['release']) ? $entry['release'] : null,
+                'release' => isset($entry['release']) ? $entry['release'] : null,
             );
         } else {
             $entry = array('checked' => time(), 'release' => $release);
@@ -305,6 +357,23 @@ final class WPAllStars_GitHub_Updater {
         self::$cache[$key] = $entry;
         set_site_transient(self::CACHE, self::$cache, 2 * DAY_IN_SECONDS);
         return $entry['release'];
+    }
+
+    /**
+     * Whether a stored answer can still be used: younger than 12 hours (an
+     * hour after a failure), and not older than a minute when someone
+     * pressed "Check again".
+     *
+     * @param array $entry Stored answer.
+     * @return bool
+     */
+    private static function still_fresh(array $entry) {
+        if (!isset($entry['checked'])) {
+            return false;
+        }
+        $age  = time() - (int) $entry['checked'];
+        $keep = empty($entry['failed']) ? self::FRESH : self::RETRY;
+        return $age < $keep && !(self::forced() && $age > self::RECENT);
     }
 
     /**
@@ -343,7 +412,7 @@ final class WPAllStars_GitHub_Updater {
      */
     private static function fetch_web($repo, $folder, $main) {
         // Redirects to the newest release that is not a draft or pre-release.
-        $response = self::remote_no_redirect('HEAD', 'https://github.com/' . $repo . '/releases/latest', array('timeout' => 10));
+        $response = self::remote_no_redirect('HEAD', self::GITHUB . $repo . '/releases/latest', array('timeout' => 10));
         if (is_wp_error($response)) {
             return $response;
         }
@@ -363,13 +432,13 @@ final class WPAllStars_GitHub_Updater {
 
         $tag     = rawurldecode($match[1]);
         $version = preg_replace('/^v/i', '', $tag);
-        if (!preg_match('/^[0-9]+(\.[0-9]+)*$/', $version)) {
+        if (!preg_match(self::VERSION_PATTERN, $version)) {
             return null;
         }
 
-        // The release zip, by its usual name: {folder}-{version}.zip.
+        // The release zip, by its name: {folder}-{version}.zip.
         $asset    = null;
-        $download = 'https://github.com/' . $repo . '/releases/download/' . rawurlencode($tag) . '/' . rawurlencode($folder . '-' . $version . '.zip');
+        $download = self::GITHUB . $repo . '/releases/download/' . rawurlencode($tag) . '/' . rawurlencode(self::asset_name($folder, $version));
         $head     = self::remote_no_redirect('HEAD', $download, array('timeout' => 10));
         if (is_wp_error($head)) {
             return $head;
@@ -388,14 +457,49 @@ final class WPAllStars_GitHub_Updater {
             'published' => '',
             'notes'     => '',
             'asset'     => $asset,
-            'zipball'   => 'https://github.com/' . $repo . '/archive/refs/tags/' . rawurlencode($tag) . '.zip',
+            'zipball'   => self::GITHUB . $repo . '/archive/refs/tags/' . rawurlencode($tag) . '.zip',
         );
         $file = wp_safe_remote_get('https://raw.githubusercontent.com/' . $repo . '/' . rawurlencode($tag) . '/' . rawurlencode($main), array(
             'timeout' => 10,
             'headers' => array('Range' => 'bytes=0-8191'),
         ));
-        $body = !is_wp_error($file) && in_array((int) wp_remote_retrieve_response_code($file), array(200, 206), true) ? (string) wp_remote_retrieve_body($file) : '';
-        return $release + self::requirements($body);
+        return self::with_requirements($release, $file, array(200, 206));
+    }
+
+    /**
+     * A release with the requirements of its main file. When GitHub did not
+     * answer, the whole check fails (and is tried again in an hour), so no
+     * release is offered without its requirements; only a release without
+     * that file (404) goes on without them.
+     *
+     * @param array          $release  Release.
+     * @param array|WP_Error $response Answer for the released main file.
+     * @param int[]          $ok       Status codes that carry the file.
+     * @return array|WP_Error
+     */
+    private static function with_requirements(array $release, $response, array $ok) {
+        if (is_wp_error($response)) {
+            return $response;
+        }
+        $code = (int) wp_remote_retrieve_response_code($response);
+        if (404 === $code) {
+            return $release + self::requirements('');
+        }
+        if (!in_array($code, $ok, true)) {
+            return self::status_error($code);
+        }
+        return $release + self::requirements((string) wp_remote_retrieve_body($response));
+    }
+
+    /**
+     * The release zip's name for a plugin folder.
+     *
+     * @param string $folder  Plugin folder.
+     * @param string $version Version.
+     * @return string
+     */
+    private static function asset_name($folder, $version) {
+        return $folder . '-' . $version . '.zip';
     }
 
     /**
@@ -425,42 +529,40 @@ final class WPAllStars_GitHub_Updater {
         $tag     = is_array($data) && isset($data['tag_name']) ? (string) $data['tag_name'] : '';
         $version = preg_replace('/^v/i', '', $tag);
         // Numbers only: anything else is not a finished version.
-        if (!preg_match('/^[0-9]+(\.[0-9]+)*$/', $version)) {
+        if (!preg_match(self::VERSION_PATTERN, $version)) {
             return null;
         }
 
         $release = array(
             'tag'       => $tag,
             'version'   => $version,
-            'url'       => isset($data['html_url']) ? (string) $data['html_url'] : 'https://github.com/' . $repo . '/releases',
+            'url'       => isset($data['html_url']) ? (string) $data['html_url'] : self::GITHUB . $repo . '/releases',
             'published' => isset($data['published_at']) ? (string) $data['published_at'] : '',
             'notes'     => isset($data['body']) ? substr((string) $data['body'], 0, 20000) : '',
-            'asset'     => self::pick_asset($repo, $folder, isset($data['assets']) && is_array($data['assets']) ? $data['assets'] : array()),
-            'zipball'   => 'https://api.github.com/repos/' . $repo . '/zipball/' . rawurlencode($tag),
+            'asset'     => self::pick_asset($repo, self::asset_name($folder, $version), isset($data['assets']) && is_array($data['assets']) ? $data['assets'] : array()),
+            'zipball'   => self::API_REPOS . $repo . '/zipball/' . rawurlencode($tag),
         );
         $file = self::api_get($repo, '/contents/' . rawurlencode($main) . '?ref=' . rawurlencode($tag), 'application/vnd.github.raw+json');
-        $body = !is_wp_error($file) && 200 === (int) wp_remote_retrieve_response_code($file) ? (string) wp_remote_retrieve_body($file) : '';
-        return $release + self::requirements($body);
+        return self::with_requirements($release, $file, array(200));
     }
 
     /**
-     * The release zip for a plugin folder: a .zip asset whose name starts
-     * with the folder name (never the "wordpress-org-…" build).
+     * The release zip: the asset named exactly {folder}-{version}.zip, as
+     * without a token (never another zip, such as the "wordpress-org-…" build).
      *
      * @param string $repo   owner/repo.
-     * @param string $folder Plugin folder.
+     * @param string $name   Asset name.
      * @param array  $assets Release assets.
      * @return array{public:string,api:string}|null Download addresses.
      */
-    private static function pick_asset($repo, $folder, array $assets) {
+    private static function pick_asset($repo, $name, array $assets) {
         foreach ($assets as $asset) {
-            $name = isset($asset['name']) ? (string) $asset['name'] : '';
-            if (0 !== stripos($name, $folder) || '.zip' !== strtolower(substr($name, -4))) {
+            if (!isset($asset['name']) || (string) $asset['name'] !== $name) {
                 continue;
             }
             $public = isset($asset['browser_download_url']) ? (string) $asset['browser_download_url'] : '';
-            $api    = isset($asset['id']) ? 'https://api.github.com/repos/' . $repo . '/releases/assets/' . (int) $asset['id'] : '';
-            if (0 === strpos($public, 'https://github.com/' . $repo . '/releases/download/')) {
+            $api    = isset($asset['id']) ? self::API_REPOS . $repo . '/releases/assets/' . (int) $asset['id'] : '';
+            if (0 === strpos($public, self::GITHUB . $repo . '/releases/download/')) {
                 return array('public' => $public, 'api' => $api);
             }
         }
@@ -480,7 +582,7 @@ final class WPAllStars_GitHub_Updater {
         foreach (array('requires' => 'Requires at least', 'requires_php' => 'Requires PHP') as $key => $header) {
             if (preg_match('/^(?:[ \t]*<\?php)?[ \t\/*#@]*' . preg_quote($header, '/') . ':(.*)$/mi', $head, $match)) {
                 $value = trim(preg_replace('/\s*(?:\*\/|\?>).*/', '', $match[1]));
-                if (preg_match('/^[0-9]+(\.[0-9]+)*$/', $value)) {
+                if (preg_match(self::VERSION_PATTERN, $value)) {
                     $found[$key] = $value;
                 }
             }
@@ -506,13 +608,19 @@ final class WPAllStars_GitHub_Updater {
     }
 
     /**
-     * Whether WordPress.org offers updates for a plugin.
+     * Whether WordPress.org offers updates for a plugin. Never for a GitHub
+     * build (its `Update URI` is on github.com): an entry there would be
+     * another plugin with the same slug.
      *
      * @param object $transient update_plugins.
      * @param string $file      Plugin file.
+     * @param array  $plugin    Plugin details (plugins()).
      * @return bool
      */
-    private static function on_wordpress_org($transient, $file) {
+    private static function on_wordpress_org($transient, $file, array $plugin) {
+        if (!empty($plugin['github_only'])) {
+            return false;
+        }
         foreach (array('response', 'no_update') as $list) {
             if (isset($transient->{$list}[$file])) {
                 $item = (object) $transient->{$list}[$file];
@@ -544,57 +652,81 @@ final class WPAllStars_GitHub_Updater {
         $early = (bool) apply_filters('wpallstars_github_updater_early', false);
 
         foreach (self::plugins() as $file => $plugin) {
-            if (!$early && self::on_wordpress_org($transient, $file)) {
+            if (!$early && self::on_wordpress_org($transient, $file, $plugin)) {
                 continue;
             }
-            $folder  = dirname($file);
-            $release = self::release($plugin['repo'], $folder, basename($file));
-            $current = isset($transient->checked[$file]) ? (string) $transient->checked[$file] : $plugin['version'];
-            if (!$release) {
+            $release = self::release($plugin['repo'], dirname($file), basename($file));
+            if (!$release || self::dot_org_is_newer($transient, $file, $plugin, $release)) {
                 // Keep WordPress.org's answer, or say nothing.
                 continue;
             }
-            $dot_org = isset($transient->response[$file]->new_version) ? (string) $transient->response[$file]->new_version : '';
-            if ('' !== $dot_org && 0 !== strpos((string) ($transient->response[$file]->id ?? ''), self::ID_PREFIX) && version_compare($dot_org, $release['version'], '>=')) {
-                // WordPress.org already offers this version or a newer one.
-                continue;
-            }
-
-            $item = (object) array(
-                'id'            => self::ID_PREFIX . $plugin['repo'],
-                'slug'          => $folder,
-                'plugin'        => $file,
-                'new_version'   => $release['version'],
-                'url'           => 'https://github.com/' . $plugin['repo'],
-                'package'       => self::package($plugin['repo'], $release, $plugin['asset_only']),
-                'requires'      => $release['requires'],
-                'requires_php'  => $release['requires_php'],
-                'tested'        => '',
-                'icons'         => array(),
-                'banners'       => array(),
-                'banners_rtl'   => array(),
-                'compatibility' => new stdClass(),
-            );
-
-            if (!is_array($transient->response ?? null)) {
-                $transient->response = array();
-            }
-            if (!is_array($transient->no_update ?? null)) {
-                $transient->no_update = array();
-            }
-            if ('' === $item->package && self::on_wordpress_org($transient, $file)) {
-                // Nothing to install from GitHub: keep WordPress.org's answer.
-                continue;
-            }
-            unset($transient->response[$file], $transient->no_update[$file]);
-            if ('' !== $item->package && version_compare($release['version'], $current, '>')) {
-                $transient->response[$file] = $item;
-            } else {
-                // Listed as up to date, so the Plugins screen offers auto-updates.
-                $transient->no_update[$file] = $item;
-            }
+            self::list_update($transient, $file, $plugin, $release);
         }
         return $transient;
+    }
+
+    /**
+     * Whether WordPress.org already offers this version or a newer one.
+     *
+     * @param object $transient update_plugins.
+     * @param string $file      Plugin file.
+     * @param array  $plugin    Plugin details.
+     * @param array  $release   GitHub release.
+     * @return bool
+     */
+    private static function dot_org_is_newer($transient, $file, array $plugin, array $release) {
+        if (!empty($plugin['github_only']) || !isset($transient->response[$file]->new_version)) {
+            return false;
+        }
+        $offer = $transient->response[$file];
+        return 0 !== strpos((string) ($offer->id ?? ''), self::ID_PREFIX)
+            && version_compare((string) $offer->new_version, $release['version'], '>=');
+    }
+
+    /**
+     * Put a GitHub release in WordPress's update check: as an update when it
+     * is newer and has something to install, otherwise as up to date.
+     *
+     * @param object $transient update_plugins (changed).
+     * @param string $file      Plugin file.
+     * @param array  $plugin    Plugin details.
+     * @param array  $release   GitHub release.
+     */
+    private static function list_update($transient, $file, array $plugin, array $release) {
+        $item = (object) array(
+            'id'            => self::ID_PREFIX . $plugin['repo'],
+            'slug'          => dirname($file),
+            'plugin'        => $file,
+            'new_version'   => $release['version'],
+            'url'           => self::GITHUB . $plugin['repo'],
+            'package'       => self::package($plugin['repo'], $release, $plugin['asset_only']),
+            'requires'      => $release['requires'],
+            'requires_php'  => $release['requires_php'],
+            'tested'        => '',
+            'icons'         => array(),
+            'banners'       => array(),
+            'banners_rtl'   => array(),
+            'compatibility' => new stdClass(),
+        );
+
+        if (!is_array($transient->response ?? null)) {
+            $transient->response = array();
+        }
+        if (!is_array($transient->no_update ?? null)) {
+            $transient->no_update = array();
+        }
+        if ('' === $item->package && self::on_wordpress_org($transient, $file, $plugin)) {
+            // Nothing to install from GitHub: keep WordPress.org's answer.
+            return;
+        }
+        $current = isset($transient->checked[$file]) ? (string) $transient->checked[$file] : $plugin['version'];
+        unset($transient->response[$file], $transient->no_update[$file]);
+        if ('' !== $item->package && version_compare($release['version'], $current, '>')) {
+            $transient->response[$file] = $item;
+        } else {
+            // Listed as up to date, so the Plugins screen offers auto-updates.
+            $transient->no_update[$file] = $item;
+        }
     }
 
     /**
@@ -653,7 +785,7 @@ final class WPAllStars_GitHub_Updater {
             'slug'          => dirname($file),
             'version'       => $release ? $release['version'] : $plugin['version'],
             'author'        => isset($data['Author']) ? $data['Author'] : '',
-            'homepage'      => 'https://github.com/' . $plugin['repo'],
+            'homepage'      => self::GITHUB . $plugin['repo'],
             'requires'      => $release ? $release['requires'] : '',
             'requires_php'  => $release ? $release['requires_php'] : '',
             'last_updated'  => $release ? $release['published'] : '',
@@ -713,6 +845,9 @@ final class WPAllStars_GitHub_Updater {
      * and leaves WordPress fetching the API address without the token
      * (GitHub answers 404).
      *
+     * When GitHub gives no address, the API address stays and the error is
+     * kept for private_download(), which returns it instead of asking again.
+     *
      * @param array $options Upgrader options; 'package' is the address.
      * @return array
      */
@@ -730,14 +865,14 @@ final class WPAllStars_GitHub_Updater {
     /**
      * Fallback for downloads that skip upgrader_package_options: ask the API
      * with the token, then fetch the file from where GitHub sends us without
-     * it.
+     * it. A failure already met this request is returned as it was.
      *
      * @param mixed       $reply    False to let WordPress download.
      * @param string      $package  Download address.
-     * @param WP_Upgrader $upgrader Upgrader.
+     * @param WP_Upgrader $upgrader Upgrader (unused; the filter passes it).
      * @return mixed File path, WP_Error or $reply.
      */
-    public static function private_download($reply, $package, $upgrader) {
+    public static function private_download($reply, $package, $upgrader) { // NOSONAR: WordPress passes $upgrader to this filter.
         if (false !== $reply) {
             return $reply;
         }
@@ -758,7 +893,7 @@ final class WPAllStars_GitHub_Updater {
      *                              not one of ours or there is no token.
      */
     private static function signed_address($package) {
-        if (!is_string($package) || !preg_match('#^https://api\.github\.com/repos/([^/]+/[^/]+)/(?:releases/assets/[0-9]+|zipball/[^/?]+)$#', $package, $match)) {
+        if (!is_string($package) || !preg_match('#^https://api\.github\.com/repos/([^/]+/[^/]+)/(?:releases/assets/\d+|zipball/[^/?]+)$#', $package, $match)) {
             return null;
         }
         $repo  = $match[1];
@@ -770,7 +905,22 @@ final class WPAllStars_GitHub_Updater {
         if (!$known || '' === $token) {
             return null;
         }
+        // Once per request: the fallback reuses the first answer, error included.
+        if (!isset(self::$signed[$package])) {
+            self::$signed[$package] = self::ask_signed_address($package, $token);
+        }
+        return self::$signed[$package];
+    }
 
+    /**
+     * Ask the API, with the token, where GitHub serves a download. Only an
+     * https address on a GitHub download host is accepted.
+     *
+     * @param string $package API download address.
+     * @param string $token   Token.
+     * @return string|WP_Error
+     */
+    private static function ask_signed_address($package, $token) {
         $response = self::remote_no_redirect('GET', $package, array(
             'timeout' => 30,
             'headers' => array(
@@ -785,6 +935,10 @@ final class WPAllStars_GitHub_Updater {
         if ('' === $location || !in_array((int) wp_remote_retrieve_response_code($response), array(301, 302, 303, 307, 308), true)) {
             return new WP_Error('wpallstars_github_download', __('GitHub did not give a download address. Check the token’s access to the repository.', 'wp-plugin-starter-template'));
         }
+        $host = strtolower((string) wp_parse_url($location, PHP_URL_HOST));
+        if ('https' !== strtolower((string) wp_parse_url($location, PHP_URL_SCHEME)) || !preg_match(self::DOWNLOAD_HOSTS, $host)) {
+            return new WP_Error('wpallstars_github_download', __('GitHub sent the download to an unexpected address.', 'wp-plugin-starter-template'));
+        }
         return $location;
     }
 
@@ -794,11 +948,11 @@ final class WPAllStars_GitHub_Updater {
      *
      * @param string|WP_Error $source        Unpacked folder.
      * @param string          $remote_source Folder it was unpacked in.
-     * @param WP_Upgrader     $upgrader      Upgrader.
+     * @param WP_Upgrader     $upgrader      Upgrader (unused; the filter passes it).
      * @param array           $hook_extra    Context.
      * @return string|WP_Error
      */
-    public static function fix_folder($source, $remote_source, $upgrader, $hook_extra = array()) {
+    public static function fix_folder($source, $remote_source, $upgrader, $hook_extra = array()) { // NOSONAR: WordPress passes $upgrader to this filter.
         global $wp_filesystem;
         if (is_wp_error($source) || empty($hook_extra['plugin']) || !$wp_filesystem) {
             return $source;

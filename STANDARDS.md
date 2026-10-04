@@ -165,16 +165,22 @@ It replaces Git Updater.
 - Keep anything that installs or updates code from outside WordPress.org in
   that folder (and in a feature listed in `.distignore-wporg`, when a plugin
   has a setting for it), because the WordPress.org build leaves them out.
-- Never add an `Update URI` header. Tokens for private repositories come only
-  from `wp-config.php` (`WPALLSTARS_GITHUB_TOKEN`) or the filter, go only to
-  api.github.com and are never stored.
+- Never put an `Update URI` header in the main file in Git: WordPress.org
+  rejects it. `scripts/build-release.sh` adds
+  `Update URI: https://github.com/{owner}/{repo}` to the GitHub zip only, so
+  WordPress.org never offers a plugin of the same slug in its place, and the
+  updater never takes WordPress.org's answer for that build. A site moves to
+  WordPress.org updates only by installing the WordPress.org build.
+- Tokens for private repositories come only from `wp-config.php`
+  (`WPALLSTARS_GITHUB_TOKEN`) or the filter, go only to api.github.com and
+  are never stored.
 
 ## Releases
 
 GitHub releases are the early channel; WordPress.org gets settled versions.
 Sites install the latest GitHub release whose tag is a plain version and the
-asset whose name starts with the plugin folder (the shared updater; Git
-Updater, where still active, reads `Version:` on `main` instead), so:
+asset named exactly `{folder}-X.Y.Z.zip` (the shared updater; Git Updater,
+where still active, reads `Version:` on `main` instead), so:
 
 - Publish the GitHub release (tag `vX.Y.Z`, asset `{slug}-X.Y.Z.zip` with a
   `{slug}/` folder, built with `.distignore`) straight after the version
@@ -183,9 +189,9 @@ Updater, where still active, reads `Version:` on `main` instead), so:
   mark test releases as pre-releases on GitHub.
 - The WordPress.org build is the release build without the files in
   `.distignore-wporg` (the GitHub updater) and the `GitHub Plugin URI`,
-  `Primary Branch` and `Release Asset` header lines. Its zip is named
-  `wordpress-org-{slug}-X.Y.Z.zip` so no updater picks it; never attach it
-  to a GitHub release.
+  `Primary Branch` and `Release Asset` header lines, and has no
+  `Update URI`. Its zip is named `wordpress-org-{slug}-X.Y.Z.zip` so no
+  updater picks it; never attach it to a GitHub release.
 - Any plugin released on GitHub (made from the starter or not) follows the
   same pattern: a `GitHub Plugin URI: owner/repo` header (and
   `Release Asset: true`), plain version tags, and a `{folder}-X.Y.Z.zip`

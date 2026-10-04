@@ -20,20 +20,21 @@ The two builds of each version:
 
 | Zip | Contents | Goes to |
 |-----|----------|---------|
-| `{slug}-X.Y.Z.zip` | Files in Git, less `.distignore` | GitHub release asset |
-| `wordpress-org-{slug}-X.Y.Z.zip` | The same, less `.distignore-wporg` (the GitHub updater) and the `GitHub Plugin URI`, `Primary Branch` and `Release Asset` header lines | WordPress.org only |
+| `{slug}-X.Y.Z.zip` | Files in Git, less `.distignore`, with `Update URI: https://github.com/{owner}/{repo}` added to the main file | GitHub release asset |
+| `wordpress-org-{slug}-X.Y.Z.zip` | The same, less `.distignore-wporg` (the GitHub updater) and the `GitHub Plugin URI`, `Primary Branch` and `Release Asset` header lines, without `Update URI` | WordPress.org only |
 
-Sites install the release asset whose name starts with `{slug}` (the shared
-GitHub updater, and Git Updater where it is still active), so the
-WordPress.org zip is named differently and must never be attached to a
-GitHub release.
+Sites install the release asset named exactly `{slug}-X.Y.Z.zip` (the
+shared GitHub updater), so the WordPress.org zip is named differently and
+must never be attached to a GitHub release. The `Update URI` stops
+WordPress.org offering a plugin of the same slug to sites on the GitHub
+build.
 
 Plugin Check reports the GitHub updater as an updater
-(`plugin_updater_detected`, `update_modification_detected`, and
-`OffloadedContent` for its raw.githubusercontent.com address) and its shared
-`wpallstars_` names as unprefixed, in the GitHub zip; `scripts/plugin-check.sh`
-lists those as expected there and fails on the updater findings in the
-WordPress.org zip.
+(`plugin_updater_detected` for the `Update URI` header and the updater files,
+`update_modification_detected`, and `OffloadedContent` for its
+raw.githubusercontent.com address) and its shared `wpallstars_` names as
+unprefixed, in the GitHub zip; `scripts/plugin-check.sh` lists those as
+expected there and fails on the updater findings in the WordPress.org zip.
 
 ## GitHub release
 

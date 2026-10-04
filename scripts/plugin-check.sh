@@ -11,7 +11,8 @@
 #
 # Exit status: 0 when no zip has Plugin Check errors. Warnings are listed;
 # review them before a WordPress.org submission. Updater findings in the
-# GitHub zip's updater files (.distignore-wporg) are expected and not counted.
+# GitHub zip's updater files (.distignore-wporg) and its main file's Update
+# URI header are expected and not counted.
 # Needs Docker and internet access (WordPress and Plugin Check are downloaded).
 
 set -euo pipefail
@@ -22,6 +23,7 @@ readonly SCRIPT_DIR
 . "$SCRIPT_DIR/lib/plugin.sh"
 # Set in main() from the plugin's main file.
 SLUG=""
+MAIN_FILE=""
 UPDATER_FILES=""
 CLI_IMAGE=""
 DB_IMAGE=""
@@ -136,7 +138,9 @@ check_zip() {
 	case "$zip_name" in
 	"$SLUG"-*)
 		# The file list goes through the environment: awk -v cannot hold newlines.
-		counts="$(printf '%s\n' "$report" | FILES="$UPDATER_FILES" awk '
+		# The main file's Update URI header (added to this zip only) is an
+		# expected plugin_updater_detected too.
+		counts="$(printf '%s\n' "$report" | FILES="$UPDATER_FILES" MAIN="$MAIN_FILE" awk '
 			BEGIN { nfiles = split(ENVIRON["FILES"], list, "\n") }
 			# A listed file, or a file inside a listed folder.
 			function updater(path,   i) {
@@ -146,11 +150,12 @@ check_zip() {
 				return 0
 			}
 			/^FILE: / { current = substr($0, 7); next }
-			/^\[/ && updater(current) {
+			/^\[/ && (current == ENVIRON["MAIN"] || updater(current)) {
+				main = (current == ENVIRON["MAIN"])
 				n = split($0, items, "},{")
 				for (i = 1; i <= n; i++) {
-					if (items[i] ~ /"type":"ERROR"/ && items[i] ~ /"code":"(plugin_updater_detected|update_modification_detected|PluginCheck\.CodeAnalysis\.Offloading\.OffloadedContent)"/) { count++ }
-					if (items[i] ~ /"type":"WARNING"/ && items[i] ~ /"code":"WordPress\.NamingConventions\.PrefixAllGlobals\./) { prefix++ }
+					if (items[i] ~ /"type":"ERROR"/ && items[i] ~ /"code":"(plugin_updater_detected|update_modification_detected|PluginCheck\.CodeAnalysis\.Offloading\.OffloadedContent)"/ && (!main || items[i] ~ /plugin_updater_detected/)) { count++ }
+					if (!main && items[i] ~ /"type":"WARNING"/ && items[i] ~ /"code":"WordPress\.NamingConventions\.PrefixAllGlobals\./) { prefix++ }
 				}
 			}
 			END { print count + 0, prefix + 0 }')"
@@ -159,7 +164,7 @@ check_zip() {
 		;;
 	esac
 	if [ "$expected" -gt 0 ] || [ "$expected_warnings" -gt 0 ]; then
-		printf '%s updater error(s) and %s prefix warning(s) in %s are expected in the GitHub zip.\n' "$expected" "$expected_warnings" "$(printf '%s' "$UPDATER_FILES" | tr '\n' ' ')"
+		printf '%s updater error(s) and %s prefix warning(s) in %s are expected in the GitHub zip.\n' "$expected" "$expected_warnings" "$MAIN_FILE (Update URI) $(printf '%s' "$UPDATER_FILES" | tr '\n' ' ')"
 		errors=$((errors - expected))
 		warnings=$((warnings - expected_warnings))
 	fi
@@ -224,6 +229,7 @@ $(cd "$(dirname "$2")" && pwd)/$(basename "$2")"
 	cd "$root"
 	plugin_identity "$ref" || die "cannot tell which plugin this is at $ref"
 	SLUG="$PLUGIN_SLUG"
+	MAIN_FILE="$PLUGIN_MAIN_FILE"
 	UPDATER_FILES="$(plugin_wporg_only "$ref")"
 	CLI_IMAGE="$(plugin_env CLI_IMAGE wordpress:cli-php8.3)"
 	DB_IMAGE="$(plugin_env DB_IMAGE mariadb:10.6)"
