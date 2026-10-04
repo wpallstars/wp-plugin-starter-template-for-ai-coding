@@ -141,20 +141,45 @@ pick_versions() {
 	return 0
 }
 
-# The new release must carry exactly the asset the shared updater takes.
+# The new release must carry exactly the asset the shared updater takes,
+# plus, from the release workflow in a public repository, its provenance
+# bundle (a name that does not start with the slug, so Git Updater never
+# takes it for the plugin), which must verify against the zip.
 check_assets() {
-	local assets
-	assets="$(gh release view "v$TO" --repo "$REPO" --json assets --jq '.assets[].name')"
+	local assets bundle="provenance-$SLUG-$TO.sigstore.json"
+	assets="$(gh release view "v$TO" --repo "$REPO" --json assets --jq '.assets[].name' | LC_ALL=C sort)"
 	if [[ "$assets" == "$SLUG-$TO.zip" ]]; then
-		ok "v$TO has one asset, $SLUG-$TO.zip"
+		ok "v$TO has one asset, $SLUG-$TO.zip (no provenance bundle)"
+	elif [[ "$assets" == "$(printf '%s\n' "$SLUG-$TO.zip" "$bundle" | LC_ALL=C sort)" ]]; then
+		ok "v$TO has the asset $SLUG-$TO.zip and its provenance bundle"
+		check_provenance "$bundle"
 	else
-		fail "v$TO assets are not exactly $SLUG-$TO.zip: $(printf '%s' "$assets" | tr '\n' ' ')"
+		fail "v$TO assets are not exactly $SLUG-$TO.zip (and $bundle): $(printf '%s' "$assets" | tr '\n' ' ')"
 	fi
 	ASSET_API="$(gh release view "v$TO" --repo "$REPO" --json assets \
 		--jq '.assets[] | select(.name == "'"$SLUG-$TO.zip"'") | .apiUrl')"
 	gh release download "v$FROM" --repo "$REPO" --pattern "$SLUG-$FROM.zip" --dir "$TMP_DIR/zips" ||
 		die "v$FROM has no asset $SLUG-$FROM.zip"
 	chmod 644 "$TMP_DIR/zips/$SLUG-$FROM.zip"
+	return 0
+}
+
+# The bundle is Sigstore build provenance for the zip, made by this
+# repository's release workflow from the release's tag.
+check_provenance() {
+	local bundle="$1"
+	local dir="$TMP_DIR/provenance"
+	mkdir -p "$dir"
+	if ! gh release download "v$TO" --repo "$REPO" --pattern "$SLUG-$TO.zip" --pattern "$bundle" --dir "$dir"; then
+		fail "cannot download $SLUG-$TO.zip and $bundle"
+		return 0
+	fi
+	if gh attestation verify "$dir/$SLUG-$TO.zip" --bundle "$dir/$bundle" --repo "$REPO" \
+		--signer-workflow "$REPO/.github/workflows/release.yml" --source-ref "refs/tags/v$TO" >/dev/null; then
+		ok "provenance verifies: built by .github/workflows/release.yml from v$TO"
+	else
+		fail "provenance for $SLUG-$TO.zip does not verify (gh attestation verify)"
+	fi
 	return 0
 }
 

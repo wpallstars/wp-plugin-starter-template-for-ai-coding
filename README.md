@@ -73,7 +73,7 @@ The updater waits while Git Updater is active, so the two never both update a pl
 Releasing on GitHub:
 
 1. Merge the version change (`Version:` and `WPSTARTER_VERSION` in `wp-plugin-starter-template.php`, `Stable tag:` in `readme.txt`) to `main`.
-2. Straight away, tag that commit `vX.Y.Z` and publish a GitHub release with `wp-plugin-starter-template-X.Y.Z.zip` attached. `scripts/build-release.sh --ref vX.Y.Z` builds it (and the WordPress.org zip) from the tag with `.distignore` applied, everything inside a `wp-plugin-starter-template/` folder; `scripts/preflight-release.sh` and `scripts/plugin-check.sh` check them first. Sites pick the latest release whose tag is a plain version number and the asset named exactly `wp-plugin-starter-template-X.Y.Z.zip`, so never attach the WordPress.org zip. Full steps: `RELEASING.md`.
+2. Straight away, tag that commit `vX.Y.Z` and push the tag. The Release workflow (`.github/workflows/release.yml`) builds `wp-plugin-starter-template-X.Y.Z.zip` from the tag with `scripts/build-release.sh` (`.distignore` applied, everything inside a `wp-plugin-starter-template/` folder), checks it with `scripts/preflight-release.sh` and publishes the GitHub release with it attached; in a public repository it also attaches signed build provenance, which `gh attestation verify` checks. Sites pick the latest release whose tag is a plain version number and the asset named exactly `wp-plugin-starter-template-X.Y.Z.zip`, so never attach the WordPress.org zip. Full steps: `RELEASING.md`.
 3. Sites offer the update when they next check (within 12 hours, or at once with **Check again** on the Updates screen).
 
 Mark test builds as pre-releases on GitHub (or tag them with letters, such as `v1.2.0-rc1`): sites never offer those. Do not add an `Update URI` header to the plugin file in Git: WordPress.org rejects it. The build adds it to the GitHub zip only.
@@ -109,6 +109,11 @@ Read a setting with `WPStarter_Settings::get( 'key' )`.
 Deleting the plugin removes its settings, its cached data, who hid lines of the Plugins screen notice about replaced plugins, and the cached GitHub releases.
 
 ## Changelog
+
+### 1.0.11
+
+- Developers: new core workflow `.github/workflows/release.yml`. Pushing a `vX.Y.Z` tag on `main` builds the zip from the tag, runs the preflight and publishes the GitHub release, with notes from this changelog. In a public repository it signs the zip's build provenance with Sigstore and attaches it as `provenance-{slug}-X.Y.Z.sigstore.json` (OpenSSF Scorecard: Signed-Releases); check a download with `gh attestation verify`. `RELEASING.md` step 3 is now tag and push; publishing by hand stays as the fallback.
+- Developers: `scripts/update-test.sh` accepts the provenance bundle next to the zip and verifies it against the zip, the Release workflow and the tag; any other asset still fails. Nothing changes for users.
 
 ### 1.0.10
 

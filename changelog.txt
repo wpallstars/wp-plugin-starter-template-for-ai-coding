@@ -2,6 +2,10 @@
 
 Every change to WP Plugin Starter. readme.txt lists the latest version in short.
 
+= 1.0.11 =
+* Developers: new core workflow .github/workflows/release.yml. Pushing a vX.Y.Z tag on main checks the tag is on main, runs scripts/preflight-release.sh on it, builds the zips from it with scripts/build-release.sh and publishes the GitHub release with {slug}-X.Y.Z.zip, its notes taken from the version's section of the README.md changelog. In a public repository it signs the zip's SLSA build provenance with Sigstore (actions/attest-build-provenance) and attaches the bundle as provenance-{slug}-X.Y.Z.sigstore.json, a name that does not start with the slug so Git Updater never installs it; OpenSSF Scorecard counts it for Signed-Releases. Private repositories get the release without provenance, as attestations there need GitHub Enterprise Cloud. RELEASING.md step 3 is now tag and push; publishing by hand stays as the fallback, and a re-run of the workflow replaces a hand-built zip with its signed build.
+* Developers: scripts/update-test.sh accepts the provenance bundle next to {slug}-X.Y.Z.zip and checks it with gh attestation verify against the zip, the Release workflow and the tag; any other asset still fails the test. Nothing changes for users.
+
 = 1.0.10 =
 * Changed: the README's Built with AI section (the Read Me tab) says the plugin works well with SEO Pro Stack, the wpallstars base plugin for speed and an organised admin. readme.txt and the plugin's screens don't mention it.
 * Developers: every plugin except SEO Pro Stack keeps that line in README.md only (STANDARDS.md → Structure), and scripts/preflight-release.sh warns when it is missing or gets into readme.txt. DEVELOPMENT.md → Test site resources: every test site runs SEO Pro Stack.
