@@ -18,13 +18,13 @@
 	--wps-success: #008a20;
 	--wps-error: #d63638;
 	--wps-radius: 8px;
-	--wps-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+	--wps-shadow: 0 1px 2px rgb(0 0 0 / 4%);
 	--wps-focus: 0 0 0 2px var(--wps-surface), 0 0 0 4px var(--wps-accent);
 
 	margin-block-start: 0;
-	margin-inline-start: -20px;
-	margin-inline-end: 0;
+	margin-inline: -20px 0;
 	color: var(--wps-text);
+
 	/* Start below the Screen Options / Notices tabs, so they never narrow the header. */
 	clear: both;
 }
@@ -133,6 +133,7 @@
 	line-height: normal;
 	color: var(--wps-text);
 	background: var(--wps-surface);
+
 	/* Border and corners stay core's, so they match core buttons in each version. */
 	box-shadow: none;
 	transition: border-color 0.1s ease-in-out, box-shadow 0.1s ease-in-out;
@@ -777,11 +778,11 @@
 	padding: 6px 10px;
 	text-align: start;
 	vertical-align: top;
-	border: 1px solid rgba(127, 127, 127, 0.25);
+	border: 1px solid rgb(127 127 127 / 25%);
 }
 
 .wps-readme th {
-	background: rgba(127, 127, 127, 0.08);
+	background: rgb(127 127 127 / 8%);
 }
 
 /* Responsive --------------------------------------------------------- */

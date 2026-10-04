@@ -43,7 +43,7 @@ in `docs/` (`STANDARDS.md` → Agent docs); the starter has none yet.
 - This repository is public. Never name private repositories, their
   issues, or local paths in it (commits, docs, comments or examples).
 - Every plugin made from the starter keeps the **Built with AI** credit to
-  aidevops (https://aidevops.sh) in `README.md` and `readme.txt`.
+  aidevops (<https://aidevops.sh>) in `README.md` and `readme.txt`.
 
 ## Test sites
 
