@@ -5,6 +5,11 @@ Every change to WP Plugin Starter. readme.txt lists the latest version in short.
 = Unreleased =
 * Developers: README.md shows badges on GitHub (CI, SonarCloud, Codacy, CodeFactor, license, latest release) and repository facts (lines of code, languages, dependencies) that .github/workflows/repo-metrics.yml keeps up to date in docs/metrics/. The Read Me tab leaves out the badges block and HTML comments, so it still loads nothing from other sites. scripts/rename-plugin.sh rebuilds the badges for the new repository. Nothing changes for users.
 * Developers: scripts/smoke-test.sh keeps its local-only HTTP install command on one line, so SonarCloud reads its NOSONAR note. Nothing changes for users.
+* Fixed: a site on the GitHub build could be offered an unrelated WordPress.org plugin that has the same folder name. The GitHub zip's main file now carries an Update URI header on github.com (added by scripts/build-release.sh; the WordPress.org zip has none), and the updater (1.1.0) never takes WordPress.org's answer for such a build.
+* Fixed: when GitHub did not answer for a release's requirements (Requires at least, Requires PHP), the release was offered without them for 12 hours; now the check fails and is tried again within the hour.
+* Fixed: with a token, the updater took the first zip whose name started with the plugin folder; it now takes only {folder}-{version}.zip, as without a token.
+* Fixed: a failed private download address is asked for once per update, its error is kept, and only an https address on a GitHub download host is used.
+* Developers: the updater's repeated addresses and version pattern are constants, and its longest methods are split into smaller ones. Its filters and behaviour are unchanged; wpallstars_github_plugins entries may carry 'github_only'.
 
 = 1.0.4 =
 * Developers: a top-level setting with 'panel' => true shows its Options panel even without visible child settings, so a feature can render its own controls there (wpstarter_setting_panel), under its switch, instead of in a separate card. Nothing changes for users.

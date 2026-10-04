@@ -4,13 +4,15 @@
 # Two builds of the same version, both with one {slug}/ folder inside (the
 # slug is the main file's name, scripts/lib/plugin.sh):
 #   {slug}-X.Y.Z.zip
-#       GitHub release asset: the files in Git, less .distignore.
+#       GitHub release asset: the files in Git, less .distignore, with an
+#       "Update URI: https://github.com/{owner}/{repo}" header added under
+#       "GitHub Plugin URI", so WordPress.org never offers another plugin
+#       with the same slug in its place.
 #   wordpress-org-{slug}-X.Y.Z.zip
 #       WordPress.org build: the same, less the files in .distignore-wporg and
-#       the GitHub updater header lines. Its name does not start with the
-#       slug, so no updater picks it even if it is attached to a GitHub
-#       release by mistake (it takes the first asset whose name starts with
-#       the plugin slug). Never attach it to a GitHub release.
+#       the GitHub updater header lines, and without Update URI. Its name is
+#       not {slug}-X.Y.Z.zip, so no updater installs it even if it is
+#       attached to a GitHub release by mistake. Never attach it to one.
 #   SHA256SUMS
 #
 # Files come from the Git ref (git archive), never from the working tree, so
@@ -92,6 +94,37 @@ make_zip() {
 	return 0
 }
 
+# Add "Update URI: https://github.com/{owner}/{repo}" under the GitHub Plugin
+# URI header of the GitHub build's main file (WordPress 5.8+ then never asks
+# WordPress.org about it). Fails when there is no such header or it is not a
+# repository.
+add_update_uri() {
+	local main="$1"
+	local added="$main.tmp"
+	awk '
+		!done && /^[[:space:]*]*GitHub Plugin URI:/ {
+			print
+			repo = $0
+			sub(/^[^:]*:[[:space:]]*/, "", repo)
+			sub(/[[:space:]]+$/, "", repo)
+			sub(/^(https?:\/\/)?(www\.)?github\.com\//, "", repo)
+			sub(/(\.git)?\/*$/, "", repo)
+			if (repo !~ /^[A-Za-z0-9][A-Za-z0-9-]*\/[A-Za-z0-9._-]+$/) { exit 2 }
+			prefix = $0
+			sub(/GitHub Plugin URI:.*/, "", prefix)
+			printf "%sUpdate URI:        https://github.com/%s\n", prefix, repo
+			done = 1
+			next
+		}
+		{ print }
+		END { if (!done) { exit 3 } }' "$main" >"$added" || {
+		rm -f "$added"
+		die "no usable GitHub Plugin URI header in $MAIN_FILE for the Update URI"
+	}
+	mv "$added" "$main"
+	return 0
+}
+
 # Remove the GitHub updater header lines from the main file of a build.
 strip_updater_headers() {
 	local main="$1"
@@ -169,6 +202,7 @@ main() {
 	fi
 	rsync -a --exclude-from="$TMP_DIR/wporg-ignore" "$TMP_DIR/github/$SLUG/" "$TMP_DIR/wporg/$SLUG/"
 	strip_updater_headers "$TMP_DIR/wporg/$SLUG/$MAIN_FILE"
+	add_update_uri "$TMP_DIR/github/$SLUG/$MAIN_FILE"
 
 	local github_zip="$out/$SLUG-$version.zip"
 	local wporg_zip="$out/wordpress-org-$SLUG-$version.zip"

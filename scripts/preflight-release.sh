@@ -18,7 +18,7 @@
 
 set -euo pipefail
 
-readonly UPDATER_HEADERS='GitHub Plugin URI|Primary Branch|Release Asset'
+readonly UPDATER_HEADERS='GitHub Plugin URI|Primary Branch|Release Asset|Update URI'
 # Development files that must never be in a release zip (paths inside the slug folder).
 readonly DEV_FILES='^[^/]+/(\.git|\.agents|\.wordpress-org|\.distignore|\.distignore-wporg|\.gitattributes|\.gitignore|\.woodpecker\.yml|\.github|\.editorconfig|\.gitleaks\.toml|\.aidevops\.json|\.task-counter|composer\.(json|lock)|phpcs\.xml(\.dist)?|phpstan(-baseline|-plugin)?\.neon(\.dist)?|vendor|AGENTS\.md|CONTRIBUTING\.md|DEVELOPMENT\.md|LAUNCH\.md|SECURITY\.md|STANDARDS\.md|RELEASING\.md|ROADMAP\.md|STABILITY\.md|TESTING\.md|docs|scripts|dist|node_modules|reference-plugins|project-documents)(/|$)|(^|/)(\.DS_Store|__MACOSX|Thumbs\.db)(/|$)|\.(bak|log|orig|swp)$'
 readonly README_MAX_BYTES=10240
@@ -170,9 +170,9 @@ check_versions() {
 	done
 
 	if printf '%s\n' "$main_php" | grep -Eiq '^[[:space:]*]*Update URI:'; then
-		err "Update URI header found: WordPress.org rejects it and Plugin Check reports an updater"
+		err "Update URI header in $MAIN_FILE: scripts/build-release.sh adds it to the GitHub zip only (WordPress.org rejects it)"
 	else
-		ok "no Update URI header"
+		ok "no Update URI header in Git (the GitHub zip gets one at build time)"
 	fi
 
 	local domain license plugin_uri author_uri
@@ -391,7 +391,7 @@ check_builds() {
 	section "Release zips"
 
 	if [ "$(basename "$github_zip")" = "$SLUG-$version.zip" ]; then
-		ok "GitHub asset name $SLUG-$version.zip (sites pick assets starting with $SLUG)"
+		ok "GitHub asset name $SLUG-$version.zip (sites install only that name)"
 	else
 		err "GitHub asset is $(basename "$github_zip"), expected $SLUG-$version.zip"
 	fi
@@ -410,6 +410,11 @@ check_builds() {
 		if [ -e "$github_dir/$path" ]; then ok "github: has $path"; else err "github: $path missing (listed in .distignore-wporg)"; fi
 	done
 	if grep -Eq "^[[:space:]*]*GitHub Plugin URI:" "$github_dir/$MAIN_FILE"; then ok "github: has the GitHub Plugin URI header"; else err "github: no GitHub Plugin URI header, sites cannot update it from GitHub"; fi
+	if grep -Eq "^[[:space:]*]*Update URI:[[:space:]]*https://github\.com/" "$github_dir/$MAIN_FILE"; then
+		ok "github: has an Update URI on github.com (WordPress.org never offers a same-slug plugin for it)"
+	else
+		err "github: no Update URI on github.com; WordPress.org could offer another plugin with the same slug"
+	fi
 
 	check_zip "$wporg_zip" "wporg"
 	local wporg_dir="$UNPACKED"
