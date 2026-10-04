@@ -8,6 +8,7 @@
 [![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=wpallstars_wp-plugin-starter-template-for-ai-coding&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=wpallstars_wp-plugin-starter-template-for-ai-coding)
 [![Codacy Badge](https://app.codacy.com/project/badge/Grade/905754fd010b481490b496fb800e6144)](https://app.codacy.com/gh/wpallstars/wp-plugin-starter-template-for-ai-coding/dashboard)
 [![CodeFactor](https://www.codefactor.io/repository/github/wpallstars/wp-plugin-starter-template-for-ai-coding/badge)](https://www.codefactor.io/repository/github/wpallstars/wp-plugin-starter-template-for-ai-coding)
+[![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/wpallstars/wp-plugin-starter-template-for-ai-coding/badge)](https://scorecard.dev/viewer/?uri=github.com/wpallstars/wp-plugin-starter-template-for-ai-coding)
 [![License: GPL v2 or later](https://img.shields.io/badge/License-GPL%20v2%20or%20later-blue.svg)](LICENSE)
 [![Latest release](https://img.shields.io/github/v/release/wpallstars/wp-plugin-starter-template-for-ai-coding)](https://github.com/wpallstars/wp-plugin-starter-template-for-ai-coding/releases)
 
@@ -109,10 +110,12 @@ Deleting the plugin removes its settings, its cached data, who hid lines of the 
 
 ## Changelog
 
-### Unreleased
+### 1.0.10
 
 - Changed: the Built with AI section says the plugin works well with [SEO Pro Stack](https://github.com/wpallstars/seoprostack), the wpallstars base plugin for speed and an organised admin. `readme.txt` and the plugin's screens don't mention it.
 - Developers: every plugin keeps that line in `README.md` only (`STANDARDS.md` → Structure); `scripts/preflight-release.sh` warns when it is missing. `DEVELOPMENT.md` → Test site resources: test sites run SEO Pro Stack.
+- Developers: new core workflow `.github/workflows/scorecard.yml`: OpenSSF Scorecard on pushes to `main`, weekly, on branch protection changes and by hand, with results in code scanning and the Scorecard badge. No setup; skipped in private repositories (`DEVELOPMENT.md` → Checks → Scorecard).
+- Developers: new core file `CODE_OF_CONDUCT.md` (Contributor Covenant 2.0), linked from `CONTRIBUTING.md`, with reports going privately to the contact in `SECURITY.md`. It stays out of both release zips. Nothing changes for users.
 
 ### 1.0.9
 

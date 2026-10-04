@@ -1,6 +1,7 @@
 # Contributing to WP Plugin Starter
 
 Thank you for helping. Bug reports, fixes and ideas are all welcome.
+Everyone taking part follows the `CODE_OF_CONDUCT.md`.
 
 ## Reporting a problem
 

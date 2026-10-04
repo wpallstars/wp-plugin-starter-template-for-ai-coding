@@ -34,6 +34,7 @@ phpstan-plugin.neon
 .metadata_never_index
 .syncing
 AGENTS.md
+CODE_OF_CONDUCT.md
 CONTRIBUTING.md
 DEVELOPMENT.md
 LAUNCH.md
