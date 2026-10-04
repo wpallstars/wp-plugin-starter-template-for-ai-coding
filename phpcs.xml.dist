@@ -43,9 +43,29 @@
 		<exclude-pattern>/scripts/*</exclude-pattern>
 	</rule>
 
-	<!-- Database: prepared queries, WordPress's database layer. -->
+	<!-- Database: prepared queries, WordPress's database layer, slow queries
+	     (meta_query, tax_query, meta_value lookups). -->
 	<rule ref="WordPress.DB">
 		<exclude-pattern>/scripts/*</exclude-pattern>
+	</rule>
+
+	<!-- Performance (STANDARDS.md → Performance), from WordPress VIP's
+	     standard: no unlimited queries (posts_per_page -1, nopaging), no
+	     ORDER BY RAND(), no REGEXP comparisons, no post__not_in or
+	     suppress_filters, cache times of at least five minutes, timeouts on
+	     remote requests. Only these sniffs: the rest of VIP's standard is for
+	     its own hosting. -->
+	<rule ref="WordPressVIPMinimum.Performance">
+		<exclude-pattern>/scripts/*</exclude-pattern>
+		<!-- Cannot tell the plugin's own files from URLs; WordPress.WP.AlternativeFunctions
+		     already flags file_get_contents() on remote addresses. -->
+		<exclude name="WordPressVIPMinimum.Performance.FetchingRemoteData"/>
+	</rule>
+	<!-- The 3-second limit is for requests a visitor's page waits on. The shared
+	     updater asks GitHub only during WordPress's update checks and downloads
+	     the release zip during an update, never on a visitor's page. -->
+	<rule ref="WordPressVIPMinimum.Performance.RemoteRequestTimeout">
+		<exclude-pattern>/includes/github-updater/*</exclude-pattern>
 	</rule>
 
 	<!-- WordPress APIs: deprecated, discouraged, alternatives, i18n, enqueues. -->

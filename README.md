@@ -34,7 +34,7 @@ Version: {WPSTARTER_VERSION}
 - **Updates from GitHub**: the shared wpallstars updater (`includes/github-updater/`). Sites get each GitHub release as a normal WordPress update. Every wpallstars plugin carries a copy and only the newest copy on a site runs, so they are all checked together, once.
 - **Two builds of each version**: the GitHub release, and a WordPress.org build without the updater, as WordPress.org requires.
 - **Scripts and CI**: lint (PHP 7.4, WordPress coding and security rules, PHPStan), a smoke test on a real WordPress, the release build, a preflight check of both zips, Plugin Check, a preview site, the banner build, and `scripts/sync-core.sh` to keep each plugin's shared parts the same as the starter's.
-- **Shared rules for people and AI**: `STANDARDS.md` (structure, code rules, releases, styling, testing), `DEVELOPMENT.md` (set-up and checks) and `RELEASING.md`, the same in every plugin made from the starter.
+- **Shared rules for people and AI**: `STANDARDS.md` (structure, code rules, performance, releases, styling, testing), `DEVELOPMENT.md` (set-up and checks) and `RELEASING.md`, the same in every plugin made from the starter.
 
 ## Start a plugin
 
@@ -108,6 +108,13 @@ Read a setting with `WPStarter_Settings::get( 'key' )`.
 Deleting the plugin removes its settings, its cached data, who hid lines of the Plugins screen notice about replaced plugins, and the cached GitHub releases.
 
 ## Changelog
+
+### 1.0.9
+
+- Developers: `STANDARDS.md` → Performance: load only what is used, no full table scans (no unlimited queries, no lookups or sorting by `meta_value`, `LIKE '%term%'`, `REGEXP` or `ORDER BY RAND()` on large tables, indexes on the plugin's own tables), one autoloaded settings array, caching, bulk work in batches through cron, no request on every page view. Code rules add "WordPress first".
+- Developers: PHPCS adds WordPress VIP's performance sniffs (`automattic/vipwpcs`, the `WordPressVIPMinimum.Performance` group only). Plugins made from the starter run `composer update` after syncing.
+- Developers: `scripts/smoke-test.sh` seeds 10,000 posts (`--posts N`), lists each request's queries, and fails on a full table or index scan, or a sort without an index, over 1,000 rows in the plugin's own queries (`EXPLAIN`, with a canary that proves the check works). New core file: `scripts/smoke-queries.php`.
+- Developers: `scripts/update-test.sh` accepts the release asset's API address the shared updater offers with `WPALLSTARS_GITHUB_TOKEN` set.
 
 ### 1.0.8
 

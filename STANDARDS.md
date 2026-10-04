@@ -173,6 +173,67 @@ adds docs as it grows.
   or as a tracked issue. That includes ones in other plugins that only happen
   because of this one. Messages that other plugins cause on their own are
   theirs: mention them, do not hide them.
+- WordPress first: use core's APIs (options, transients, the object cache,
+  `WP_Query`, cron, the HTTP API, the Settings and REST APIs) before writing
+  your own, and follow the WordPress Coding Standards (`phpcs.xml.dist`).
+  Fix a PHPCS finding in the code; an inline `phpcs:ignore` needs the
+  sniff and the reason, on that line only.
+
+## Performance
+
+Every plugin runs on every request of every site it is on, next to many
+others, so it must cost nearly nothing when idle and stay fast on large
+sites. The lessons come from WordPress and WooCommerce sites with hundreds
+of thousands of posts, products and meta rows, where problems invisible on
+a test site take the site down.
+
+- **Load only what is used.** Hook each feature on the narrowest hook and
+  screen it needs. Admin code runs only in the admin; CSS and JS load only
+  on the screens or pages that use them, and nothing loads on the front end
+  unless the feature shows something there.
+- **No full table scans.** Every query reads only the rows it needs,
+  through an index:
+  - No unlimited queries (`posts_per_page => -1`, `nopaging`): page or
+    batch them.
+  - No `'no_found_rows' => false` unless the page shows a total or page
+    numbers; set `true` otherwise (counting every match is often the
+    slowest part).
+  - Ask only for what is used: `'fields' => 'ids'`, and
+    `update_post_meta_cache`/`update_post_term_cache` off when meta or
+    terms are not read.
+  - No lookups or sorting by `meta_value`, `LIKE '%term%'`, `REGEXP`,
+    `ORDER BY RAND()` or large `post__not_in` lists on large tables.
+    Searching or filtering by the plugin's own data uses its own table with
+    indexes on the columns it searches, or taxonomies; full-text search
+    uses a full-text index.
+  - Index the plugin's own tables (created with `dbDelta()`) for every
+    lookup, join and sort. Never add indexes to WordPress's own tables:
+    that is a job for plugins that specialise in it.
+  - Admin lists of large tables page, sort only on indexed columns, and
+    cache their counts.
+- **Options:** one autoloaded settings array (`{prefix}_options`). Store
+  large or rarely used data with autoload off (`update_option( $name,
+  $value, false )`) or in the plugin's own table. Never write an option or
+  transient on every page load.
+- **Cache repeated work:** `wp_cache_*` for lookups repeated within a
+  request (a persistent object cache keeps them between requests), and
+  transients that expire for results that are slow to build. Cache times
+  are at least five minutes.
+- **Work off the page.** Heavy or bulk work runs in cron, in batches with a
+  limit, and never on a visitor's page or with no limit. Bulk changes to
+  posts or terms use `wp_defer_term_counting()` and
+  `wp_suspend_cache_invalidation()`, then turn them back on.
+- **No request per page view.** No admin-ajax, REST or remote request on
+  every visitor page unless the feature needs it; remote requests a page
+  waits on have a short timeout (at most 3 seconds).
+- **Measure on large data.** `scripts/smoke-test.sh` loads every page on a
+  site seeded with thousands of posts and meta rows, reports query counts
+  and times, and fails on a full table or index scan, or a large sort, in
+  the plugin's own queries (`DEVELOPMENT.md` → Smoke test). PHPCS flags the
+  patterns above as you write them (`WordPress.DB.SlowDBQuery` and
+  WordPress VIP's performance sniffs, `phpcs.xml.dist`). An exception, such
+  as an unlimited query over a list that cannot grow, needs an inline
+  `phpcs:ignore` with the reason.
 
 ## Updates from GitHub
 

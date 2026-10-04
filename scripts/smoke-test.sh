@@ -1,11 +1,13 @@
 #!/usr/bin/env bash
-# Smoke test: install the release zip on a disposable WordPress in Docker and
-# load the site and admin screens, first with the default settings and then
-# with every feature switched on. Then uninstall it and check it left nothing
-# behind. Nothing is kept and no other site is touched.
+# Smoke test: install the release zip on a disposable WordPress in Docker,
+# seeded with many posts and meta rows, and load the site and admin screens,
+# first with the default settings and then with every feature switched on.
+# Then uninstall it and check it left nothing behind. Nothing is kept and no
+# other site is touched.
 #
 # Usage: scripts/smoke-test.sh [--wp VERSION] [--php VERSION] [--ref REF]
 #                              [--zip FILE] [--wporg] [--keep-log FILE]
+#                              [--posts N]
 #   --wp VERSION     WordPress version (default: latest). The minimum is 6.2.
 #   --php VERSION    PHP version of the Docker images (default: 8.3). The
 #                    minimum is 7.4.
@@ -13,10 +15,14 @@
 #   --zip FILE       Test this zip instead of building one.
 #   --wporg          Test the WordPress.org build instead of the GitHub one.
 #   --keep-log FILE  Save the site's debug.log to FILE.
+#   --posts N        Seed N posts, with 3 meta rows each (default: 10000).
 #
 # Fails on any PHP error, warning, notice or deprecation in debug.log (from
 # the pages loaded, WP-CLI and cron), a page that fails to load (HTTP 500 or
-# WordPress's critical error page), or settings left after uninstalling.
+# WordPress's critical error page), a full table or index scan, or a sort,
+# over 1000 rows or more in the plugin's own queries (EXPLAIN, see
+# scripts/smoke-queries.php), or settings left after uninstalling. Lists each
+# request's query count and time, and the plugin's own queries.
 # Needs Docker, curl and internet access (WordPress is downloaded).
 
 set -euo pipefail
@@ -38,6 +44,14 @@ BASE_URL=""
 DB_PASSWORD=""
 ADMIN_PASSWORD=""
 FAILED=0
+POSTS=10000
+# Options (parse_args).
+REF="HEAD"
+ZIP=""
+WPORG=0
+KEEP_LOG=""
+# A scan or sort over this many rows or more in the plugin's own queries fails.
+readonly SCAN_ROWS=1000
 
 die() {
 	local message="$1"
@@ -46,7 +60,7 @@ die() {
 }
 
 usage() {
-	sed -n '2,20p' "$0" | sed 's/^# \{0,1\}//'
+	sed -n '2,26p' "$0" | sed 's/^# \{0,1\}//'
 	return 0
 }
 
@@ -219,6 +233,28 @@ add_canary() {
 	return $?
 }
 
+# The query recorder (scripts/smoke-queries.php) as a must-use plugin, with
+# SAVEQUERIES on so it gets each query's time, then the seeded posts.
+add_query_checks() {
+	wp_cli config set WPALLSTARS_SMOKE_PLUGIN "$SLUG" --quiet || return 1
+	wp_cli config set SAVEQUERIES true --raw --quiet || return 1
+	wp_cli eval 'copy( "/zips/smoke-queries.php", WPMU_PLUGIN_DIR . "/smoke-queries.php" ) || exit( 1 );' || return 1
+	wp_cli eval "wpallstars_smoke_seed( $POSTS );" || return 1
+	return 0
+}
+
+# List the requests since the last reset and check the plugin's own queries;
+# the canary page proves the check finds a full table scan.
+check_queries() {
+	local report
+	fetch '/?smoke-query-canary' visitor
+	report="$(wp_cli eval "wpallstars_smoke_report( $SCAN_ROWS );" 2>&1)" || true
+	printf '\n%s\n' "$report"
+	grep -q '^queries: ok$' <<<"$report" || fail "the plugin's own queries (see above)"
+	wp_cli eval 'wpallstars_smoke_reset();' || fail "resetting the query log"
+	return 0
+}
+
 check_debug_log() {
 	local keep="$1"
 	local log
@@ -241,45 +277,55 @@ check_debug_log() {
 	return 0
 }
 
-main() {
-	local ref="HEAD"
-	local zip=""
-	local wporg=0
-	local keep=""
+# Read the options into REF, ZIP, WPORG, KEEP_LOG and the settings above.
+parse_args() {
 	local arg value
 	while [[ $# -gt 0 ]]; do
 		arg="$1"
 		value="${2:-}"
 		case "$arg" in
-		--wp | --php | --ref | --zip | --keep-log)
+		--wp | --php | --ref | --zip | --keep-log | --posts)
 			[[ $# -ge 2 ]] || die "$arg needs a value"
 			case "$arg" in
 			--wp) WP_VERSION="$value" ;;
 			--php) PHP_VERSION="$value" ;;
-			--ref) ref="$value" ;;
+			--ref) REF="$value" ;;
+			--posts)
+				[[ "$value" =~ ^[1-9][0-9]{0,5}$ ]] || die "--posts needs a number from 1 to 999999"
+				POSTS="$value"
+				;;
 			--zip)
 				[[ -f "$value" ]] || die "no such zip: $value"
-				zip="$(cd "$(dirname "$value")" && pwd)/$(basename "$value")"
+				ZIP="$(cd "$(dirname "$value")" && pwd)/$(basename "$value")"
 				;;
 			--keep-log)
 				case "$value" in
-				/*) keep="$value" ;;
-				*) keep="$PWD/$value" ;;
+				/*) KEEP_LOG="$value" ;;
+				*) KEEP_LOG="$PWD/$value" ;;
 				esac
 				;;
 			*) ;; # The outer pattern lists every option that takes a value.
 			esac
 			shift
 			;;
-		--wporg) wporg=1 ;;
+		--wporg) WPORG=1 ;;
 		-h | --help)
 			usage
-			return 0
+			exit 0
 			;;
 		*) die "unknown argument: $arg" ;;
 		esac
 		shift
 	done
+	return 0
+}
+
+main() {
+	parse_args "$@"
+	local ref="$REF"
+	local zip="$ZIP"
+	local wporg="$WPORG"
+	local keep="$KEEP_LOG"
 
 	command -v docker >/dev/null 2>&1 || die "needs Docker"
 	command -v curl >/dev/null 2>&1 || die "needs curl"
@@ -308,20 +354,26 @@ main() {
 		zip="${built[0]}"
 	fi
 	cp "$zip" "$TMP_DIR/zips/$SLUG.zip"
-	chmod 644 "$TMP_DIR/zips/$SLUG.zip"
+	cp "$root/scripts/smoke-queries.php" "$TMP_DIR/zips/smoke-queries.php"
+	chmod 644 "$TMP_DIR/zips/$SLUG.zip" "$TMP_DIR/zips/smoke-queries.php"
 
 	start_site
 	add_canary || die "could not add the debug.log canary"
+	add_query_checks || die "could not add the query checks and seed the posts"
 	printf '\nInstalling %s\n' "$(basename "$zip")"
 	wp_cli plugin install "/zips/$SLUG.zip" --activate --quiet || die "could not install and activate the plugin"
 	log_in
+	wp_cli eval 'wpallstars_smoke_reset();' || die "could not reset the query log"
 
 	printf '\nDefault settings:\n'
 	load_pages
+	check_queries
 
 	printf '\nEvery feature on:\n'
 	switch_all_on || fail "switching features on"
+	wp_cli eval 'wpallstars_smoke_reset();' || fail "resetting the query log"
 	load_pages
+	check_queries
 
 	printf '\nUninstall:\n'
 	check_uninstall

@@ -34,6 +34,7 @@ scripts/preflight-release.sh
 scripts/preview-site.sh
 scripts/rename-plugin.sh
 scripts/replaced-plugins.php
+scripts/smoke-queries.php
 scripts/smoke-test.sh
 scripts/sync-core.sh
 scripts/update-test.sh
