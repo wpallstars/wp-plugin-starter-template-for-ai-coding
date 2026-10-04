@@ -5,7 +5,7 @@ Tags: starter, boilerplate, settings, developer, template
 Requires at least: 6.2
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 1.0.4
+Stable tag: 1.0.5
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -43,8 +43,11 @@ No. The WordPress.org build contacts nothing outside WordPress.
 
 == Changelog ==
 
-= 1.0.4 =
-* Developers: scripts/rename-plugin.sh starts a new plugin at version 0.1.0 with its own changelog, and a feature's switch can open an Options panel for the feature's own controls. Nothing changes for users.
+= 1.0.5 =
+* Fixed: two settings saved at the same moment could undo each other; a save now holds a short lock.
+* Fixed: GitHub updates are only ever taken from GitHub (never a same-named WordPress.org plugin), from the exact release zip, with the release's requirements checked.
+* Fixed: "Select all" and "Clear" on long lists work for every setting key.
+* Developers: scripts report failures instead of success, rename-plugin.sh takes names with quotes, $ and &, and the settings code is split into small methods with the same output.
 
 Every change: changelog.txt.
 
