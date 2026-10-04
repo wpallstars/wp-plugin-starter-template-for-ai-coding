@@ -544,6 +544,32 @@ check_agent_docs() {
 	return 0
 }
 
+# Every plugin keeps two credits in README.md and readme.txt (STANDARDS.md →
+# Structure): Built with AI, linking aidevops, and the line starting
+# "Made from " that links the starter. Warnings: a person writes them.
+check_credits() {
+	local sha="$1"
+	section "Credits"
+	local file text problems=0
+	for file in README.md readme.txt; do
+		if ! text="$(git show "$sha:$file" 2>/dev/null)"; then
+			warn "$file missing"
+			problems=1
+			continue
+		fi
+		if ! grep -qF 'aidevops.sh' <<<"$text"; then
+			warn "$file has no Built with AI credit linking aidevops (https://aidevops.sh)"
+			problems=1
+		fi
+		if ! grep -qE '^Made from .*https://github\.com/' <<<"$text"; then
+			warn "$file has no line starting 'Made from ' with a link to the starter on GitHub"
+			problems=1
+		fi
+	done
+	[[ "$problems" -eq 1 ]] || ok "README.md and readme.txt credit aidevops and the starter"
+	return 0
+}
+
 check_git() {
 	local ref="$1"
 	local sha="$2"
@@ -625,6 +651,7 @@ main() {
 		check_core_files
 	fi
 	check_agent_docs "$sha"
+	check_credits "$sha"
 	check_git "$ref" "$sha" "$VERSION"
 
 	printf '\n%s error(s), %s warning(s).\n' "$ERRORS" "$WARNINGS"

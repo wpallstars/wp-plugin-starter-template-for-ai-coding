@@ -84,6 +84,14 @@ How changes are made and checked: `DEVELOPMENT.md`. Releases: `RELEASING.md`.
   `readme.txt` must stay under 10 KB for WordPress.org: one short line per
   feature, every service the plugin contacts under External services, and
   only the newest version's changelog, in short. Details go in `README.md`.
+- Every plugin keeps its credits in `README.md` and `readme.txt` (the
+  **Built with AI** section): the credit to aidevops (<https://aidevops.sh>),
+  a line sending questions to aidevops, which reads the plugin's docs and
+  code to answer them, and the line starting "Made from " that credits the
+  starter with a link to it. `scripts/rename-plugin.sh` writes the starter's
+  line for a new plugin; keep all three when replacing the starter's
+  README and readme.txt. `scripts/preflight-release.sh` warns when a credit
+  is missing.
 - `.distignore` lists files kept out of the release zip. Add new
   development-only files there (the preflight fails when a known one gets in),
   then check the build with Plugin Check.
