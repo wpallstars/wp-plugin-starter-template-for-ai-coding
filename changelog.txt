@@ -2,6 +2,12 @@
 
 Every change to WP Plugin Starter. readme.txt lists the latest version in short.
 
+= Unreleased =
+* Fixed: Updates from GitHub reads the last Location header when GitHub sends more than one, instead of the text "Array" and a PHP warning, when it looks up the latest release and a private release's download.
+* Fixed: the settings screen's styles and script are versioned by their file times as text, falling back to the plugin version when a file time can't be read; empty script handles from the wpstarter_admin_script_deps filter are dropped.
+* Fixed: the Read Me tab, release notes, line lists and domain lists no longer fail on text that a regular expression can't split; they are treated as empty.
+* Developers: PHPStan runs at level 7 (phpstan.neon.dist), without the missingType.* checks, which ask for types on every parameter, return, property and array. Plugins made from the starter fix their own level-7 findings, or note stub mistakes in phpstan-plugin.neon, before syncing phpstan.neon.dist.
+
 = 1.0.11 =
 * Developers: new core workflow .github/workflows/release.yml. Pushing a vX.Y.Z tag on main checks the tag is on main, runs scripts/preflight-release.sh on it, builds the zips from it with scripts/build-release.sh and publishes the GitHub release with {slug}-X.Y.Z.zip, its notes taken from the version's section of the README.md changelog. In a public repository it signs the zip's SLSA build provenance with Sigstore (actions/attest-build-provenance) and attaches the bundle as provenance-{slug}-X.Y.Z.sigstore.json, a name that does not start with the slug so Git Updater never installs it; OpenSSF Scorecard counts it for Signed-Releases. Private repositories get the release without provenance, as attestations there need GitHub Enterprise Cloud. RELEASING.md step 3 is now tag and push; publishing by hand stays as the fallback, and a re-run of the workflow replaces a hand-built zip with its signed build.
 * Developers: scripts/update-test.sh accepts the provenance bundle next to {slug}-X.Y.Z.zip and checks it with gh attestation verify against the zip, the Release workflow and the tag; any other asset still fails the test. Nothing changes for users.

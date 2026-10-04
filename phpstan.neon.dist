@@ -13,7 +13,20 @@ includes:
 	- phpstan-plugin.neon
 
 parameters:
-	level: 5
+	# Level 7: also union types, such as false from preg_split() or
+	# filemtime(), and arrays and objects of the wrong shape.
+	level: 7
+	ignoreErrors:
+		# Level 6 asks every parameter, return and property, and every array's
+		# contents, to carry a type. That is a large, low-value change to
+		# working code; the checks above still read the types that are given.
+		-
+			identifiers:
+				- missingType.iterableValue
+				- missingType.parameter
+				- missingType.property
+				- missingType.return
+			reportUnmatched: false
 	phpVersion: 70400
 	# Result cache, kept between CI runs so only changed files are analysed again.
 	tmpDir: .cache/phpstan

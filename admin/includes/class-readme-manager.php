@@ -47,7 +47,7 @@ class WPStarter_Readme_Manager {
         // then 'body') and the heading IDs used so far.
         $state = array('list' => '', 'table' => '', 'ids' => array());
         $html  = '';
-        foreach (preg_split('/\r\n|\r|\n/', $markdown) as $line) {
+        foreach (preg_split('/\r\n|\r|\n/', $markdown) ?: array() as $line) {
             $html .= self::block(trim($line), $state);
         }
 
