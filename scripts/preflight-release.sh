@@ -116,7 +116,7 @@ field() {
 }
 
 # A licence name in one spelling, so "GPLv2 or later", "GPL-2.0-or-later"
-# and "GPL-2.0+" compare equal.
+# and "GPL-2.0+" compare equal, and so do "GPLv2" and "GPL-2.0-only".
 license_key() {
 	local key="$1"
 	key="$(tr '[:upper:]' '[:lower:]' <<<"$key")"
@@ -125,6 +125,7 @@ license_key() {
 	key="${key/gplv/gpl}"
 	key="${key/gpl20/gpl2}"
 	key="${key/gpl30/gpl3}"
+	key="${key%only}"
 	printf '%s\n' "$key"
 	return 0
 }
