@@ -78,9 +78,6 @@ final class WPStarter_Setup {
      * Register the helpers' hooks, after the settings store's.
      */
     public static function init() {
-        add_action('wp', static function () {
-            get_posts(array('meta_key' => 'smoke_value', 'meta_value' => 'smoke_value-7', 'orderby' => 'title', 'order' => 'ASC', 'posts_per_page' => 5)); // TEMP probe
-        });
     }
 
     /**
