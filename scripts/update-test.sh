@@ -114,8 +114,10 @@ wp_cli() {
 # Release tags with numbers only (vX.Y.Z), newest first; drafts and
 # pre-releases left out, as the shared updater leaves them out.
 release_versions() {
-	gh release list --repo "$REPO" --exclude-drafts --exclude-pre-releases --limit 50 \
-		--json tagName --jq '.[].tagName' | sed -nE 's/^v([0-9]+\.[0-9]+\.[0-9]+)$/\1/p'
+	local tags
+	tags="$(gh release list --repo "$REPO" --exclude-drafts --exclude-pre-releases --limit 50 \
+		--json tagName --jq '.[].tagName')" || return 1
+	printf '%s\n' "$tags" | sed -nE 's/^v([0-9]+\.[0-9]+\.[0-9]+)$/\1/p'
 	return 0
 }
 
