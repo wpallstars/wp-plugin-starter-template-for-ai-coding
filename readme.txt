@@ -5,7 +5,7 @@ Tags: starter, boilerplate, settings, developer, template
 Requires at least: 6.2
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 1.0.5
+Stable tag: 1.0.6
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -43,11 +43,9 @@ No. The WordPress.org build contacts nothing outside WordPress.
 
 == Changelog ==
 
-= 1.0.5 =
-* Fixed: two settings saved at the same moment could undo each other; a save now holds a short lock.
-* Fixed: GitHub updates are only ever taken from GitHub (never a same-named WordPress.org plugin), from the exact release zip, with the release's requirements checked.
-* Fixed: "Select all" and "Clear" on long lists work for every setting key.
-* Developers: scripts report failures instead of success, rename-plugin.sh takes names with quotes, $ and &, and the settings code is split into small methods with the same output.
+= 1.0.6 =
+* Developers: plugins made from the starter get a weekly Starter sync check that opens an issue when their shared files fall behind the starter.
+* Developers: SonarCloud runs from GitHub Actions with sonar-project.properties, and the Read Me, settings navigation and replaced-plugin code is split into smaller methods with the same output. Nothing changes for users.
 
 Every change: changelog.txt.
 
