@@ -1,0 +1,44 @@
+# SonarCloud (SonarQube Cloud) analysis from CI, so sonar-project.properties
+# applies (automatic analysis ignores it; turn automatic analysis off for the
+# project). Needs the SONAR_TOKEN secret; without it (forks, Dependabot) the
+# job is skipped. Organization and project key come from the repository:
+# {owner} and {owner}_{repo}, the keys SonarCloud gives an imported repository.
+name: SonarCloud
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+  push:
+    branches: [main]
+    paths-ignore:
+      - "docs/metrics/**"
+
+permissions:
+  contents: read
+  pull-requests: read
+
+concurrency:
+  group: sonarcloud-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  analysis:
+    name: SonarCloud analysis
+    runs-on: ubuntu-latest
+    env:
+      SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+    steps:
+      - name: Skip without SONAR_TOKEN
+        if: env.SONAR_TOKEN == ''
+        run: echo "SONAR_TOKEN is not available to this run; skipping SonarCloud."
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        if: env.SONAR_TOKEN != ''
+        with:
+          fetch-depth: 0 # blame data for new-code detection
+          persist-credentials: false
+      - uses: SonarSource/sonarqube-scan-action@d209202bc7d53ff1cc128f7f907dac145c9d6ae9 # v8.3.0
+        if: env.SONAR_TOKEN != ''
+        with:
+          args: >
+            -Dsonar.organization=${{ github.repository_owner }}
+            -Dsonar.projectKey=${{ github.repository_owner }}_${{ github.event.repository.name }}

@@ -114,6 +114,17 @@ switched on at once, except one with the key `maintenance` (a maintenance
 mode would answer every visitor page with its notice). `--keep-log FILE` saves `debug.log`; CI keeps it as an artifact
 when the test fails.
 
+### SonarCloud
+
+`.github/workflows/sonarcloud.yml` runs the SonarCloud scan on pull
+requests and pushes to `main`, with `sonar-project.properties`. That file
+ignores four rules WordPress coding standards contradict (snake_case method
+and field names, `Prefix_Name` classes, early returns); the free plan cannot
+give a project its own Quality Profile. For a new plugin: import the
+repository in SonarCloud, turn off **Automatic Analysis** (Administration →
+Analysis Method; it ignores the file), and add a SonarCloud token as the
+`SONAR_TOKEN` Actions secret. Without the secret the job is skipped.
+
 ## Test site resources
 
 Test sites run the plugin alongside many others (a plugin that recommends

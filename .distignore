@@ -13,6 +13,7 @@
 .editorconfig
 .gitleaks.toml
 .codacy.yml
+sonar-project.properties
 .aidevops.json
 composer.json
 composer.lock

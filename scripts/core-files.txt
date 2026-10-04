@@ -44,6 +44,7 @@ scripts/sync-core.sh
 .gitignore
 .gitleaks.toml
 .codacy.yml
+sonar-project.properties
 composer.json
 phpcs.xml.dist
 phpstan.neon.dist
