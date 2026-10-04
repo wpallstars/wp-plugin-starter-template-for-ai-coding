@@ -24,7 +24,7 @@ WP Plugin Starter is what wpallstars plugins are made from. It has no features o
 
 If this saves you time, headaches and costs, feel free to [buy me a coffee](https://buymeacoffee.com/marcusquinn), or whatever you like, to invest in making more things open-source.
 
-Version: 1.0.16
+Version: 1.0.17
 
 <!-- github-only:start -->
 ## Screenshots
@@ -127,6 +127,10 @@ Read a setting with `WPStarter_Settings::get( 'key' )`.
 Deleting the plugin removes its settings, its cached data, who hid lines of the Plugins screen notice about replaced plugins, and the cached GitHub releases.
 
 ## Changelog
+
+### 1.0.17
+
+- Developers: four rules in `STANDARDS.md` that plugins made from the starter learned. A changed default is only sure to reach new installs, as migrations and saves store every setting (Structure). SQL goes through `$wpdb->prepare()`, with the plugin's own table and column names as `%i`, which Plugin Check otherwise warns about. A notice shown once after an action adds its query argument to `removable_query_args`, so a reload does not show it again. An inline `NOSONAR` needs its reason on that line, as `phpcs:ignore` does (Code rules). Nothing changes for users.
 
 ### 1.0.16
 
