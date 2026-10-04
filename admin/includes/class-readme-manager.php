@@ -38,6 +38,7 @@ class WPStarter_Readme_Manager {
      */
     public static function parse_markdown($markdown) {
         $markdown = str_replace('{WPSTARTER_VERSION}', WPSTARTER_VERSION, $markdown);
+        $markdown = str_replace(array("\r\n", "\r"), "\n", $markdown);
         // GitHub-only parts: the badges block (remote images) and HTML comments.
         $markdown = (string) preg_replace('/^<!-- aidevops:badges:start -->$.*?^<!-- aidevops:badges:end -->$/ms', '', $markdown);
         $markdown = (string) preg_replace('/^[ \t]*<!--(?:(?!-->).)*-->[ \t]*$/ms', '', $markdown);
