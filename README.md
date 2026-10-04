@@ -34,7 +34,7 @@ Version: {WPSTARTER_VERSION}
 - **Updates from GitHub**: the shared wpallstars updater (`includes/github-updater/`). Sites get each GitHub release as a normal WordPress update. Every wpallstars plugin carries a copy and only the newest copy on a site runs, so they are all checked together, once.
 - **Two builds of each version**: the GitHub release, and a WordPress.org build without the updater, as WordPress.org requires.
 - **Scripts and CI**: lint (PHP 7.4, WordPress coding and security rules, PHPStan), a smoke test on a real WordPress, the release build, a preflight check of both zips, Plugin Check, a preview site, the banner build, and `scripts/sync-core.sh` to keep each plugin's shared parts the same as the starter's.
-- **Shared rules for people and AI**: `STANDARDS.md` (structure, code rules, releases, styling, testing), `DEVELOPMENT.md` (set-up and checks) and `RELEASING.md`, the same in every plugin made from the starter.
+- **Shared rules for people and AI**: `STANDARDS.md` (structure, code rules, performance, releases, styling, testing), `DEVELOPMENT.md` (set-up and checks) and `RELEASING.md`, the same in every plugin made from the starter.
 
 ## Start a plugin
 

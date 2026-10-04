@@ -53,11 +53,11 @@ Every pull request and every push to `main` runs these in GitHub Actions
 | JavaScript syntax | `scripts/lint.sh js` | Syntax errors (`node --check`). |
 | Shell scripts | `scripts/lint.sh shell` | ShellCheck findings in `scripts/`. |
 | Workflows | `scripts/lint.sh workflows` | actionlint findings in `.github/workflows/`. |
-| Coding standards | `scripts/lint.sh phpcs` | WordPress Coding Standards: escaping, sanitising, nonces, prepared SQL, i18n, PHP 7.4 and WordPress 6.2 compatibility (`phpcs.xml.dist`). |
+| Coding standards | `scripts/lint.sh phpcs` | WordPress Coding Standards: escaping, sanitising, nonces, prepared SQL, i18n, PHP 7.4 and WordPress 6.2 compatibility; slow and unlimited queries, `ORDER BY RAND()`, short cache times and long remote timeouts (`phpcs.xml.dist`). |
 | Static analysis | `scripts/lint.sh phpstan` | Unknown functions, classes and methods, wrong argument counts and types, dead code (PHPStan level 5, `phpstan.neon.dist`). |
 | Release build | `scripts/preflight-release.sh --offline` | Versions, headers, `readme.txt`, presets (where the plugin has them) and the contents of both zips. |
 | Plugin Check | `scripts/plugin-check.sh` | The WordPress.org review tool, on both zips. |
-| Smoke test | `scripts/smoke-test.sh --wp 6.2 --php 7.4` and `scripts/smoke-test.sh` | Installs the GitHub zip, loads the site and admin screens with default settings and with every feature on, runs cron, uninstalls. Fails on any PHP message, a failed page or leftover options. |
+| Smoke test | `scripts/smoke-test.sh --wp 6.2 --php 7.4` and `scripts/smoke-test.sh` | Installs the GitHub zip on a site with 10,000 posts, loads the site and admin screens with default settings and with every feature on, runs cron, uninstalls. Lists each page's queries. Fails on any PHP message, a failed page, a full table scan or large sort in the plugin's own queries, or leftover options. |
 
 `scripts/lint.sh` with no arguments runs the first six.
 
@@ -76,7 +76,13 @@ starter.
 `phpcs.xml.dist` uses the WordPress ruleset. The plugin's own style
 differs from it in a few places (spacing, `array()`, file names, Yoda
 conditions), and those sniffs are off; the comments in the file say why.
-Security, database and compatibility sniffs stay on. Fix findings in the
+Security, database and compatibility sniffs stay on, with the performance
+sniffs of WordPress VIP's standard (`automattic/vipwpcs`; only its
+`WordPressVIPMinimum.Performance` group, as the rest is for VIP's own
+hosting): unlimited queries, `ORDER BY RAND()`, `REGEXP`, `post__not_in`,
+cache times under five minutes and remote requests with timeouts over 3
+seconds. The shared updater's GitHub requests may take longer: they run
+only during update checks and updates. Fix findings in the
 code. Where a finding is intended, add an inline
 `// phpcs:ignore Sniff.Name -- reason` on that line only.
 
@@ -121,6 +127,19 @@ the latest WordPress with PHP 8.3. Every feature with an on/off setting is
 switched on at once, except one with the key `maintenance` (a maintenance
 mode would answer every visitor page with its notice). `--keep-log FILE` saves `debug.log`; CI keeps it as an artifact
 when the test fails.
+
+Queries are checked on large data (`STANDARDS.md` → Performance). Before
+installing the plugin, the test seeds 10,000 posts (`--posts N`) with three
+meta rows each, and adds `scripts/smoke-queries.php` as a must-use plugin
+with `SAVEQUERIES` on. It records every request: the query count and time,
+and the queries the plugin made itself (a file of the plugin is in the call
+stack, so this includes core queries the plugin causes, such as an option
+that is not autoloaded). After each round of pages it lists the requests,
+then runs `EXPLAIN` on each of the plugin's own queries, slowest first. A
+full table or index scan, or a sort without an index, over 1,000 rows or
+more fails. A canary page runs a known full table scan, and the test fails
+if the check misses it. Query counts and times are listed, not limited:
+compare them with `main` when a change adds work to every page.
 
 ### SonarCloud
 
