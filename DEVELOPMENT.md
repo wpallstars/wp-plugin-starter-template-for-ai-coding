@@ -153,6 +153,17 @@ coverage out, as the smoke test, not unit tests, checks the plugin. Fix
 other findings in the code. Without the `SONAR_TOKEN` secret the job is
 skipped; setting it up: Services setup below.
 
+### Scorecard
+
+`.github/workflows/scorecard.yml` runs OpenSSF Scorecard on pushes to
+`main`, every Monday, when branch protection changes, and from the Actions
+tab (**Run workflow**). It checks the repository's security practices
+(pinned actions, token permissions, branch protection, code review and
+more), puts the results in Security → Code scanning and publishes them for
+the Scorecard badge. It needs no setup. In a private repository the job is
+skipped: publishing needs a public one, and minutes cost money there.
+Fix what it finds in the repository, or dismiss the alert with the reason.
+
 ### Starter sync
 
 `.github/workflows/starter-sync.yml` runs every Monday (and from the
@@ -302,7 +313,8 @@ it at that standard:
    and qlty, plus GitHub's CodeQL (JavaScript and GitHub Actions; it has
    no PHP support, so PHPStan, SonarCloud and Codacy cover the PHP),
    Dependabot security alerts, secret scanning with push protection, and
-   OpenSSF Scorecard. Socket keeps checking dependencies. Connect any
+   OpenSSF Scorecard (Actions → **Scorecard** → **Run workflow** once; it
+   then runs by itself). Socket keeps checking dependencies. Connect any
    service still missing with Services setup above.
 2. Fix what they find in the code, in small pull requests by area
    (security first). Each finding is either fixed, explained in an inline
@@ -313,9 +325,9 @@ it at that standard:
    tests) with a branch ruleset, without "branch must be up to date": the
    checks are fast, and changelog lines conflict on every merge.
 5. Turn on private vulnerability reporting (Settings → Security), which
-   `SECURITY.md` asks reporters to use, and add the CI badge to
-   `README.md`. `SECURITY.md`, `CONTRIBUTING.md` and the issue and pull
-   request templates are already in place.
+   `SECURITY.md` asks reporters to use, and add the CI and Scorecard badges
+   to `README.md`. `SECURITY.md`, `CONTRIBUTING.md`, `CODE_OF_CONDUCT.md`
+   and the issue and pull request templates are already in place.
 6. Run `workflows/public-launch-checklist.md` from the AI DevOps framework
    for anything public: no private paths, site names or secrets in the code,
    history, issues or docs. Run the history scan above again for commits

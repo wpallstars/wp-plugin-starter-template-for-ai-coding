@@ -28,7 +28,8 @@ How changes are made and checked: `DEVELOPMENT.md`. Releases: `RELEASING.md`.
   (`includes/class-{prefix}-settings.php`), the admin screen and Read Me tab
   (`admin/`), the shared GitHub updater (`includes/github-updater/`), the
   scripts, the CI workflow and tool configuration, and the shared docs (this
-  file, `DEVELOPMENT.md`, `RELEASING.md`, `CONTRIBUTING.md`, `SECURITY.md`).
+  file, `DEVELOPMENT.md`, `RELEASING.md`, `CONTRIBUTING.md`,
+  `CODE_OF_CONDUCT.md`, `SECURITY.md`).
   A plugin's copy differs from the starter's only in the names above. They
   hold no code for one plugin: they read `{Prefix}_Setup`
   (`includes/class-{prefix}-setup.php`: features, settings tabs, header

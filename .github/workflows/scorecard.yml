@@ -1,0 +1,46 @@
+# OpenSSF Scorecard: checks the repository's security practices (pinned
+# actions, token permissions, branch protection, and so on), uploads the
+# results to Security → Code scanning, and publishes them for the badge.
+# Public repositories only: publishing needs one, and a private repository
+# pays for the minutes (DEVELOPMENT.md → While private), so the job is
+# skipped there. No secrets: the workflow's own token is enough.
+name: Scorecard
+
+on:
+  push:
+    branches: [main]
+    paths-ignore:
+      - "docs/metrics/**"
+  schedule:
+    - cron: "17 4 * * 1" # Mondays
+  branch_protection_rule:
+  workflow_dispatch:
+
+# publish_results accepts only a plain workflow: read-only top-level
+# permissions, write permissions on the job, no top-level env or defaults,
+# no run steps, and only the actions below.
+permissions:
+  contents: read
+
+jobs:
+  analysis:
+    name: Scorecard analysis
+    if: github.event.repository.private == false
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      actions: read # upload-sarif reads this workflow run
+      security-events: write # upload the SARIF to code scanning
+      id-token: write # publish_results
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: ossf/scorecard-action@2d1146689b8cda280b9bc96326124645441f03bc # v2.4.4
+        with:
+          results_file: results.sarif
+          results_format: sarif
+          publish_results: true
+      - uses: github/codeql-action/upload-sarif@2892aa5e19bbd11bc0cff5427e3b750a04d9e3c2 # v4.38.2
+        with:
+          sarif_file: results.sarif

@@ -2,9 +2,11 @@
 
 Every change to WP Plugin Starter. readme.txt lists the latest version in short.
 
-= Unreleased =
+= 1.0.10 =
 * Changed: the README's Built with AI section (the Read Me tab) says the plugin works well with SEO Pro Stack, the wpallstars base plugin for speed and an organised admin. readme.txt and the plugin's screens don't mention it.
 * Developers: every plugin except SEO Pro Stack keeps that line in README.md only (STANDARDS.md → Structure), and scripts/preflight-release.sh warns when it is missing or gets into readme.txt. DEVELOPMENT.md → Test site resources: every test site runs SEO Pro Stack.
+* Developers: new core workflow .github/workflows/scorecard.yml runs OpenSSF Scorecard on pushes to main, every Monday, on branch protection changes and by hand, uploads the results to code scanning and publishes them for the Scorecard badge. It needs no setup and is skipped in private repositories. DEVELOPMENT.md → Checks → Scorecard; the public launch sweep runs it once and adds its badge.
+* Developers: new core file CODE_OF_CONDUCT.md (Contributor Covenant 2.0, from GitHub's API), with reports going privately to the contact in SECURITY.md. CONTRIBUTING.md links it; .distignore and scripts/preflight-release.sh keep it out of both release zips. Nothing changes for users.
 
 = 1.0.9 =
 * Developers: STANDARDS.md has a Performance section every plugin made from the starter follows: load only what is used, no full table scans (no unlimited queries, no lookups or sorting by meta_value, LIKE '%term%', REGEXP or ORDER BY RAND() on large tables, no_found_rows unless a total is shown, indexes on the plugin's own tables but never on WordPress's), one autoloaded settings array, caching with wp_cache_* and transients, bulk work in batches through cron, no request on every page view, and measuring on large data. Code rules add "WordPress first": core APIs before custom code, PHPCS findings fixed in the code.
