@@ -58,12 +58,12 @@ fail() {
 }
 
 cleanup() {
-	if [ "$STARTED" -eq 1 ]; then
+	if [[ "$STARTED" -eq 1 ]]; then
 		docker rm -f "$NAME-web" "$NAME-db" >/dev/null 2>&1 || true
 		docker volume rm "$NAME-wp" >/dev/null 2>&1 || true
 		docker network rm "$NAME" >/dev/null 2>&1 || true
 	fi
-	if [ -n "$TMP_DIR" ] && [ -d "$TMP_DIR" ]; then
+	if [[ -n "$TMP_DIR" ]] && [[ -d "$TMP_DIR" ]]; then
 		rm -rf "$TMP_DIR"
 	fi
 	return 0
@@ -94,7 +94,7 @@ start_site() {
 
 	local waited=0
 	until docker exec "$NAME-db" mariadb-admin ping -h127.0.0.1 -uroot -p"$DB_PASSWORD" --silent >/dev/null 2>&1; do
-		[ "$waited" -lt 90 ] || die "the database did not start"
+		[[ "$waited" -lt 90 ]] || die "the database did not start"
 		sleep 2
 		waited=$((waited + 2))
 	done
@@ -128,7 +128,7 @@ log_in() {
 		"$BASE_URL/wp-login.php"
 	local status
 	status="$(curl -sS -o /dev/null -w '%{http_code}' -b "$TMP_DIR/cookies" "$BASE_URL/wp-admin/")"
-	[ "$status" = "200" ] || die "could not log in (wp-admin answered $status)"
+	[[ "$status" = "200" ]] || die "could not log in (wp-admin answered $status)"
 	return 0
 }
 
@@ -140,14 +140,14 @@ fetch() {
 	local who="$2"
 	local status code=0
 	local args=(-sS -o "$TMP_DIR/page" -w '%{http_code}' --max-time 60)
-	[ "$who" = "admin" ] && args+=(-b "$TMP_DIR/cookies")
+	[[ "$who" = "admin" ]] && args+=(-b "$TMP_DIR/cookies")
 	rm -f "$TMP_DIR/page"
 	status="$(curl "${args[@]}" "$BASE_URL$path")" || code=$?
-	if [ "$code" -ne 0 ] || ! [[ "$status" =~ ^[1-9][0-9][0-9]$ ]]; then
+	if [[ "$code" -ne 0 ]] || ! [[ "$status" =~ ^[1-9][0-9][0-9]$ ]]; then
 		fail "${status:-000} $who $path: no answer (curl exit $code)"
-	elif [ -f "$TMP_DIR/page" ] && grep -q 'There has been a critical error' "$TMP_DIR/page"; then
+	elif [[ -f "$TMP_DIR/page" ]] && grep -q 'There has been a critical error' "$TMP_DIR/page"; then
 		fail "$status $who $path: critical error page"
-	elif [ "$status" -ge 500 ]; then
+	elif [[ "$status" -ge 500 ]]; then
 		fail "$status $who $path"
 	else
 		printf '  %s %s %s\n' "$status" "$who" "$path"
@@ -204,9 +204,9 @@ check_uninstall() {
 	wp_cli plugin uninstall "$SLUG" --quiet || fail "uninstall"
 	local left
 	left="$(wp_cli option list --search="*$PLUGIN_PREFIX*" --field=option_name 2>/dev/null || true)"
-	[ -z "$left" ] || fail "options left after uninstalling: $(printf '%s' "$left" | tr '\n' ' ')"
+	[[ -z "$left" ]] || fail "options left after uninstalling: $(printf '%s' "$left" | tr '\n' ' ')"
 	left="$(wp_cli cron event list --field=hook 2>/dev/null | grep -i "$PLUGIN_PREFIX" || true)"
-	[ -z "$left" ] || fail "cron events left after uninstalling: $(printf '%s' "$left" | tr '\n' ' ')"
+	[[ -z "$left" ]] || fail "cron events left after uninstalling: $(printf '%s' "$left" | tr '\n' ' ')"
 	return 0
 }
 
@@ -224,7 +224,7 @@ check_debug_log() {
 	local log
 	fetch '/?smoke-canary' visitor
 	log="$(docker exec "$NAME-web" sh -c 'cat /var/www/html/wp-content/debug.log 2>/dev/null' || true)"
-	if [ -n "$keep" ]; then
+	if [[ -n "$keep" ]]; then
 		printf '%s\n' "$log" >"$keep"
 	fi
 	if ! printf '%s\n' "$log" | grep -q 'smoke-test canary'; then
@@ -232,7 +232,7 @@ check_debug_log() {
 		return 0
 	fi
 	log="$(printf '%s\n' "$log" | grep -v 'smoke-test canary' || true)"
-	if [ -n "$log" ]; then
+	if [[ -n "$log" ]]; then
 		printf '\ndebug.log:\n%s\n' "$log"
 		fail "PHP messages in debug.log"
 	else
@@ -246,26 +246,28 @@ main() {
 	local zip=""
 	local wporg=0
 	local keep=""
-	local arg
-	while [ $# -gt 0 ]; do
+	local arg value
+	while [[ $# -gt 0 ]]; do
 		arg="$1"
+		value="${2:-}"
 		case "$arg" in
 		--wp | --php | --ref | --zip | --keep-log)
-			[ $# -ge 2 ] || die "$arg needs a value"
+			[[ $# -ge 2 ]] || die "$arg needs a value"
 			case "$arg" in
-			--wp) WP_VERSION="$2" ;;
-			--php) PHP_VERSION="$2" ;;
-			--ref) ref="$2" ;;
+			--wp) WP_VERSION="$value" ;;
+			--php) PHP_VERSION="$value" ;;
+			--ref) ref="$value" ;;
 			--zip)
-				[ -f "$2" ] || die "no such zip: $2"
-				zip="$(cd "$(dirname "$2")" && pwd)/$(basename "$2")"
+				[[ -f "$value" ]] || die "no such zip: $value"
+				zip="$(cd "$(dirname "$value")" && pwd)/$(basename "$value")"
 				;;
 			--keep-log)
-				case "$2" in
-				/*) keep="$2" ;;
-				*) keep="$PWD/$2" ;;
+				case "$value" in
+				/*) keep="$value" ;;
+				*) keep="$PWD/$value" ;;
 				esac
 				;;
+			*) ;; # The outer pattern lists every option that takes a value.
 			esac
 			shift
 			;;
@@ -294,15 +296,15 @@ main() {
 	TMP_DIR="$(mktemp -d "${TMPDIR:-/tmp}/$SLUG-smoke.XXXXXX")"
 	mkdir -p "$TMP_DIR/zips"
 	chmod 755 "$TMP_DIR" "$TMP_DIR/zips"
-	if [ -z "$zip" ]; then
+	if [[ -z "$zip" ]]; then
 		"$root/scripts/build-release.sh" --ref "$ref" --out "$TMP_DIR/build" --quiet >/dev/null || die "build failed"
 		local built=()
-		if [ "$wporg" -eq 1 ]; then
+		if [[ "$wporg" -eq 1 ]]; then
 			built=("$TMP_DIR"/build/wordpress-org-"$SLUG"-*.zip)
 		else
 			built=("$TMP_DIR"/build/"$SLUG"-*.zip)
 		fi
-		[ -f "${built[0]}" ] || die "the build made no zip"
+		[[ -f "${built[0]}" ]] || die "the build made no zip"
 		zip="${built[0]}"
 	fi
 	cp "$zip" "$TMP_DIR/zips/$SLUG.zip"
@@ -326,7 +328,7 @@ main() {
 	check_debug_log "$keep"
 
 	printf '\n'
-	if [ "$FAILED" -eq 1 ]; then
+	if [[ "$FAILED" -eq 1 ]]; then
 		printf 'Smoke test failed (WordPress %s, PHP %s).\n' "$WP_VERSION" "$PHP_VERSION"
 		return 1
 	fi

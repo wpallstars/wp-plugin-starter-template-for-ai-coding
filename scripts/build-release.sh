@@ -53,7 +53,7 @@ usage() {
 }
 
 cleanup() {
-	if [ -n "$TMP_DIR" ] && [ -d "$TMP_DIR" ]; then
+	if [[ -n "$TMP_DIR" ]] && [[ -d "$TMP_DIR" ]]; then
 		rm -rf "$TMP_DIR"
 	fi
 	return 0
@@ -139,16 +139,16 @@ main() {
 	local out=""
 	local quiet=0
 	local arg
-	while [ $# -gt 0 ]; do
+	while [[ $# -gt 0 ]]; do
 		arg="$1"
 		case "$arg" in
 		--ref)
-			[ $# -ge 2 ] || die "--ref needs a value"
+			[[ $# -ge 2 ]] || die "--ref needs a value"
 			ref="$2"
 			shift
 			;;
 		--out)
-			[ $# -ge 2 ] || die "--out needs a value"
+			[[ $# -ge 2 ]] || die "--out needs a value"
 			out="$2"
 			shift
 			;;
@@ -175,13 +175,13 @@ main() {
 	SLUG="$PLUGIN_SLUG"
 	MAIN_FILE="$PLUGIN_MAIN_FILE"
 	version="$(version_at "$sha")"
-	[ -n "$version" ] || die "no Version: header in $MAIN_FILE at $ref"
+	[[ -n "$version" ]] || die "no Version: header in $MAIN_FILE at $ref"
 
-	if [ "$ref" = "HEAD" ] && [ -n "$(git status --porcelain --untracked-files=no)" ] && [ "$quiet" -eq 0 ]; then
+	if [[ "$ref" = "HEAD" ]] && [[ -n "$(git status --porcelain --untracked-files=no)" ]] && [[ "$quiet" -eq 0 ]]; then
 		printf 'Note: uncommitted changes are not in the build (it is made from HEAD).\n'
 	fi
 
-	[ -n "$out" ] || out="$root/dist"
+	[[ -n "$out" ]] || out="$root/dist"
 	mkdir -p "$out"
 	out="$(cd "$out" && pwd)"
 
@@ -193,7 +193,7 @@ main() {
 	# .distignore lists itself and is export-ignored, so read it from Git.
 	git show "$sha:.distignore" >"$TMP_DIR/distignore" || die ".distignore missing at $ref"
 	rsync -a --exclude-from="$TMP_DIR/distignore" "$TMP_DIR/src/" "$TMP_DIR/github/$SLUG/"
-	[ -f "$TMP_DIR/github/$SLUG/$MAIN_FILE" ] || die "$MAIN_FILE is not in the build; check .distignore"
+	[[ -f "$TMP_DIR/github/$SLUG/$MAIN_FILE" ]] || die "$MAIN_FILE is not in the build; check .distignore"
 
 	if git cat-file -e "$sha:$WPORG_IGNORE" 2>/dev/null; then
 		git show "$sha:$WPORG_IGNORE" >"$TMP_DIR/wporg-ignore"
@@ -214,7 +214,7 @@ main() {
 		printf '%s  %s\n' "$(sha256_of "$wporg_zip")" "$(basename "$wporg_zip")"
 	} >"$out/SHA256SUMS"
 
-	if [ "$quiet" -eq 1 ]; then
+	if [[ "$quiet" -eq 1 ]]; then
 		printf '%s\n%s\n' "$github_zip" "$wporg_zip"
 		return 0
 	fi
