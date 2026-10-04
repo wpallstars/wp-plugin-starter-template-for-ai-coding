@@ -5,7 +5,7 @@ Tags: starter, boilerplate, settings, developer, template
 Requires at least: 6.2
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 1.0.11
+Stable tag: 1.0.12
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -51,11 +51,8 @@ No. The WordPress.org build contacts nothing outside WordPress.
 
 == Changelog ==
 
-= Unreleased =
+= 1.0.12 =
 * Fixed: Updates from GitHub handles repeated Location headers, and the settings screen's file versions and text splitting are sturdier.
-
-= 1.0.11 =
-* Developers: GitHub releases are built, checked and published by a workflow from the version tag, with signed build provenance. Nothing changes for users.
 
 Every change: changelog.txt.
 
