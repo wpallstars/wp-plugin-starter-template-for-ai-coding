@@ -24,7 +24,7 @@ WP Plugin Starter is what wpallstars plugins are made from. It has no features o
 
 If this saves you time, headaches and costs, feel free to [buy me a coffee](https://buymeacoffee.com/marcusquinn), or whatever you like, to invest in making more things open-source.
 
-Version: 1.0.15
+Version: 1.0.16
 
 <!-- github-only:start -->
 ## Screenshots
@@ -86,6 +86,8 @@ There are two builds of each version:
 
 The updater waits while Git Updater is active, so the two never both update a plugin.
 
+GitHub releases are the stable beta channel: each version is released there first. WordPress.org gets a version 90 days later, once it has been used on real sites, except security releases, which go to WordPress.org at once. The WordPress.org build has no affiliate links: those listed in `.wporg-links` are replaced by plain ones when it is built.
+
 Releasing on GitHub:
 
 1. Merge the version change (`Version:` and `WPSTARTER_VERSION` in `wp-plugin-starter-template.php`, `Stable tag:` in `readme.txt`, `Version:` near the top of this file) to `main`.
@@ -125,6 +127,11 @@ Read a setting with `WPStarter_Settings::get( 'key' )`.
 Deleting the plugin removes its settings, its cached data, who hid lines of the Plugins screen notice about replaced plugins, and the cached GitHub releases.
 
 ## Changelog
+
+### 1.0.16
+
+- Changed: two release channels, at the owner's decision (`STANDARDS.md` → Releases, `RELEASING.md` → WordPress.org). GitHub releases are the stable beta channel: each version comes out there first. WordPress.org gets a version 90 days after its GitHub release, built from its tag, except security releases (changelog entries starting "Security:"), which go to WordPress.org at once. [Updates and releases](#updates-and-releases) and the `readme.txt` FAQ say so.
+- Developers: the WordPress.org build has no affiliate links. A plugin lists each referral link, or its referral query, in the new optional `.wporg-links` file with its plain replacement (a tab between them); `scripts/build-release.sh` replaces them, HTML-escaped forms included, in the WordPress.org build only. `scripts/preflight-release.sh` errors when a listed text is left in that build and warns about other addresses with referral parameters (`ref=`, `aff=`, `irpid=`, `via=` and the like). `.wporg-links` stays out of both zips.
 
 ### 1.0.15
 

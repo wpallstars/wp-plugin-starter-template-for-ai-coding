@@ -322,7 +322,20 @@ It replaces Git Updater.
 
 ## Releases
 
-GitHub releases are the early channel; WordPress.org gets settled versions.
+Two release channels, at the owner's decision:
+
+- **GitHub releases are the stable beta channel.** Every version is released
+  there first, as soon as it is ready. Sites with the GitHub build (and
+  sites that turn on early updates from GitHub) get it at once.
+- **WordPress.org gets a version 90 days after its GitHub release**, so it
+  has been used on real sites first, unless it is a security release: a
+  version that fixes a vulnerability goes to WordPress.org as soon as it is
+  on GitHub. The WordPress.org release is built from the GitHub tag of the
+  version it ships, never from changes that are not on GitHub.
+- Say which channel a site is on in `README.md` → Updates and releases and
+  in `readme.txt` (FAQ), and mark security releases in the changelog
+  ("Security:") so the exception is clear.
+
 Sites install the latest GitHub release whose tag is a plain version and the
 asset named exactly `{folder}-X.Y.Z.zip` (the shared updater; Git Updater,
 where still active, reads `Version:` on `main` instead), so:
@@ -341,6 +354,14 @@ where still active, reads `Version:` on `main` instead), so:
   `Primary Branch` and `Release Asset` header lines, and has no
   `Update URI`. Its zip is named `wordpress-org-{slug}-X.Y.Z.zip` so no
   updater picks it; never attach it to a GitHub release.
+- The WordPress.org build has no affiliate links (guideline 11 does not
+  permit tracking referrals in the dashboard; guideline 12 wants affiliate
+  links to point straight at the service). List each referral link, or its
+  referral query, in `.wporg-links` with its plain replacement (a tab
+  between them); `scripts/build-release.sh` swaps them in that build only,
+  and `scripts/preflight-release.sh` errors when one is left and warns about
+  other addresses with referral parameters. GitHub builds keep them,
+  disclosed in `README.md` and `readme.txt`.
 - Any plugin released on GitHub (made from the starter or not) follows the
   same pattern: a `GitHub Plugin URI: owner/repo` header (and
   `Release Asset: true`), plain version tags, and a `{folder}-X.Y.Z.zip`
