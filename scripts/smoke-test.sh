@@ -45,6 +45,11 @@ DB_PASSWORD=""
 ADMIN_PASSWORD=""
 FAILED=0
 POSTS=10000
+# Options (parse_args).
+REF="HEAD"
+ZIP=""
+WPORG=0
+KEEP_LOG=""
 # A scan or sort over this many rows or more in the plugin's own queries fails.
 readonly SCAN_ROWS=1000
 
@@ -272,11 +277,8 @@ check_debug_log() {
 	return 0
 }
 
-main() {
-	local ref="HEAD"
-	local zip=""
-	local wporg=0
-	local keep=""
+# Read the options into REF, ZIP, WPORG, KEEP_LOG and the settings above.
+parse_args() {
 	local arg value
 	while [[ $# -gt 0 ]]; do
 		arg="$1"
@@ -287,34 +289,43 @@ main() {
 			case "$arg" in
 			--wp) WP_VERSION="$value" ;;
 			--php) PHP_VERSION="$value" ;;
-			--ref) ref="$value" ;;
+			--ref) REF="$value" ;;
 			--posts)
 				[[ "$value" =~ ^[1-9][0-9]{0,5}$ ]] || die "--posts needs a number from 1 to 999999"
 				POSTS="$value"
 				;;
 			--zip)
 				[[ -f "$value" ]] || die "no such zip: $value"
-				zip="$(cd "$(dirname "$value")" && pwd)/$(basename "$value")"
+				ZIP="$(cd "$(dirname "$value")" && pwd)/$(basename "$value")"
 				;;
 			--keep-log)
 				case "$value" in
-				/*) keep="$value" ;;
-				*) keep="$PWD/$value" ;;
+				/*) KEEP_LOG="$value" ;;
+				*) KEEP_LOG="$PWD/$value" ;;
 				esac
 				;;
 			*) ;; # The outer pattern lists every option that takes a value.
 			esac
 			shift
 			;;
-		--wporg) wporg=1 ;;
+		--wporg) WPORG=1 ;;
 		-h | --help)
 			usage
-			return 0
+			exit 0
 			;;
 		*) die "unknown argument: $arg" ;;
 		esac
 		shift
 	done
+	return 0
+}
+
+main() {
+	parse_args "$@"
+	local ref="$REF"
+	local zip="$ZIP"
+	local wporg="$WPORG"
+	local keep="$KEEP_LOG"
 
 	command -v docker >/dev/null 2>&1 || die "needs Docker"
 	command -v curl >/dev/null 2>&1 || die "needs curl"
