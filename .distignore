@@ -12,7 +12,6 @@
 .github
 .editorconfig
 .gitleaks.toml
-.sonarcloud.properties
 .codacy.yml
 .aidevops.json
 composer.json
