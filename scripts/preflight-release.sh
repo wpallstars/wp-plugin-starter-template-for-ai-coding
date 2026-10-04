@@ -20,7 +20,7 @@ set -euo pipefail
 
 readonly UPDATER_HEADERS='GitHub Plugin URI|Primary Branch|Release Asset'
 # Development files that must never be in a release zip (paths inside the slug folder).
-readonly DEV_FILES='^[^/]+/(\.git|\.agents|\.wordpress-org|\.distignore|\.distignore-wporg|\.gitattributes|\.gitignore|\.woodpecker\.yml|\.github|\.editorconfig|\.gitleaks\.toml|\.aidevops\.json|composer\.(json|lock)|phpcs\.xml(\.dist)?|phpstan(-baseline|-plugin)?\.neon(\.dist)?|vendor|AGENTS\.md|CONTRIBUTING\.md|DEVELOPMENT\.md|LAUNCH\.md|SECURITY\.md|STANDARDS\.md|RELEASING\.md|ROADMAP\.md|STABILITY\.md|TESTING\.md|docs|scripts|dist|node_modules|reference-plugins|project-documents)(/|$)|(^|/)(\.DS_Store|__MACOSX|Thumbs\.db)(/|$)|\.(bak|log|orig|swp)$'
+readonly DEV_FILES='^[^/]+/(\.git|\.agents|\.wordpress-org|\.distignore|\.distignore-wporg|\.gitattributes|\.gitignore|\.woodpecker\.yml|\.github|\.editorconfig|\.gitleaks\.toml|\.aidevops\.json|\.task-counter|composer\.(json|lock)|phpcs\.xml(\.dist)?|phpstan(-baseline|-plugin)?\.neon(\.dist)?|vendor|AGENTS\.md|CONTRIBUTING\.md|DEVELOPMENT\.md|LAUNCH\.md|SECURITY\.md|STANDARDS\.md|RELEASING\.md|ROADMAP\.md|STABILITY\.md|TESTING\.md|docs|scripts|dist|node_modules|reference-plugins|project-documents)(/|$)|(^|/)(\.DS_Store|__MACOSX|Thumbs\.db)(/|$)|\.(bak|log|orig|swp)$'
 readonly README_MAX_BYTES=10240
 readonly SHORT_DESC_MAX=150
 readonly MAX_TAGS=5
