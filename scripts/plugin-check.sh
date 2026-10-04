@@ -121,7 +121,7 @@ check_zip() {
 	if [[ -n "$keep" ]]; then
 		printf '%s\n' "$report" >"$keep/${zip_name%.zip}-plugin-check.json"
 	fi
-	if ! printf '%s\n' "$report" | grep -Eq '^(FILE: |Success: )'; then
+	if ! grep -Eq '^(FILE: |Success: )' <<<"$report"; then
 		# Neither findings nor the success line: Plugin Check did not run.
 		printf 'Plugin Check did not run:\n%s\n' "$report"
 		wp_cli plugin delete "$SLUG" --quiet || true

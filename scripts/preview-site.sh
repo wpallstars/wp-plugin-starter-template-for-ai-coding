@@ -254,7 +254,7 @@ branch_note() {
 			return 0
 		fi
 	fi
-	if ! printf '%s' "$INCLUDED" | grep -q " $current "; then
+	if ! grep -q " $current " <<<"$INCLUDED"; then
 		printf 'Your branch %s is not in the preview: push it and open a draft PR, or see skipped above.\n' "$current"
 	elif [[ "$(git rev-parse HEAD)" != "$(git rev-parse --verify --quiet "refs/remotes/origin/$current" || true)" ]]; then
 		printf 'Your branch %s is in the preview as pushed; local commits not pushed are not.\n' "$current"
