@@ -111,8 +111,7 @@ start_site() {
 	wp_cli config set WP_DEBUG_LOG true --raw --quiet
 	wp_cli config set WP_DEBUG_DISPLAY false --raw --quiet
 	wp_cli config set DISABLE_WP_CRON true --raw --quiet
-	wp_cli core install --title=SmokeTest --admin_user=admin --admin_password="$ADMIN_PASSWORD" \
-		--admin_email=admin@example.com --skip-email --quiet --url="$BASE_URL" # NOSONAR: local-only HTTP, see BASE_URL
+	wp_cli core install --title=SmokeTest --admin_user=admin --admin_password="$ADMIN_PASSWORD" --admin_email=admin@example.com --skip-email --quiet --url="$BASE_URL" # NOSONAR: local-only HTTP, see BASE_URL
 	# WP-CLI cannot see Apache's mod_rewrite, so write core's rules itself.
 	wp_cli rewrite structure '/%postname%/' --quiet
 	docker exec -u www-data "$NAME-web" sh -c 'printf "%s\n" "# BEGIN WordPress" "RewriteEngine On" "RewriteBase /" \
