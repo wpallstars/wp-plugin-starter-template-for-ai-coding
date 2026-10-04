@@ -4,6 +4,7 @@ Every change to WP Plugin Starter. readme.txt lists the latest version in short.
 
 = Unreleased =
 * Developers: a licence rule for plugins made from the starter (STANDARDS.md → Structure): stay GPL-2.0-or-later and keep LICENSE, the GPL notice, the starter's copyright line and its credit. The starter now has a copyright line (Marcus Quinn); scripts/rename-plugin.sh gives a new plugin its own copyright line above it. scripts/preflight-release.sh checks LICENSE is in both zips, that readme.txt names the same licence as the plugin header, and warns when a copyright line is missing. Nothing changes for users.
+* Developers: scripts/preflight-release.sh no longer stops without a message (exit 141) when README.md is over 64 KB: the Version: check read only up to the first match, so git show was cut off.
 
 = 1.0.14 =
 * New: WordPress.org icons (icon-128x128.png, icon-256x256.png and icon.svg in .wordpress-org/), the banner's plugin stack and stars on their own. scripts/build-banner.sh builds the PNGs from .wordpress-org/icon.svg when a plugin has one.

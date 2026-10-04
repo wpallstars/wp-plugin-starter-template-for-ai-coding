@@ -158,7 +158,10 @@ check_readme_version() {
 	local version="$2"
 	git cat-file -e "$sha:README.md" 2>/dev/null || return 0
 	local line
-	line="$(git show "$sha:README.md" | sed -nE '/^Version:/{s/^Version:[[:space:]]*//p;q;}')"
+	# Read to the end and keep the first match: sed quitting early would end
+	# git show with SIGPIPE on a README over the pipe buffer (pipefail, set -e).
+	line="$(git show "$sha:README.md" | sed -nE 's/^Version:[[:space:]]*//p')"
+	line="${line%%$'\n'*}"
 	if [[ -z "$line" ]]; then
 		return 0
 	elif [[ "$line" = "$version" ]]; then
