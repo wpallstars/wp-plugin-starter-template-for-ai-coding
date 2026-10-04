@@ -123,10 +123,8 @@ and field names, `Prefix_Name` classes, early returns), since the free plan
 cannot give a project its own Quality Profile; ignores a few findings that
 are by design, each scoped to its files with the reason; and leaves
 coverage out, as the smoke test, not unit tests, checks the plugin. Fix
-other findings in the code. For a new plugin: import the
-repository in SonarCloud, turn off **Automatic Analysis** (Administration →
-Analysis Method; it ignores the file), and add a SonarCloud token as the
-`SONAR_TOKEN` Actions secret. Without the secret the job is skipped.
+other findings in the code. Without the `SONAR_TOKEN` secret the job is
+skipped; setting it up: Services setup below.
 
 ### Starter sync
 
@@ -148,6 +146,59 @@ git -C ../<starter> pull
 scripts/sync-core.sh --check   # list what differs
 scripts/sync-core.sh           # copy the starter's core files, renamed
 ```
+
+## Services setup
+
+Once per repository, for a new plugin or one that has just synced these
+workflows from the starter. Each step needs the owner's accounts or makes a
+secret, so an agent lists the missing ones for the owner (with this
+section) instead of doing them. `{owner}/{repo}` is the plugin's GitHub
+repository.
+
+While the repository is private: SonarCloud's free plan analyses private
+projects up to 50,000 lines of code for the whole organization, so a
+private plugin can take step 1 if the organization has room. Codacy
+analyses private repositories only on a paid plan, so step 2 waits for
+public launch (below). Branch rulesets need a paid GitHub plan on private
+repositories, so step 3 waits too. Until then the SonarCloud job skips
+without its secret, and nothing fails.
+
+1. **SonarCloud** (SonarQube Cloud), for `.github/workflows/sonarcloud.yml`:
+   1. Import the repository into the `{owner}` organization: in its GitHub
+      import screen, select the repository and choose **Analyze 1
+      project**. The project key must stay `{owner}_{repo}`, the key the
+      workflow passes.
+   2. In the project, **Administration → Analysis Method**: turn
+      **Automatic Analysis** off. It ignores `sonar-project.properties`, and
+      the CI scan fails while it is on.
+   3. Make a token for the scan: a personal access token on the free plan;
+      on the Team plan, a scoped organization token with only **Execute
+      analysis**. Store it in the repository:
+      `gh secret set SONAR_TOKEN --repo {owner}/{repo}` (it asks for the
+      value; never paste it into a chat, issue or file).
+   4. Check: the next pull request's **SonarCloud analysis** job runs the
+      scan instead of logging "skipping SonarCloud".
+2. **Codacy**, which reads `.codacy.yml`: in the `{owner}` organization,
+   **Manage repositories** (top right), then **Add** beside the repository.
+   Check: the next pull request gets a **Codacy Static Code Analysis**
+   check. Then add the repository's Codacy badge to the badges block in
+   `README.md` (`STANDARDS.md` → Structure).
+3. **`SYNC_PAT`**, only once `main` is protected by a branch ruleset.
+   `.github/workflows/repo-metrics.yml` commits `docs/metrics/` to `main`;
+   with protection and no `SYNC_PAT` it warns "SYNC_PAT not present" and
+   leaves the metrics out of date. Make a fine-grained personal access token
+   (GitHub → Settings → Developer settings → Personal access tokens →
+   Fine-grained tokens) for an account the ruleset lets push to `main`,
+   limited to this repository, with **Contents: Read and write**. Store it:
+   `gh secret set SYNC_PAT --repo {owner}/{repo}`. Check: the next
+   **Repository metrics** run logs "SYNC_PAT present".
+4. **Starter sync**: Actions → **Starter sync** → **Run workflow**, once,
+   to see that it runs. It needs no secret. Set the repository variable
+   `STARTER_REPO` only to follow a fork of the starter.
+
+`gh secret list --repo {owner}/{repo}` shows which secrets are set (names
+only). CodeRabbit, CodeFactor, Socket and qlty are GitHub apps installed
+for the whole organization; they need nothing per repository.
 
 ## Test site resources
 
@@ -221,7 +272,8 @@ it at that standard:
    and qlty, plus GitHub's CodeQL (JavaScript and GitHub Actions; it has
    no PHP support, so PHPStan, SonarCloud and Codacy cover the PHP),
    Dependabot security alerts, secret scanning with push protection, and
-   OpenSSF Scorecard. Socket keeps checking dependencies.
+   OpenSSF Scorecard. Socket keeps checking dependencies. Connect any
+   service still missing with Services setup above.
 2. Fix what they find in the code, in small pull requests by area
    (security first). Each finding is either fixed, explained in an inline
    comment, or marked as a false positive in that service with the reason.
