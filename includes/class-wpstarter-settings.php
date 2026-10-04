@@ -97,6 +97,11 @@ class WPStarter_Settings {
      * - open:        multi only; also keep key-like values that are not (yet)
      *                in options, e.g. post types or widgets registered later
      * - replaces:    top-level only; plugin slug => name this setting replaces
+     * - panel:       top-level only; true to show the Options panel even with
+     *                no visible child settings, for a feature that renders its
+     *                own controls there (wpstarter_setting_panel)
+     * - hidden:      child only; true for wiring set by starter data or code,
+     *                which the panel does not show
      * - reload:      true when the change shows only after a page load; the
      *                saved message then asks to reload the page
      * - label, description, placeholder, min, max, unit, tokens, rows: UI metadata
