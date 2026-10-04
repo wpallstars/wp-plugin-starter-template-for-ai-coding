@@ -137,7 +137,8 @@ set_link() {
 }
 
 # Replace what follows the line that is exactly HEADING, up to the next line
-# matching NEXT (or the end), with BODY; with no BODY, drop the heading too.
+# matching NEXT (with no NEXT, the end), with BODY; with no BODY, drop the
+# heading too.
 set_section() {
 	local file="$1"
 	local heading="$2"
@@ -145,7 +146,7 @@ set_section() {
 	local body="$4"
 	[ -f "$file" ] || return 0
 	HEADING="$heading" NEXT="$next" BODY="$body" awk '
-		skip && $0 ~ ENVIRON["NEXT"] {
+		skip && ENVIRON["NEXT"] != "" && $0 ~ ENVIRON["NEXT"] {
 			skip = 0
 			if (ENVIRON["BODY"] != "") print ""
 		}
@@ -181,7 +182,7 @@ set_version() {
 * $first
 
 Every change: changelog.txt."
-	set_section changelog.txt "== Changelog ==" 'a^' "Every change to $TO_NAME. readme.txt lists the latest version in short.
+	set_section changelog.txt "== Changelog ==" "" "Every change to $TO_NAME. readme.txt lists the latest version in short.
 
 = $VERSION =
 * $first"
