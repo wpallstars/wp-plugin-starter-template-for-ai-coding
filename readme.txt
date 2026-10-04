@@ -5,7 +5,7 @@ Tags: starter, boilerplate, settings, developer, template
 Requires at least: 6.2
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 1.0.18
+Stable tag: 1.0.19
 License: GPLv3 or later
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 
@@ -60,8 +60,8 @@ GitHub releases are the stable beta channel: each version comes out there first.
 
 == Changelog ==
 
-= 1.0.18 =
-* Changed: WordPress.org gets each version 30 days after its GitHub release, not 90. Security releases still come out on both at once.
+= 1.0.19 =
+* Developers: STANDARDS.md is shorter, with preview-site details in DEVELOPMENT.md. Nothing changes on sites.
 
 Every change: changelog.txt.
 

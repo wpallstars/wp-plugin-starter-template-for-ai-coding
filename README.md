@@ -24,7 +24,7 @@ WP Plugin Starter is what wpallstars plugins are made from. It has no features o
 
 If this saves you time, headaches and costs, feel free to [buy me a coffee](https://buymeacoffee.com/marcusquinn), or whatever you like, to invest in making more things open-source.
 
-Version: 1.0.18
+Version: 1.0.19
 
 <!-- github-only:start -->
 ## Screenshots
@@ -127,6 +127,10 @@ Read a setting with `WPStarter_Settings::get( 'key' )`.
 Deleting the plugin removes its settings, its cached data, who hid lines of the Plugins screen notice about replaced plugins, and the cached GitHub releases.
 
 ## Changelog
+
+### 1.0.19
+
+- Developers: `STANDARDS.md` is under 500 lines again (481), so plugins can sync it without failing the aidevops push gate for long Markdown files. How the preview site works, its conflicts and throwaway sites moved to `DEVELOPMENT.md` → Preview site; the rules stay in `STANDARDS.md` → Testing, and the starter sync bullet points to `DEVELOPMENT.md` → Starter sync. No rule changed. Nothing changes for users.
 
 ### 1.0.18
 

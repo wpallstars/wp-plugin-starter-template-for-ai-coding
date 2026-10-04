@@ -42,14 +42,11 @@ How changes are made and checked: `DEVELOPMENT.md`. Releases: `RELEASING.md`.
   `scripts/sync-core.sh` in each plugin; `scripts/sync-core.sh --check` lists
   core files that differ. A new plugin starts as a copy of the starter
   renamed with `scripts/rename-plugin.sh`.
-- Every plugin keeps up with the starter. The weekly Starter sync workflow
-  (`.github/workflows/starter-sync.yml`) compares the plugin's core files
-  with the starter's and keeps one issue labelled `starter-sync` open while
-  any differ, with the files and the steps; it closes the issue once they
-  match. Work that issue like any other: sync, check the starter's
-  changelog for changes the plugin's own files need, lint, smoke test,
-  pull request. A change the plugin made to a core file goes into the
-  starter first.
+- Every plugin keeps up with the starter: the weekly Starter sync workflow
+  keeps one `starter-sync` issue open while core files differ
+  (`DEVELOPMENT.md` → Starter sync). Work it like any other issue: sync,
+  check the starter's changelog for changes the plugin's own files need,
+  lint, smoke test, pull request.
 - One class per feature in `includes/features/`, extending `{Prefix}_Feature`,
   registered in `{Prefix}_Setup::FEATURES`. Features some builds leave out
   go in `{Prefix}_Setup::OPTIONAL_FEATURES` and load only when present.
@@ -444,43 +441,19 @@ WordPress:
    `phpstan-baseline.neon` or add a `phpcs:ignore` without a reason.
 2. The user reviews on one local test site per plugin, shared by every
    session and worktree. It shows a **combined preview**: `origin/main` plus
-   every open pull request from the repository, merged together. Update it
-   only with the script, from any worktree:
+   every open pull request, merged together. Update it only with
+   `scripts/preview-site.sh`, from any worktree (`--dry-run` reports what it
+   would include); how it works, conflicts and throwaway sites for checks
+   of your own: `DEVELOPMENT.md` → Preview site.
 
-   ```bash
-   scripts/preview-site.sh             # the first run on a clone takes the site: scripts/preview-site.sh "<site>"
-   scripts/preview-site.sh --dry-run   # report what would be included, copy nothing
-   ```
-
-   It fetches `origin`, merges each open PR's branch onto `origin/main` in PR
-   order without touching any checkout, leaves out branches that conflict
-   (and lists them), copies the result with `.distignore` applied (exactly
-   what a release build contains), and writes
-   `<site>/wp-content/{slug}-synced-from.txt` listing what is included.
-   A lock stops two runs at once. Because every run includes everyone's
-   pushed work, no session hides another's.
-
-   - **Never** `rsync` your worktree into the shared site: it hides every
-     other session's work until the next run. Do not use Git hooks either:
-     they are shared by every worktree and would deploy the wrong checkout.
+   - **Never** `rsync` your worktree into the shared site or deploy it with
+     Git hooks (shared by every worktree): either hides every other
+     session's work or deploys the wrong checkout.
    - Only pushed work with an open PR is included. Before asking the user to
      look at unmerged work, push the branch and open a draft PR, then run the
-     script. It says so if the branch you run it from is missing or has
-     commits that are not pushed.
-   - After merging a PR, run the script again, then check that the stamp
-     lists your merge in `main` before telling the user to look.
-   - Conflicts only in `changelog.txt`, `readme.txt` or `README.md` do not
-     leave a branch out: every PR adds lines at the top of the same
-     changelogs, so each merge to `main` would otherwise drop every other
-     open PR. The preview keeps both sides' lines there and says so in the
-     stamp; still merge `origin/main` into your branch before it merges.
-   - If your branch is left out because it conflicts in other files, merge
-     `origin/main` into it (or wait for the other PR), push and run the
-     script again. Tell the user which PRs are left out.
-   - To check your branch on its own, or for checks the user will not look
-     at, use a throwaway site of your own (step 4's Docker image on a free
-     port), which no one else overwrites:
-     `rsync -a --delete --delete-excluded --exclude-from=.distignore ./ "<site>/wp-content/plugins/{slug}/"`.
+     script. After merging a PR, run it again and check that the stamp lists
+     your merge in `main` before telling the user to look. Tell the user
+     which PRs it leaves out.
    - Size every test site, shared or throwaway, as `DEVELOPMENT.md` → Test
      site resources says. PHP's defaults fill up and the slowdowns look like
      bugs.
