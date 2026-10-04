@@ -35,8 +35,8 @@ TMP_FILE=""
 LIST_FILE=""
 
 cleanup() {
-	[ -z "$TMP_FILE" ] || rm -f "$TMP_FILE"
-	[ -z "$LIST_FILE" ] || rm -f "$LIST_FILE"
+	[[ -z "$TMP_FILE" ]] || rm -f "$TMP_FILE"
+	[[ -z "$LIST_FILE" ]] || rm -f "$LIST_FILE"
 	return 0
 }
 
@@ -61,30 +61,30 @@ core_paths() {
 		*/)
 			files="$(git -C "$from" ls-tree -r --name-only "$ref" -- "$line")" ||
 				die "cannot list $line in the starter at $ref"
-			[ -n "$files" ] || die "scripts/core-files.txt lists $line, which has no files in the starter at $ref"
+			[[ -n "$files" ]] || die "scripts/core-files.txt lists $line, which has no files in the starter at $ref"
 			printf '%s\n' "$files" >>"$out"
 			;;
 		*) printf '%s\n' "$line" >>"$out" ;;
 		esac
 	done < <(printf '%s\n' "$list" | sed -e 's/[[:space:]]*$//' -e '/^#/d' -e '/^$/d')
-	[ -s "$out" ] || die "scripts/core-files.txt in the starter at $ref lists no files"
+	[[ -s "$out" ]] || die "scripts/core-files.txt in the starter at $ref lists no files"
 	return 0
 }
 
 main() {
 	local check=0 from="" ref="HEAD"
-	while [ $# -gt 0 ]; do
+	while [[ $# -gt 0 ]]; do
 		local arg="$1"
 		local value="${2:-}"
 		case "$arg" in
 		--check) check=1 ;;
 		--from)
-			[ $# -ge 2 ] || die "--from needs a value"
+			[[ $# -ge 2 ]] || die "--from needs a value"
 			from="$value"
 			shift
 			;;
 		--ref)
-			[ $# -ge 2 ] || die "--ref needs a value"
+			[[ $# -ge 2 ]] || die "--ref needs a value"
 			ref="$value"
 			shift
 			;;
@@ -103,12 +103,12 @@ main() {
 	plugin_identity HEAD || die "cannot tell which plugin this is"
 	plugin_names_as TO
 
-	if [ -z "$from" ]; then
+	if [[ -z "$from" ]]; then
 		from="$(plugin_env STARTER_DIR "$(dirname "$root")/$STARTER_REPO_DIR")"
 	fi
-	[ -d "$from" ] || die "no starter checkout at $from; clone it there or pass --from DIR"
+	[[ -d "$from" ]] || die "no starter checkout at $from; clone it there or pass --from DIR"
 	from="$(cd "$from" && pwd)"
-	[ "$from" != "$root" ] || die "this is the starter; run it in a plugin made from the starter"
+	[[ "$from" != "$root" ]] || die "this is the starter; run it in a plugin made from the starter"
 	git -C "$from" rev-parse --verify --quiet "$ref^{commit}" >/dev/null || die "not a commit in the starter: $ref"
 
 	cd "$from"
@@ -130,12 +130,12 @@ main() {
 		target="$(printf '%s' "$path" | plugin_map)"
 		git -C "$from" show "$ref:$path" | plugin_map "$target" >"$tmp"
 		count=$((count + 1))
-		if [ -f "$target" ] && cmp -s "$tmp" "$target"; then
+		if [[ -f "$target" ]] && cmp -s "$tmp" "$target"; then
 			continue
 		fi
 		differ=$((differ + 1))
-		if [ "$check" -eq 1 ]; then
-			if [ -f "$target" ]; then
+		if [[ "$check" -eq 1 ]]; then
+			if [[ -f "$target" ]]; then
 				printf '  differs  %s\n' "$target"
 			else
 				printf '  missing  %s\n' "$target"
@@ -147,13 +147,13 @@ main() {
 		# goes, so rewriting scripts/sync-core.sh itself would break this run.
 		cp "$tmp" "$target.sync-core-new"
 		mode="$(git -C "$from" ls-tree "$ref" -- "$path" | awk '{ print $1 }')"
-		if [ "$mode" = "100755" ]; then chmod 755 "$target.sync-core-new"; else chmod 644 "$target.sync-core-new"; fi
+		if [[ "$mode" = "100755" ]]; then chmod 755 "$target.sync-core-new"; else chmod 644 "$target.sync-core-new"; fi
 		mv -f "$target.sync-core-new" "$target"
 		printf '  updated  %s\n' "$target"
 	done <"$LIST_FILE"
 
-	if [ "$check" -eq 1 ]; then
-		if [ "$differ" -eq 0 ]; then
+	if [[ "$check" -eq 1 ]]; then
+		if [[ "$differ" -eq 0 ]]; then
 			printf 'All %d core files match the starter.\n' "$count"
 			return 0
 		fi

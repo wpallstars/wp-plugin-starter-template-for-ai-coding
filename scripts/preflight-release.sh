@@ -57,7 +57,7 @@ usage() {
 }
 
 cleanup() {
-	if [ -n "$TMP_DIR" ] && [ -d "$TMP_DIR" ]; then
+	if [[ -n "$TMP_DIR" ]] && [[ -d "$TMP_DIR" ]]; then
 		rm -rf "$TMP_DIR"
 	fi
 	return 0
@@ -152,17 +152,17 @@ check_versions() {
 	else
 		err "Version: '$version' is not X.Y.Z; pre-release versions on main are offered to sites still using Git Updater"
 	fi
-	if [ "$constant" = "$version" ]; then ok "version constant matches ($constant)"; else err "version constant is '$constant', Version: is '$version'"; fi
-	if [ "$stable" = "$version" ]; then ok "readme.txt Stable tag matches"; else err "readme.txt Stable tag is '$stable', Version: is '$version'"; fi
-	if [ "$(printf '%s' "$stable" | tr '[:upper:]' '[:lower:]')" = "trunk" ]; then err "Stable tag: trunk is not allowed for new plugins"; fi
+	if [[ "$constant" = "$version" ]]; then ok "version constant matches ($constant)"; else err "version constant is '$constant', Version: is '$version'"; fi
+	if [[ "$stable" = "$version" ]]; then ok "readme.txt Stable tag matches"; else err "readme.txt Stable tag is '$stable', Version: is '$version'"; fi
+	if [[ "$(printf '%s' "$stable" | tr '[:upper:]' '[:lower:]')" = "trunk" ]]; then err "Stable tag: trunk is not allowed for new plugins"; fi
 
 	local key header_value readme_value
 	for key in "Requires at least" "Requires PHP"; do
 		header_value="$(field "$plugin_header" "$key")"
 		readme_value="$(field "$readme" "$key")"
-		if [ -z "$header_value" ]; then
+		if [[ -z "$header_value" ]]; then
 			err "$MAIN_FILE has no '$key' header (WordPress reads it from the plugin file)"
-		elif [ -n "$readme_value" ] && [ "$header_value" != "$readme_value" ]; then
+		elif [[ -n "$readme_value" ]] && [[ "$header_value" != "$readme_value" ]]; then
 			err "$key: $header_value in $MAIN_FILE, $readme_value in readme.txt"
 		else
 			ok "$key: $header_value"
@@ -177,12 +177,12 @@ check_versions() {
 
 	local domain license plugin_uri author_uri
 	domain="$(field "$plugin_header" "Text Domain")"
-	if [ "$domain" = "$SLUG" ]; then ok "Text Domain: $domain"; else err "Text Domain is '$domain'; it must be the slug ($SLUG) for language packs"; fi
+	if [[ "$domain" = "$SLUG" ]]; then ok "Text Domain: $domain"; else err "Text Domain is '$domain'; it must be the slug ($SLUG) for language packs"; fi
 	license="$(field "$plugin_header" "License")"
 	if printf '%s' "$license" | grep -Eiq 'GPL'; then ok "License: $license"; else err "License '$license' is not GPL-compatible as written"; fi
 	plugin_uri="$(field "$plugin_header" "Plugin URI")"
 	author_uri="$(field "$plugin_header" "Author URI")"
-	if [ -n "$plugin_uri" ] && [ "$plugin_uri" = "$author_uri" ]; then
+	if [[ -n "$plugin_uri" ]] && [[ "$plugin_uri" = "$author_uri" ]]; then
 		warn "Plugin URI and Author URI are the same ($plugin_uri); WordPress.org asks for a Plugin URI unique to the plugin, or none"
 	fi
 	VERSION="$version"
@@ -214,7 +214,7 @@ check_readme() {
 
 	local bytes
 	bytes="$(printf '%s' "$readme" | wc -c | tr -d ' ')"
-	if [ "$bytes" -le "$README_MAX_BYTES" ]; then
+	if [[ "$bytes" -le "$README_MAX_BYTES" ]]; then
 		ok "size ${bytes} bytes ($((README_MAX_BYTES - bytes)) left)"
 	else
 		warn "size ${bytes} bytes; WordPress.org says over 10 KB may cause errors (keep the current changelog, move older entries to changelog.txt, trim the description)"
@@ -223,13 +223,13 @@ check_readme() {
 	local name readme_name
 	name="$(field "$plugin_header" "Plugin Name")"
 	readme_name="$(printf '%s\n' "$readme" | sed -n '1s/^===[[:space:]]*\(.*[^[:space:]]\)[[:space:]]*===.*/\1/p')"
-	if [ "$readme_name" = "$name" ]; then ok "name matches the plugin header ($name)"; else warn "readme name '$readme_name' differs from Plugin Name '$name'"; fi
+	if [[ "$readme_name" = "$name" ]]; then ok "name matches the plugin header ($name)"; else warn "readme name '$readme_name' differs from Plugin Name '$name'"; fi
 
 	local short
 	short="$(printf '%s\n' "$readme" | awk 'NR == 1 { next } !h && /^[ \t]*$/ { h = 1; next } h && /^==/ { exit } h && !/^[ \t]*$/ { print; exit }')"
-	if [ -z "$short" ]; then
+	if [[ -z "$short" ]]; then
 		err "no short description (the line after the header)"
-	elif [ "${#short}" -le "$SHORT_DESC_MAX" ]; then
+	elif [[ "${#short}" -le "$SHORT_DESC_MAX" ]]; then
 		ok "short description ${#short} characters"
 	else
 		warn "short description ${#short} characters; WordPress.org cuts it at $SHORT_DESC_MAX"
@@ -238,7 +238,7 @@ check_readme() {
 	local tags tag_count
 	tags="$(field "$readme" "Tags")"
 	tag_count="$(printf '%s\n' "$tags" | awk -F',' '{ print ($0 == "") ? 0 : NF }')"
-	if [ "$tag_count" -ge 1 ] && [ "$tag_count" -le "$MAX_TAGS" ]; then ok "$tag_count tags"; else warn "$tag_count tags; WordPress.org shows at most $MAX_TAGS"; fi
+	if [[ "$tag_count" -ge 1 ]] && [[ "$tag_count" -le "$MAX_TAGS" ]]; then ok "$tag_count tags"; else warn "$tag_count tags; WordPress.org shows at most $MAX_TAGS"; fi
 
 	local tested
 	tested="$(field "$readme" "Tested up to")"
@@ -247,14 +247,14 @@ check_readme() {
 	else
 		err "Tested up to '$tested' should be a major version such as 6.8"
 	fi
-	if [ "$OFFLINE" -eq 0 ]; then
+	if [[ "$OFFLINE" -eq 0 ]]; then
 		local latest latest_major
 		# The first offer is the latest release; later ones are older branches.
 		latest="$(curl -s -m 20 'https://api.wordpress.org/core/version-check/1.7/' | grep -o '"current":"[0-9.]*"' | head -n 1 | cut -d'"' -f4 || true)"
 		latest_major="$(printf '%s' "$latest" | cut -d. -f1-2)"
-		if [ -z "$latest_major" ]; then
+		if [[ -z "$latest_major" ]]; then
 			note "could not read the latest WordPress version"
-		elif [ "$(version_lt "$tested" "$latest_major")" = "1" ]; then
+		elif [[ "$(version_lt "$tested" "$latest_major")" = "1" ]]; then
 			warn "Tested up to $tested, latest WordPress is $latest; test and raise it"
 		else
 			ok "Tested up to is the latest WordPress ($latest)"
@@ -262,7 +262,7 @@ check_readme() {
 	fi
 
 	check_changelog "readme.txt" "$(printf '%s\n' "$readme" | awk '/^== *[Cc]hangelog *==/ { c = 1; next } c && /^== / { exit } c')" "$version"
-	if [ -n "$CHANGELOG_TXT" ]; then
+	if [[ -n "$CHANGELOG_TXT" ]]; then
 		check_changelog "changelog.txt" "$CHANGELOG_TXT" "$version"
 	fi
 	if printf '%s\n' "$readme" | grep -Eiq '^== *upgrade notice *=='; then
@@ -283,7 +283,7 @@ check_wporg() {
 	local name derived
 	name="$(field "$plugin_header" "Plugin Name")"
 	derived="$(printf '%s' "$name" | tr '[:upper:]' '[:lower:]' | sed -E 's/[^a-z0-9]+/-/g; s/^-+|-+$//g')"
-	if [ "$derived" = "$SLUG" ]; then
+	if [[ "$derived" = "$SLUG" ]]; then
 		ok "the slug WordPress.org makes from '$name' is $SLUG"
 	else
 		warn "WordPress.org makes the slug from Plugin Name: '$name' becomes '$derived', not '$SLUG'. Ask for '$SLUG' in the submission notes (it can change only before approval), or the text domain will not match"
@@ -292,7 +292,7 @@ check_wporg() {
 		warn "Plugin Name starts with a trademark ('$name'); WordPress.org does not allow that"
 	fi
 
-	if [ "$OFFLINE" -eq 1 ]; then
+	if [[ "$OFFLINE" -eq 1 ]]; then
 		note "offline: slug and contributor profiles not checked"
 		return 0
 	fi
@@ -300,13 +300,13 @@ check_wporg() {
 	info="$(curl -s -m 20 "https://api.wordpress.org/plugins/info/1.2/?action=plugin_information&request%5Bslug%5D=$SLUG&request%5Bfields%5D%5Bsections%5D=0" || true)"
 	if printf '%s' "$info" | grep -q '"error"'; then
 		note "slug $SLUG is not listed on WordPress.org yet"
-	elif [ -n "$info" ]; then
+	elif [[ -n "$info" ]]; then
 		note "slug $SLUG is already listed on WordPress.org; check it is this plugin"
 	fi
 
 	local contributors user status
 	contributors="$(field "$readme" "Contributors")"
-	if [ -z "$contributors" ]; then
+	if [[ -z "$contributors" ]]; then
 		err "readme.txt has no Contributors"
 	fi
 	for user in $(printf '%s' "$contributors" | tr ',' ' '); do
@@ -327,7 +327,7 @@ check_syntax() {
 	local out php_label
 	local expected
 	expected="$(find "$dir" -name '*.php' | wc -l | tr -d ' ')"
-	if [ "$USE_DOCKER" -eq 1 ] && command -v docker >/dev/null 2>&1 && docker info >/dev/null 2>&1; then
+	if [[ "$USE_DOCKER" -eq 1 ]] && command -v docker >/dev/null 2>&1 && docker info >/dev/null 2>&1; then
 		local image="php:7.4-cli"
 		if docker image inspect wordpress:php7.4-apache >/dev/null 2>&1; then image="wordpress:php7.4-apache"; fi
 		out="$(docker run --rm -v "$dir:/src:ro" "$image" sh -c 'find /src -name "*.php" -exec php -l {} \;' 2>&1 || true)"
@@ -340,14 +340,14 @@ check_syntax() {
 		php_label=""
 		warn "$label: no PHP to lint with"
 	fi
-	if [ -n "$php_label" ]; then
+	if [[ -n "$php_label" ]]; then
 		# Count the files php -l passed, so a lint that never ran cannot pass.
 		local passed problems
 		passed="$(printf '%s\n' "$out" | grep -c '^No syntax errors' || true)"
 		problems="$(printf '%s\n' "$out" | grep -v '^No syntax errors' | grep -v '^[[:space:]]*$' || true)"
-		if [ -z "$problems" ] && [ "$passed" -eq "$expected" ] && [ "$expected" -gt 0 ]; then
+		if [[ -z "$problems" ]] && [[ "$passed" -eq "$expected" ]] && [[ "$expected" -gt 0 ]]; then
 			ok "$label: $php_label, $passed files"
-		elif [ -z "$problems" ]; then
+		elif [[ -z "$problems" ]]; then
 			err "$label: PHP lint checked $passed of $expected files"
 		else
 			err "$label: $php_label errors:"
@@ -356,7 +356,7 @@ check_syntax() {
 	fi
 	if command -v node >/dev/null 2>&1; then
 		out="$(find "$dir" -name '*.js' -exec node --check {} \; 2>&1 || true)"
-		if [ -z "$out" ]; then ok "$label: JS syntax"; else err "$label: JS syntax errors:"; printf '%s\n' "$out" | sed 's/^/           /'; fi
+		if [[ -z "$out" ]]; then ok "$label: JS syntax"; else err "$label: JS syntax errors:"; printf '%s\n' "$out" | sed 's/^/           /'; fi
 	else
 		warn "$label: node not found, JS not checked"
 	fi
@@ -371,10 +371,10 @@ check_zip() {
 	local list tops dev size
 	list="$(unzip -Z1 "$zip_path")"
 	tops="$(printf '%s\n' "$list" | cut -d/ -f1 | sort -u | tr '\n' ' ')"
-	if [ "$tops" = "$SLUG " ]; then ok "$label: one $SLUG/ folder"; else err "$label: top level is '$tops', must be only $SLUG/"; fi
+	if [[ "$tops" = "$SLUG " ]]; then ok "$label: one $SLUG/ folder"; else err "$label: top level is '$tops', must be only $SLUG/"; fi
 	if printf '%s\n' "$list" | grep -qx "$SLUG/$MAIN_FILE"; then ok "$label: $SLUG/$MAIN_FILE present"; else err "$label: $SLUG/$MAIN_FILE missing"; fi
 	dev="$(printf '%s\n' "$list" | grep -E "$DEV_FILES" || true)"
-	if [ -z "$dev" ]; then ok "$label: no development files"; else err "$label: development files: $(printf '%s' "$dev" | tr '\n' ' ')"; fi
+	if [[ -z "$dev" ]]; then ok "$label: no development files"; else err "$label: development files: $(printf '%s' "$dev" | tr '\n' ' ')"; fi
 	size="$(wc -c <"$zip_path" | tr -d ' ')"
 	note "$label: $(basename "$zip_path"), $((size / 1024)) KB, $(printf '%s\n' "$list" | grep -cv '/$') files"
 	mkdir -p "$dir"
@@ -390,7 +390,7 @@ check_builds() {
 	local version="$3"
 	section "Release zips"
 
-	if [ "$(basename "$github_zip")" = "$SLUG-$version.zip" ]; then
+	if [[ "$(basename "$github_zip")" = "$SLUG-$version.zip" ]]; then
 		ok "GitHub asset name $SLUG-$version.zip (sites install only that name)"
 	else
 		err "GitHub asset is $(basename "$github_zip"), expected $SLUG-$version.zip"
@@ -403,11 +403,11 @@ check_builds() {
 	UNPACKED=""
 	check_zip "$github_zip" "github"
 	local github_dir="$UNPACKED" path
-	if [ -z "$UPDATER_FILES" ]; then
+	if [[ -z "$UPDATER_FILES" ]]; then
 		note "no .distignore-wporg: both builds hold the same files"
 	fi
 	for path in $UPDATER_FILES; do
-		if [ -e "$github_dir/$path" ]; then ok "github: has $path"; else err "github: $path missing (listed in .distignore-wporg)"; fi
+		if [[ -e "$github_dir/$path" ]]; then ok "github: has $path"; else err "github: $path missing (listed in .distignore-wporg)"; fi
 	done
 	if grep -Eq "^[[:space:]*]*GitHub Plugin URI:" "$github_dir/$MAIN_FILE"; then ok "github: has the GitHub Plugin URI header"; else err "github: no GitHub Plugin URI header, sites cannot update it from GitHub"; fi
 	if grep -Eq "^[[:space:]*]*Update URI:[[:space:]]*https://github\.com/" "$github_dir/$MAIN_FILE"; then
@@ -419,12 +419,12 @@ check_builds() {
 	check_zip "$wporg_zip" "wporg"
 	local wporg_dir="$UNPACKED"
 	for path in $UPDATER_FILES; do
-		if [ -e "$wporg_dir/$path" ]; then err "wporg: $path must not be in the WordPress.org build"; else ok "wporg: no $path"; fi
+		if [[ -e "$wporg_dir/$path" ]]; then err "wporg: $path must not be in the WordPress.org build"; else ok "wporg: no $path"; fi
 	done
 	if grep -Eq "^[[:space:]*]*($UPDATER_HEADERS):" "$wporg_dir/$MAIN_FILE"; then err "wporg: GitHub updater header lines still in $MAIN_FILE"; else ok "wporg: no GitHub updater header lines"; fi
 	local hits
 	hits="$(grep -rEl --include='*.php' --include='*.js' 'gu_override_dot_org|api\.github\.com/repos|Plugin_Upgrader|Theme_Upgrader|site_transient_update_plugins|auto_update_(plugin|theme)' "$wporg_dir" 2>/dev/null | sed "s|^$wporg_dir/||" || true)"
-	if [ -z "$hits" ]; then
+	if [[ -z "$hits" ]]; then
 		ok "wporg: no code that installs or updates plugins from elsewhere"
 	else
 		warn "wporg: check these install or update code (guideline 8 allows only WordPress.org sources): $(printf '%s' "$hits" | tr '\n' ' ')"
@@ -432,17 +432,18 @@ check_builds() {
 
 	section "Remote assets and services (WordPress.org build)"
 	hits="$(grep -rEn "(wp_(enqueue|register)_(script|style)|<script|<link)[^;]*['\"](https?:)?//" "$wporg_dir" --include='*.php' 2>/dev/null | sed "s|^$wporg_dir/||" | cut -c1-160 || true)"
-	if [ -z "$hits" ]; then ok "no scripts or styles loaded from other sites"; else warn "scripts or styles from other sites (guideline 8: ship them in the plugin unless they are part of a service):"; printf '%s\n' "$hits" | sed 's/^/           /'; fi
+	if [[ -z "$hits" ]]; then ok "no scripts or styles loaded from other sites"; else warn "scripts or styles from other sites (guideline 8: ship them in the plugin unless they are part of a service):"; printf '%s\n' "$hits" | sed 's/^/           /'; fi
 	local readme_text hosts host missing=""
 	readme_text="$(cat "$wporg_dir/readme.txt")"
 	hosts="$(grep -rEoh 'https?://[A-Za-z0-9.-]+\.[a-z]{2,}' "$wporg_dir/includes" "$wporg_dir/blocks" 2>/dev/null | sed -E 's|https?://||; s|^www\.||' | sort -u || true)"
 	for host in $hosts; do
 		case "$host" in
 		w3.org | gnu.org | wordpress.org | *.wordpress.org | w.org | *.w.org | wp.org | *.wp.org | example.com | *.example.com) continue ;;
+		*) ;;
 		esac
 		if ! printf '%s' "$readme_text" | grep -Fqi "$host"; then missing="$missing $host"; fi
 	done
-	if [ -z "$missing" ]; then
+	if [[ -z "$missing" ]]; then
 		ok "every host in includes/ and blocks/ is named in readme.txt"
 	else
 		note "hosts in code not named in readme.txt (fine if they are only links; services the plugin contacts need an External services entry):$missing"
@@ -451,12 +452,12 @@ check_builds() {
 	# Checks for parts only some plugins have; each runs when its files exist.
 	# A plugin's own checks: scripts/preflight-plugin.sh defines plugin_preflight,
 	# which gets the unpacked GitHub build and can use section, ok, warn and err.
-	if [ -f "$SCRIPT_DIR/preflight-plugin.sh" ]; then
+	if [[ -f "$SCRIPT_DIR/preflight-plugin.sh" ]]; then
 		# shellcheck source=/dev/null
 		. "$SCRIPT_DIR/preflight-plugin.sh"
 		plugin_preflight "$github_dir"
 	fi
-	if [ -f "$SCRIPT_DIR/replaced-plugins.php" ]; then
+	if [[ -f "$SCRIPT_DIR/replaced-plugins.php" ]]; then
 		check_replaced_count "$github_dir"
 	fi
 	return 0
@@ -509,26 +510,26 @@ check_agent_docs() {
 	fi
 	local lines problems=0
 	lines="$(printf '%s\n' "$agents" | wc -l | tr -d ' ')"
-	if [ "$lines" -gt "$AGENTS_MD_MAX_LINES" ]; then
+	if [[ "$lines" -gt "$AGENTS_MD_MAX_LINES" ]]; then
 		warn "AGENTS.md is $lines lines (most $AGENTS_MD_MAX_LINES): move sections only one kind of task needs to docs/, with one line saying when to read each"
 		problems=1
 	fi
 	local doc
 	while IFS= read -r doc; do
-		[ -n "$doc" ] || continue
+		[[ -n "$doc" ]] || continue
 		if ! printf '%s\n' "$agents" | grep -qF "$doc"; then
 			warn "$doc is not named in AGENTS.md, so agents will not find it"
 			problems=1
 		fi
 	done < <(git ls-tree -r --name-only "$sha" -- docs | grep '\.md$' || true)
 	while IFS= read -r doc; do
-		[ -n "$doc" ] || continue
+		[[ -n "$doc" ]] || continue
 		if ! git cat-file -e "$sha:$doc" 2>/dev/null; then
 			warn "AGENTS.md names $doc, which does not exist"
 			problems=1
 		fi
 	done < <(printf '%s\n' "$agents" | grep -oE 'docs/[A-Za-z0-9._/-]+\.md' | sort -u || true)
-	[ "$problems" -eq 1 ] || ok "AGENTS.md is $lines lines and names every doc in docs/"
+	[[ "$problems" -eq 1 ]] || ok "AGENTS.md is $lines lines and names every doc in docs/"
 	return 0
 }
 
@@ -539,7 +540,7 @@ check_git() {
 	section "Git"
 	local tag_sha
 	if tag_sha="$(git rev-parse --verify --quiet "refs/tags/v$version^{commit}")"; then
-		if [ "$tag_sha" = "$sha" ]; then ok "tag v$version is this commit"; else warn "tag v$version exists on another commit (${tag_sha:0:12}); bump the version"; fi
+		if [[ "$tag_sha" = "$sha" ]]; then ok "tag v$version is this commit"; else warn "tag v$version exists on another commit (${tag_sha:0:12}); bump the version"; fi
 	else
 		note "no tag v$version yet"
 	fi
@@ -547,7 +548,7 @@ check_git() {
 	if main_sha="$(git rev-parse --verify --quiet "refs/remotes/origin/main^{commit}")"; then
 		if git merge-base --is-ancestor "$sha" "$main_sha"; then ok "$ref is on origin/main"; else note "$ref is not on origin/main yet; release only from main"; fi
 	fi
-	if [ "$ref" = "HEAD" ] && [ -n "$(git status --porcelain --untracked-files=no)" ]; then
+	if [[ "$ref" = "HEAD" ]] && [[ -n "$(git status --porcelain --untracked-files=no)" ]]; then
 		note "uncommitted changes are not checked (the build comes from HEAD)"
 	fi
 	return 0
@@ -557,11 +558,11 @@ main() {
 	local ref="HEAD"
 	local strict=0
 	local arg
-	while [ $# -gt 0 ]; do
+	while [[ $# -gt 0 ]]; do
 		arg="$1"
 		case "$arg" in
 		--ref)
-			[ $# -ge 2 ] || die "--ref needs a value"
+			[[ $# -ge 2 ]] || die "--ref needs a value"
 			ref="$2"
 			shift
 			;;
@@ -609,18 +610,18 @@ main() {
 	github_zip="$(printf '%s\n' "$zips" | sed -n 1p)"
 	wporg_zip="$(printf '%s\n' "$zips" | sed -n 2p)"
 	check_builds "$github_zip" "$wporg_zip" "$VERSION"
-	if [ -f "$SCRIPT_DIR/sync-core.sh" ]; then
+	if [[ -f "$SCRIPT_DIR/sync-core.sh" ]]; then
 		check_core_files
 	fi
 	check_agent_docs "$sha"
 	check_git "$ref" "$sha" "$VERSION"
 
 	printf '\n%s error(s), %s warning(s).\n' "$ERRORS" "$WARNINGS"
-	if [ "$ERRORS" -gt 0 ]; then
+	if [[ "$ERRORS" -gt 0 ]]; then
 		printf 'Not ready: fix the errors.\n'
 		return 1
 	fi
-	if [ "$strict" -eq 1 ] && [ "$WARNINGS" -gt 0 ]; then
+	if [[ "$strict" -eq 1 ]] && [[ "$WARNINGS" -gt 0 ]]; then
 		printf 'Not ready (--strict): resolve or accept the warnings.\n'
 		return 1
 	fi
