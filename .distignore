@@ -26,6 +26,7 @@ phpstan-plugin.neon
 .aider*
 # Local AI tooling state (aidevops), never part of the plugin.
 .agents
+.task-counter
 .security-analysis
 *.bak
 .metadata_never_index
