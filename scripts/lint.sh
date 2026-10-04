@@ -35,7 +35,7 @@ say() {
 
 need_vendor() {
 	local tool="$1"
-	if [ ! -x "$ROOT/vendor/bin/$tool" ]; then
+	if [[ ! -x "$ROOT/vendor/bin/$tool" ]]; then
 		printf 'lint: vendor/bin/%s is missing; run: composer install\n' "$tool" >&2
 		return 1
 	fi
@@ -67,14 +67,14 @@ check_shell() {
 	while IFS= read -r -d '' file; do
 		files+=("$file")
 	done < <(git -C "$ROOT" ls-files -z '*.sh')
-	[ "${#files[@]}" -eq 0 ] && return 0
+	[[ "${#files[@]}" -eq 0 ]] && return 0
 	# -x follows the scripts' `# shellcheck source=` lines (scripts/lib/).
 	shellcheck -x --severity=style "${files[@]}"
 	return $?
 }
 
 check_workflows() {
-	if [ ! -d "$ROOT/.github/workflows" ]; then
+	if [[ ! -d "$ROOT/.github/workflows" ]]; then
 		return 0
 	fi
 	if ! command -v actionlint >/dev/null 2>&1; then
@@ -100,7 +100,7 @@ check_phpstan() {
 main() {
 	local checks="$*"
 	local check
-	if [ -z "$checks" ]; then
+	if [[ -z "$checks" ]]; then
 		checks="$ALL_CHECKS"
 	fi
 	for check in $checks; do
@@ -123,7 +123,7 @@ main() {
 		fi
 	done
 
-	if [ -n "$FAILED" ]; then
+	if [[ -n "$FAILED" ]]; then
 		printf '\nlint: failed:%s\n' "$FAILED" >&2
 		return 1
 	fi

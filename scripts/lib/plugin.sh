@@ -60,15 +60,15 @@ plugin_identity() {
 		esac
 		# WordPress reads the header from the first 8 KB of the file.
 		text="$(git show "$ref:$file" 2>/dev/null || true)"
-		if [ -n "$(plugin_header_field "${text:0:8192}" "Plugin Name")" ]; then
-			[ -z "$found" ] || {
+		if [[ -n "$(plugin_header_field "${text:0:8192}" "Plugin Name")" ]]; then
+			[[ -z "$found" ]] || {
 				printf 'plugin: more than one main file at %s: %s and %s\n' "$ref" "$found" "$file" >&2
 				return 1
 			}
 			found="$file"
 		fi
 	done < <(git ls-tree --name-only "$ref" 2>/dev/null)
-	if [ -z "$found" ]; then
+	if [[ -z "$found" ]]; then
 		printf 'plugin: no PHP file with a Plugin Name: header at the top of %s\n' "$ref" >&2
 		return 1
 	fi
@@ -79,18 +79,18 @@ plugin_identity() {
 	PLUGIN_NAME="$(plugin_header_field "${text:0:8192}" "Plugin Name")"
 	PLUGIN_PACKAGE="$(printf '%s\n' "$text" | sed -nE '/^[[:space:]*]*@package[[:space:]]+[A-Za-z0-9_]+/{s/^[[:space:]*]*@package[[:space:]]+([A-Za-z0-9_]+).*/\1/p;q;}')"
 	PLUGIN_CONST="$(printf '%s\n' "$text" | sed -nE "/define\([[:space:]]*['\"][A-Z0-9_]+_VERSION['\"]/{s/.*define\([[:space:]]*['\"]([A-Z0-9_]+)_VERSION['\"].*/\1/p;q;}")"
-	if [ -z "$PLUGIN_PACKAGE" ]; then
+	if [[ -z "$PLUGIN_PACKAGE" ]]; then
 		printf 'plugin: %s has no @package tag (the class prefix)\n' "$found" >&2
 		return 1
 	fi
-	if [ -z "$PLUGIN_CONST" ]; then
+	if [[ -z "$PLUGIN_CONST" ]]; then
 		printf "plugin: %s does not define a <PREFIX>_VERSION constant\n" "$found" >&2
 		return 1
 	fi
 	PLUGIN_PREFIX="$(printf '%s' "$PLUGIN_CONST" | tr '[:upper:]' '[:lower:]')"
 	PLUGIN_REPO="$(plugin_header_field "${text:0:8192}" "GitHub Plugin URI")"
 	PLUGIN_CSS="$(git show "$ref:admin/includes/class-admin-manager.php" 2>/dev/null | sed -nE 's/.*class="wrap ([a-z0-9]+)-wrap.*/\1/p' | head -n 1)"
-	if [ -z "$PLUGIN_CSS" ]; then
+	if [[ -z "$PLUGIN_CSS" ]]; then
 		printf 'plugin: no "wrap <css>-wrap" class in admin/includes/class-admin-manager.php at %s\n' "$ref" >&2
 		return 1
 	fi
