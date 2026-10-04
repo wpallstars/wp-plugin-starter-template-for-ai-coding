@@ -143,7 +143,10 @@ separate from the account password and is set on the WordPress.org profile
 3. Copy trunk to the tag: `svn cp trunk tags/X.Y.Z`. `Stable tag:` in
    `trunk/readme.txt` and `tags/X.Y.Z/readme.txt` must be `X.Y.Z`; never
    `trunk`.
-4. Put the banners, icons and screenshots in `assets/`.
+4. Copy the listing images from `.wordpress-org/` to `assets/`: the banner
+   and icon PNGs, `icon.svg` and the `screenshot-N` files (not
+   `banner.svg`, which is only a source). `scripts/preflight-release.sh`
+   checks them under "WordPress.org assets".
 5. `svn ci -m "Release X.Y.Z"`, then check the plugin page and download.
 6. Consider release confirmation emails (Plugin Handbook → Release
    Confirmation Emails), so a release goes out only after it is confirmed.
