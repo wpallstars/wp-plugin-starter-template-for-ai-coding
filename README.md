@@ -24,7 +24,7 @@ WP Plugin Starter is what wpallstars plugins are made from. It has no features o
 
 If this saves you time, headaches and costs, feel free to [buy me a coffee](https://buymeacoffee.com/marcusquinn), or whatever you like, to invest in making more things open-source.
 
-Version: 1.0.17
+Version: 1.0.18
 
 <!-- github-only:start -->
 ## Screenshots
@@ -86,7 +86,7 @@ There are two builds of each version:
 
 The updater waits while Git Updater is active, so the two never both update a plugin.
 
-GitHub releases are the stable beta channel: each version is released there first. WordPress.org gets a version 90 days later, once it has been used on real sites, except security releases, which go to WordPress.org at once. The WordPress.org build has no affiliate links: those listed in `.wporg-links` are replaced by plain ones when it is built.
+GitHub releases are the stable beta channel: each version is released there first. WordPress.org gets a version 30 days later, once it has been used on real sites, except security releases, which go to WordPress.org at once. The WordPress.org build has no affiliate links: those listed in `.wporg-links` are replaced by plain ones when it is built.
 
 Releasing on GitHub:
 
@@ -127,6 +127,10 @@ Read a setting with `WPStarter_Settings::get( 'key' )`.
 Deleting the plugin removes its settings, its cached data, who hid lines of the Plugins screen notice about replaced plugins, and the cached GitHub releases.
 
 ## Changelog
+
+### 1.0.18
+
+- Changed: WordPress.org gets each version 30 days after its GitHub release, not 90, so WordPress.org users are not left long behind on fixes (`STANDARDS.md` → Releases, `RELEASING.md`, [Updates and releases](#updates-and-releases), the `readme.txt` FAQ). Security releases still go to WordPress.org at once; GitHub releases stay the stable beta channel.
 
 ### 1.0.17
 

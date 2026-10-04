@@ -346,8 +346,9 @@ Two release channels, at the owner's decision:
 - **GitHub releases are the stable beta channel.** Every version is released
   there first, as soon as it is ready. Sites with the GitHub build (and
   sites that turn on early updates from GitHub) get it at once.
-- **WordPress.org gets a version 90 days after its GitHub release**, so it
-  has been used on real sites first, unless it is a security release: a
+- **WordPress.org gets a version 30 days after its GitHub release**, so it
+  has been used on real sites first without leaving WordPress.org users
+  long behind on fixes, unless it is a security release: a
   version that fixes a vulnerability goes to WordPress.org as soon as it is
   on GitHub. The WordPress.org release is built from the GitHub tag of the
   version it ships, never from changes that are not on GitHub.

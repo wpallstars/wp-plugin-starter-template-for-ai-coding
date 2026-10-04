@@ -24,7 +24,7 @@ The two builds of each version:
 | Zip | Contents | Goes to |
 |-----|----------|---------|
 | `{slug}-X.Y.Z.zip` | Files in Git, less `.distignore`, with `Update URI: https://github.com/{owner}/{repo}` added to the main file | GitHub release asset |
-| `wordpress-org-{slug}-X.Y.Z.zip` | The same, less `.distignore-wporg` (the GitHub updater) and the `GitHub Plugin URI`, `Primary Branch` and `Release Asset` header lines, without `Update URI`, and with the affiliate links in `.wporg-links` replaced by plain ones | WordPress.org only, 90 days after the GitHub release (security releases at once) |
+| `wordpress-org-{slug}-X.Y.Z.zip` | The same, less `.distignore-wporg` (the GitHub updater) and the `GitHub Plugin URI`, `Primary Branch` and `Release Asset` header lines, without `Update URI`, and with the affiliate links in `.wporg-links` replaced by plain ones | WordPress.org only, 30 days after the GitHub release (security releases at once) |
 
 Sites install the release asset named exactly `{slug}-X.Y.Z.zip` (the
 shared GitHub updater), so the WordPress.org zip is named differently and
@@ -107,8 +107,8 @@ Guidelines: [Detailed Plugin Guidelines](https://developer.wordpress.org/plugins
 [Using Subversion](https://developer.wordpress.org/plugins/wordpress-org/how-to-use-subversion/).
 
 GitHub releases are the stable beta channel; WordPress.org gets each version
-90 days after its GitHub release (`STANDARDS.md` → Releases). When a version
-has been on GitHub for 90 days, release it to WordPress.org from its tag,
+30 days after its GitHub release (`STANDARDS.md` → Releases). When a version
+has been on GitHub for 30 days, release it to WordPress.org from its tag,
 even if newer versions are on GitHub by then. A security release (its
 changelog entry starts "Security:") goes to WordPress.org as soon as its
 GitHub release is out: the newest GitHub release with the fix, so the
@@ -166,7 +166,7 @@ separate from the account password and is set on the WordPress.org profile
 6. Consider release confirmation emails (Plugin Handbook → Release
    Confirmation Emails), so a release goes out only after it is confirmed.
 
-Each later WordPress.org release: the GitHub tag that has been out for 90
+Each later WordPress.org release: the GitHub tag that has been out for 30
 days (or the security release), `--strict` preflight, Plugin Check, then
 steps 2 to 5. Readme-only changes
 (such as raising Tested up to) go to trunk and the current tag.
