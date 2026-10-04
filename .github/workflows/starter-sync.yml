@@ -1,0 +1,128 @@
+# Weekly check that this plugin's core files (scripts/core-files.txt) match
+# the starter's. When any differ, it opens one issue labelled starter-sync,
+# or updates the open one, with the files and the steps to sync; when all
+# match again, it closes that issue. STANDARDS.md → Structure.
+#
+# The check is the starter's own scripts/sync-core.sh --check, run from this
+# plugin against the starter's default branch, so it is always the newest.
+# The starter's repository is written in two parts so that sync-core.sh,
+# which renames the starter's names in every core file, leaves it alone.
+# Set the repository variable STARTER_REPO (owner/repo) to follow another
+# starter. In the starter itself the check does nothing.
+name: Starter sync
+
+on:
+  schedule:
+    - cron: "41 5 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: starter-sync
+  cancel-in-progress: false
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      issues: write
+    steps:
+      - name: Find the starter
+        id: starter
+        env:
+          STARTER_REPO: ${{ vars.STARTER_REPO }}
+        run: |
+          repo="${STARTER_REPO:-wpallstars/wp-plugin-""starter-template-for-ai-coding}"
+          if [[ ! "$repo" =~ ^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$ ]]; then
+            echo "::error::STARTER_REPO must be owner/repo, not '$repo'"
+            exit 1
+          fi
+          if [[ "${repo,,}" == "${GITHUB_REPOSITORY,,}" ]]; then
+            echo "::notice::This is the starter; nothing to check."
+            echo "skip=true" >>"$GITHUB_OUTPUT"
+          else
+            echo "skip=false" >>"$GITHUB_OUTPUT"
+          fi
+          echo "repo=$repo" >>"$GITHUB_OUTPUT"
+
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        if: steps.starter.outputs.skip == 'false'
+        with:
+          path: plugin
+          persist-credentials: false
+
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        if: steps.starter.outputs.skip == 'false'
+        with:
+          repository: ${{ steps.starter.outputs.repo }}
+          path: starter
+          persist-credentials: false
+
+      - name: Compare core files and open, update or close the issue
+        if: steps.starter.outputs.skip == 'false'
+        working-directory: plugin
+        env:
+          GH_TOKEN: ${{ github.token }}
+          STARTER_REPO: ${{ steps.starter.outputs.repo }}
+        run: |
+          set +e
+          report="$(../starter/scripts/sync-core.sh --check --from ../starter 2>&1)"
+          status=$?
+          set -e
+          printf '%s\n' "$report"
+          if [[ "$status" -gt 1 ]]; then
+            echo "::error::scripts/sync-core.sh --check failed (exit $status)"
+            exit 1
+          fi
+
+          sha="$(git -C ../starter rev-parse HEAD)"
+          short="${sha:0:7}"
+          label="starter-sync"
+          number="$(gh issue list --label "$label" --state open --limit 1 --json number --jq '.[0].number // empty' || true)"
+
+          if [[ "$status" -eq 0 ]]; then
+            if [[ -n "$number" ]]; then
+              gh issue close "$number" --comment "All core files match the starter at $STARTER_REPO@$short."
+            fi
+            exit 0
+          fi
+
+          gh label create "$label" --color FBCA04 --description "Core files differ from the starter" --force
+          name="${STARTER_REPO#*/}"
+          files=""
+          while read -r kind path; do
+            files+="- \`$path\` ($kind)"$'\n'
+          done < <(printf '%s\n' "$report" | sed -nE 's/^  (differs|missing)  (.*)$/\1 \2/p')
+          summary="$(printf '%s\n' "$report" | tail -n 1)"
+          body="$RUNNER_TEMP/starter-sync.md"
+          cat >"$body" <<EOF
+          ## What
+
+          Compared with the starter at [$STARTER_REPO@$short](https://github.com/$STARTER_REPO/commit/$sha): $summary Core files are the same in every plugin made from the starter, apart from the names (STANDARDS.md → Structure).
+
+          $files
+
+          ## How
+
+          1. Next to this repository: \`git clone https://github.com/$STARTER_REPO.git\` (or \`git -C ../$name pull\`).
+          2. Here, on a branch: \`scripts/sync-core.sh --from ../$name\`, then review \`git diff\`.
+          3. A change this plugin made to a core file, which the starter lacks, goes into the starter first; sync after it is merged there. Never keep a plugin-only change in a core file: move it to this plugin's own files.
+          4. Read the starter's \`changelog.txt\` since this plugin last synced, for changes that need work in this plugin's own files (its Setup class, \`phpstan-plugin.neon\`, \`.distignore\` entries, README or readme.txt sections).
+          5. \`scripts/lint.sh\` and \`scripts/smoke-test.sh\` pass; add a changelog line; open a pull request.
+
+          The weekly Starter sync workflow (\`.github/workflows/starter-sync.yml\`) updates this issue while files differ and closes it once they match.
+
+          ## Verification
+
+          \`scripts/sync-core.sh --check --from ../$name\` reports that all core files match the starter.
+          EOF
+
+          if [[ -n "$number" ]]; then
+            gh issue edit "$number" --body-file "$body"
+          else
+            gh issue create --title "Core files differ from the starter" --label "$label" --body-file "$body"
+          fi

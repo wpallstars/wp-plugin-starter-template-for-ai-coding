@@ -41,6 +41,14 @@ How changes are made and checked: `DEVELOPMENT.md`. Releases: `RELEASING.md`.
   `scripts/sync-core.sh` in each plugin; `scripts/sync-core.sh --check` lists
   core files that differ. A new plugin starts as a copy of the starter
   renamed with `scripts/rename-plugin.sh`.
+- Every plugin keeps up with the starter. The weekly Starter sync workflow
+  (`.github/workflows/starter-sync.yml`) compares the plugin's core files
+  with the starter's and keeps one issue labelled `starter-sync` open while
+  any differ, with the files and the steps; it closes the issue once they
+  match. Work that issue like any other: sync, check the starter's
+  changelog for changes the plugin's own files need, lint, smoke test,
+  pull request. A change the plugin made to a core file goes into the
+  starter first.
 - One class per feature in `includes/features/`, extending `{Prefix}_Feature`,
   registered in `{Prefix}_Setup::FEATURES`. Features some builds leave out
   go in `{Prefix}_Setup::OPTIONAL_FEATURES` and load only when present.
