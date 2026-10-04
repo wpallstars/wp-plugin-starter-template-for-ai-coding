@@ -65,24 +65,34 @@ class WPStarter_Readme_Manager {
         if ('' === $trim || '#' === $trim) {
             return self::close_blocks($state);
         }
+        $row = self::table_row($trim, $state);
+        if (null !== $row) {
+            return $row;
+        }
+        // A "- " or "* " item, or a "1. " item ($m[1] empty).
+        if (preg_match('/^(?:([-*])|\d+\.)\s+(.+)$/', $trim, $m)) {
+            return self::list_item('' === $m[1] ? 'ol' : 'ul', $m[2], $state);
+        }
+        return self::close_blocks($state) . self::single_block($trim, $state['ids']);
+    }
+
+    /**
+     * HTML for a line that stands alone: an image, a heading or a paragraph.
+     *
+     * @param string $trim Line without surrounding whitespace.
+     * @param array  $ids  Heading IDs used so far (updated).
+     * @return string HTML.
+     */
+    private static function single_block($trim, array &$ids) {
         // An image on a line of its own, from the plugin's own folder.
         if (preg_match('/^!\[([^\]]*)\]\(([^)\s]+)\)$/', $trim, $m)) {
-            return self::close_blocks($state) . self::image($m[2], $m[1]);
+            return self::image($m[2], $m[1]);
         }
         if (preg_match('/^(#{1,4})\s+(.+)$/', $trim, $m)) {
             $level = min(4, strlen($m[1]) + 1); // h1 is reserved for the page title.
-            return self::close_blocks($state) . sprintf('<h%1$d id="%2$s">%3$s</h%1$d>', $level, esc_attr(self::anchor($m[2], $state['ids'])), self::inline($m[2]));
+            return sprintf('<h%1$d id="%2$s">%3$s</h%1$d>', $level, esc_attr(self::anchor($m[2], $ids)), self::inline($m[2]));
         }
-        if (strlen($trim) > 1 && '|' === $trim[0] && '|' === substr($trim, -1)) {
-            return self::table_row($trim, $state);
-        }
-        if (preg_match('/^[-*]\s+(.+)$/', $trim, $m)) {
-            return self::list_item('ul', $m[1], $state);
-        }
-        if (preg_match('/^\d+\.\s+(.+)$/', $trim, $m)) {
-            return self::list_item('ol', $m[1], $state);
-        }
-        return self::close_blocks($state) . '<p>' . self::inline($trim) . '</p>';
+        return '<p>' . self::inline($trim) . '</p>';
     }
 
     /**
@@ -107,11 +117,14 @@ class WPStarter_Readme_Manager {
     /**
      * A table line: a header row, a |---| separator, then body rows.
      *
-     * @param string $trim  Line starting and ending with |.
+     * @param string $trim  Line without surrounding whitespace.
      * @param array  $state Open list and table (updated).
-     * @return string HTML.
+     * @return string|null HTML, or null when the line is not a table line.
      */
     private static function table_row($trim, array &$state) {
+        if (strlen($trim) < 2 || '|' !== $trim[0] || '|' !== substr($trim, -1)) {
+            return null;
+        }
         if ('head' === $state['table'] && preg_match('/^\|[\s:|-]+\|$/', $trim)) {
             $state['table'] = 'body';
             return '</thead><tbody>';
