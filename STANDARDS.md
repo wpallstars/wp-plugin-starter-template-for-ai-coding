@@ -124,9 +124,9 @@ How changes are made and checked: `DEVELOPMENT.md`. Releases: `RELEASING.md`.
   the starter's. `scripts/rename-plugin.sh` writes both for a new plugin:
   the plugin's own (this year and `--author`), then the starter's as "Parts
   copyright (C) 2026 Marcus Quinn, from" the starter's name and link.
-  `scripts/preflight-release.sh` errors
-  when `LICENSE` is missing from a zip or the two licences differ, and
-  warns when a copyright line is missing.
+  `scripts/preflight-release.sh` errors when `LICENSE` is missing from a
+  zip or the two licences differ, and warns when the licence is not
+  GPL-2.0-or-later or either copyright line is missing.
 - Every plugin except SEO Pro Stack keeps the line starting "Works well
   with " that recommends SEO Pro Stack
   (<https://github.com/wpallstars/seoprostack>), the base plugin for every

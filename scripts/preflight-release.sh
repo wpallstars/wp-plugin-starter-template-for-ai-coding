@@ -218,6 +218,9 @@ check_versions() {
 	if [[ "$domain" = "$SLUG" ]]; then ok "Text Domain: $domain"; else err "Text Domain is '$domain'; it must be the slug ($SLUG) for language packs"; fi
 	license="$(field "$plugin_header" "License")"
 	if grep -Eiq 'GPL' <<<"$license"; then ok "License: $license"; else err "License '$license' is not GPL-compatible as written"; fi
+	if [[ "$(license_key "$license")" != "gpl2orlater" ]]; then
+		warn "License '$license': plugins made from the starter stay GPL-2.0-or-later (STANDARDS.md → Structure)"
+	fi
 	plugin_uri="$(field "$plugin_header" "Plugin URI")"
 	author_uri="$(field "$plugin_header" "Author URI")"
 	if [[ -n "$plugin_uri" ]] && [[ "$plugin_uri" = "$author_uri" ]]; then
@@ -721,14 +724,20 @@ check_licence() {
 		warn "$MAIN_FILE has no GPL notice in its header comment"
 		problems=1
 	fi
+	# A line starting "Copyright (C) " is the plugin's own (in the starter,
+	# the starter's line is its own); "Parts copyright" is not.
 	for file in "$MAIN_FILE" README.md; do
 		text="$(git show "$sha:$file" 2>/dev/null || true)"
+		if ! grep -Eq '^[[:space:]*]*Copyright \(C\) ' <<<"$text"; then
+			warn "$file has no copyright line of its own ('Copyright (C) year owner'), above the starter's"
+			problems=1
+		fi
 		if ! grep -qiF "$starter" <<<"$text"; then
 			warn "$file has no line with the starter's 'Copyright (C) 2026 Marcus Quinn'; keep it below your own"
 			problems=1
 		fi
 	done
-	[[ "$problems" -eq 1 ]] || ok "LICENSE, the GPL notice and the starter's copyright line are present"
+	[[ "$problems" -eq 1 ]] || ok "LICENSE, the GPL notice, and both copyright lines (the plugin's and the starter's) are present"
 	return 0
 }
 
