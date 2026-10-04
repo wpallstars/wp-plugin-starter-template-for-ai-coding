@@ -230,7 +230,10 @@ for the whole organization; they need nothing per repository.
 ## Test site resources
 
 Test sites run the plugin alongside many others (a plugin that recommends
-plugins is tested with all of them active). PHP's defaults are too small for that: OPcache fills
+plugins is tested with all of them active). Every test site also runs
+[SEO Pro Stack](https://github.com/wpallstars/seoprostack), the base plugin
+for speed and an organised admin, so each plugin is tested alongside the
+base the sites it runs on will have. PHP's defaults are too small for that: OPcache fills
 and restarts, admin requests queue behind two workers, and the slowdowns
 look like bugs. Size every test site, shared or throwaway, with room to
 spare:

@@ -109,6 +109,11 @@ Deleting the plugin removes its settings, its cached data, who hid lines of the 
 
 ## Changelog
 
+### Unreleased
+
+- Changed: the Built with AI section says the plugin works well with [SEO Pro Stack](https://github.com/wpallstars/seoprostack), the wpallstars base plugin for speed and an organised admin. `readme.txt` and the plugin's screens don't mention it.
+- Developers: every plugin keeps that line in `README.md` only (`STANDARDS.md` → Structure); `scripts/preflight-release.sh` warns when it is missing. `DEVELOPMENT.md` → Test site resources: test sites run SEO Pro Stack.
+
 ### 1.0.9
 
 - Developers: `STANDARDS.md` → Performance: load only what is used, no full table scans (no unlimited queries, no lookups or sorting by `meta_value`, `LIKE '%term%'`, `REGEXP` or `ORDER BY RAND()` on large tables, indexes on the plugin's own tables), one autoloaded settings array, caching, bulk work in batches through cron, no request on every page view. Code rules add "WordPress first".
@@ -178,6 +183,8 @@ WP Plugin Starter is built and maintained with [aidevops](https://aidevops.sh), 
 Questions about using, changing or building on WP Plugin Starter: ask aidevops. Open this repository, or the site it runs on, with aidevops and ask; it reads the plugin's docs and code to answer, and can report a problem for you.
 
 Made from [WP Plugin Starter](https://github.com/wpallstars/wp-plugin-starter-template-for-ai-coding), the wpallstars starter plugin. Its shared standards and the weekly Starter sync keep this plugin up to date.
+
+Works well with [SEO Pro Stack](https://github.com/wpallstars/seoprostack), the wpallstars base plugin for every site: it speeds WordPress up and keeps the admin organised, each job a switch you turn on.
 
 ## License
 

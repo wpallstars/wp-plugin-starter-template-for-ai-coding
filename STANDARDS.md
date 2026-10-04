@@ -92,6 +92,15 @@ How changes are made and checked: `DEVELOPMENT.md`. Releases: `RELEASING.md`.
   line for a new plugin; keep all three when replacing the starter's
   README and readme.txt. `scripts/preflight-release.sh` warns when a credit
   is missing.
+- Every plugin except SEO Pro Stack keeps the line starting "Works well
+  with " that recommends SEO Pro Stack
+  (<https://github.com/wpallstars/seoprostack>), the base plugin for every
+  site, at the end of `README.md` → **Built with AI**. Keep it out of
+  `readme.txt`, admin notices and the plugin's own screens other than the
+  Read Me tab: WordPress.org's guidelines are strict about plugins promoting
+  other plugins, and those are the places its reviewers check.
+  `scripts/preflight-release.sh` warns when the line is missing from
+  `README.md` or appears in `readme.txt`.
 - `.distignore` lists files kept out of the release zip. Add new
   development-only files there (the preflight fails when a known one gets in),
   then check the build with Plugin Check.
