@@ -32,9 +32,11 @@ die() {
 }
 
 TMP_FILE=""
+LIST_FILE=""
 
 cleanup() {
 	[ -z "$TMP_FILE" ] || rm -f "$TMP_FILE"
+	[ -z "$LIST_FILE" ] || rm -f "$LIST_FILE"
 	return 0
 }
 
@@ -43,17 +45,29 @@ usage() {
 	return 0
 }
 
-# Core paths at the starter ref, one per line, with directories expanded.
+# Core paths at the starter ref, one per line, with directories expanded,
+# into FILE. Stops when the list cannot be read or comes out empty, so a
+# failure never reads as "all 0 core files match".
 core_paths() {
 	local from="$1"
 	local ref="$2"
-	local line
-	git -C "$from" show "$ref:scripts/core-files.txt" | sed -e 's/[[:space:]]*$//' -e '/^#/d' -e '/^$/d' | while IFS= read -r line; do
+	local out="$3"
+	local list line files
+	list="$(git -C "$from" show "$ref:scripts/core-files.txt" 2>/dev/null)" ||
+		die "no scripts/core-files.txt in the starter at $ref"
+	: >"$out"
+	while IFS= read -r line; do
 		case "$line" in
-		*/) git -C "$from" ls-tree -r --name-only "$ref" -- "$line" ;;
-		*) printf '%s\n' "$line" ;;
+		*/)
+			files="$(git -C "$from" ls-tree -r --name-only "$ref" -- "$line")" ||
+				die "cannot list $line in the starter at $ref"
+			[ -n "$files" ] || die "scripts/core-files.txt lists $line, which has no files in the starter at $ref"
+			printf '%s\n' "$files" >>"$out"
+			;;
+		*) printf '%s\n' "$line" >>"$out" ;;
 		esac
-	done
+	done < <(printf '%s\n' "$list" | sed -e 's/[[:space:]]*$//' -e '/^#/d' -e '/^$/d')
+	[ -s "$out" ] || die "scripts/core-files.txt in the starter at $ref lists no files"
 	return 0
 }
 
@@ -109,6 +123,8 @@ main() {
 	local path target mode differ=0 count=0
 	trap cleanup EXIT
 	TMP_FILE="$(mktemp "${TMPDIR:-/tmp}/sync-core.XXXXXX")"
+	LIST_FILE="$(mktemp "${TMPDIR:-/tmp}/sync-core-list.XXXXXX")"
+	core_paths "$from" "$ref" "$LIST_FILE"
 	local tmp="$TMP_FILE"
 	while IFS= read -r path; do
 		target="$(printf '%s' "$path" | plugin_map)"
@@ -134,7 +150,7 @@ main() {
 		if [ "$mode" = "100755" ]; then chmod 755 "$target.sync-core-new"; else chmod 644 "$target.sync-core-new"; fi
 		mv -f "$target.sync-core-new" "$target"
 		printf '  updated  %s\n' "$target"
-	done < <(core_paths "$from" "$ref")
+	done <"$LIST_FILE"
 
 	if [ "$check" -eq 1 ]; then
 		if [ "$differ" -eq 0 ]; then

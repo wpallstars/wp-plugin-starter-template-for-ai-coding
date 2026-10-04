@@ -11,6 +11,7 @@ Every change to WP Plugin Starter. readme.txt lists the latest version in short.
 * Fixed: with a token, the updater took the first zip whose name started with the plugin folder; it now takes only {folder}-{version}.zip, as without a token.
 * Fixed: a failed private download address is asked for once per update, its error is kept, and only an https address on a GitHub download host is used.
 * Developers: the updater's repeated addresses and version pattern are constants, and its longest methods are split into smaller ones. Its filters and behaviour are unchanged; wpallstars_github_plugins entries may carry 'github_only'.
+* Developers: scripts report failures instead of success. smoke-test.sh fails a page the site did not answer and never reads the previous page; sync-core.sh stops when the starter's core file list cannot be read, is empty, or names a folder with no files; plugin-check.sh fails when Plugin Check exits with an error but reports none; preview-site.sh takes over a lock only when its run's process has gone, never by age, so a run that takes over 10 minutes keeps it. DEVELOPMENT.md: CodeQL covers JavaScript and GitHub Actions, not PHP. Nothing changes for users.
 
 = 1.0.4 =
 * Developers: a top-level setting with 'panel' => true shows its Options panel even without visible child settings, so a feature can render its own controls there (wpstarter_setting_panel), under its switch, instead of in a separate card. Nothing changes for users.
