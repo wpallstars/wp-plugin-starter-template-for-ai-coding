@@ -246,6 +246,26 @@ set_credit() {
 	return 0
 }
 
+# Copyright (STANDARDS.md → Structure): the new plugin's own line (this year,
+# its Author), then the starter's, kept as "Parts copyright". Split strings,
+# as in set_credit, so renaming this script leaves them alone.
+set_copyright() {
+	local main_file="$1"
+	local name="WP Plugin ""Starter"
+	local url="https://github.com/wpallstars/wp-plugin-""starter-template-for-ai-coding"
+	local starter="Copyright (C) 2026 Marcus ""Quinn"
+	local parts="Parts copyright (C) 2026 Marcus ""Quinn"
+	local owner year
+	owner="$(plugin_header_field "$(head -c 8192 "$main_file")" "Author")"
+	year="$(date +%Y)"
+	set_line "$main_file" " * $starter" " * Copyright (C) $year $owner
+ * $parts, from $name ($url)"
+	set_line README.md "$starter" "Copyright (C) $year $owner
+
+$parts, from [$name]($url)."
+	return 0
+}
+
 # Put the maker's details in, after the renaming. Empty ones stay as they are.
 set_identity() {
 	local main_file="$1"
@@ -407,6 +427,7 @@ main() {
 	set_version "$slug.php" "$starter_version"
 	set_badges "$repo"
 	set_credit
+	set_copyright "$slug.php"
 	check_php
 
 	printf '%d files changed, %d renamed. Run composer update --lock (the package name changed), review with git diff and git status, then commit.\n' "$changed" "$moved"

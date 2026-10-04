@@ -115,6 +115,21 @@ field() {
 	return 0
 }
 
+# A licence name in one spelling, so "GPLv2 or later", "GPL-2.0-or-later"
+# and "GPL-2.0+" compare equal, and so do "GPLv2" and "GPL-2.0-only".
+license_key() {
+	local key="$1"
+	key="$(tr '[:upper:]' '[:lower:]' <<<"$key")"
+	key="${key//+/orlater}"
+	key="${key//[^a-z0-9]/}"
+	key="${key/gplv/gpl}"
+	key="${key/gpl20/gpl2}"
+	key="${key/gpl30/gpl3}"
+	key="${key%only}"
+	printf '%s\n' "$key"
+	return 0
+}
+
 # 1 if version a < b (numeric parts), else 0.
 version_lt() {
 	local a="$1"
@@ -204,6 +219,9 @@ check_versions() {
 	if [[ "$domain" = "$SLUG" ]]; then ok "Text Domain: $domain"; else err "Text Domain is '$domain'; it must be the slug ($SLUG) for language packs"; fi
 	license="$(field "$plugin_header" "License")"
 	if grep -Eiq 'GPL' <<<"$license"; then ok "License: $license"; else err "License '$license' is not GPL-compatible as written"; fi
+	if [[ "$(license_key "$license")" != "gpl2orlater" ]]; then
+		warn "License '$license': plugins made from the starter stay GPL-2.0-or-later (STANDARDS.md → Structure)"
+	fi
 	plugin_uri="$(field "$plugin_header" "Plugin URI")"
 	author_uri="$(field "$plugin_header" "Author URI")"
 	if [[ -n "$plugin_uri" ]] && [[ "$plugin_uri" = "$author_uri" ]]; then
@@ -250,6 +268,17 @@ check_readme() {
 	name="$(field "$plugin_header" "Plugin Name")"
 	readme_name="$(printf '%s\n' "$readme" | sed -n '1s/^===[[:space:]]*\(.*[^[:space:]]\)[[:space:]]*===.*/\1/p')"
 	if [[ "$readme_name" = "$name" ]]; then ok "name matches the plugin header ($name)"; else warn "readme name '$readme_name' differs from Plugin Name '$name'"; fi
+
+	local license readme_license
+	license="$(field "$plugin_header" "License")"
+	readme_license="$(field "$readme" "License")"
+	if [[ -z "$readme_license" ]]; then
+		err "no License: header"
+	elif [[ "$(license_key "$readme_license")" = "$(license_key "$license")" ]]; then
+		ok "License: $readme_license (the same as the plugin header)"
+	else
+		err "License '$readme_license' differs from the plugin header's '$license'"
+	fi
 
 	local short
 	short="$(awk 'NR == 1 { next } !h && /^[ \t]*$/ { h = 1; next } h && /^==/ { exit } h && !/^[ \t]*$/ { print; exit }' <<<"$readme")"
@@ -485,6 +514,7 @@ check_zip() {
 	tops="$(printf '%s\n' "$list" | cut -d/ -f1 | sort -u | tr '\n' ' ')"
 	if [[ "$tops" = "$SLUG " ]]; then ok "$label: one $SLUG/ folder"; else err "$label: top level is '$tops', must be only $SLUG/"; fi
 	if grep -qx "$SLUG/$MAIN_FILE" <<<"$list"; then ok "$label: $SLUG/$MAIN_FILE present"; else err "$label: $SLUG/$MAIN_FILE missing"; fi
+	if grep -qx "$SLUG/LICENSE" <<<"$list"; then ok "$label: LICENSE present"; else err "$label: LICENSE missing (the GPL needs its text shipped with the code)"; fi
 	dev="$(printf '%s\n' "$list" | grep -E "$DEV_FILES" || true)"
 	if [[ -z "$dev" ]]; then ok "$label: no development files"; else err "$label: development files: $(printf '%s' "$dev" | tr '\n' ' ')"; fi
 	size="$(wc -c <"$zip_path" | tr -d ' ')"
@@ -678,6 +708,40 @@ check_credits() {
 	return 0
 }
 
+# Licence (STANDARDS.md → Structure): LICENSE in Git, the GPL notice in the
+# main file, and the starter's copyright line in the main file and README.md
+# (a plugin's own line goes above it). Warnings: a person writes them.
+check_licence() {
+	local sha="$1"
+	section "Licence"
+	local starter="copyright (C) 2026 Marcus Quinn"
+	local file text problems=0
+	if ! git cat-file -e "$sha:LICENSE" 2>/dev/null; then
+		warn "no LICENSE file (the GPL's text; copy the starter's)"
+		problems=1
+	fi
+	text="$(git show "$sha:$MAIN_FILE")"
+	if ! grep -qF 'GNU General Public License' <<<"$text"; then
+		warn "$MAIN_FILE has no GPL notice in its header comment"
+		problems=1
+	fi
+	# A line starting "Copyright (C) " is the plugin's own (in the starter,
+	# the starter's line is its own); "Parts copyright" is not.
+	for file in "$MAIN_FILE" README.md; do
+		text="$(git show "$sha:$file" 2>/dev/null || true)"
+		if ! grep -Eq '^[[:space:]*]*Copyright \(C\) ' <<<"$text"; then
+			warn "$file has no copyright line of its own ('Copyright (C) year owner'), above the starter's"
+			problems=1
+		fi
+		if ! grep -qiF "$starter" <<<"$text"; then
+			warn "$file has no line with the starter's 'Copyright (C) 2026 Marcus Quinn'; keep it below your own"
+			problems=1
+		fi
+	done
+	[[ "$problems" -eq 1 ]] || ok "LICENSE, the GPL notice, and both copyright lines (the plugin's and the starter's) are present"
+	return 0
+}
+
 # Every plugin except SEO Pro Stack recommends it in README.md only, with a
 # line starting "Works well with " (STANDARDS.md → Structure). readme.txt
 # never mentions it: WordPress.org reviewers check it for promotion.
@@ -795,6 +859,7 @@ main() {
 	fi
 	check_agent_docs "$sha"
 	check_credits "$sha"
+	check_licence "$sha"
 	check_recommendation "$sha"
 	check_git "$ref" "$sha" "$VERSION"
 

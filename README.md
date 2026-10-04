@@ -57,7 +57,7 @@ Version: 1.0.14
 
 1. On GitHub, choose **Use this template** to make your repository, and clone it.
 2. Give it its names: `scripts/rename-plugin.sh --slug my-plugin --name "My Plugin" --prefix MyPlugin`. Add `--css mp` for a short CSS prefix and `--repo owner/repo` if it is not under wpallstars. Put in your own details too, or the plugin keeps the starter's: `--description`, `--author`, `--author-uri`, `--contributors` (WordPress.org usernames) and `--donate` (a link, or `none`); `--help` lists them all. The new plugin starts at version 0.1.0 (`--version` for another) with a changelog of its own. Review with `git diff`, then commit.
-3. Replace this README, `readme.txt`, `changelog.txt` and `AGENTS.md` with your plugin's own, its banner and icon (`.wordpress-org/banner.svg` and `icon.svg`, then `scripts/build-banner.sh`), and screenshots (`.wordpress-org/screenshot-N.png` with captions in `readme.txt`, and GitHub-only ones in `docs/images/`).
+3. Replace this README, `readme.txt`, `changelog.txt` and `AGENTS.md` with your plugin's own, its banner and icon (`.wordpress-org/banner.svg` and `icon.svg`, then `scripts/build-banner.sh`), and screenshots (`.wordpress-org/screenshot-N.png` with captions in `readme.txt`, and GitHub-only ones in `docs/images/`). Keep the licence and the starter's credit: GPL-2.0-or-later, `LICENSE`, the GPL notice and both copyright lines in the main file and this README's License section, and the Built with AI section (`STANDARDS.md` → Structure).
 4. Add features: a class in `includes/features/` listed in `MyPlugin_Setup::FEATURES` (see Developers below and `STANDARDS.md`).
 5. Keep the shared parts up to date: change them in the starter first, then run `scripts/sync-core.sh` in each plugin (`--check` lists what differs).
 
@@ -128,6 +128,7 @@ Deleting the plugin removes its settings, its cached data, who hid lines of the 
 
 ### Unreleased
 
+- Developers: a licence rule for plugins made from the starter (`STANDARDS.md` → Structure): stay GPL-2.0-or-later and keep `LICENSE`, the GPL notice, the starter's copyright line and its credit. The starter now has a copyright line (Marcus Quinn); `scripts/rename-plugin.sh` gives a new plugin its own copyright line above it. `scripts/preflight-release.sh` checks `LICENSE` is in both zips, that `readme.txt` names the same licence as the plugin header, and warns when a copyright line is missing. Nothing changes for users.
 - Developers: `scripts/preflight-release.sh` no longer stops without a message (exit 141) when `README.md` is over 64 KB: the `Version:` check read only up to the first match, so `git show` was cut off.
 
 ### 1.0.14
@@ -236,4 +237,6 @@ Works well with [SEO Pro Stack](https://github.com/wpallstars/seoprostack), the 
 
 ## License
 
-GPL-2.0-or-later.
+GPL-2.0-or-later: the full text is in `LICENSE`.
+
+Copyright (C) 2026 Marcus Quinn
