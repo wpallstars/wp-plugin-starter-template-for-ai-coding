@@ -65,9 +65,8 @@ class WPStarter_Readme_Manager {
         if ('' === $trim || '#' === $trim) {
             return self::close_blocks($state);
         }
-        $row = self::table_row($trim, $state);
-        if (null !== $row) {
-            return $row;
+        if (self::is_table_line($trim)) {
+            return self::table_row($trim, $state);
         }
         // A "- " or "* " item, or a "1. " item ($m[1] empty).
         if (preg_match('/^(?:([-*])|\d+\.)\s+(.+)$/', $trim, $m)) {
@@ -115,16 +114,23 @@ class WPStarter_Readme_Manager {
     }
 
     /**
+     * Whether a line is a table line: it starts and ends with |.
+     *
+     * @param string $trim Line without surrounding whitespace.
+     * @return bool
+     */
+    private static function is_table_line($trim) {
+        return strlen($trim) > 1 && '|' === $trim[0] && '|' === substr($trim, -1);
+    }
+
+    /**
      * A table line: a header row, a |---| separator, then body rows.
      *
-     * @param string $trim  Line without surrounding whitespace.
+     * @param string $trim  Line starting and ending with |.
      * @param array  $state Open list and table (updated).
-     * @return string|null HTML, or null when the line is not a table line.
+     * @return string HTML.
      */
     private static function table_row($trim, array &$state) {
-        if (strlen($trim) < 2 || '|' !== $trim[0] || '|' !== substr($trim, -1)) {
-            return null;
-        }
         if ('head' === $state['table'] && preg_match('/^\|[\s:|-]+\|$/', $trim)) {
             $state['table'] = 'body';
             return '</thead><tbody>';
