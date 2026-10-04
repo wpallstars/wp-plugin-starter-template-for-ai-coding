@@ -110,6 +110,13 @@ Deleting the plugin removes its settings, its cached data, who hid lines of the 
 
 ## Changelog
 
+### 1.0.12
+
+- Fixed: Updates from GitHub reads the last `Location` header when GitHub sends more than one, instead of the text "Array" and a PHP warning, when it looks up the latest release and a private release's download.
+- Fixed: the settings screen's styles and script are versioned by their file times as text, falling back to the plugin version when a file time can't be read; empty script handles from the `wpstarter_admin_script_deps` filter are dropped.
+- Fixed: the Read Me tab, release notes, line lists and domain lists no longer fail on text that a regular expression can't split; they are treated as empty.
+- Developers: PHPStan runs at level 7 (`phpstan.neon.dist`), without the `missingType.*` checks. Plugins made from the starter fix their own level-7 findings, or note stub mistakes in `phpstan-plugin.neon`, before syncing `phpstan.neon.dist`.
+
 ### 1.0.11
 
 - Developers: new core workflow `.github/workflows/release.yml`. Pushing a `vX.Y.Z` tag on `main` builds the zip from the tag, runs the preflight and publishes the GitHub release, with notes from this changelog. In a public repository it signs the zip's build provenance with Sigstore and attaches it as `provenance-{slug}-X.Y.Z.sigstore.json` (OpenSSF Scorecard: Signed-Releases); check a download with `gh attestation verify`. `RELEASING.md` step 3 is now tag and push; publishing by hand stays as the fallback.
