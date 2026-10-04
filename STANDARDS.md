@@ -113,20 +113,27 @@ How changes are made and checked: `DEVELOPMENT.md`. Releases: `RELEASING.md`.
   line for a new plugin; keep all three when replacing the starter's
   README and readme.txt. `scripts/preflight-release.sh` warns when a credit
   is missing.
-- Licence: the starter is GPL-2.0-or-later, and so is every plugin made
-  from it (GPL-3.0-or-later is allowed by "or later", but WordPress.org
-  needs GPLv2-or-later compatible, so stay on 2.0-or-later). Keep `LICENSE`
-  (it ships in both zips), the `License:` and `License URI:` headers in the
-  main file and `readme.txt` (the same licence in both), the GPL notice in
-  the main file's comment, and the starter's copyright line,
-  "Copyright (C) 2026 Marcus Quinn", in the main file and in `README.md` →
-  License. Add your own copyright line above it; never replace or remove
-  the starter's. `scripts/rename-plugin.sh` writes both for a new plugin:
-  the plugin's own (this year and `--author`), then the starter's as "Parts
-  copyright (C) 2026 Marcus Quinn, from" the starter's name and link.
-  `scripts/preflight-release.sh` errors when `LICENSE` is missing from a
-  zip or the two licences differ, and warns when the licence is not
-  GPL-2.0-or-later or either copyright line is missing.
+- Licence: the starter is GPL-3.0-or-later with additional terms under
+  GPL-3.0 section 7(b), set out in `ATTRIBUTION.txt`, and so is every plugin
+  made from it (WordPress.org accepts GPLv3). The terms make the credit part
+  of the licence: keep the copyright notices, the line starting "Made from "
+  in `README.md` and `readme.txt`, and `ATTRIBUTION.txt`. Keep `LICENSE` and
+  `ATTRIBUTION.txt` (core files; both ship in both zips, and `ATTRIBUTION.txt`
+  keeps the starter's names word for word), the `License:` and
+  `License URI:` headers in the main file and `readme.txt` (the same licence
+  in both), the GPL notice in the main file's comment, the SPDX lines at the
+  top of each source file (licence, copyright, and the pointer to
+  `ATTRIBUTION.txt`; a plugin's own new files carry its own copyright), and
+  the starter's copyright line, "Copyright (C) 2026 Marcus Quinn", in the
+  main file and in `README.md` → License. Add your own copyright line above
+  it; never replace or remove the starter's. `scripts/rename-plugin.sh`
+  writes both for a new plugin: the plugin's own (this year and `--author`),
+  then the starter's as "Parts copyright (C) 2026 Marcus Quinn, from" the
+  starter's name and link. `scripts/preflight-release.sh` errors when
+  `LICENSE` or `ATTRIBUTION.txt` is missing from a zip or the two licences
+  differ, and warns when the licence is not GPL-3.0-or-later, when
+  `ATTRIBUTION.txt` is missing, or when a copyright line or a source file's
+  SPDX copyright line is missing.
 - Every plugin except SEO Pro Stack keeps the line starting "Works well
   with " that recommends SEO Pro Stack
   (<https://github.com/wpallstars/seoprostack>), the base plugin for every

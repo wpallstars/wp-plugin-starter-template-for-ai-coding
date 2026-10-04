@@ -38,6 +38,10 @@
  * - While Git Updater is active, this waits and Git Updater does the job.
  *   The `wpallstars_github_updater_enabled` filter can turn it off too.
  *
+ * SPDX-License-Identifier: GPL-3.0-or-later
+ * SPDX-FileCopyrightText: 2026 Marcus Quinn
+ * Additional terms (GPL-3.0 section 7(b)): ATTRIBUTION.txt
+ *
  * @package WPStarter
  */
 

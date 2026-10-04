@@ -33,5 +33,6 @@ so a reviewer knows what changed, why, and how you tested it.
 
 ## Licence
 
-WP Plugin Starter is GPL-2.0-or-later. By contributing, you agree your work is
-released under the same licence.
+WP Plugin Starter is GPL-3.0-or-later, with the additional terms in
+`ATTRIBUTION.txt` (GPL-3.0 section 7(b)). By contributing, you agree your work
+is released under the same licence and terms.

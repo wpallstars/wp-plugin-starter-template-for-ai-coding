@@ -20,6 +20,10 @@
 # on a missing release or asset, no update offered, a failed update or any PHP
 # message in debug.log. Needs Docker, curl, gh and internet access.
 
+# SPDX-License-Identifier: GPL-3.0-or-later
+# SPDX-FileCopyrightText: 2026 Marcus Quinn
+# Additional terms (GPL-3.0 section 7(b)): ATTRIBUTION.txt
+
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"

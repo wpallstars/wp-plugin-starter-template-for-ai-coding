@@ -32,6 +32,10 @@
 #
 # Needs a clean working tree. Then update README.md, readme.txt,
 # changelog.txt, AGENTS.md and the banner (STANDARDS.md and DEVELOPMENT.md say how).
+#
+# SPDX-License-Identifier: GPL-3.0-or-later
+# SPDX-FileCopyrightText: 2026 Marcus Quinn
+# Additional terms (GPL-3.0 section 7(b)): ATTRIBUTION.txt
 
 set -euo pipefail
 
@@ -208,7 +212,7 @@ set_badges() {
 	BADGES="<!-- On GitHub only: the Read Me tab skips this block. scripts/rename-plugin.sh rewrites it. -->
 [![CI]($url/actions/workflows/ci.yml/badge.svg?branch=main)]($url/actions/workflows/ci.yml)
 [![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=$key&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=$key)
-[![License: GPL v2 or later](https://img.shields.io/badge/License-GPL%20v2%20or%20later-blue.svg)](LICENSE)
+[![License: GPL v3 or later](https://img.shields.io/badge/License-GPL%20v3%20or%20later-blue.svg)](LICENSE)
 [![Latest release](https://img.shields.io/github/v/release/$repo)]($url/releases)
 
 [![Lines of code](docs/metrics/badges/loc.svg)](docs/metrics/repo-metrics.md)

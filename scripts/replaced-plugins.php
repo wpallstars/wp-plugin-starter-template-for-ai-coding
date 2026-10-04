@@ -19,6 +19,10 @@
  *   DIR       Plugin folder to read (default: this checkout).
  *
  * Exit status: 0 when fine, 1 when --check finds a different count, 2 on errors.
+ *
+ * SPDX-License-Identifier: GPL-3.0-or-later
+ * SPDX-FileCopyrightText: 2026 Marcus Quinn
+ * Additional terms (GPL-3.0 section 7(b)): ATTRIBUTION.txt
  */
 
 // Replaced plugins that are not on WordPress.org but have GitHub releases.

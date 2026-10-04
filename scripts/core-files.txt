@@ -58,3 +58,7 @@ RELEASING.md
 CONTRIBUTING.md
 CODE_OF_CONDUCT.md
 SECURITY.md
+
+# Licence: the GPL-3.0 text and the starter's attribution terms, word for word.
+LICENSE
+ATTRIBUTION.txt

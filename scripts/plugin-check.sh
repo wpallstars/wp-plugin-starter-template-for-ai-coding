@@ -14,6 +14,10 @@
 # GitHub zip's updater files (.distignore-wporg) and its main file's Update
 # URI header are expected and not counted.
 # Needs Docker and internet access (WordPress and Plugin Check are downloaded).
+#
+# SPDX-License-Identifier: GPL-3.0-or-later
+# SPDX-FileCopyrightText: 2026 Marcus Quinn
+# Additional terms (GPL-3.0 section 7(b)): ATTRIBUTION.txt
 
 set -euo pipefail
 
