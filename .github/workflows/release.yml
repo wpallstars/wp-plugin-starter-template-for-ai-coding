@@ -100,8 +100,7 @@ jobs:
           if [[ -n "$BUNDLE" ]]; then
             cp "$BUNDLE" "dist/provenance-$SLUG-$VERSION.sigstore.json"
             assets+=("dist/provenance-$SLUG-$VERSION.sigstore.json")
-            printf '\nBuilt and signed by GitHub Actions. Check the zip with: `gh attestation verify %s --repo %s`\n' \
-              "$SLUG-$VERSION.zip" "$GITHUB_REPOSITORY" >>dist/notes.md
+            printf '\n%s\n' "Built and signed by GitHub Actions. Check the zip with: \`gh attestation verify $SLUG-$VERSION.zip --repo $GITHUB_REPOSITORY\`" >>dist/notes.md
           fi
           if gh release view "$TAG" >/dev/null 2>&1; then
             # Made by hand first: replace its zip with this signed build.
