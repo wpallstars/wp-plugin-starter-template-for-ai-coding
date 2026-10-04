@@ -1,10 +1,12 @@
 # Files excluded from the release builds (scripts/build-release.sh, wp dist-archive).
-# The WordPress.org build also leaves out the files in .distignore-wporg.
+# The WordPress.org build also leaves out the files in .distignore-wporg, and
+# replaces the affiliate links listed in .wporg-links.
 .git
 .gitattributes
 .gitignore
 .distignore
 .distignore-wporg
+.wporg-links
 # WordPress.org SVN assets (banners) and their source; admin/images/banner.svg ships instead.
 .wordpress-org
 .woodpecker.yml

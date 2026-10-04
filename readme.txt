@@ -5,7 +5,7 @@ Tags: starter, boilerplate, settings, developer, template
 Requires at least: 6.2
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 1.0.15
+Stable tag: 1.0.16
 License: GPLv3 or later
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 
@@ -49,6 +49,10 @@ Ask aidevops (https://aidevops.sh): open the plugin's repository, or your site, 
 
 No. The WordPress.org build contacts nothing outside WordPress.
 
+= When do versions reach WordPress.org? =
+
+GitHub releases are the stable beta channel: each version comes out there first. WordPress.org gets it 90 days later, except security releases, which come out on both at once.
+
 == Screenshots ==
 
 1. The settings screen (Settings → WP Plugin Starter) on the General tab, empty until features add settings.
@@ -56,9 +60,9 @@ No. The WordPress.org build contacts nothing outside WordPress.
 
 == Changelog ==
 
-= 1.0.15 =
-* Changed: the licence is now GPLv3 or later, with additional terms (ATTRIBUTION.txt) that keep the copyright notices and the "Made from" credit. Nothing changes on sites.
-* Developers: licence rule and checks, copyright lines, and a fix for preflight on a README.md over 64 KB.
+= 1.0.16 =
+* Changed: GitHub releases are the stable beta channel; WordPress.org gets each version 90 days later, security releases at once.
+* Developers: the WordPress.org build replaces the affiliate links listed in .wporg-links.
 
 Every change: changelog.txt.
 

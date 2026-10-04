@@ -24,7 +24,7 @@ The two builds of each version:
 | Zip | Contents | Goes to |
 |-----|----------|---------|
 | `{slug}-X.Y.Z.zip` | Files in Git, less `.distignore`, with `Update URI: https://github.com/{owner}/{repo}` added to the main file | GitHub release asset |
-| `wordpress-org-{slug}-X.Y.Z.zip` | The same, less `.distignore-wporg` (the GitHub updater) and the `GitHub Plugin URI`, `Primary Branch` and `Release Asset` header lines, without `Update URI` | WordPress.org only |
+| `wordpress-org-{slug}-X.Y.Z.zip` | The same, less `.distignore-wporg` (the GitHub updater) and the `GitHub Plugin URI`, `Primary Branch` and `Release Asset` header lines, without `Update URI`, and with the affiliate links in `.wporg-links` replaced by plain ones | WordPress.org only, 90 days after the GitHub release (security releases at once) |
 
 Sites install the release asset named exactly `{slug}-X.Y.Z.zip` (the
 shared GitHub updater), so the WordPress.org zip is named differently and
@@ -106,6 +106,21 @@ Guidelines: [Detailed Plugin Guidelines](https://developer.wordpress.org/plugins
 [Plugin assets](https://developer.wordpress.org/plugins/wordpress-org/plugin-assets/),
 [Using Subversion](https://developer.wordpress.org/plugins/wordpress-org/how-to-use-subversion/).
 
+GitHub releases are the stable beta channel; WordPress.org gets each version
+90 days after its GitHub release (`STANDARDS.md` → Releases). When a version
+has been on GitHub for 90 days, release it to WordPress.org from its tag,
+even if newer versions are on GitHub by then. A security release (its
+changelog entry starts "Security:") goes to WordPress.org as soon as its
+GitHub release is out: the newest GitHub release with the fix, so the
+WordPress.org version skips ahead. Note each WordPress.org release, with its
+date, in the plugin's `LAUNCH.md`.
+
+The WordPress.org build replaces the affiliate links listed in
+`.wporg-links` (one per line: the link or its referral query, a tab, and
+the plain replacement, or nothing to remove a query). The preflight errors
+when one is left in that build and warns about other addresses with
+referral parameters (`ref=`, `aff=`, `irpid=`, `via=` and the like).
+
 Before submitting, work through the plugin's `LAUNCH.md`: what
 `scripts/preflight-release.sh --strict` still reports, and a review of the
 code against each guideline (no code from elsewhere, external services,
@@ -151,8 +166,9 @@ separate from the account password and is set on the WordPress.org profile
 6. Consider release confirmation emails (Plugin Handbook → Release
    Confirmation Emails), so a release goes out only after it is confirmed.
 
-Each later WordPress.org release: build from the tag that is already on GitHub,
-`--strict` preflight, Plugin Check, then steps 2 to 5. Readme-only changes
+Each later WordPress.org release: the GitHub tag that has been out for 90
+days (or the security release), `--strict` preflight, Plugin Check, then
+steps 2 to 5. Readme-only changes
 (such as raising Tested up to) go to trunk and the current tag.
 
 Once listed, sites with the GitHub build update from WordPress.org, unless

@@ -24,7 +24,7 @@ set -euo pipefail
 
 readonly UPDATER_HEADERS='GitHub Plugin URI|Primary Branch|Release Asset|Update URI'
 # Development files that must never be in a release zip (paths inside the slug folder).
-readonly DEV_FILES='^[^/]+/(\.git|\.agents|\.wordpress-org|\.distignore|\.distignore-wporg|\.gitattributes|\.gitignore|\.woodpecker\.yml|\.github|\.editorconfig|\.gitleaks\.toml|\.codacy\.yml|sonar-project\.properties|\.aidevops\.json|\.task-counter|composer\.(json|lock)|phpcs\.xml(\.dist)?|phpstan(-baseline|-plugin)?\.neon(\.dist)?|vendor|AGENTS\.md|CODE_OF_CONDUCT\.md|CONTRIBUTING\.md|DEVELOPMENT\.md|LAUNCH\.md|SECURITY\.md|STANDARDS\.md|RELEASING\.md|ROADMAP\.md|STABILITY\.md|TESTING\.md|docs|scripts|dist|node_modules|reference-plugins|project-documents)(/|$)|(^|/)(\.DS_Store|__MACOSX|Thumbs\.db)(/|$)|\.(bak|log|orig|swp)$'
+readonly DEV_FILES='^[^/]+/(\.git|\.agents|\.wordpress-org|\.distignore|\.distignore-wporg|\.wporg-links|\.gitattributes|\.gitignore|\.woodpecker\.yml|\.github|\.editorconfig|\.gitleaks\.toml|\.codacy\.yml|sonar-project\.properties|\.aidevops\.json|\.task-counter|composer\.(json|lock)|phpcs\.xml(\.dist)?|phpstan(-baseline|-plugin)?\.neon(\.dist)?|vendor|AGENTS\.md|CODE_OF_CONDUCT\.md|CONTRIBUTING\.md|DEVELOPMENT\.md|LAUNCH\.md|SECURITY\.md|STANDARDS\.md|RELEASING\.md|ROADMAP\.md|STABILITY\.md|TESTING\.md|docs|scripts|dist|node_modules|reference-plugins|project-documents)(/|$)|(^|/)(\.DS_Store|__MACOSX|Thumbs\.db)(/|$)|\.(bak|log|orig|swp)$'
 readonly README_MAX_BYTES=10240
 readonly SHORT_DESC_MAX=150
 readonly MAX_TAGS=5
@@ -41,6 +41,10 @@ MAIN_FILE=""
 VERSION_CONSTANT=""
 # Paths only in the GitHub build (.distignore-wporg): the GitHub updater.
 UPDATER_FILES=""
+# The texts .wporg-links replaces in the WordPress.org build (affiliate links), one per line.
+WPORG_LINK_TEXTS=""
+# Referral parameters in addresses, which the WordPress.org build must not have.
+readonly REFERRAL_QUERY='https?://[^]"'"'"' <>)]*[?&](ref|refcode|referralcode|referral_code|aff|affid|aff_id|affiliate|affiliate_id|irpid|irgwc|via|fpr|tap_a|r|bta|deal|start)=[^]"'"'"' <>)&]*'
 
 ERRORS=0
 WARNINGS=0
@@ -569,7 +573,27 @@ check_builds() {
 		if [[ -e "$wporg_dir/$path" ]]; then err "wporg: $path must not be in the WordPress.org build"; else ok "wporg: no $path"; fi
 	done
 	if grep -Eq "^[[:space:]*]*($UPDATER_HEADERS):" "$wporg_dir/$MAIN_FILE"; then err "wporg: GitHub updater header lines still in $MAIN_FILE"; else ok "wporg: no GitHub updater header lines"; fi
+	local text escaped left=""
+	if [[ -n "$WPORG_LINK_TEXTS" ]]; then
+		while IFS= read -r text; do
+			[[ -n "$text" ]] || continue
+			escaped="${text//&/&amp;}"
+			if grep -rFqs -e "$text" -e "$escaped" -e "${text//&/&#038;}" "$wporg_dir"; then left="$left $text"; fi
+		done <<<"$WPORG_LINK_TEXTS"
+		if [[ -z "$left" ]]; then
+			ok "wporg: every text in .wporg-links replaced ($(grep -c . <<<"$WPORG_LINK_TEXTS"))"
+		else
+			err "wporg: still has texts .wporg-links replaces:$left"
+		fi
+	fi
 	local hits
+	hits="$(grep -rEohi --include='*.php' --include='*.js' --include='*.txt' --include='*.json' --include='*.html' "$REFERRAL_QUERY" "$wporg_dir" 2>/dev/null | sort -u || true)"
+	if [[ -z "$hits" ]]; then
+		ok "wporg: no addresses with referral parameters"
+	else
+		warn "wporg: addresses with referral parameters (WordPress.org builds carry no affiliate links: list them in .wporg-links):"
+		printf '%s\n' "$hits" | cut -c1-160 | sed 's/^/           /'
+	fi
 	hits="$(grep -rEl --include='*.php' --include='*.js' 'gu_override_dot_org|api\.github\.com/repos|Plugin_Upgrader|Theme_Upgrader|site_transient_update_plugins|auto_update_(plugin|theme)' "$wporg_dir" 2>/dev/null | sed "s|^$wporg_dir/||" || true)"
 	if [[ -z "$hits" ]]; then
 		ok "wporg: no code that installs or updates plugins from elsewhere"
@@ -862,6 +886,7 @@ main() {
 	MAIN_FILE="$PLUGIN_MAIN_FILE"
 	VERSION_CONSTANT="${PLUGIN_CONST}_VERSION"
 	UPDATER_FILES="$(plugin_wporg_only "$sha")"
+	WPORG_LINK_TEXTS="$(git show "$sha:.wporg-links" 2>/dev/null | sed -e 's/\r$//' -e '/^[[:space:]]*#/d' -e '/^[[:space:]]*$/d' | cut -f1 || true)"
 
 	trap cleanup EXIT
 	TMP_DIR="$(mktemp -d "${TMPDIR:-/tmp}/$SLUG-preflight.XXXXXX")"

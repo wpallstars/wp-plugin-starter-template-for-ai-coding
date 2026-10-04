@@ -10,9 +10,11 @@
 #       with the same slug in its place.
 #   wordpress-org-{slug}-X.Y.Z.zip
 #       WordPress.org build: the same, less the files in .distignore-wporg and
-#       the GitHub updater header lines, and without Update URI. Its name is
-#       not {slug}-X.Y.Z.zip, so no updater installs it even if it is
-#       attached to a GitHub release by mistake. Never attach it to one.
+#       the GitHub updater header lines, and without Update URI. Each text
+#       listed in .wporg-links (affiliate links) is replaced by its plain
+#       one. Its name is not {slug}-X.Y.Z.zip, so no updater installs it even
+#       if it is attached to a GitHub release by mistake. Never attach it to
+#       one.
 #   SHA256SUMS
 #
 # Files come from the Git ref (git archive), never from the working tree, so
@@ -23,7 +25,8 @@
 #   --out DIR   Output folder (default: dist/ in the repository, gitignored).
 #   --quiet     Print only the paths of the zips.
 #
-# Needs git, rsync, zip, unzip and shasum or sha256sum.
+# Needs git, rsync, zip, unzip and shasum or sha256sum (and perl with a
+# .wporg-links file).
 #
 # SPDX-License-Identifier: GPL-3.0-or-later
 # SPDX-FileCopyrightText: 2026 Marcus Quinn
@@ -38,6 +41,8 @@ readonly SCRIPT_DIR
 # shellcheck source=scripts/lib/plugin.sh disable=SC1091 # followed only with -x
 . "$SCRIPT_DIR/lib/plugin.sh"
 readonly WPORG_IGNORE=".distignore-wporg"
+# Affiliate links and their plain replacements for the WordPress.org build.
+readonly WPORG_LINKS=".wporg-links"
 # Header lines read only by GitHub updaters (ours and Git Updater); left out of the WordPress.org build.
 readonly WPORG_STRIP_HEADERS='GitHub Plugin URI|Primary Branch|Release Asset'
 
@@ -52,7 +57,7 @@ die() {
 }
 
 usage() {
-	sed -n '2,24p' "$0" | sed 's/^# \{0,1\}//'
+	sed -n '2,29p' "$0" | sed 's/^# \{0,1\}//'
 	return 0
 }
 
@@ -138,6 +143,40 @@ strip_updater_headers() {
 	return 0
 }
 
+# Replace each text in a .wporg-links file with its replacement in the text
+# files of a build. One pair per line, separated by a tab: the text (such as
+# an affiliate link, or only its referral query) and its replacement (the
+# plain address, or nothing). Lines starting with # are comments. Each text
+# is also replaced in its HTML-escaped forms (& as &amp; or &#038;).
+replace_wporg_links() {
+	local dir="$1"
+	local links="$2"
+	[[ -s "$links" ]] || return 0
+	need perl
+	local file
+	while IFS= read -r -d '' file; do
+		WPORG_LINKS_FILE="$links" perl -i -pe '
+			BEGIN {
+				open(my $fh, "<", $ENV{WPORG_LINKS_FILE}) or die "build-release: cannot read .wporg-links: $!\n";
+				while (my $line = <$fh>) {
+					$line =~ s/\r?\n$//;
+					next if $line =~ /^\s*(#|$)/;
+					my ($from, $to) = split /\t+/, $line, 2;
+					$to = "" unless defined $to;
+					die "build-release: no tab in .wporg-links line: $line\n" unless $line =~ /\t/ && length $from;
+					for my $amp ("&", "&amp;", "&#038;") {
+						(my $f = $from) =~ s/&/$amp/g;
+						(my $t = $to) =~ s/&/$amp/g;
+						push @pairs, [$f, $t];
+					}
+				}
+			}
+			for my $pair (@pairs) { s/\Q$pair->[0]\E/$pair->[1]/g }
+		' "$file"
+	done < <(find "$dir" -type f \( -name '*.php' -o -name '*.js' -o -name '*.css' -o -name '*.json' -o -name '*.html' -o -name '*.md' -o -name '*.txt' \) -print0)
+	return 0
+}
+
 main() {
 	local ref="HEAD"
 	local out=""
@@ -206,6 +245,10 @@ main() {
 	fi
 	rsync -a --exclude-from="$TMP_DIR/wporg-ignore" "$TMP_DIR/github/$SLUG/" "$TMP_DIR/wporg/$SLUG/"
 	strip_updater_headers "$TMP_DIR/wporg/$SLUG/$MAIN_FILE"
+	if git cat-file -e "$sha:$WPORG_LINKS" 2>/dev/null; then
+		git show "$sha:$WPORG_LINKS" >"$TMP_DIR/wporg-links"
+		replace_wporg_links "$TMP_DIR/wporg/$SLUG" "$TMP_DIR/wporg-links"
+	fi
 	add_update_uri "$TMP_DIR/github/$SLUG/$MAIN_FILE"
 
 	local github_zip="$out/$SLUG-$version.zip"
