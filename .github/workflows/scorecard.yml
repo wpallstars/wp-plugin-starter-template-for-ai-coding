@@ -19,7 +19,8 @@ on:
 # publish_results accepts only a plain workflow: read-only top-level
 # permissions, write permissions on the job, no top-level env or defaults,
 # no run steps, and only the actions below.
-permissions: read-all
+permissions:
+  contents: read
 
 jobs:
   analysis:
@@ -27,6 +28,8 @@ jobs:
     if: github.event.repository.private == false
     runs-on: ubuntu-latest
     permissions:
+      contents: read
+      actions: read # upload-sarif reads this workflow run
       security-events: write # upload the SARIF to code scanning
       id-token: write # publish_results
     steps:
