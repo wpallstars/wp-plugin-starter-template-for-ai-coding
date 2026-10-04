@@ -16,6 +16,10 @@
 # Exit status: 0 when there are no errors (and, with --strict, no warnings).
 # Plugin Check runs separately: scripts/plugin-check.sh.
 
+# SPDX-License-Identifier: GPL-3.0-or-later
+# SPDX-FileCopyrightText: 2026 Marcus Quinn
+# Additional terms (GPL-3.0 section 7(b)): ATTRIBUTION.txt
+
 set -euo pipefail
 
 readonly UPDATER_HEADERS='GitHub Plugin URI|Primary Branch|Release Asset|Update URI'
@@ -219,8 +223,8 @@ check_versions() {
 	if [[ "$domain" = "$SLUG" ]]; then ok "Text Domain: $domain"; else err "Text Domain is '$domain'; it must be the slug ($SLUG) for language packs"; fi
 	license="$(field "$plugin_header" "License")"
 	if grep -Eiq 'GPL' <<<"$license"; then ok "License: $license"; else err "License '$license' is not GPL-compatible as written"; fi
-	if [[ "$(license_key "$license")" != "gpl2orlater" ]]; then
-		warn "License '$license': plugins made from the starter stay GPL-2.0-or-later (STANDARDS.md → Structure)"
+	if [[ "$(license_key "$license")" != "gpl3orlater" ]]; then
+		warn "License '$license': the starter and plugins made from it are GPL-3.0-or-later with the terms in ATTRIBUTION.txt (STANDARDS.md → Structure)"
 	fi
 	plugin_uri="$(field "$plugin_header" "Plugin URI")"
 	author_uri="$(field "$plugin_header" "Author URI")"
@@ -515,6 +519,7 @@ check_zip() {
 	if [[ "$tops" = "$SLUG " ]]; then ok "$label: one $SLUG/ folder"; else err "$label: top level is '$tops', must be only $SLUG/"; fi
 	if grep -qx "$SLUG/$MAIN_FILE" <<<"$list"; then ok "$label: $SLUG/$MAIN_FILE present"; else err "$label: $SLUG/$MAIN_FILE missing"; fi
 	if grep -qx "$SLUG/LICENSE" <<<"$list"; then ok "$label: LICENSE present"; else err "$label: LICENSE missing (the GPL needs its text shipped with the code)"; fi
+	if grep -qx "$SLUG/ATTRIBUTION.txt" <<<"$list"; then ok "$label: ATTRIBUTION.txt present"; else err "$label: ATTRIBUTION.txt missing (the licence's additional terms go with the code)"; fi
 	dev="$(printf '%s\n' "$list" | grep -E "$DEV_FILES" || true)"
 	if [[ -z "$dev" ]]; then ok "$label: no development files"; else err "$label: development files: $(printf '%s' "$dev" | tr '\n' ' ')"; fi
 	size="$(wc -c <"$zip_path" | tr -d ' ')"
@@ -708,8 +713,9 @@ check_credits() {
 	return 0
 }
 
-# Licence (STANDARDS.md → Structure): LICENSE in Git, the GPL notice in the
-# main file, and the starter's copyright line in the main file and README.md
+# Licence (STANDARDS.md → Structure): LICENSE and ATTRIBUTION.txt in Git, SPDX
+# lines atop each source file, the GPL notice in the main file, and the
+# starter's copyright line in the main file and README.md
 # (a plugin's own line goes above it). Warnings: a person writes them.
 check_licence() {
 	local sha="$1"
@@ -718,6 +724,22 @@ check_licence() {
 	local file text problems=0
 	if ! git cat-file -e "$sha:LICENSE" 2>/dev/null; then
 		warn "no LICENSE file (the GPL's text; copy the starter's)"
+		problems=1
+	fi
+	if ! git cat-file -e "$sha:ATTRIBUTION.txt" 2>/dev/null; then
+		warn "no ATTRIBUTION.txt (the licence's additional terms; scripts/sync-core.sh copies the starter's)"
+		problems=1
+	fi
+	# Every source file names its licence and copyright in its first lines
+	# (the main file's copyright is in its "Copyright (C)" lines).
+	local missing=()
+	while IFS= read -r file; do
+		if ! git show "$sha:$file" | sed -n 1,60p | grep -Eq 'SPDX-FileCopyrightText:|Copyright \(C\) '; then
+			missing+=("$file")
+		fi
+	done < <(git ls-tree -r --name-only "$sha" | grep -E '\.(php|js|css|sh)$' | grep -Ev '^(vendor|node_modules|dist)/|\.min\.(js|css)$')
+	if [[ "${#missing[@]}" -gt 0 ]]; then
+		warn "${#missing[@]} source file(s) without a copyright line (SPDX-FileCopyrightText) at the top: ${missing[*]}"
 		problems=1
 	fi
 	text="$(git show "$sha:$MAIN_FILE")"
@@ -738,7 +760,7 @@ check_licence() {
 			problems=1
 		fi
 	done
-	[[ "$problems" -eq 1 ]] || ok "LICENSE, the GPL notice, and both copyright lines (the plugin's and the starter's) are present"
+	[[ "$problems" -eq 1 ]] || ok "LICENSE, ATTRIBUTION.txt, SPDX lines, the GPL notice, and both copyright lines (the plugin's and the starter's) are present"
 	return 0
 }
 

@@ -3,13 +3,13 @@
  * Plugin Name:       WP Plugin Starter
  * Plugin URI:        https://github.com/wpallstars/wp-plugin-starter-template-for-ai-coding
  * Description:       A clean start for a WordPress plugin: a settings screen, a Read Me tab, updates from GitHub and release scripts, ready for your features.
- * Version:           1.0.14
+ * Version:           1.0.15
  * Requires at least: 6.2
  * Requires PHP:      7.4
  * Author:            Marcus Quinn
  * Author URI:        https://www.wpallstars.com/
- * License:           GPL-2.0-or-later
- * License URI:       https://www.gnu.org/licenses/gpl-2.0.html
+ * License:           GPL-3.0-or-later
+ * License URI:       https://www.gnu.org/licenses/gpl-3.0.html
  * Text Domain:       wp-plugin-starter-template
  * GitHub Plugin URI: wpallstars/wp-plugin-starter-template-for-ai-coding
  * Primary Branch:    main
@@ -19,13 +19,17 @@
  *
  * WP Plugin Starter is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 2 of the License, or
- * any later version.
+ * the Free Software Foundation, either version 3 of the License, or
+ * any later version, with the additional terms in ATTRIBUTION.txt
+ * (section 7(b) of the License: keep the copyright notices and the
+ * starter plugin's "Made from" credit).
  *
  * WP Plugin Starter is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
- * GNU General Public License for more details.
+ * GNU General Public License for more details: LICENSE.
+ *
+ * SPDX-License-Identifier: GPL-3.0-or-later
  *
  * @package WPStarter
  */
@@ -34,7 +38,7 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
-define('WPSTARTER_VERSION', '1.0.14');
+define('WPSTARTER_VERSION', '1.0.15');
 define('WPSTARTER_FILE', __FILE__);
 define('WPSTARTER_DIR', plugin_dir_path(__FILE__));
 define('WPSTARTER_URL', plugin_dir_url(__FILE__));

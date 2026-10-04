@@ -24,6 +24,10 @@
 #
 # Needs git 2.38+ (merge-tree --write-tree), gh (signed in) and rsync.
 
+# SPDX-License-Identifier: GPL-3.0-or-later
+# SPDX-FileCopyrightText: 2026 Marcus Quinn
+# Additional terms (GPL-3.0 section 7(b)): ATTRIBUTION.txt
+
 set -euo pipefail
 
 readonly LOCK_WAIT_SECONDS=180

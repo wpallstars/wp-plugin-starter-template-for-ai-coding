@@ -9,7 +9,7 @@
 [![Codacy Badge](https://app.codacy.com/project/badge/Grade/905754fd010b481490b496fb800e6144)](https://app.codacy.com/gh/wpallstars/wp-plugin-starter-template-for-ai-coding/dashboard)
 [![CodeFactor](https://www.codefactor.io/repository/github/wpallstars/wp-plugin-starter-template-for-ai-coding/badge)](https://www.codefactor.io/repository/github/wpallstars/wp-plugin-starter-template-for-ai-coding)
 [![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/wpallstars/wp-plugin-starter-template-for-ai-coding/badge)](https://scorecard.dev/viewer/?uri=github.com/wpallstars/wp-plugin-starter-template-for-ai-coding)
-[![License: GPL v2 or later](https://img.shields.io/badge/License-GPL%20v2%20or%20later-blue.svg)](LICENSE)
+[![License: GPL v3 or later](https://img.shields.io/badge/License-GPL%20v3%20or%20later-blue.svg)](LICENSE)
 [![Latest release](https://img.shields.io/github/v/release/wpallstars/wp-plugin-starter-template-for-ai-coding)](https://github.com/wpallstars/wp-plugin-starter-template-for-ai-coding/releases)
 
 [![Lines of code](docs/metrics/badges/loc.svg)](docs/metrics/repo-metrics.md)
@@ -24,7 +24,7 @@ WP Plugin Starter is what wpallstars plugins are made from. It has no features o
 
 If this saves you time, headaches and costs, feel free to [buy me a coffee](https://buymeacoffee.com/marcusquinn), or whatever you like, to invest in making more things open-source.
 
-Version: 1.0.14
+Version: 1.0.15
 
 <!-- github-only:start -->
 ## Screenshots
@@ -57,7 +57,7 @@ Version: 1.0.14
 
 1. On GitHub, choose **Use this template** to make your repository, and clone it.
 2. Give it its names: `scripts/rename-plugin.sh --slug my-plugin --name "My Plugin" --prefix MyPlugin`. Add `--css mp` for a short CSS prefix and `--repo owner/repo` if it is not under wpallstars. Put in your own details too, or the plugin keeps the starter's: `--description`, `--author`, `--author-uri`, `--contributors` (WordPress.org usernames) and `--donate` (a link, or `none`); `--help` lists them all. The new plugin starts at version 0.1.0 (`--version` for another) with a changelog of its own. Review with `git diff`, then commit.
-3. Replace this README, `readme.txt`, `changelog.txt` and `AGENTS.md` with your plugin's own, its banner and icon (`.wordpress-org/banner.svg` and `icon.svg`, then `scripts/build-banner.sh`), and screenshots (`.wordpress-org/screenshot-N.png` with captions in `readme.txt`, and GitHub-only ones in `docs/images/`). Keep the licence and the starter's credit: GPL-2.0-or-later, `LICENSE`, the GPL notice and both copyright lines in the main file and this README's License section, and the Built with AI section (`STANDARDS.md` → Structure).
+3. Replace this README, `readme.txt`, `changelog.txt` and `AGENTS.md` with your plugin's own, its banner and icon (`.wordpress-org/banner.svg` and `icon.svg`, then `scripts/build-banner.sh`), and screenshots (`.wordpress-org/screenshot-N.png` with captions in `readme.txt`, and GitHub-only ones in `docs/images/`). Keep the licence and the starter's credit, as its licence requires (`ATTRIBUTION.txt`, `STANDARDS.md` → Structure): GPL-3.0-or-later, `LICENSE`, `ATTRIBUTION.txt`, the licence lines at the top of each file, both copyright lines in the main file and this README's License section, and the "Made from" line here and in `readme.txt`. Please keep the rest of the Built with AI section too.
 4. Add features: a class in `includes/features/` listed in `MyPlugin_Setup::FEATURES` (see Developers below and `STANDARDS.md`).
 5. Keep the shared parts up to date: change them in the starter first, then run `scripts/sync-core.sh` in each plugin (`--check` lists what differs).
 
@@ -126,9 +126,11 @@ Deleting the plugin removes its settings, its cached data, who hid lines of the 
 
 ## Changelog
 
-### Unreleased
+### 1.0.15
 
-- Developers: a licence rule for plugins made from the starter (`STANDARDS.md` → Structure): stay GPL-2.0-or-later and keep `LICENSE`, the GPL notice, the starter's copyright line and its credit. The starter now has a copyright line (Marcus Quinn); `scripts/rename-plugin.sh` gives a new plugin its own copyright line above it. `scripts/preflight-release.sh` checks `LICENSE` is in both zips, that `readme.txt` names the same licence as the plugin header, and warns when a copyright line is missing. Nothing changes for users.
+- Changed: the licence is now GPL-3.0-or-later (it was GPL-2.0-or-later), with additional terms under section 7(b) of the GPL version 3, set out in the new `ATTRIBUTION.txt`: keep the copyright notices, the "Made from WP Plugin Starter" line in `README.md` and `readme.txt`, and `ATTRIBUTION.txt` itself. Every source file starts with SPDX licence and copyright lines and a pointer to `ATTRIBUTION.txt`. Nothing changes on sites.
+- Developers: plugins made from the starter take the new licence with `scripts/sync-core.sh` (`LICENSE` and `ATTRIBUTION.txt` are core files now; `ATTRIBUTION.txt` keeps the starter's names, word for word). `scripts/preflight-release.sh` expects GPL-3.0-or-later, errors when `ATTRIBUTION.txt` is missing from a zip, and warns when it is missing from Git or a source file has no SPDX copyright line.
+- Developers: a licence rule for plugins made from the starter (`STANDARDS.md` → Structure): keep the licence, `LICENSE`, the GPL notice, the starter's copyright line and its credit. The starter now has a copyright line (Marcus Quinn); `scripts/rename-plugin.sh` gives a new plugin its own copyright line above it. `scripts/preflight-release.sh` checks `LICENSE` is in both zips, that `readme.txt` names the same licence as the plugin header, and warns when a copyright line is missing. Nothing changes for users.
 - Developers: `scripts/preflight-release.sh` no longer stops without a message (exit 141) when `README.md` is over 64 KB: the `Version:` check read only up to the first match, so `git show` was cut off.
 
 ### 1.0.14
@@ -237,6 +239,6 @@ Works well with [SEO Pro Stack](https://github.com/wpallstars/seoprostack), the 
 
 ## License
 
-GPL-2.0-or-later: the full text is in `LICENSE`.
+GPL-3.0-or-later (the full text is in `LICENSE`), with the additional terms in `ATTRIBUTION.txt` (GPL-3.0 section 7(b)): keep the copyright notices and the "Made from" credit.
 
 Copyright (C) 2026 Marcus Quinn

@@ -7,6 +7,10 @@
  * http(s) links, links to headings and images from the plugin's folder).
  * HTML comments, the GitHub badges block and github-only blocks are left out.
  *
+ * SPDX-License-Identifier: GPL-3.0-or-later
+ * SPDX-FileCopyrightText: 2026 Marcus Quinn
+ * Additional terms (GPL-3.0 section 7(b)): ATTRIBUTION.txt
+ *
  * @package WPStarter
  * @since 0.2.0
  */

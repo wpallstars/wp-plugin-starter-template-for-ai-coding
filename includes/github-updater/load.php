@@ -16,6 +16,10 @@
  * Plugins change what it does only through its filters, never by calling the
  * class: another plugin's newer or older copy may be the one that runs.
  *
+ * SPDX-License-Identifier: GPL-3.0-or-later
+ * SPDX-FileCopyrightText: 2026 Marcus Quinn
+ * Additional terms (GPL-3.0 section 7(b)): ATTRIBUTION.txt
+ *
  * @package WPStarter
  */
 

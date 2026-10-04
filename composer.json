@@ -2,7 +2,7 @@
 	"name": "wpallstars/wp-plugin-starter-template-for-ai-coding",
 	"description": "WP Plugin Starter WordPress plugin. Development tools only: the plugin has no Composer dependencies and ships without vendor/.",
 	"type": "wordpress-plugin",
-	"license": "GPL-2.0-or-later",
+	"license": "GPL-3.0-or-later",
 	"require": {
 		"php": ">=7.4"
 	},

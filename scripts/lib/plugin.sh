@@ -20,6 +20,10 @@
 #   PLUGIN_REPO       the GitHub Plugin URI header, owner/repo (may be empty)
 #
 # Files come from the Git ref, never the working tree, like the release build.
+#
+# SPDX-License-Identifier: GPL-3.0-or-later
+# SPDX-FileCopyrightText: 2026 Marcus Quinn
+# Additional terms (GPL-3.0 section 7(b)): ATTRIBUTION.txt
 
 PLUGIN_MAIN_FILE=""
 PLUGIN_SLUG=""
@@ -117,8 +121,15 @@ plugin_names_as() {
 # it lands: inside PHP string literals ('…' or "…") in .php files, in JSON
 # strings in .json files, and as XML text in .xml, .dist and .svg files.
 # Comments, Markdown and plain text get it as it is.
+#
+# ATTRIBUTION.txt is the starter's own licence terms (GPL-3.0 section 7(b)),
+# kept word for word in every plugin, so it passes through unchanged.
 plugin_map() {
 	local file="${1:-}"
+	if [[ "$file" = "ATTRIBUTION.txt" ]]; then
+		cat
+		return 0
+	fi
 	MAP_FILE="$file" perl -pe '
 		BEGIN {
 			%e = map { $_ => $ENV{$_} // "" } grep { /^(FROM|TO)_/ } keys %ENV;
