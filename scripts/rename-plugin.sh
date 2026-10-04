@@ -49,7 +49,7 @@ die() {
 TMP_FILE=""
 
 cleanup() {
-	[ -z "$TMP_FILE" ] || rm -f "$TMP_FILE"
+	[[ -z "$TMP_FILE" ]] || rm -f "$TMP_FILE"
 	return 0
 }
 
@@ -62,7 +62,7 @@ need() {
 	local flag="$1"
 	local value="$2"
 	local pattern="$3"
-	[ -n "$value" ] || die "$flag is needed (see --help)"
+	[[ -n "$value" ]] || die "$flag is needed (see --help)"
 	printf '%s' "$value" | grep -Eq "$pattern" || die "$flag '$value' must match $pattern"
 	return 0
 }
@@ -72,7 +72,7 @@ allow() {
 	local flag="$1"
 	local value="$2"
 	local pattern="$3"
-	[ -z "$value" ] || need "$flag" "$value" "$pattern"
+	[[ -z "$value" ]] || need "$flag" "$value" "$pattern"
 	return 0
 }
 
@@ -82,7 +82,7 @@ replace_with_tmp() {
 	local file="$1"
 	cmp -s "$TMP_FILE" "$file" && return 1
 	cp "$TMP_FILE" "$file.rename-new"
-	if [ -x "$file" ]; then chmod 755 "$file.rename-new"; else chmod 644 "$file.rename-new"; fi
+	if [[ -x "$file" ]]; then chmod 755 "$file.rename-new"; else chmod 644 "$file.rename-new"; fi
 	mv -f "$file.rename-new" "$file"
 	return 0
 }
@@ -93,7 +93,7 @@ set_field() {
 	local file="$1"
 	local field="$2"
 	local value="$3"
-	[ -f "$file" ] || return 0
+	[[ -f "$file" ]] || return 0
 	FIELD="$field" VALUE="$value" awk '
 		!done && match($0, "^[ \t*#/]*" ENVIRON["FIELD"] ":[ \t]*") {
 			done = 1
@@ -110,7 +110,7 @@ set_line() {
 	local file="$1"
 	local old="$2"
 	local new="$3"
-	[ -f "$file" ] || return 0
+	[[ -f "$file" ]] || return 0
 	OLD="$old" NEW="$new" awk '
 		!done && $0 == ENVIRON["OLD"] { print ENVIRON["NEW"]; done = 1; next }
 		{ print }' "$file" >"$TMP_FILE"
@@ -123,7 +123,7 @@ set_link() {
 	local file="$1"
 	local key="$2"
 	local url="$3"
-	[ -f "$file" ] || return 0
+	[[ -f "$file" ]] || return 0
 	Q="'" KEY="$key" URL="$url" awk '
 		BEGIN { q = ENVIRON["Q"] }
 		!done && match($0, "^[ \t]*" q ENVIRON["KEY"] q "[ \t]*=>[ \t]*" q) {
@@ -144,7 +144,7 @@ set_section() {
 	local heading="$2"
 	local next="$3"
 	local body="$4"
-	[ -f "$file" ] || return 0
+	[[ -f "$file" ]] || return 0
 	HEADING="$heading" NEXT="$next" BODY="$body" awk '
 		skip && ENVIRON["NEXT"] != "" && $0 ~ ENVIRON["NEXT"] {
 			skip = 0
@@ -199,7 +199,7 @@ set_badges() {
 	local repo="$1"
 	local url="https://github.com/$repo"
 	local key="${repo/\//_}"
-	[ -f README.md ] || return 0
+	[[ -f README.md ]] || return 0
 	BADGES="<!-- On GitHub only: the Read Me tab skips this block. scripts/rename-plugin.sh rewrites it. -->
 [![CI]($url/actions/workflows/ci.yml/badge.svg?branch=main)]($url/actions/workflows/ci.yml)
 [![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=$key&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=$key)
@@ -224,22 +224,22 @@ set_identity() {
 	local main_file="$1"
 	local setup_file="$2"
 	local old_description="$3"
-	if [ -n "$DESCRIPTION" ]; then
+	if [[ -n "$DESCRIPTION" ]]; then
 		set_field "$main_file" "Description" "$DESCRIPTION"
 		set_line readme.txt "$old_description" "$DESCRIPTION"
 		set_line README.md "$old_description" "$DESCRIPTION"
 	fi
-	[ -z "$AUTHOR" ] || set_field "$main_file" "Author" "$AUTHOR"
-	if [ -n "$AUTHOR_URI" ]; then
+	[[ -z "$AUTHOR" ]] || set_field "$main_file" "Author" "$AUTHOR"
+	if [[ -n "$AUTHOR_URI" ]]; then
 		set_field "$main_file" "Author URI" "$AUTHOR_URI"
 		set_link "$setup_file" website "$AUTHOR_URI"
 	fi
-	[ -z "$PLUGIN_URI" ] || set_field "$main_file" "Plugin URI" "$PLUGIN_URI"
-	[ -z "$CONTRIBUTORS" ] || set_field readme.txt "Contributors" "$CONTRIBUTORS"
-	if [ "$DONATE" = none ]; then
+	[[ -z "$PLUGIN_URI" ]] || set_field "$main_file" "Plugin URI" "$PLUGIN_URI"
+	[[ -z "$CONTRIBUTORS" ]] || set_field readme.txt "Contributors" "$CONTRIBUTORS"
+	if [[ "$DONATE" = none ]]; then
 		set_field readme.txt "Donate link" ""
 		set_link "$setup_file" donate ""
-	elif [ -n "$DONATE" ]; then
+	elif [[ -n "$DONATE" ]]; then
 		set_field readme.txt "Donate link" "$DONATE"
 		set_link "$setup_file" donate "$DONATE"
 	fi
@@ -258,13 +258,14 @@ check_identity() {
 	local url='^https?://[^[:space:]<>"'\''\\]+$'
 	case "$DESCRIPTION$AUTHOR" in
 	*[[:cntrl:]]* | *'*/'*) die "--description and --author are one line, without */ or control characters" ;;
+	*) ;;
 	esac
-	[ "${#DESCRIPTION}" -le 150 ] || die "--description is ${#DESCRIPTION} characters; WordPress.org allows 150"
+	[[ "${#DESCRIPTION}" -le 150 ]] || die "--description is ${#DESCRIPTION} characters; WordPress.org allows 150"
 	allow --author "$AUTHOR" '^[^<>]+$'
 	allow --author-uri "$AUTHOR_URI" "$url"
 	allow --plugin-uri "$PLUGIN_URI" "$url"
 	allow --contributors "$CONTRIBUTORS" '^[A-Za-z0-9_.@-]+(, ?[A-Za-z0-9_.@-]+)*$'
-	[ "$DONATE" = none ] || allow --donate "$DONATE" "$url"
+	[[ "$DONATE" = none ]] || allow --donate "$DONATE" "$url"
 	need --version "$VERSION" '^[0-9]+\.[0-9]+\.[0-9]+$'
 	return 0
 }
@@ -277,24 +278,24 @@ check_php() {
 	}
 	local file bad=0
 	while IFS= read -r file; do
-		[ -f "$file" ] || continue
+		[[ -f "$file" ]] || continue
 		php -l "$file" >/dev/null 2>&1 || {
 			php -l "$file" >&2 || true
 			bad=1
 		}
 	done < <(git ls-files '*.php')
-	[ "$bad" -eq 0 ] || die "the renamed PHP above does not parse; see git diff"
+	[[ "$bad" -eq 0 ]] || die "the renamed PHP above does not parse; see git diff"
 	return 0
 }
 
 main() {
 	local slug="" name="" prefix="" const="" css="" repo=""
-	while [ $# -gt 0 ]; do
+	while [[ $# -gt 0 ]]; do
 		local arg="$1"
 		local value="${2:-}"
 		case "$arg" in
 		--slug | --name | --prefix | --const | --css | --repo | --description | --author | --author-uri | --plugin-uri | --contributors | --donate | --version)
-			[ $# -ge 2 ] || die "$arg needs a value"
+			[[ $# -ge 2 ]] || die "$arg needs a value"
 			case "$arg" in
 			--slug) slug="$value" ;;
 			--name) name="$value" ;;
@@ -309,6 +310,7 @@ main() {
 			--contributors) CONTRIBUTORS="$value" ;;
 			--donate) DONATE="$value" ;;
 			--version) VERSION="$value" ;;
+			*) ;; # The outer pattern lists every option that takes a value.
 			esac
 			shift
 			;;
@@ -321,9 +323,9 @@ main() {
 		shift
 	done
 
-	[ -n "$const" ] || const="$(printf '%s' "$prefix" | tr '[:lower:]' '[:upper:]')"
-	[ -n "$css" ] || css="$(printf '%s' "$const" | tr '[:upper:]' '[:lower:]')"
-	[ -n "$repo" ] || repo="wpallstars/$slug"
+	[[ -n "$const" ]] || const="$(printf '%s' "$prefix" | tr '[:lower:]' '[:upper:]')"
+	[[ -n "$css" ]] || css="$(printf '%s' "$const" | tr '[:upper:]' '[:lower:]')"
+	[[ -n "$repo" ]] || repo="wpallstars/$slug"
 	need --slug "$slug" '^[a-z][a-z0-9-]*[a-z0-9]$'
 	# Quotes and $ are escaped where the name lands in code (plugin_map); /, \,
 	# <, > and % are not allowed: paths, comments, HTML and sprintf formats.
@@ -337,7 +339,7 @@ main() {
 	local root
 	root="$(git rev-parse --show-toplevel)" || die "run this inside a checkout of the plugin"
 	cd "$root"
-	[ -z "$(git status --porcelain)" ] || die "commit or put away your changes first"
+	[[ -z "$(git status --porcelain)" ]] || die "commit or put away your changes first"
 	plugin_identity HEAD || die "cannot tell which plugin this is"
 	plugin_names_as FROM
 
@@ -345,7 +347,7 @@ main() {
 	export TO_PREFIX
 	TO_PREFIX="$(printf '%s' "$const" | tr '[:upper:]' '[:lower:]')"
 	export TO_CSS="$css" TO_REPO="$repo"
-	[ "$TO_SLUG" != "$FROM_SLUG" ] || die "the slug is already $slug"
+	[[ "$TO_SLUG" != "$FROM_SLUG" ]] || die "the slug is already $slug"
 
 	printf 'Renaming %s to %s: %s / %s / %s / %s / %s / %s\n' "$FROM_NAME" "$name" "$slug" "$TO_PREFIX" "$prefix" "$const" "$css" "$repo"
 
@@ -354,7 +356,7 @@ main() {
 	TMP_FILE="$(mktemp "${TMPDIR:-/tmp}/rename-plugin.XXXXXX")"
 	local tmp="$TMP_FILE"
 	while IFS= read -r file; do
-		[ -f "$file" ] || continue
+		[[ -f "$file" ]] || continue
 		# Text files only (pictures and other binaries keep their bytes).
 		if grep -Iq . "$file"; then
 			# The path only tells plugin_map how to escape the name.
@@ -365,7 +367,7 @@ main() {
 			fi
 		fi
 		target="$(printf '%s' "$file" | plugin_map)"
-		if [ "$target" != "$file" ]; then
+		if [[ "$target" != "$file" ]]; then
 			mkdir -p "$(dirname "$target")"
 			git mv "$file" "$target"
 			moved=$((moved + 1))
