@@ -183,9 +183,10 @@ it at that standard:
 
 1. Turn on the free reviewers for the whole codebase, not just new
    changes: CodeRabbit full review, Codacy, SonarCloud (SonarQube Cloud)
-   and qlty, plus GitHub's CodeQL (PHP and JavaScript), Dependabot
-   security alerts, secret scanning with push protection, and OpenSSF
-   Scorecard. Socket keeps checking dependencies.
+   and qlty, plus GitHub's CodeQL (JavaScript and GitHub Actions; it has
+   no PHP support, so PHPStan, SonarCloud and Codacy cover the PHP),
+   Dependabot security alerts, secret scanning with push protection, and
+   OpenSSF Scorecard. Socket keeps checking dependencies.
 2. Fix what they find in the code, in small pull requests by area
    (security first). Each finding is either fixed, explained in an inline
    comment, or marked as a false positive in that service with the reason.

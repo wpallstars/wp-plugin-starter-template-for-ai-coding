@@ -81,14 +81,18 @@ cleanup() {
 	return 0
 }
 
-# One run at a time across all worktrees; a lock left by a dead run is taken over.
+# One run at a time across all worktrees. A lock is taken over only when its
+# run has gone: its pid is no longer running, or (no pid written, so the run
+# stopped straight after taking it) it is older than LOCK_STALE_MINUTES. A
+# live run keeps its lock however long it takes.
 acquire_lock() {
 	local lock="$1"
 	local waited=0
 	local owner=""
 	while ! mkdir "$lock" 2>/dev/null; do
 		owner="$(cat "$lock/pid" 2>/dev/null || true)"
-		if { [ -n "$owner" ] && ! kill -0 "$owner" 2>/dev/null; } || [ -n "$(find "$lock" -maxdepth 0 -mmin +"$LOCK_STALE_MINUTES" 2>/dev/null)" ]; then
+		if { [ -n "$owner" ] && ! kill -0 "$owner" 2>/dev/null; } ||
+			{ [ -z "$owner" ] && [ -n "$(find "$lock" -maxdepth 0 -mmin +"$LOCK_STALE_MINUTES" 2>/dev/null)" ]; }; then
 			rm -rf "$lock"
 			continue
 		fi

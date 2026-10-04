@@ -132,18 +132,22 @@ log_in() {
 	return 0
 }
 
-# Load one page; $2 is "admin" to send the login cookie. Fails on 5xx or
-# WordPress's critical error page; other statuses are listed.
+# Load one page; $2 is "admin" to send the login cookie. Fails when the site
+# does not answer, on 5xx or WordPress's critical error page; other statuses
+# are listed.
 fetch() {
 	local path="$1"
 	local who="$2"
-	local status
+	local status code=0
 	local args=(-sS -o "$TMP_DIR/page" -w '%{http_code}' --max-time 60)
 	[ "$who" = "admin" ] && args+=(-b "$TMP_DIR/cookies")
-	status="$(curl "${args[@]}" "$BASE_URL$path" || printf '000')"
-	if grep -q 'There has been a critical error' "$TMP_DIR/page"; then
+	rm -f "$TMP_DIR/page"
+	status="$(curl "${args[@]}" "$BASE_URL$path")" || code=$?
+	if [ "$code" -ne 0 ] || ! [[ "$status" =~ ^[1-9][0-9][0-9]$ ]]; then
+		fail "${status:-000} $who $path: no answer (curl exit $code)"
+	elif [ -f "$TMP_DIR/page" ] && grep -q 'There has been a critical error' "$TMP_DIR/page"; then
 		fail "$status $who $path: critical error page"
-	elif [ "$status" -ge 500 ] || [ "$status" = "000" ]; then
+	elif [ "$status" -ge 500 ]; then
 		fail "$status $who $path"
 	else
 		printf '  %s %s %s\n' "$status" "$who" "$path"

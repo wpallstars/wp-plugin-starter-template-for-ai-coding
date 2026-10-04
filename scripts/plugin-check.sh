@@ -109,13 +109,15 @@ start_site() {
 check_zip() {
 	local zip_name="$1"
 	local keep="$2"
-	local report errors warnings
+	local report errors warnings code=0
 	printf '\n== %s ==\n' "$zip_name"
 	if ! wp_cli plugin install "/zips/$zip_name" --force --quiet; then
 		printf 'Could not install %s.\n' "$zip_name"
 		return 1
 	fi
-	report="$(wp_cli plugin check "$SLUG" --format=json 2>&1 || true)"
+	# Plugin Check exits non-zero when it reports errors, so the exit code is
+	# read with the findings below, not on its own.
+	report="$(wp_cli plugin check "$SLUG" --format=json 2>&1)" || code=$?
 	if [ -n "$keep" ]; then
 		printf '%s\n' "$report" >"$keep/${zip_name%.zip}-plugin-check.json"
 	fi
@@ -127,6 +129,12 @@ check_zip() {
 	fi
 	errors="$( (printf '%s\n' "$report" | grep -o '"type":"ERROR"' || true) | wc -l | tr -d ' ')"
 	warnings="$( (printf '%s\n' "$report" | grep -o '"type":"WARNING"' || true) | wc -l | tr -d ' ')"
+	if [ "$code" -ne 0 ] && [ "$errors" -eq 0 ]; then
+		# A failure with no errors found: it stopped part way.
+		printf 'Plugin Check failed (exit %s) without reporting errors:\n%s\n' "$code" "$report"
+		wp_cli plugin delete "$SLUG" --quiet || true
+		return 1
+	fi
 	# The GitHub zip carries Updates from GitHub on purpose; Plugin Check
 	# reports it as an updater. Those findings are expected there (and only
 	# in those files); in the WordPress.org zip they stay errors. So are
