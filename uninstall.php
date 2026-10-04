@@ -18,6 +18,7 @@ function wpstarter_uninstall_site() {
     global $wpdb;
 
     delete_option('wpstarter_options');
+    delete_option('wpstarter_options_lock');
     delete_option('wpstarter_db_version');
 
     $patterns = array('_transient_wpstarter_', '_transient_timeout_wpstarter_');

@@ -34,6 +34,22 @@ class WPStarter_Settings {
     /** Current schema version; its history is in WPStarter_Setup. */
     const DB_VERSION = WPStarter_Setup::DB_VERSION;
 
+    /** Seconds after which a save lock is taken as left behind (see lock()). */
+    const LOCK_TIMEOUT = 10;
+
+    /** Sanitizer for each field type (sanitize_value()); any other type is text. */
+    private const SANITIZERS = array(
+        'bool'    => 'sanitize_bool',
+        'int'     => 'sanitize_int',
+        'domains' => 'sanitize_domains',
+        'media'   => 'sanitize_media',
+        'select'  => 'sanitize_select',
+        'multi'   => 'sanitize_multi',
+        'times'   => 'sanitize_times',
+        'url'     => 'sanitize_url',
+        'lines'   => 'sanitize_lines',
+    );
+
     /**
      * Request-level cache of the resolved schema.
      *
@@ -214,17 +230,67 @@ class WPStarter_Settings {
             return new WP_Error('wpstarter_unknown_setting', __('Unknown setting.', 'wp-plugin-starter-template'));
         }
 
-        // Read what is stored now, not the copy loaded when this request
-        // began, so a save made meanwhile is not overwritten.
-        self::flush_cache();
-        $options       = self::all();
-        $options[$key] = self::sanitize_value($value, $schema[$key]);
-        update_option(self::OPTION, $options);
+        $clean = self::sanitize_value($value, $schema[$key]);
 
-        if (!self::stored($key, $options[$key])) {
+        // Every setting is in one option, so a save reads it, changes one key
+        // and writes it all back. The lock stops two saves at once (two tabs,
+        // two admins) each writing back a copy without the other's change.
+        if (!self::lock()) {
             return new WP_Error('wpstarter_not_saved', __('The setting could not be saved. Please try again.', 'wp-plugin-starter-template'));
         }
-        return $options[$key];
+        try {
+            // Read what is stored now, not the copy loaded when this request
+            // began, so a save made meanwhile is not overwritten.
+            self::flush_cache();
+            $options       = self::all();
+            $options[$key] = $clean;
+            update_option(self::OPTION, $options);
+            $saved = self::stored($key, $clean);
+        } finally {
+            self::unlock();
+        }
+
+        if (!$saved) {
+            return new WP_Error('wpstarter_not_saved', __('The setting could not be saved. Please try again.', 'wp-plugin-starter-template'));
+        }
+        return $clean;
+    }
+
+    /**
+     * Take the save lock: a row in the options table that only one request
+     * can insert (INSERT IGNORE, as WP_Upgrader::create_lock() does;
+     * add_option() checks then writes, so two requests can both "add" it).
+     * Waits up to about five seconds; a lock older than LOCK_TIMEOUT seconds
+     * was left by a request that stopped, and is taken over.
+     *
+     * @return bool Whether this request holds the lock.
+     */
+    private static function lock() {
+        global $wpdb;
+        $name = self::OPTION . '_lock';
+        for ($try = 0; $try < 50; $try++) {
+            // phpcs:ignore WordPress.DB.DirectDatabaseQuery -- an atomic insert is the lock; the options API cannot do it.
+            if ($wpdb->query($wpdb->prepare("INSERT IGNORE INTO {$wpdb->options} (option_name, option_value, autoload) VALUES (%s, %s, 'no')", $name, (string) time()))) {
+                return true;
+            }
+            // phpcs:ignore WordPress.DB.DirectDatabaseQuery -- read past the options cache: the lock changes under it.
+            $since = (int) $wpdb->get_var($wpdb->prepare("SELECT option_value FROM {$wpdb->options} WHERE option_name = %s", $name));
+            if ($since && $since < time() - self::LOCK_TIMEOUT) {
+                self::unlock();
+                continue;
+            }
+            usleep(100000);
+        }
+        return false;
+    }
+
+    /**
+     * Release the save lock.
+     */
+    private static function unlock() {
+        global $wpdb;
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery -- the lock row is never cached (see lock()).
+        $wpdb->query($wpdb->prepare("DELETE FROM {$wpdb->options} WHERE option_name = %s", self::OPTION . '_lock'));
     }
 
     /**
@@ -290,30 +356,46 @@ class WPStarter_Settings {
 
         $matches = array();
         foreach (self::schema() as $key => $field) {
-            if (!empty($field['parent']) || empty($field['tab'])) {
-                continue;
-            }
-
-            $haystack = array(
-                $key,
-                isset($field['label']) ? $field['label'] : '',
-                isset($field['description']) ? $field['description'] : '',
-            );
-            if (!empty($field['replaces']) && is_array($field['replaces'])) {
-                $haystack = array_merge($haystack, array_keys($field['replaces']), array_values($field['replaces']));
-            }
-            foreach (self::children_of($key) as $child) {
-                $haystack[] = isset($child['label']) && empty($child['hidden']) ? (string) $child['label'] : '';
-            }
-
-            $text = implode(' ', array_map('strval', $haystack));
-            $found = function_exists('mb_stripos') ? mb_stripos($text, $query) : stripos($text, $query);
-            if (false !== $found) {
+            if (empty($field['parent']) && !empty($field['tab']) && self::contains(self::search_text($key, $field), $query)) {
                 $matches[$key] = $field;
             }
         }
 
         return $matches;
+    }
+
+    /**
+     * What search() looks in for a top-level setting: its key, label,
+     * description, replaced plugins and its visible child settings' labels.
+     *
+     * @param string $key   Setting key.
+     * @param array  $field Schema entry.
+     * @return string
+     */
+    private static function search_text($key, array $field) {
+        $haystack = array(
+            $key,
+            isset($field['label']) ? $field['label'] : '',
+            isset($field['description']) ? $field['description'] : '',
+        );
+        if (!empty($field['replaces']) && is_array($field['replaces'])) {
+            $haystack = array_merge($haystack, array_keys($field['replaces']), array_values($field['replaces']));
+        }
+        foreach (self::children_of($key) as $child) {
+            $haystack[] = isset($child['label']) && empty($child['hidden']) ? (string) $child['label'] : '';
+        }
+        return implode(' ', array_map('strval', $haystack));
+    }
+
+    /**
+     * Whether text contains a query, ignoring case (multibyte when it can).
+     *
+     * @param string $text  Text.
+     * @param string $query Query.
+     * @return bool
+     */
+    private static function contains($text, $query) {
+        return false !== (function_exists('mb_stripos') ? mb_stripos($text, $query) : stripos($text, $query));
     }
 
     /**
@@ -339,94 +421,182 @@ class WPStarter_Settings {
      * @return mixed
      */
     public static function sanitize_value($value, array $field) {
-        $type    = isset($field['type']) ? $field['type'] : 'text';
-        $default = isset($field['default']) ? $field['default'] : null;
+        $type   = isset($field['type']) ? $field['type'] : 'text';
+        $method = isset(self::SANITIZERS[$type]) ? self::SANITIZERS[$type] : 'sanitize_text';
+        return self::$method($value, $field);
+    }
 
-        switch ($type) {
-            case 'bool':
-                return rest_sanitize_boolean($value);
+    /**
+     * A field's default value.
+     *
+     * @param array $field Schema entry.
+     * @return mixed
+     */
+    private static function default_of(array $field) {
+        return isset($field['default']) ? $field['default'] : null;
+    }
 
-            case 'int':
-                $value = is_numeric($value) ? (int) $value : (int) $default;
-                if (isset($field['min'])) {
-                    $value = max((int) $field['min'], $value);
-                }
-                if (isset($field['max'])) {
-                    $value = min((int) $field['max'], $value);
-                }
-                return $value;
+    /**
+     * Sanitize a bool field.
+     *
+     * @param mixed $value Raw value.
+     * @param array $field Schema entry (not needed for this type).
+     * @return bool
+     */
+    private static function sanitize_bool($value, array $field) {
+        return rest_sanitize_boolean($value);
+    }
 
-            case 'domains':
-                return implode("\n", self::parse_domains($value));
-
-            case 'media':
-                // A Media Library picture's ID, or 0.
-                $value = is_numeric($value) ? absint($value) : 0;
-                return $value && wp_attachment_is_image($value) ? $value : 0;
-
-            case 'select':
-                $value = is_scalar($value) ? (string) $value : '';
-                if (array_key_exists($value, self::options_for($field))) {
-                    return $value;
-                }
-                // Open selects (another plugin's board or course) keep an
-                // identifier whose plugin is not loaded on this request.
-                return !empty($field['open']) && strlen($value) <= 200 && preg_match('/^[A-Za-z0-9_-]+$/', $value) ? $value : $default;
-
-            case 'multi':
-                $values = is_array($value) ? $value : preg_split('/\s*,\s*/', (string) $value, -1, PREG_SPLIT_NO_EMPTY);
-                $values = array_map('strval', array_filter((array) $values, 'is_scalar'));
-                // Keep the options' order so stored values are stable.
-                $known = array_values(array_intersect(array_map('strval', array_keys(self::options_for($field))), $values));
-                if (empty($field['open'])) {
-                    return $known;
-                }
-                // Open lists also keep identifiers that are not registered right now
-                // (class names may contain namespace separators).
-                $extra = array_filter(array_diff($values, $known), function ($item) {
-                    return strlen($item) <= 200 && (bool) preg_match('/^[A-Za-z0-9_\\\\-]+$/', $item);
-                });
-                return array_values(array_unique(array_merge($known, $extra)));
-
-            case 'times':
-                return implode(', ', self::parse_times($value));
-
-            case 'url':
-                $value = trim((string) $value);
-                if ('' === $value) {
-                    return '';
-                }
-                if ('/' === $value[0] && '/' !== substr($value, 1, 1)) {
-                    // Site path: keep it relative so it survives domain changes.
-                    return '/' . ltrim(preg_replace('/\s+/', '', sanitize_text_field($value)), '/');
-                }
-                return esc_url_raw($value, array('http', 'https'));
-
-            case 'lines':
-                $lines = preg_split('/[\r\n]+/', (string) $value);
-                // Not sanitize_text_field(): it strips %xx, which URL paths need.
-                $lines = array_filter(array_map(function ($line) {
-                    return trim(preg_replace('/[\x00-\x1F\x7F]+/', '', wp_strip_all_tags($line)));
-                }, $lines), function ($line) {
-                    return '' !== $line;
-                });
-                return implode("\n", array_values(array_unique($lines)));
-
-            case 'text':
-            default:
-                $value = (string) $value;
-                if (empty($field['tokens'])) {
-                    return sanitize_text_field($value);
-                }
-                // sanitize_text_field() drops "%" plus two hex digits, which
-                // breaks tokens such as %date% and %day%; set them aside.
-                $tokens = array();
-                foreach (array_values((array) $field['tokens']) as $i => $token) {
-                    $tokens["\u{E000}{$i}\u{E001}"] = (string) $token;
-                }
-                $value = str_replace(array_values($tokens), array_keys($tokens), $value);
-                return str_replace(array_keys($tokens), array_values($tokens), sanitize_text_field($value));
+    /**
+     * Sanitize an int field: a number (else the default) within min and max.
+     *
+     * @param mixed $value Raw value.
+     * @param array $field Schema entry.
+     * @return int
+     */
+    private static function sanitize_int($value, array $field) {
+        $value = is_numeric($value) ? (int) $value : (int) self::default_of($field);
+        if (isset($field['min'])) {
+            $value = max((int) $field['min'], $value);
         }
+        if (isset($field['max'])) {
+            $value = min((int) $field['max'], $value);
+        }
+        return $value;
+    }
+
+    /**
+     * Sanitize a domains field: one bare host per line.
+     *
+     * @param mixed $value Raw value.
+     * @param array $field Schema entry (not needed for this type).
+     * @return string
+     */
+    private static function sanitize_domains($value, array $field) {
+        return implode("\n", self::parse_domains($value));
+    }
+
+    /**
+     * Sanitize a media field: a Media Library picture's ID, or 0.
+     *
+     * @param mixed $value Raw value.
+     * @param array $field Schema entry (not needed for this type).
+     * @return int
+     */
+    private static function sanitize_media($value, array $field) {
+        $value = is_numeric($value) ? absint($value) : 0;
+        return $value && wp_attachment_is_image($value) ? $value : 0;
+    }
+
+    /**
+     * Sanitize a select field: one of its options, else the default.
+     *
+     * @param mixed $value Raw value.
+     * @param array $field Schema entry.
+     * @return mixed
+     */
+    private static function sanitize_select($value, array $field) {
+        $value = is_scalar($value) ? (string) $value : '';
+        if (array_key_exists($value, self::options_for($field))) {
+            return $value;
+        }
+        // Open selects (another plugin's board or course) keep an
+        // identifier whose plugin is not loaded on this request.
+        return !empty($field['open']) && strlen($value) <= 200 && preg_match('/^[A-Za-z0-9_-]+$/', $value) ? $value : self::default_of($field);
+    }
+
+    /**
+     * Sanitize a multi field: its options that are chosen, in the options'
+     * order; open lists also keep other identifiers.
+     *
+     * @param mixed $value Raw value: an array or a comma separated list.
+     * @param array $field Schema entry.
+     * @return string[]
+     */
+    private static function sanitize_multi($value, array $field) {
+        $values = is_array($value) ? $value : preg_split('/\s*,\s*/', (string) $value, -1, PREG_SPLIT_NO_EMPTY);
+        $values = array_map('strval', array_filter((array) $values, 'is_scalar'));
+        // Keep the options' order so stored values are stable.
+        $known = array_values(array_intersect(array_map('strval', array_keys(self::options_for($field))), $values));
+        if (empty($field['open'])) {
+            return $known;
+        }
+        // Open lists also keep identifiers that are not registered right now
+        // (class names may contain namespace separators).
+        $extra = array_filter(array_diff($values, $known), function ($item) {
+            return strlen($item) <= 200 && (bool) preg_match('/^[A-Za-z0-9_\\\\-]+$/', $item);
+        });
+        return array_values(array_unique(array_merge($known, $extra)));
+    }
+
+    /**
+     * Sanitize a times field: sorted 24-hour times, comma separated.
+     *
+     * @param mixed $value Raw value.
+     * @param array $field Schema entry (not needed for this type).
+     * @return string
+     */
+    private static function sanitize_times($value, array $field) {
+        return implode(', ', self::parse_times($value));
+    }
+
+    /**
+     * Sanitize a url field: an http(s) URL, or a site path kept relative so
+     * it survives domain changes.
+     *
+     * @param mixed $value Raw value.
+     * @param array $field Schema entry (not needed for this type).
+     * @return string
+     */
+    private static function sanitize_url($value, array $field) {
+        $value = trim((string) $value);
+        if ('' === $value) {
+            return '';
+        }
+        if ('/' === $value[0] && '/' !== substr($value, 1, 1)) {
+            return '/' . ltrim(preg_replace('/\s+/', '', sanitize_text_field($value)), '/');
+        }
+        return esc_url_raw($value, array('http', 'https'));
+    }
+
+    /**
+     * Sanitize a lines field: unique plain-text lines.
+     *
+     * @param mixed $value Raw value.
+     * @param array $field Schema entry (not needed for this type).
+     * @return string
+     */
+    private static function sanitize_lines($value, array $field) {
+        $lines = preg_split('/[\r\n]+/', (string) $value);
+        // Not sanitize_text_field(): it strips %xx, which URL paths need.
+        $lines = array_filter(array_map(function ($line) {
+            return trim(preg_replace('/[\x00-\x1F\x7F]+/', '', wp_strip_all_tags($line)));
+        }, $lines), function ($line) {
+            return '' !== $line;
+        });
+        return implode("\n", array_values(array_unique($lines)));
+    }
+
+    /**
+     * Sanitize a text field, keeping its tokens (such as %date%).
+     *
+     * @param mixed $value Raw value.
+     * @param array $field Schema entry.
+     * @return string
+     */
+    private static function sanitize_text($value, array $field) {
+        $value = (string) $value;
+        if (empty($field['tokens'])) {
+            return sanitize_text_field($value);
+        }
+        // sanitize_text_field() drops "%" plus two hex digits, which
+        // breaks tokens such as %date% and %day%; set them aside.
+        $tokens = array();
+        foreach (array_values((array) $field['tokens']) as $i => $token) {
+            $tokens["\u{E000}{$i}\u{E001}"] = (string) $token;
+        }
+        $value = str_replace(array_values($tokens), array_keys($tokens), $value);
+        return str_replace(array_keys($tokens), array_values($tokens), sanitize_text_field($value));
     }
 
     /**
@@ -483,26 +653,39 @@ class WPStarter_Settings {
      */
     public static function parse_times($value) {
         preg_match_all('/(\d{1,2})(?:[:.](\d{2}))?\s*(am|pm)?/i', (string) $value, $matches, PREG_SET_ORDER);
-        $times = array();
-
-        foreach ($matches as $match) {
-            $hour   = (int) $match[1];
-            $minute = isset($match[2]) && '' !== $match[2] ? (int) $match[2] : 0;
-            $suffix = isset($match[3]) ? strtolower($match[3]) : '';
-            if ('pm' === $suffix && $hour < 12) {
-                $hour += 12;
-            } elseif ('am' === $suffix && 12 === $hour) {
-                $hour = 0;
-            }
-            if ($hour > 23 || $minute > 59) {
-                continue;
-            }
-            $times[] = sprintf('%02d:%02d', $hour, $minute);
-        }
-
-        $times = array_values(array_unique($times));
+        $times = array_values(array_unique(array_filter(array_map(array(__CLASS__, 'time_of'), $matches))));
         sort($times);
         return $times;
+    }
+
+    /**
+     * One parse_times() match as "HH:MM", or '' when it is not a time of day.
+     *
+     * @param array $match Hour, minutes and am/pm from parse_times().
+     * @return string
+     */
+    private static function time_of(array $match) {
+        $hour   = (int) $match[1];
+        $minute = isset($match[2]) && '' !== $match[2] ? (int) $match[2] : 0;
+        $hour   = self::hour_24($hour, isset($match[3]) ? strtolower($match[3]) : '');
+        return $hour > 23 || $minute > 59 ? '' : sprintf('%02d:%02d', $hour, $minute);
+    }
+
+    /**
+     * An hour on the 24-hour clock: 9 pm is 21, 12 am is 0.
+     *
+     * @param int    $hour   Hour as written.
+     * @param string $suffix 'am', 'pm' or ''.
+     * @return int
+     */
+    private static function hour_24($hour, $suffix) {
+        if ('pm' === $suffix && $hour < 12) {
+            return $hour + 12;
+        }
+        if ('am' === $suffix && 12 === $hour) {
+            return 0;
+        }
+        return $hour;
     }
 
     /**
