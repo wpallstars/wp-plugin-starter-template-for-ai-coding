@@ -27,7 +27,6 @@
 set -euo pipefail
 
 readonly LOCK_WAIT_SECONDS=180
-readonly LOCK_STALE_MINUTES=10
 # Files whose conflicts do not keep a PR out of the preview.
 readonly DOC_FILES="changelog.txt readme.txt README.md"
 
@@ -82,22 +81,23 @@ cleanup() {
 }
 
 # One run at a time across all worktrees. A lock is taken over only when its
-# run has gone: its pid is no longer running, or (no pid written, so the run
-# stopped straight after taking it) it is older than LOCK_STALE_MINUTES. A
-# live run keeps its lock however long it takes.
+# pid is no longer running, so a live run keeps it however long it takes. A
+# lock without a pid (its run is starting, or stopped in the instant before
+# writing one) is never taken over: after LOCK_WAIT_SECONDS the message says
+# how to remove it.
 acquire_lock() {
 	local lock="$1"
 	local waited=0
 	local owner=""
 	while ! mkdir "$lock" 2>/dev/null; do
 		owner="$(cat "$lock/pid" 2>/dev/null || true)"
-		if { [ -n "$owner" ] && ! kill -0 "$owner" 2>/dev/null; } ||
-			{ [ -z "$owner" ] && [ -n "$(find "$lock" -maxdepth 0 -mmin +"$LOCK_STALE_MINUTES" 2>/dev/null)" ]; }; then
+		if [ -n "$owner" ] && ! kill -0 "$owner" 2>/dev/null; then
 			rm -rf "$lock"
 			continue
 		fi
 		if [ "$waited" -ge "$LOCK_WAIT_SECONDS" ]; then
-			die "another preview run is still going (lock: $lock)"
+			[ -n "$owner" ] || die "a lock without a run id is in the way; if no preview run is going, remove $lock"
+			die "another preview run (pid $owner) is still going (lock: $lock)"
 		fi
 		[ "$waited" -eq 0 ] && printf 'Waiting for another preview run to finish...\n'
 		sleep 3

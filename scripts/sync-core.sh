@@ -52,15 +52,17 @@ core_paths() {
 	local from="$1"
 	local ref="$2"
 	local out="$3"
-	local list line
+	local list line files
 	list="$(git -C "$from" show "$ref:scripts/core-files.txt" 2>/dev/null)" ||
 		die "no scripts/core-files.txt in the starter at $ref"
 	: >"$out"
 	while IFS= read -r line; do
 		case "$line" in
 		*/)
-			git -C "$from" ls-tree -r --name-only "$ref" -- "$line" >>"$out" ||
+			files="$(git -C "$from" ls-tree -r --name-only "$ref" -- "$line")" ||
 				die "cannot list $line in the starter at $ref"
+			[ -n "$files" ] || die "scripts/core-files.txt lists $line, which has no files in the starter at $ref"
+			printf '%s\n' "$files" >>"$out"
 			;;
 		*) printf '%s\n' "$line" >>"$out" ;;
 		esac
