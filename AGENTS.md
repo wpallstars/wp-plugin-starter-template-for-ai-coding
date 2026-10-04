@@ -38,7 +38,8 @@ in `docs/` (`STANDARDS.md` → Agent docs); the starter has none yet.
   change to names in core files, try it on a throwaway clone (rename, lint,
   smoke test).
 - The banner source is `.wordpress-org/banner.svg`: the wpallstars plugin
-  stack picture in red only, on wpallstars branding. Rebuild it with
+  stack picture in red only, on wpallstars branding. The icon source,
+  `.wordpress-org/icon.svg`, is that picture alone. Rebuild both with
   `scripts/build-banner.sh`.
 - This repository is public. Never name private repositories, their
   issues, or local paths in it (commits, docs, comments or examples).

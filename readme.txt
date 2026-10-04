@@ -5,7 +5,7 @@ Tags: starter, boilerplate, settings, developer, template
 Requires at least: 6.2
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 1.0.13
+Stable tag: 1.0.14
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -56,11 +56,8 @@ No. The WordPress.org build contacts nothing outside WordPress.
 
 == Changelog ==
 
-= Unreleased =
-* Developers: scripts/rename-plugin.sh adds no CodeFactor badge until CodeFactor has the repository.
-
-= 1.0.13 =
-* New: screenshots. The settings screen's header buttons are Source code, Support and Buy me a coffee, on one row.
+= 1.0.14 =
+* Developers: WordPress.org icons, and release checks for the listing images. Nothing changes on sites.
 
 Every change: changelog.txt.
 

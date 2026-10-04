@@ -88,6 +88,12 @@ How changes are made and checked: `DEVELOPMENT.md`. Releases: `RELEASING.md`.
   in `readme.txt` → Screenshots), which the release zip leaves out. They show
   only what the WordPress.org build shows; GitHub-only pictures, such as
   Updates from GitHub, go in `docs/images/` with no caption in `readme.txt`.
+  The other listing images are in `.wordpress-org/` too: the banner
+  (`banner.svg`) and the icon (`icon.svg`, the banner's picture alone, with
+  no words), which `scripts/build-banner.sh` turns into `banner-772x250.png`,
+  `banner-1544x500.png`, `icon-128x128.png` and `icon-256x256.png`.
+  `scripts/preflight-release.sh` checks their sizes, and that each
+  `screenshot-N` has a caption.
   The `Version: X.Y.Z` line under the intro holds the version itself (GitHub
   shows it as written) and changes with every release (`RELEASING.md`).
 - The settings screen's header links come from `{Prefix}_Setup::header_links()`:
