@@ -444,7 +444,8 @@ class WPStarter_Settings {
      * @return bool
      */
     private static function sanitize_bool($value, array $field) {
-        return rest_sanitize_boolean($value);
+        // Core reads strings ('false', '0'); everything else is a plain cast.
+        return is_string($value) ? rest_sanitize_boolean($value) : (bool) $value;
     }
 
     /**
@@ -567,7 +568,7 @@ class WPStarter_Settings {
      * @return string
      */
     private static function sanitize_lines($value, array $field) {
-        $lines = preg_split('/[\r\n]+/', (string) $value);
+        $lines = preg_split('/[\r\n]+/', (string) $value) ?: array();
         // Not sanitize_text_field(): it strips %xx, which URL paths need.
         $lines = array_filter(array_map(function ($line) {
             return trim(preg_replace('/[\x00-\x1F\x7F]+/', '', wp_strip_all_tags($line)));
@@ -606,7 +607,7 @@ class WPStarter_Settings {
      * @return string[]
      */
     public static function parse_domains($value) {
-        $lines   = preg_split('/[\r\n,]+/', (string) $value);
+        $lines   = preg_split('/[\r\n,]+/', (string) $value) ?: array();
         $domains = array();
 
         foreach ($lines as $line) {

@@ -182,8 +182,11 @@ class WPStarter_Admin_Manager {
         }
 
         $tab = self::get_active_tab();
-        $css = file_exists(WPSTARTER_DIR . self::CSS_FILE) ? filemtime(WPSTARTER_DIR . self::CSS_FILE) : WPSTARTER_VERSION;
-        $js  = file_exists(WPSTARTER_DIR . self::JS_FILE) ? filemtime(WPSTARTER_DIR . self::JS_FILE) : WPSTARTER_VERSION;
+        // File times bust caches after edits; the version is the fallback.
+        $css = file_exists(WPSTARTER_DIR . self::CSS_FILE) ? filemtime(WPSTARTER_DIR . self::CSS_FILE) : false;
+        $css = false === $css ? WPSTARTER_VERSION : (string) $css;
+        $js  = file_exists(WPSTARTER_DIR . self::JS_FILE) ? filemtime(WPSTARTER_DIR . self::JS_FILE) : false;
+        $js  = false === $js ? WPSTARTER_VERSION : (string) $js;
 
         wp_enqueue_style('wpstarter-admin', WPSTARTER_URL . self::CSS_FILE, array('dashicons'), $css);
 
@@ -193,7 +196,7 @@ class WPStarter_Admin_Manager {
          * @param string[] $deps Script handles.
          * @param string   $tab  Active tab.
          */
-        $deps = (array) apply_filters('wpstarter_admin_script_deps', array('jquery', 'wp-a11y', 'wp-i18n'), $tab);
+        $deps = array_values(array_filter(array_map('strval', (array) apply_filters('wpstarter_admin_script_deps', array('jquery', 'wp-a11y', 'wp-i18n'), $tab))));
 
         if (self::shows_media_field($tab)) {
             wp_enqueue_media();

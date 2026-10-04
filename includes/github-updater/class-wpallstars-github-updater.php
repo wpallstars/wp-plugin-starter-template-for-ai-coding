@@ -201,7 +201,7 @@ final class WPAllStars_GitHub_Updater {
      *
      * @param string $file   Plugin file.
      * @param mixed  $plugin Details.
-     * @return array|null
+     * @return array{repo:string,asset_only:bool,github_only:bool,version:string,name:string}|null
      */
     private static function clean_plugin($file, $plugin) {
         $repo = is_array($plugin) && isset($plugin['repo']) ? self::repo_name($plugin['repo']) : '';
@@ -215,6 +215,22 @@ final class WPAllStars_GitHub_Updater {
             'version'     => isset($plugin['version']) ? (string) $plugin['version'] : '',
             'name'        => isset($plugin['name']) ? (string) $plugin['name'] : $file,
         );
+    }
+
+    /**
+     * A response header as one string. With more than one header of that
+     * name WordPress returns an array; the last one is the one that counts.
+     *
+     * @param array|WP_Error $response HTTP response.
+     * @param string         $name     Header name.
+     * @return string
+     */
+    private static function header_value($response, $name) {
+        $value = wp_remote_retrieve_header($response, $name);
+        if (is_array($value)) {
+            $value = $value ? end($value) : '';
+        }
+        return (string) $value;
     }
 
     /**
@@ -417,7 +433,7 @@ final class WPAllStars_GitHub_Updater {
             return $response;
         }
         $code     = (int) wp_remote_retrieve_response_code($response);
-        $location = (string) wp_remote_retrieve_header($response, 'location');
+        $location = self::header_value($response, 'location');
         if (404 === $code) {
             // No such public repository (private ones need a token).
             return null;
@@ -643,6 +659,7 @@ final class WPAllStars_GitHub_Updater {
         if (!is_object($transient)) {
             return $transient;
         }
+        /** @var \stdClass $transient Core saves update_plugins as a stdClass. */
         /**
          * Whether plugins also on WordPress.org take each version from GitHub
          * as soon as it is released, instead of waiting for WordPress.org.
@@ -687,10 +704,10 @@ final class WPAllStars_GitHub_Updater {
      * Put a GitHub release in WordPress's update check: as an update when it
      * is newer and has something to install, otherwise as up to date.
      *
-     * @param object $transient update_plugins (changed).
-     * @param string $file      Plugin file.
-     * @param array  $plugin    Plugin details.
-     * @param array  $release   GitHub release.
+     * @param \stdClass $transient update_plugins (changed).
+     * @param string    $file      Plugin file.
+     * @param array     $plugin    Plugin details.
+     * @param array     $release   GitHub release.
      */
     private static function list_update($transient, $file, array $plugin, array $release) {
         $item = (object) array(
@@ -806,7 +823,7 @@ final class WPAllStars_GitHub_Updater {
     private static function notes_html($markdown) {
         $html = '';
         $list = false;
-        foreach (preg_split('/\r\n|\r|\n/', (string) $markdown) as $line) {
+        foreach (preg_split('/\r\n|\r|\n/', (string) $markdown) ?: array() as $line) {
             $line = rtrim($line);
             $text = esc_html(ltrim(preg_replace('/^(#{1,6}|[-*+])\s+/', '', trim($line))));
             $text = preg_replace('/\*\*(.+?)\*\*/', '<strong>$1</strong>', $text);
@@ -931,7 +948,7 @@ final class WPAllStars_GitHub_Updater {
         if (is_wp_error($response)) {
             return $response;
         }
-        $location = (string) wp_remote_retrieve_header($response, 'location');
+        $location = self::header_value($response, 'location');
         if ('' === $location || !in_array((int) wp_remote_retrieve_response_code($response), array(301, 302, 303, 307, 308), true)) {
             return new WP_Error('wpallstars_github_download', __('GitHub did not give a download address. Check the token’s access to the repository.', 'wp-plugin-starter-template'));
         }

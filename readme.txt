@@ -51,6 +51,9 @@ No. The WordPress.org build contacts nothing outside WordPress.
 
 == Changelog ==
 
+= Unreleased =
+* Fixed: Updates from GitHub handles repeated Location headers, and the settings screen's file versions and text splitting are sturdier.
+
 = 1.0.11 =
 * Developers: GitHub releases are built, checked and published by a workflow from the version tag, with signed build provenance. Nothing changes for users.
 
