@@ -444,7 +444,8 @@ class WPStarter_Settings {
             if ('' === $line) {
                 continue;
             }
-            $host = wp_parse_url(false === strpos($line, '://') ? 'http://' . $line : $line, PHP_URL_HOST);
+            // A bare domain gets a scheme-relative "//" so the host is found.
+            $host = wp_parse_url(false === strpos($line, '://') ? '//' . $line : $line, PHP_URL_HOST);
             $host = $host ? strtolower(preg_replace('/^www\./i', '', $host)) : '';
             if ('' !== $host && preg_match('/^[a-z0-9.-]+$/', $host)) {
                 $domains[] = $host;

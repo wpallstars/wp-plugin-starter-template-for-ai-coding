@@ -443,7 +443,7 @@
 .wps-panel-note--warning p::before {
 	content: "\f534";
 	margin-inline-end: 6px;
-	font: 16px/1 dashicons;
+	font: 16px/1 dashicons, sans-serif;
 	vertical-align: -3px;
 	color: #dba617;
 }
@@ -686,7 +686,7 @@
 
 .wps-status.is-saved::before {
 	content: "\f147";
-	font: normal 18px/1 dashicons;
+	font: normal 18px/1 dashicons, sans-serif;
 }
 
 .wps-status.is-error {
