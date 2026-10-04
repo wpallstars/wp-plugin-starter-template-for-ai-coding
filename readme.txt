@@ -5,7 +5,7 @@ Tags: starter, boilerplate, settings, developer, template
 Requires at least: 6.2
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 1.0.2
+Stable tag: 1.0.3
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -43,8 +43,8 @@ No. The WordPress.org build contacts nothing outside WordPress.
 
 == Changelog ==
 
-= 1.0.2 =
-* Developers: AGENTS.md stays a short map, with task guidance in docs/ (STANDARDS.md → Agent docs); the release preflight checks it. Nothing changes for users.
+= 1.0.3 =
+* Developers: scripts/rename-plugin.sh can set the new plugin's description, author, author URI, plugin URI, contributors and donate link. Nothing changes for users.
 
 Every change: changelog.txt.
 
