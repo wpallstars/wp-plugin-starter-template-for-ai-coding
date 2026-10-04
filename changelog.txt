@@ -2,6 +2,9 @@
 
 Every change to WP Plugin Starter. readme.txt lists the latest version in short.
 
+= 1.0.18 =
+* Changed: WordPress.org gets each version 30 days after its GitHub release, not 90 (STANDARDS.md → Releases, RELEASING.md → WordPress.org), so its users do not wait too long for fixes. Security releases still go to WordPress.org at once. README.md → Updates and releases and the readme.txt FAQ say so.
+
 = 1.0.17 =
 * Developers: four rules in STANDARDS.md that plugins made from the starter learned. A changed default is only sure to reach new installs, as migrations and saves store every setting (Structure). SQL goes through $wpdb->prepare(), with the plugin's own table and column names as %i, which Plugin Check otherwise warns about. A notice shown once after an action adds its query argument to removable_query_args, so a reload does not show it again. An inline NOSONAR needs its reason on that line, as phpcs:ignore does (Code rules). Nothing changes for users.
 
