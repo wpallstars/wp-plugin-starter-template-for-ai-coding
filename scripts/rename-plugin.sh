@@ -192,6 +192,32 @@ Every change: changelog.txt."
 	return 0
 }
 
+# Rebuild README.md's GitHub badges block for the new repository. The
+# SonarCloud key is owner_repo; the Codacy badge has a per-project ID, so it
+# is left out until the new repository's own Codacy badge is added.
+set_badges() {
+	local repo="$1"
+	local url="https://github.com/$repo"
+	local key="${repo/\//_}"
+	[ -f README.md ] || return 0
+	BADGES="<!-- On GitHub only: the Read Me tab skips this block. scripts/rename-plugin.sh rewrites it. -->
+[![CI]($url/actions/workflows/ci.yml/badge.svg?branch=main)]($url/actions/workflows/ci.yml)
+[![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=$key&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=$key)
+[![CodeFactor](https://www.codefactor.io/repository/github/$repo/badge)](https://www.codefactor.io/repository/github/$repo)
+[![License: GPL v2 or later](https://img.shields.io/badge/License-GPL%20v2%20or%20later-blue.svg)](LICENSE)
+[![Latest release](https://img.shields.io/github/v/release/$repo)]($url/releases)
+
+[![Lines of code](docs/metrics/badges/loc.svg)](docs/metrics/repo-metrics.md)
+[![Dependencies](docs/metrics/badges/dependencies.svg)](docs/metrics/repo-metrics.md)
+[![Languages by lines of code](docs/metrics/badges/languages.svg)](docs/metrics/repo-metrics.md)" awk '
+		$0 == "<!-- aidevops:badges:end -->" { skip = 0 }
+		skip { next }
+		{ print }
+		$0 == "<!-- aidevops:badges:start -->" { print ENVIRON["BADGES"]; skip = 1 }' README.md >"$TMP_FILE"
+	replace_with_tmp README.md || true
+	return 0
+}
+
 # Put the maker's details in, after the renaming. Empty ones stay as they are.
 set_identity() {
 	local main_file="$1"
@@ -328,6 +354,7 @@ main() {
 	starter_version="$(plugin_header_field "$(head -c 8192 "$slug.php")" "Version")"
 	set_identity "$slug.php" "includes/class-$TO_PREFIX-setup.php" "$old_description"
 	set_version "$slug.php" "$starter_version"
+	set_badges "$repo"
 
 	printf '%d files changed, %d renamed. Run composer update --lock (the package name changed), review with git diff and git status, then commit.\n' "$changed" "$moved"
 	return 0
