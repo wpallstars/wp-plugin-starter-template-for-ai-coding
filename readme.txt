@@ -56,6 +56,9 @@ No. The WordPress.org build contacts nothing outside WordPress.
 
 == Changelog ==
 
+= Unreleased =
+* Developers: scripts/preflight-release.sh no longer stops early on a README.md over 64 KB.
+
 = 1.0.14 =
 * Developers: WordPress.org icons, and release checks for the listing images. Nothing changes on sites.
 

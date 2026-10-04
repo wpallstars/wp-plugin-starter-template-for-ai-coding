@@ -126,6 +126,10 @@ Deleting the plugin removes its settings, its cached data, who hid lines of the 
 
 ## Changelog
 
+### Unreleased
+
+- Developers: `scripts/preflight-release.sh` no longer stops without a message (exit 141) when `README.md` is over 64 KB: the `Version:` check read only up to the first match, so `git show` was cut off.
+
 ### 1.0.14
 
 - New: WordPress.org icons (`icon-128x128.png`, `icon-256x256.png` and `icon.svg` in `.wordpress-org/`), the banner's plugin stack and stars on their own. `scripts/build-banner.sh` builds the PNGs from `.wordpress-org/icon.svg` when a plugin has one.
