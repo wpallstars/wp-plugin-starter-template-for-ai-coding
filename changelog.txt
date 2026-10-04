@@ -3,6 +3,7 @@
 Every change to WP Plugin Starter. readme.txt lists the latest version in short.
 
 = Unreleased =
+* Developers: the settings screen renders each kind of child setting (select, multi, url, times, int, lines and domains, media, bool, text) in its own method, chosen from a map, instead of one long switch. The page's HTML, hooks and wps-* classes are unchanged. Nothing changes for users.
 * Developers: scripts/rename-plugin.sh takes plugin names with quotes, $ and & (such as Owner's "Best" Plugin): the new name is escaped for where it lands (PHP strings, JSON, XML), and the renamed PHP is checked with php -l. Names with / \ < > % or control characters, and URLs with quotes or \, are refused before any file changes. scripts/sync-core.sh escapes the same way. scripts/replaced-plugins.php quotes the name in its README pattern. README.md's languages badge has a line of its own. Nothing changes for users.
 * Developers: README.md shows badges on GitHub (CI, SonarCloud, Codacy, CodeFactor, license, latest release) and repository facts (lines of code, languages, dependencies) that .github/workflows/repo-metrics.yml keeps up to date in docs/metrics/. The Read Me tab leaves out the badges block and HTML comments, so it still loads nothing from other sites. scripts/rename-plugin.sh rebuilds the badges for the new repository. Nothing changes for users.
 * Developers: scripts/smoke-test.sh keeps its local-only HTTP install command on one line, so SonarCloud reads its NOSONAR note. Nothing changes for users.
