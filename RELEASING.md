@@ -6,7 +6,9 @@ lists them, and the plugin's `AGENTS.md` gives its values). The plugin's own
 submission state and guideline review: `LAUNCH.md`.
 
 Releases on GitHub and the WordPress.org submission need the owner's say.
-None of the scripts below tags, publishes, uploads or commits anything.
+None of the scripts below tags, publishes, uploads or commits anything. The
+Release workflow (`.github/workflows/release.yml`) publishes a GitHub release
+only when someone pushes a version tag.
 
 ## Scripts
 
@@ -55,16 +57,35 @@ expected there and fails on the updater findings in the WordPress.org zip.
    git fetch origin
    scripts/preflight-release.sh --ref origin/main   # no errors before tagging
    git tag -a vX.Y.Z origin/main -m "{Name} X.Y.Z"
-   scripts/build-release.sh --ref vX.Y.Z
    git push origin vX.Y.Z
-   gh release create vX.Y.Z dist/{slug}-X.Y.Z.zip --title "{Name} X.Y.Z" --notes-file <notes>
+   gh run watch   # choose the Release run for vX.Y.Z
    ```
+
+   The tag starts the Release workflow (`.github/workflows/release.yml`).
+   It checks the tag is on `main`, runs the preflight on it, builds the zips
+   from it and publishes the release `{Name} X.Y.Z` with
+   `{slug}-X.Y.Z.zip`, its notes taken from the version's section of the
+   `README.md` changelog (edit them on GitHub afterwards if needed). In a
+   public repository it also signs the zip's build provenance with Sigstore
+   and attaches the bundle as `provenance-{slug}-X.Y.Z.sigstore.json`;
+   anyone can check a download with
+   `gh attestation verify {slug}-X.Y.Z.zip --repo {owner}/{repo}`. OpenSSF
+   Scorecard counts it (Signed-Releases). Attestations in a private
+   repository need GitHub Enterprise Cloud, so a private plugin's release
+   has the zip only.
+
+   If the workflow cannot run, publish by hand from the same tag:
+   `scripts/build-release.sh --ref vX.Y.Z`, then
+   `gh release create vX.Y.Z dist/{slug}-X.Y.Z.zip --verify-tag --title "{Name} X.Y.Z" --notes-file <notes>`.
+   Running the workflow again later (Actions → the failed run → **Re-run
+   jobs**) replaces that zip with its signed build.
 
    Sites with the shared updater see the release when they next check.
    Sites still on Git Updater are offered the `Version:` on `main` before the
    release exists, so do this in the same sitting as the merge.
 4. Run `scripts/update-test.sh`. It checks the release has exactly one
-   asset, `{slug}-X.Y.Z.zip`, and that a site with the previous version
+   plugin asset, `{slug}-X.Y.Z.zip` (and, if present, that its provenance
+   bundle verifies), and that a site with the previous version
    sees the update with **Check again** on the Updates screen and installs
    it. For a private repository, export a read-only token as
    `WPALLSTARS_GITHUB_TOKEN` first (below); the test site reads it from the

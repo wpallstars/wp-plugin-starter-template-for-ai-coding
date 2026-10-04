@@ -164,6 +164,13 @@ the Scorecard badge. It needs no setup. In a private repository the job is
 skipped: publishing needs a public one, and minutes cost money there.
 Fix what it finds in the repository, or dismiss the alert with the reason.
 
+### Release
+
+`.github/workflows/release.yml` runs when a `vX.Y.Z` tag is pushed: it
+checks the tag is on `main`, runs the preflight, builds the zips and
+publishes the GitHub release, with signed build provenance in a public
+repository. It needs no setup. Steps: `RELEASING.md` → GitHub release.
+
 ### Starter sync
 
 `.github/workflows/starter-sync.yml` runs every Monday (and from the
