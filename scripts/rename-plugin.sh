@@ -63,7 +63,7 @@ need() {
 	local value="$2"
 	local pattern="$3"
 	[[ -n "$value" ]] || die "$flag is needed (see --help)"
-	printf '%s' "$value" | grep -Eq "$pattern" || die "$flag '$value' must match $pattern"
+	grep -Eq "$pattern" <<<"$value" || die "$flag '$value' must match $pattern"
 	return 0
 }
 

@@ -227,7 +227,7 @@ check_debug_log() {
 	if [[ -n "$keep" ]]; then
 		printf '%s\n' "$log" >"$keep"
 	fi
-	if ! printf '%s\n' "$log" | grep -q 'smoke-test canary'; then
+	if ! grep -q 'smoke-test canary' <<<"$log"; then
 		fail "debug.log does not work: the canary notice is missing"
 		return 0
 	fi

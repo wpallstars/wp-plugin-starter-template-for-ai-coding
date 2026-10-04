@@ -34,7 +34,7 @@ PLUGIN_REPO=""
 plugin_header_field() {
 	local text="$1"
 	local key="$2"
-	printf '%s\n' "$text" | awk -v k="$key" '
+	awk -v k="$key" '
 		BEGIN { k = tolower(k) }
 		{
 			line = $0
@@ -46,7 +46,7 @@ plugin_header_field() {
 				print v
 				exit
 			}
-		}'
+		}' <<<"$text"
 	return 0
 }
 

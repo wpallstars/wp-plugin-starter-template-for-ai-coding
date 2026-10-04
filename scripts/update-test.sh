@@ -126,14 +126,14 @@ pick_versions() {
 	versions="$(release_versions)" || die "cannot list the releases of $REPO (is gh signed in?)"
 	[[ -n "$versions" ]] || die "$REPO has no vX.Y.Z releases"
 	if [[ -z "$TO" ]]; then
-		TO="$(printf '%s\n' "$versions" | head -n 1)"
+		TO="$(head -n 1 <<<"$versions")"
 	fi
-	printf '%s\n' "$versions" | grep -qxF "$TO" || die "no release v$TO in $REPO"
+	grep -qxF "$TO" <<<"$versions" || die "no release v$TO in $REPO"
 	if [[ -z "$FROM" ]]; then
 		FROM="$(printf '%s\n' "$versions" | grep -A1 -xF "$TO" | sed -n 2p)"
 		[[ -n "$FROM" ]] || die "no release before v$TO in $REPO; give --from"
 	fi
-	printf '%s\n' "$versions" | grep -qxF "$FROM" || die "no release v$FROM in $REPO"
+	grep -qxF "$FROM" <<<"$versions" || die "no release v$FROM in $REPO"
 	[[ "$FROM" != "$TO" ]] || die "--from and --to are the same version ($TO)"
 	return 0
 }
@@ -302,7 +302,7 @@ check_debug_log() {
 	if [[ -n "$keep" ]]; then
 		printf '%s\n' "$log" >"$keep"
 	fi
-	if ! printf '%s\n' "$log" | grep -q 'update-test canary'; then
+	if ! grep -q 'update-test canary' <<<"$log"; then
 		fail "debug.log does not work: the canary notice is missing"
 		return 0
 	fi

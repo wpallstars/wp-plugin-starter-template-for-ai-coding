@@ -99,7 +99,7 @@ section() {
 field() {
 	local text="$1"
 	local key="$2"
-	printf '%s\n' "$text" | awk -v k="$key" '
+	awk -v k="$key" '
 		BEGIN { k = tolower(k) }
 		{
 			line = $0
@@ -111,7 +111,7 @@ field() {
 				print v
 				exit
 			}
-		}'
+		}' <<<"$text"
 	return 0
 }
 
@@ -147,7 +147,7 @@ check_versions() {
 	constant="$(printf '%s\n' "$main_php" | sed -nE "/define\([[:space:]]*['\"]${VERSION_CONSTANT}['\"]/{s/.*,[[:space:]]*['\"]([^'\"]+)['\"].*/\1/p;q;}")"
 	stable="$(field "$readme" "Stable tag")"
 
-	if printf '%s' "$version" | grep -Eq '^[0-9]+\.[0-9]+(\.[0-9]+)?$'; then
+	if grep -Eq '^[0-9]+\.[0-9]+(\.[0-9]+)?$' <<<"$version"; then
 		ok "Version: $version (numbers only, so GitHub updates and WordPress.org treat it as stable)"
 	else
 		err "Version: '$version' is not X.Y.Z; pre-release versions on main are offered to sites still using Git Updater"
@@ -169,7 +169,7 @@ check_versions() {
 		fi
 	done
 
-	if printf '%s\n' "$main_php" | grep -Eiq '^[[:space:]*]*Update URI:'; then
+	if grep -Eiq '^[[:space:]*]*Update URI:' <<<"$main_php"; then
 		err "Update URI header in $MAIN_FILE: scripts/build-release.sh adds it to the GitHub zip only (WordPress.org rejects it)"
 	else
 		ok "no Update URI header in Git (the GitHub zip gets one at build time)"
@@ -179,7 +179,7 @@ check_versions() {
 	domain="$(field "$plugin_header" "Text Domain")"
 	if [[ "$domain" = "$SLUG" ]]; then ok "Text Domain: $domain"; else err "Text Domain is '$domain'; it must be the slug ($SLUG) for language packs"; fi
 	license="$(field "$plugin_header" "License")"
-	if printf '%s' "$license" | grep -Eiq 'GPL'; then ok "License: $license"; else err "License '$license' is not GPL-compatible as written"; fi
+	if grep -Eiq 'GPL' <<<"$license"; then ok "License: $license"; else err "License '$license' is not GPL-compatible as written"; fi
 	plugin_uri="$(field "$plugin_header" "Plugin URI")"
 	author_uri="$(field "$plugin_header" "Author URI")"
 	if [[ -n "$plugin_uri" ]] && [[ "$plugin_uri" = "$author_uri" ]]; then
@@ -190,17 +190,19 @@ check_versions() {
 }
 
 # Changelog text (a readme section or changelog.txt): an entry for the version,
-# and no Unreleased section left.
+# and no Unreleased section left. Text goes to grep -q as a here-string, never
+# through a pipe: grep -q stops at the first match, and with pipefail the
+# writer's SIGPIPE on text over 64 KB would fail a check that matched.
 check_changelog() {
 	local label="$1"
 	local text="$2"
 	local version="$3"
-	if printf '%s\n' "$text" | grep -Eq "^= *v?$version *="; then
+	if grep -Eq "^= *v?$version *=" <<<"$text"; then
 		ok "$label changelog has $version"
 	else
 		warn "$label changelog has no '= $version =' entry"
 	fi
-	if printf '%s\n' "$text" | grep -Eiq '^= *unreleased *='; then
+	if grep -Eiq '^= *unreleased *=' <<<"$text"; then
 		warn "$label changelog still has an Unreleased section; name it $version when releasing"
 	fi
 	return 0
@@ -226,7 +228,7 @@ check_readme() {
 	if [[ "$readme_name" = "$name" ]]; then ok "name matches the plugin header ($name)"; else warn "readme name '$readme_name' differs from Plugin Name '$name'"; fi
 
 	local short
-	short="$(printf '%s\n' "$readme" | awk 'NR == 1 { next } !h && /^[ \t]*$/ { h = 1; next } h && /^==/ { exit } h && !/^[ \t]*$/ { print; exit }')"
+	short="$(awk 'NR == 1 { next } !h && /^[ \t]*$/ { h = 1; next } h && /^==/ { exit } h && !/^[ \t]*$/ { print; exit }' <<<"$readme")"
 	if [[ -z "$short" ]]; then
 		err "no short description (the line after the header)"
 	elif [[ "${#short}" -le "$SHORT_DESC_MAX" ]]; then
@@ -242,7 +244,7 @@ check_readme() {
 
 	local tested
 	tested="$(field "$readme" "Tested up to")"
-	if printf '%s' "$tested" | grep -Eq '^[0-9]+\.[0-9]+$'; then
+	if grep -Eq '^[0-9]+\.[0-9]+$' <<<"$tested"; then
 		ok "Tested up to: $tested"
 	else
 		err "Tested up to '$tested' should be a major version such as 6.8"
@@ -261,12 +263,14 @@ check_readme() {
 		fi
 	fi
 
-	check_changelog "readme.txt" "$(printf '%s\n' "$readme" | awk '/^== *[Cc]hangelog *==/ { c = 1; next } c && /^== / { exit } c')" "$version"
+	check_changelog "readme.txt" "$(awk '/^== *[Cc]hangelog *==/ { c = 1; next } c && /^== / { exit } c' <<<"$readme")" "$version"
 	if [[ -n "$CHANGELOG_TXT" ]]; then
 		check_changelog "changelog.txt" "$CHANGELOG_TXT" "$version"
 	fi
-	if printf '%s\n' "$readme" | grep -Eiq '^== *upgrade notice *=='; then
-		if printf '%s\n' "$readme" | awk '/^== *[Uu]pgrade [Nn]otice *==/ { u = 1; next } u && /^== / { exit } u' | grep -Eq "^= *v?$version *="; then
+	if grep -Eiq '^== *upgrade notice *==' <<<"$readme"; then
+		local notice
+		notice="$(awk '/^== *[Uu]pgrade [Nn]otice *==/ { u = 1; next } u && /^== / { exit } u' <<<"$readme")"
+		if grep -Eq "^= *v?$version *=" <<<"$notice"; then
 			ok "upgrade notice has $version"
 		else
 			note "no upgrade notice for $version (optional)"
@@ -288,7 +292,7 @@ check_wporg() {
 	else
 		warn "WordPress.org makes the slug from Plugin Name: '$name' becomes '$derived', not '$SLUG'. Ask for '$SLUG' in the submission notes (it can change only before approval), or the text domain will not match"
 	fi
-	if printf '%s' "$name" | grep -Eiq '^(wordpress|wp|woocommerce|woo|gutenberg)([^a-z]|$)'; then
+	if grep -Eiq '^(wordpress|wp|woocommerce|woo|gutenberg)([^a-z]|$)' <<<"$name"; then
 		warn "Plugin Name starts with a trademark ('$name'); WordPress.org does not allow that"
 	fi
 
@@ -298,7 +302,7 @@ check_wporg() {
 	fi
 	local info
 	info="$(curl -s -m 20 "https://api.wordpress.org/plugins/info/1.2/?action=plugin_information&request%5Bslug%5D=$SLUG&request%5Bfields%5D%5Bsections%5D=0" || true)"
-	if printf '%s' "$info" | grep -q '"error"'; then
+	if grep -q '"error"' <<<"$info"; then
 		note "slug $SLUG is not listed on WordPress.org yet"
 	elif [[ -n "$info" ]]; then
 		note "slug $SLUG is already listed on WordPress.org; check it is this plugin"
@@ -372,7 +376,7 @@ check_zip() {
 	list="$(unzip -Z1 "$zip_path")"
 	tops="$(printf '%s\n' "$list" | cut -d/ -f1 | sort -u | tr '\n' ' ')"
 	if [[ "$tops" = "$SLUG " ]]; then ok "$label: one $SLUG/ folder"; else err "$label: top level is '$tops', must be only $SLUG/"; fi
-	if printf '%s\n' "$list" | grep -qx "$SLUG/$MAIN_FILE"; then ok "$label: $SLUG/$MAIN_FILE present"; else err "$label: $SLUG/$MAIN_FILE missing"; fi
+	if grep -qx "$SLUG/$MAIN_FILE" <<<"$list"; then ok "$label: $SLUG/$MAIN_FILE present"; else err "$label: $SLUG/$MAIN_FILE missing"; fi
 	dev="$(printf '%s\n' "$list" | grep -E "$DEV_FILES" || true)"
 	if [[ -z "$dev" ]]; then ok "$label: no development files"; else err "$label: development files: $(printf '%s' "$dev" | tr '\n' ' ')"; fi
 	size="$(wc -c <"$zip_path" | tr -d ' ')"
@@ -441,7 +445,7 @@ check_builds() {
 		w3.org | gnu.org | wordpress.org | *.wordpress.org | w.org | *.w.org | wp.org | *.wp.org | example.com | *.example.com) continue ;;
 		*) ;;
 		esac
-		if ! printf '%s' "$readme_text" | grep -Fqi "$host"; then missing="$missing $host"; fi
+		if ! grep -Fqi "$host" <<<"$readme_text"; then missing="$missing $host"; fi
 	done
 	if [[ -z "$missing" ]]; then
 		ok "every host in includes/ and blocks/ is named in readme.txt"
@@ -515,14 +519,14 @@ check_agent_docs() {
 		warn "AGENTS.md is $lines lines (most $AGENTS_MD_MAX_LINES): move sections only one kind of task needs to docs/, with one line saying when to read each"
 		problems=1
 	fi
-	if ! printf '%s\n' "$agents" | grep -qF 'STANDARDS.md'; then
+	if ! grep -qF 'STANDARDS.md' <<<"$agents"; then
 		warn "AGENTS.md does not send agents to STANDARDS.md, so they miss the rules every plugin shares"
 		problems=1
 	fi
 	local doc
 	while IFS= read -r doc; do
 		[[ -n "$doc" ]] || continue
-		if ! printf '%s\n' "$agents" | grep -qF "$doc"; then
+		if ! grep -qF "$doc" <<<"$agents"; then
 			warn "$doc is not named in AGENTS.md, so agents will not find it"
 			problems=1
 		fi
