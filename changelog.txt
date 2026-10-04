@@ -2,6 +2,9 @@
 
 Every change to WP Plugin Starter. readme.txt lists the latest version in short.
 
+= Unreleased =
+* Developers: SonarCloud runs from GitHub Actions (.github/workflows/sonarcloud.yml) with the new core file sonar-project.properties, which ignores the four rules WordPress coding standards contradict (php:S100, S101, S116, S1142). Automatic analysis ignored such settings, and the free plan has no per-project Quality Profile. DEVELOPMENT.md → SonarCloud lists the setup for a new plugin. Nothing changes for users.
+
 = 1.0.5 =
 * Developers: scripts/preflight-release.sh treats only docs/{topic}.md as agent docs, so generated files in docs/metrics/ need no line in AGENTS.md. Nothing changes for users.
 * Developers: new core file .codacy.yml: Codacy skips the generated composer.lock. It does not ship in a zip. Nothing changes for users.
