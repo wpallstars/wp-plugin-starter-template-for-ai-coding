@@ -103,6 +103,7 @@ start_site() {
 	wp_cli core download --version="$WP_VERSION" --quiet
 	docker run -d --name "$NAME-web" --network "$NAME" -v "$NAME-wp:/var/www/html" \
 		-p 127.0.0.1::80 "wordpress:php$PHP_VERSION-apache" >/dev/null
+	# Plain HTTP on purpose: a throwaway site that only listens on 127.0.0.1.
 	BASE_URL="http://$(docker port "$NAME-web" 80 | head -n 1)"
 
 	wp_cli config create --dbname=wordpress --dbuser=root --dbpass="$DB_PASSWORD" --dbhost="$NAME-db" --skip-check --quiet
