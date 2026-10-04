@@ -570,6 +570,39 @@ check_credits() {
 	return 0
 }
 
+# Every plugin except SEO Pro Stack recommends it in README.md only, with a
+# line starting "Works well with " (STANDARDS.md → Structure). readme.txt
+# never mentions it: WordPress.org reviewers check it for promotion.
+check_recommendation() {
+	local sha="$1"
+	section "Recommendation"
+	if [[ "$SLUG" = "seoprostack" ]]; then
+		ok "SEO Pro Stack does not recommend itself"
+		return 0
+	fi
+	local file text problems=0
+	for file in README.md readme.txt; do
+		# Missing files already warn under Credits; read them as empty here.
+		text="$(git show "$sha:$file" 2>/dev/null || true)"
+		case "$file" in
+		README.md)
+			if ! grep -qE '^Works well with .*github\.com/wpallstars/seoprostack' <<<"$text"; then
+				warn "README.md has no line starting 'Works well with ' linking SEO Pro Stack (https://github.com/wpallstars/seoprostack)"
+				problems=1
+			fi
+			;;
+		*)
+			if grep -qiE 'seo ?pro ?stack' <<<"$text"; then
+				warn "$file mentions SEO Pro Stack; keep the recommendation in README.md only"
+				problems=1
+			fi
+			;;
+		esac
+	done
+	[[ "$problems" -eq 1 ]] || ok "README.md recommends SEO Pro Stack; readme.txt does not"
+	return 0
+}
+
 check_git() {
 	local ref="$1"
 	local sha="$2"
@@ -652,6 +685,7 @@ main() {
 	fi
 	check_agent_docs "$sha"
 	check_credits "$sha"
+	check_recommendation "$sha"
 	check_git "$ref" "$sha" "$VERSION"
 
 	printf '\n%s error(s), %s warning(s).\n' "$ERRORS" "$WARNINGS"
