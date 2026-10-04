@@ -58,11 +58,13 @@ How changes are made and checked: `DEVELOPMENT.md`. Releases: `RELEASING.md`.
 - `boot()` returns early unless `self::enabled()`. Features are **off by
   default**; the plugin's `AGENTS.md` lists any the owner asked to be on.
   Turning another feature on by default needs the owner's say.
-- A changed default reaches new installs only: the first migration stores
-  every setting, defaults included, so existing sites keep the old value. A
-  new setting's default reaches every site. To change it on existing sites
-  too, set it in `migrate()` with a `DB_VERSION` bump, and only where the
-  owner agrees.
+- A changed default is only sure to reach new installs. A stored setting
+  keeps its value, and every setting is stored, defaults included, by each
+  migration and by any save on the settings screen (`set()` writes them all
+  back). Until then, a setting with no stored value (one added since)
+  follows the current default, so a new setting's default reaches every
+  site. To change a stored value on existing sites, set it in `migrate()`
+  with a `DB_VERSION` bump, and only where the owner agrees.
 - A feature that replaces another plugin sets `'replaces' => array(slug => name)`
   and imports that plugin's settings in `migrate()` with
   `self::import_setting()` (fills only unset keys). It never writes or
