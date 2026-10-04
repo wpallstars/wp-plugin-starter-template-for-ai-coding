@@ -99,6 +99,17 @@ function wpallstars_smoke_canary() {
 add_action('init', 'wpallstars_smoke_canary');
 
 /**
+ * The WP-CLI command, when it is cron; otherwise an empty string.
+ *
+ * @return string
+ */
+function wpallstars_smoke_cli_command() {
+    $command = class_exists('WP_CLI') ? WP_CLI::get_runner()->arguments : array();
+    $is_cron = isset($command[0]) && 'cron' === $command[0];
+    return $is_cron ? 'wp ' . implode(' ', array_slice($command, 0, 3)) : '';
+}
+
+/**
  * What this request was: the method and address, or the WP-CLI command.
  * Of WP-CLI's commands only cron runs the plugin's own work; the test's
  * other commands are its set-up, so they get an empty string.
@@ -107,9 +118,7 @@ add_action('init', 'wpallstars_smoke_canary');
  */
 function wpallstars_smoke_request() {
     if (defined('WP_CLI') && WP_CLI) {
-        $command = class_exists('WP_CLI') ? WP_CLI::get_runner()->arguments : array();
-        $is_cron = isset($command[0]) && 'cron' === $command[0];
-        return $is_cron ? 'wp ' . implode(' ', array_slice($command, 0, 3)) : '';
+        return wpallstars_smoke_cli_command();
     }
     $method = isset($_SERVER['REQUEST_METHOD']) ? (string) $_SERVER['REQUEST_METHOD'] : 'GET';
     $uri    = isset($_SERVER['REQUEST_URI']) ? (string) $_SERVER['REQUEST_URI'] : '/';
