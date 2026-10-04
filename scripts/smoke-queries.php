@@ -26,8 +26,8 @@
  * @package WPStarter
  */
 
-if ( ! defined( 'ABSPATH' ) || ! defined( 'WPALLSTARS_SMOKE_PLUGIN' ) ) {
-	return;
+if (!defined('ABSPATH') || !defined('WPALLSTARS_SMOKE_PLUGIN')) {
+    return;
 }
 
 /** Queries of this request made by the tested plugin, by their index in $wpdb->queries. */
@@ -41,7 +41,22 @@ $GLOBALS['wpallstars_smoke_off']    = false;
  * @return string
  */
 function wpallstars_smoke_log_file() {
-	return WP_CONTENT_DIR . '/smoke-queries.log';
+    return WP_CONTENT_DIR . '/smoke-queries.log';
+}
+
+/**
+ * Whether a file of the tested plugin is in the call stack.
+ *
+ * @return bool
+ */
+function wpallstars_smoke_called_by_plugin() {
+    $folder = WP_PLUGIN_DIR . '/' . WPALLSTARS_SMOKE_PLUGIN . '/';
+    foreach (debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS) as $frame) {
+        if (isset($frame['file']) && 0 === strpos($frame['file'], $folder)) {
+            return true;
+        }
+    }
+    return false;
 }
 
 /**
@@ -50,32 +65,22 @@ function wpallstars_smoke_log_file() {
  * @param string $query SQL.
  * @return string The same SQL.
  */
-function wpallstars_smoke_record( $query ) {
-	global $wpdb;
-	if ( $GLOBALS['wpallstars_smoke_off'] ) {
-		return $query;
-	}
-	$own    = $GLOBALS['wpallstars_smoke_canary'];
-	$folder = WP_PLUGIN_DIR . '/' . WPALLSTARS_SMOKE_PLUGIN . '/';
-	if ( ! $own ) {
-		foreach ( debug_backtrace( DEBUG_BACKTRACE_IGNORE_ARGS ) as $frame ) {
-			if ( isset( $frame['file'] ) && 0 === strpos( $frame['file'], $folder ) ) {
-				$own = true;
-				break;
-			}
-		}
-	}
-	if ( $own ) {
-		$index = is_array( $wpdb->queries ) ? count( $wpdb->queries ) : 0;
+function wpallstars_smoke_record($query) {
+    global $wpdb;
+    if ($GLOBALS['wpallstars_smoke_off']) {
+        return $query;
+    }
+    if ($GLOBALS['wpallstars_smoke_canary'] || wpallstars_smoke_called_by_plugin()) {
+        $index = is_array($wpdb->queries) ? count($wpdb->queries) : 0;
 
-		$GLOBALS['wpallstars_smoke_own'][ $index ] = array(
-			'sql'    => $query,
-			'canary' => $GLOBALS['wpallstars_smoke_canary'],
-		);
-	}
-	return $query;
+        $GLOBALS['wpallstars_smoke_own'][$index] = array(
+            'sql'    => $query,
+            'canary' => $GLOBALS['wpallstars_smoke_canary'],
+        );
+    }
+    return $query;
 }
-add_filter( 'query', 'wpallstars_smoke_record', PHP_INT_MAX );
+add_filter('query', 'wpallstars_smoke_record', PHP_INT_MAX);
 
 /**
  * The canary: a full table scan of the posts table, counted as the plugin's.
@@ -83,62 +88,65 @@ add_filter( 'query', 'wpallstars_smoke_record', PHP_INT_MAX );
  * @return void
  */
 function wpallstars_smoke_canary() {
-	global $wpdb;
-	if ( ! isset( $_GET['smoke-query-canary'] ) ) {
-		return;
-	}
-	$GLOBALS['wpallstars_smoke_canary'] = true;
-	$wpdb->get_col( "SELECT ID FROM {$wpdb->posts} WHERE post_content LIKE '%smoke-query-canary%'" );
-	$GLOBALS['wpallstars_smoke_canary'] = false;
+    global $wpdb;
+    if (!isset($_GET['smoke-query-canary'])) {
+        return;
+    }
+    $GLOBALS['wpallstars_smoke_canary'] = true;
+    $wpdb->get_col("SELECT ID FROM {$wpdb->posts} WHERE post_content LIKE '%smoke-query-canary%'");
+    $GLOBALS['wpallstars_smoke_canary'] = false;
 }
-add_action( 'init', 'wpallstars_smoke_canary' );
+add_action('init', 'wpallstars_smoke_canary');
 
 /**
- * Record this request: its address, query count and time, and the plugin's
- * own queries with their times.
+ * What this request was: the method and address, or the WP-CLI command.
+ * Of WP-CLI's commands only cron runs the plugin's own work; the test's
+ * other commands are its set-up, so they get an empty string.
+ *
+ * @return string
+ */
+function wpallstars_smoke_request() {
+    if (defined('WP_CLI') && WP_CLI) {
+        $command = class_exists('WP_CLI') ? WP_CLI::get_runner()->arguments : array();
+        $is_cron = isset($command[0]) && 'cron' === $command[0];
+        return $is_cron ? 'wp ' . implode(' ', array_slice($command, 0, 3)) : '';
+    }
+    $method = isset($_SERVER['REQUEST_METHOD']) ? (string) $_SERVER['REQUEST_METHOD'] : 'GET';
+    $uri    = isset($_SERVER['REQUEST_URI']) ? (string) $_SERVER['REQUEST_URI'] : '/';
+    return $method . ' ' . $uri . (is_user_logged_in() ? ' (admin)' : '');
+}
+
+/**
+ * Record this request: what it was, its query count and time, and the
+ * plugin's own queries with their times.
  *
  * @return void
  */
 function wpallstars_smoke_write() {
-	global $wpdb;
-	if ( $GLOBALS['wpallstars_smoke_off'] ) {
-		return;
-	}
-	$queries = is_array( $wpdb->queries ) ? $wpdb->queries : array();
-	$total   = 0.0;
-	foreach ( $queries as $query ) {
-		$total += (float) $query[1];
-	}
-	$own = array();
-	foreach ( $GLOBALS['wpallstars_smoke_own'] as $index => $query ) {
-		$query['time'] = isset( $queries[ $index ][1] ) ? (float) $queries[ $index ][1] : 0.0;
+    global $wpdb;
+    $where = $GLOBALS['wpallstars_smoke_off'] ? '' : wpallstars_smoke_request();
+    if ('' === $where) {
+        return;
+    }
+    $queries = is_array($wpdb->queries) ? $wpdb->queries : array();
+    $times   = array_map('floatval', array_column($queries, 1));
+    $own     = array();
+    foreach ($GLOBALS['wpallstars_smoke_own'] as $index => $query) {
+        $query['time'] = isset($times[$index]) ? $times[$index] : 0.0;
 
-		$own[] = $query;
-	}
-	if ( defined( 'WP_CLI' ) && WP_CLI ) {
-		// Of WP-CLI's commands, only cron runs the plugin's own work; the
-		// test's other commands are its set-up.
-		$command = class_exists( 'WP_CLI' ) ? WP_CLI::get_runner()->arguments : array();
-		if ( ! isset( $command[0] ) || 'cron' !== $command[0] ) {
-			return;
-		}
-		$where = 'wp ' . implode( ' ', array_slice( $command, 0, 3 ) );
-	} else {
-		$method = isset( $_SERVER['REQUEST_METHOD'] ) ? (string) $_SERVER['REQUEST_METHOD'] : 'GET';
-		$where  = $method . ' ' . ( isset( $_SERVER['REQUEST_URI'] ) ? (string) $_SERVER['REQUEST_URI'] : '/' );
-		$where .= is_user_logged_in() ? ' (admin)' : '';
-	}
-	$line = json_encode(
-		array(
-			'where' => $where,
-			'count' => count( $queries ),
-			'time'  => $total,
-			'own'   => $own,
-		)
-	);
-	file_put_contents( wpallstars_smoke_log_file(), $line . "\n", FILE_APPEND | LOCK_EX );
+        $own[] = $query;
+    }
+    $line = json_encode(
+        array(
+            'where' => $where,
+            'count' => count($queries),
+            'time'  => array_sum($times),
+            'own'   => $own,
+        )
+    );
+    file_put_contents(wpallstars_smoke_log_file(), $line . "\n", FILE_APPEND | LOCK_EX);
 }
-add_action( 'shutdown', 'wpallstars_smoke_write', PHP_INT_MAX );
+add_action('shutdown', 'wpallstars_smoke_write', PHP_INT_MAX);
 
 /**
  * Forget the recorded requests.
@@ -146,10 +154,8 @@ add_action( 'shutdown', 'wpallstars_smoke_write', PHP_INT_MAX );
  * @return void
  */
 function wpallstars_smoke_reset() {
-	$GLOBALS['wpallstars_smoke_off'] = true;
-	if ( file_exists( wpallstars_smoke_log_file() ) ) {
-		unlink( wpallstars_smoke_log_file() );
-	}
+    $GLOBALS['wpallstars_smoke_off'] = true;
+    wp_delete_file(wpallstars_smoke_log_file());
 }
 
 /**
@@ -159,50 +165,75 @@ function wpallstars_smoke_reset() {
  * @param int $posts How many posts.
  * @return void
  */
-function wpallstars_smoke_seed( $posts ) {
-	global $wpdb;
-	$GLOBALS['wpallstars_smoke_off'] = true;
+function wpallstars_smoke_seed($posts) {
+    global $wpdb;
+    $GLOBALS['wpallstars_smoke_off'] = true;
 
-	$posts  = max( 1, (int) $posts );
-	$digits = '(SELECT 0 AS d UNION ALL SELECT 1 UNION ALL SELECT 2 UNION ALL SELECT 3 UNION ALL SELECT 4'
-		. ' UNION ALL SELECT 5 UNION ALL SELECT 6 UNION ALL SELECT 7 UNION ALL SELECT 8 UNION ALL SELECT 9)';
-	$numbers = "SELECT a.d + b.d * 10 + c.d * 100 + d.d * 1000 + e.d * 10000 + f.d * 100000 + 1 AS n
-		FROM $digits a, $digits b, $digits c, $digits d, $digits e, $digits f";
+    $posts   = max(1, (int) $posts);
+    $digits  = '(SELECT 0 AS d UNION ALL SELECT 1 UNION ALL SELECT 2 UNION ALL SELECT 3 UNION ALL SELECT 4'
+        . ' UNION ALL SELECT 5 UNION ALL SELECT 6 UNION ALL SELECT 7 UNION ALL SELECT 8 UNION ALL SELECT 9)';
+    $numbers = "SELECT a.d + b.d * 10 + c.d * 100 + d.d * 1000 + e.d * 10000 + f.d * 100000 + 1 AS n
+        FROM $digits a, $digits b, $digits c, $digits d, $digits e, $digits f";
 
-	$wpdb->query(
-		"INSERT INTO {$wpdb->posts} (post_author, post_date, post_date_gmt, post_content, post_title,
-			post_excerpt, post_status, comment_status, ping_status, post_name, to_ping, pinged,
-			post_modified, post_modified_gmt, post_content_filtered, post_type, guid)
-		SELECT 1, NOW() - INTERVAL n MINUTE, UTC_TIMESTAMP() - INTERVAL n MINUTE,
-			CONCAT('Smoke test post ', n, '. Lorem ipsum dolor sit amet, consectetur adipiscing elit.'),
-			CONCAT('Smoke test post ', n), '', 'publish', 'open', 'open', CONCAT('smoke-post-', n), '', '',
-			NOW() - INTERVAL n MINUTE, UTC_TIMESTAMP() - INTERVAL n MINUTE, '', 'post', ''
-		FROM ($numbers) numbers WHERE n <= " . $posts
-	);
-	$wpdb->query(
-		"INSERT INTO {$wpdb->postmeta} (post_id, meta_key, meta_value)
-		SELECT p.ID, k.meta_key, CONCAT(k.meta_key, '-', p.ID % 1000)
-		FROM {$wpdb->posts} p,
-			(SELECT '_smoke_a' AS meta_key UNION ALL SELECT '_smoke_b' UNION ALL SELECT 'smoke_value') k
-		WHERE p.post_name LIKE 'smoke-post-%'"
-	);
-	$category = get_term( (int) get_option( 'default_category' ), 'category' );
-	if ( $category instanceof WP_Term ) {
-		$wpdb->query(
-			$wpdb->prepare(
-				"INSERT IGNORE INTO {$wpdb->term_relationships} (object_id, term_taxonomy_id)
-				SELECT ID, %d FROM {$wpdb->posts} WHERE post_name LIKE 'smoke-post-%%'",
-				$category->term_taxonomy_id
-			)
-		);
-		wp_update_term_count_now( array( $category->term_taxonomy_id ), 'category' );
-	}
-	wp_cache_flush();
-	printf(
-		"Seeded %d posts and %d meta rows.\n",
-		(int) $wpdb->get_var( "SELECT COUNT(*) FROM {$wpdb->posts} WHERE post_type = 'post'" ),
-		(int) $wpdb->get_var( "SELECT COUNT(*) FROM {$wpdb->postmeta}" )
-	);
+    $wpdb->query(
+        "INSERT INTO {$wpdb->posts} (post_author, post_date, post_date_gmt, post_content, post_title,
+            post_excerpt, post_status, comment_status, ping_status, post_name, to_ping, pinged,
+            post_modified, post_modified_gmt, post_content_filtered, post_type, guid)
+        SELECT 1, NOW() - INTERVAL n MINUTE, UTC_TIMESTAMP() - INTERVAL n MINUTE,
+            CONCAT('Smoke test post ', n, '. Lorem ipsum dolor sit amet, consectetur adipiscing elit.'),
+            CONCAT('Smoke test post ', n), '', 'publish', 'open', 'open', CONCAT('smoke-post-', n), '', '',
+            NOW() - INTERVAL n MINUTE, UTC_TIMESTAMP() - INTERVAL n MINUTE, '', 'post', ''
+        FROM ($numbers) numbers WHERE n <= " . $posts
+    );
+    $wpdb->query(
+        "INSERT INTO {$wpdb->postmeta} (post_id, meta_key, meta_value)
+        SELECT p.ID, k.meta_key, CONCAT(k.meta_key, '-', p.ID % 1000)
+        FROM {$wpdb->posts} p,
+            (SELECT '_smoke_a' AS meta_key UNION ALL SELECT '_smoke_b' UNION ALL SELECT 'smoke_value') k
+        WHERE p.post_name LIKE 'smoke-post-%'"
+    );
+    $category = get_term((int) get_option('default_category'), 'category');
+    if ($category instanceof WP_Term) {
+        $wpdb->query(
+            $wpdb->prepare(
+                "INSERT IGNORE INTO {$wpdb->term_relationships} (object_id, term_taxonomy_id)
+                SELECT ID, %d FROM {$wpdb->posts} WHERE post_name LIKE 'smoke-post-%%'",
+                $category->term_taxonomy_id
+            )
+        );
+        wp_update_term_count_now(array($category->term_taxonomy_id), 'category');
+    }
+    wp_cache_flush();
+    printf(
+        "Seeded %d posts and %d meta rows.\n",
+        (int) $wpdb->get_var("SELECT COUNT(*) FROM {$wpdb->posts} WHERE post_type = 'post'"),
+        (int) $wpdb->get_var("SELECT COUNT(*) FROM {$wpdb->postmeta}")
+    );
+}
+
+/**
+ * What is wrong with one step of an EXPLAIN plan, if anything.
+ *
+ * @param array<string,mixed> $step One row of EXPLAIN.
+ * @param int                 $rows Rows from which a scan or sort counts.
+ * @return string[]
+ */
+function wpallstars_smoke_step_problems(array $step, $rows) {
+    $step     = array_merge(array('rows' => 0, 'table' => '', 'type' => '', 'Extra' => ''), $step);
+    $count    = (int) $step['rows'];
+    $table    = (string) $step['table'];
+    $scans    = array(
+        'ALL'   => 'full table scan',
+        'index' => 'full index scan',
+    );
+    $problems = array();
+    if ($count >= $rows && isset($scans[$step['type']])) {
+        $problems[] = sprintf('%s of %s (%d rows)', $scans[$step['type']], $table, $count);
+    }
+    if ($count >= $rows && false !== strpos((string) $step['Extra'], 'Using filesort')) {
+        $problems[] = sprintf('sort of %d rows of %s without an index', $count, $table);
+    }
+    return $problems;
 }
 
 /**
@@ -212,33 +243,94 @@ function wpallstars_smoke_seed( $posts ) {
  * @param int    $rows Rows from which a scan or sort counts.
  * @return string[]|null Problems, or null when the query cannot be explained.
  */
-function wpallstars_smoke_explain( $sql, $rows ) {
-	global $wpdb;
-	$suppress = $wpdb->suppress_errors( true );
-	$plan     = $wpdb->get_results( 'EXPLAIN ' . $sql, ARRAY_A ); // The query as the plugin made it.
-	$wpdb->suppress_errors( $suppress );
-	if ( ! is_array( $plan ) || '' !== $wpdb->last_error ) {
-		return null;
-	}
-	$problems = array();
-	foreach ( $plan as $step ) {
-		$type  = isset( $step['type'] ) ? (string) $step['type'] : '';
-		$count = isset( $step['rows'] ) ? (int) $step['rows'] : 0;
-		$table = isset( $step['table'] ) ? (string) $step['table'] : '';
-		$extra = isset( $step['Extra'] ) ? (string) $step['Extra'] : '';
-		if ( $count < $rows ) {
-			continue;
-		}
-		if ( 'ALL' === $type ) {
-			$problems[] = sprintf( 'full table scan of %s (%d rows)', $table, $count );
-		} elseif ( 'index' === $type ) {
-			$problems[] = sprintf( 'full index scan of %s (%d rows)', $table, $count );
-		}
-		if ( false !== strpos( $extra, 'Using filesort' ) ) {
-			$problems[] = sprintf( 'sort of %d rows of %s without an index', $count, $table );
-		}
-	}
-	return $problems;
+function wpallstars_smoke_explain($sql, $rows) {
+    global $wpdb;
+    $suppress = $wpdb->suppress_errors(true);
+    $plan     = $wpdb->get_results('EXPLAIN ' . $sql, ARRAY_A); // The query as the plugin made it.
+    $wpdb->suppress_errors($suppress);
+    if (!is_array($plan) || '' !== $wpdb->last_error) {
+        return null;
+    }
+    $problems = array();
+    foreach ($plan as $step) {
+        $problems = array_merge($problems, wpallstars_smoke_step_problems($step, $rows));
+    }
+    return $problems;
+}
+
+/**
+ * Add one request's own queries to $own, each SQL once with its calls and
+ * total time.
+ *
+ * @param array<string,array{sql:string,canary:bool,calls:int,time:float}> $own     The queries so far.
+ * @param array<int,array{sql:string,canary:bool,time:float}>               $queries One request's.
+ * @return array<string,array{sql:string,canary:bool,calls:int,time:float}>
+ */
+function wpallstars_smoke_add_queries(array $own, array $queries) {
+    foreach ($queries as $query) {
+        $sql = $query['sql'];
+        if (!isset($own[$sql])) {
+            $own[$sql] = array('sql' => $sql, 'canary' => $query['canary'], 'calls' => 0, 'time' => 0.0);
+        }
+        ++$own[$sql]['calls'];
+        $own[$sql]['time'] += $query['time'];
+    }
+    return $own;
+}
+
+/**
+ * Read the recorded requests, print one line for each, and return the
+ * plugin's own queries, each once with its calls and total time, slowest
+ * first.
+ *
+ * @return array<string,array{sql:string,canary:bool,calls:int,time:float}>
+ */
+function wpallstars_smoke_requests() {
+    $file  = wpallstars_smoke_log_file();
+    $lines = file_exists($file) ? (array) file($file, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES) : array();
+    $own   = array();
+    echo "  queries     ms  own   own ms  request\n";
+    foreach ($lines as $line) {
+        $request = array_merge(
+            array('where' => '', 'count' => 0, 'time' => 0.0, 'own' => array()),
+            (array) json_decode($line, true)
+        );
+        $own     = wpallstars_smoke_add_queries($own, (array) $request['own']);
+        printf(
+            "  %7d %6.1f %4d %8.1f  %s\n",
+            $request['count'],
+            $request['time'] * 1000,
+            count($request['own']),
+            array_sum(array_column($request['own'], 'time')) * 1000,
+            $request['where']
+        );
+    }
+    uasort(
+        $own,
+        static function ($a, $b) {
+            return $b['time'] <=> $a['time'];
+        }
+    );
+    return $own;
+}
+
+/**
+ * Print one of the plugin's own queries with what EXPLAIN found.
+ *
+ * @param array{sql:string,calls:int,time:float} $query    The query.
+ * @param string[]|null                          $problems From wpallstars_smoke_explain().
+ * @return void
+ */
+function wpallstars_smoke_print_query(array $query, $problems) {
+    $verdict = 'ok';
+    if (null === $problems) {
+        $verdict = 'not checked (EXPLAIN cannot read it)';
+    } elseif ($problems) {
+        $verdict = 'FAIL ' . implode('; ', $problems);
+    }
+    $sql = preg_replace('/\s+/', ' ', trim($query['sql']));
+    $sql = strlen($sql) > 160 ? substr($sql, 0, 157) . '...' : $sql;
+    printf("  %s: %dx, %.1f ms: %s\n", $verdict, $query['calls'], $query['time'] * 1000, $sql);
 }
 
 /**
@@ -248,75 +340,26 @@ function wpallstars_smoke_explain( $sql, $rows ) {
  * @param int $rows Rows from which a scan or sort fails.
  * @return void
  */
-function wpallstars_smoke_report( $rows ) {
-	$GLOBALS['wpallstars_smoke_off'] = true;
+function wpallstars_smoke_report($rows) {
+    $GLOBALS['wpallstars_smoke_off'] = true;
 
-	$file  = wpallstars_smoke_log_file();
-	$lines = file_exists( $file ) ? file( $file, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES ) : array();
-	$own   = array();
-	echo "  queries     ms  own   own ms  request\n";
-	foreach ( (array) $lines as $line ) {
-		$request = json_decode( $line, true );
-		if ( ! is_array( $request ) ) {
-			continue;
-		}
-		$own_time = 0.0;
-		foreach ( $request['own'] as $query ) {
-			$own_time += $query['time'];
-			$key       = md5( $query['sql'] );
-			if ( ! isset( $own[ $key ] ) ) {
-				$own[ $key ] = array(
-					'sql'    => $query['sql'],
-					'canary' => $query['canary'],
-					'calls'  => 0,
-					'time'   => 0.0,
-				);
-			}
-			++$own[ $key ]['calls'];
-			$own[ $key ]['time'] += $query['time'];
-		}
-		printf(
-			"  %7d %6.1f %4d %8.1f  %s\n",
-			$request['count'],
-			$request['time'] * 1000,
-			count( $request['own'] ),
-			$own_time * 1000,
-			$request['where']
-		);
-	}
-
-	uasort(
-		$own,
-		static function ( $a, $b ) {
-			return $b['time'] <=> $a['time'];
-		}
-	);
-	$failed = false;
-	$canary = false;
-	$mine   = 0;
-	foreach ( $own as $query ) {
-		$problems = wpallstars_smoke_explain( $query['sql'], $rows );
-		$sql      = preg_replace( '/\s+/', ' ', trim( $query['sql'] ) );
-		$sql      = strlen( $sql ) > 160 ? substr( $sql, 0, 157 ) . '...' : $sql;
-		if ( $query['canary'] ) {
-			$canary = ! empty( $problems );
-			continue;
-		}
-		++$mine;
-		if ( null === $problems ) {
-			$verdict = 'not checked (EXPLAIN cannot read it)';
-		} elseif ( $problems ) {
-			$verdict = 'FAIL ' . implode( '; ', $problems );
-			$failed  = true;
-		} else {
-			$verdict = 'ok';
-		}
-		printf( "  %s: %dx, %.1f ms: %s\n", $verdict, $query['calls'], $query['time'] * 1000, $sql );
-	}
-	printf( "  The plugin's own queries: %d different, slowest first (EXPLAIN, %d rows or more fail).\n", $mine, $rows );
-	if ( ! $canary ) {
-		echo "  FAIL the canary query's full table scan was not found: the check does not work\n";
-		$failed = true;
-	}
-	echo $failed ? "queries: failed\n" : "queries: ok\n";
+    $failed = false;
+    $canary = false;
+    $mine   = 0;
+    foreach (wpallstars_smoke_requests() as $query) {
+        $problems = wpallstars_smoke_explain($query['sql'], $rows);
+        if ($query['canary']) {
+            $canary = !empty($problems);
+            continue;
+        }
+        ++$mine;
+        $failed = $failed || !empty($problems);
+        wpallstars_smoke_print_query($query, $problems);
+    }
+    printf("  The plugin's own queries: %d different, slowest first (EXPLAIN, %d rows or more fail).\n", $mine, $rows);
+    if (!$canary) {
+        echo "  FAIL the canary query's full table scan was not found: the check does not work\n";
+        $failed = true;
+    }
+    echo $failed ? "queries: failed\n" : "queries: ok\n";
 }
