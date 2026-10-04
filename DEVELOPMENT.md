@@ -22,8 +22,9 @@ the plugin's own rules: `AGENTS.md`. Releases: `RELEASING.md`.
 ## Set up
 
 Needs PHP 7.4 or later, Composer 2, Node.js (syntax checks only),
-ShellCheck and Docker (release checks and smoke test). actionlint is
-optional locally; CI runs it.
+ShellCheck and Docker (release checks, smoke test and update test), and
+the GitHub CLI `gh` for releases. actionlint is optional locally; CI runs
+it.
 
 ```bash
 composer install
