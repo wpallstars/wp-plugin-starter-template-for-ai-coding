@@ -3,13 +3,13 @@
 The wpallstars starter plugin: what every wpallstars plugin is made from.
 It has no features of its own, only the parts every plugin needs.
 
-**Read `STANDARDS.md` before any change.** It holds the rules every plugin
+**Read `STD` before any change.** It holds the rules every plugin
 made from the starter shares: structure and core files, code rules, Updates
 from GitHub, releases, front-end styling and dark mode, and testing. This
 repository holds the master copy of it and of every core file
 (`scripts/core-files.txt`). This file holds only what is the starter's own.
 
-| Placeholder in `STANDARDS.md` | WP Plugin Starter |
+| Placeholder in `STD` | WP Plugin Starter |
 |---|---|
 | `{slug}` | `wp-plugin-starter-template` (main file `wp-plugin-starter-template.php`) |
 | `{prefix}` | `wpstarter` |
@@ -21,7 +21,7 @@ repository holds the master copy of it and of every core file
 User docs: `README.md` (developers, and the Read Me tab) and `readme.txt`.
 Development: `DEVELOPMENT.md`. Releases: `RELEASING.md`; launch state:
 `LAUNCH.md`. Keep this file a short map: guidance for one kind of task goes
-in `docs/` (`STANDARDS.md` → Agent docs); the starter has none yet.
+in `docs/` (`STD` → Agent docs); the starter has none yet.
 
 ## What belongs here
 
