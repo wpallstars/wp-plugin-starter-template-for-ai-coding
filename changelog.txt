@@ -3,6 +3,7 @@
 Every change to WP Plugin Starter. readme.txt lists the latest version in short.
 
 = Unreleased =
+* Fixed: "Select all" and "Clear" on a long list of choices find the list by id, so they also work for a setting whose key holds a dot or other character that means something in a CSS selector.
 * Developers: the Bash scripts use [[ ]] for tests, every case has a default, and plugin-check.sh and smoke-test.sh read option values into a named variable. Behaviour is unchanged. Nothing changes for users.
 * Developers: the settings screen renders each kind of child setting (select, multi, url, times, int, lines and domains, media, bool, text) in its own method, chosen from a map, instead of one long switch. The page's HTML, hooks and wps-* classes are unchanged. Nothing changes for users.
 * Developers: scripts/rename-plugin.sh takes plugin names with quotes, $ and & (such as Owner's "Best" Plugin): the new name is escaped for where it lands (PHP strings, JSON, XML), and the renamed PHP is checked with php -l. Names with / \ < > % or control characters, and URLs with quotes or \, are refused before any file changes. scripts/sync-core.sh escapes the same way. scripts/replaced-plugins.php quotes the name in its README pattern. README.md's languages badge has a line of its own. Nothing changes for users.

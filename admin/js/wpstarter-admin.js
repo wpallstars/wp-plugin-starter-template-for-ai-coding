@@ -84,9 +84,13 @@
 			// "Select all" and "Clear" for long checkbox lists: one save for the lot.
 			$(document).on('click', '[data-wps-check-all], [data-wps-check-none]', function () {
 				var all = this.hasAttribute('data-wps-check-all');
-				var $group = $('#' + $(this).attr(all ? 'data-wps-check-all' : 'data-wps-check-none'));
-				$group.find(':checkbox').prop('checked', all);
-				Settings.save($group);
+				// By id, so the attribute is never read as a selector.
+				var group = document.getElementById(this.getAttribute(all ? 'data-wps-check-all' : 'data-wps-check-none'));
+				if (!group) {
+					return;
+				}
+				$(group).find(':checkbox').prop('checked', all);
+				Settings.save($(group));
 			});
 			// Forms that change data elsewhere ask first.
 			$(document).on('submit', 'form[data-wps-confirm]', function (event) {
