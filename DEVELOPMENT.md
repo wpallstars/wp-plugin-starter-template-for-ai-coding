@@ -15,9 +15,41 @@ the plugin's own rules: `AGENTS.md`. Releases: `RELEASING.md`.
 4. Push and open a pull request (`Resolves #N`). Open it as a draft while
    the work is in progress: CI lints every push, and the longer release and
    smoke-test jobs start when the pull request is marked ready for review.
-5. Check the change on the shared preview site (`scripts/preview-site.sh`,
+5. Check the change on the shared preview site (Preview site below,
    `STANDARDS.md` → Testing), in light and dark mode for front-end styles.
 6. Merge once CI passes. Releases are separate: `RELEASING.md`.
+
+## Preview site
+
+Each plugin has one local test site for the user to review, shared by every
+session and worktree (rules: `STANDARDS.md` → Testing). Update it only with
+the script, from any worktree:
+
+```bash
+scripts/preview-site.sh             # the first run on a clone takes the site: scripts/preview-site.sh "<site>"
+scripts/preview-site.sh --dry-run   # report what would be included, copy nothing
+```
+
+It fetches `origin`, merges each open PR's branch onto `origin/main` in PR
+order without touching any checkout, leaves out branches that conflict (and
+lists them), copies the result with `.distignore` applied (exactly what a
+release build contains), and writes `<site>/wp-content/{slug}-synced-from.txt`
+listing what is included. A lock stops two runs at once. Because every run
+includes everyone's pushed work, no session hides another's. It says so if
+the branch you run it from is missing or has commits that are not pushed.
+
+- Conflicts only in `changelog.txt`, `readme.txt` or `README.md` do not
+  leave a branch out: every PR adds lines at the top of the same
+  changelogs, so each merge to `main` would otherwise drop every other open
+  PR. The preview keeps both sides' lines there and says so in the stamp;
+  still merge `origin/main` into your branch before it merges.
+- If your branch is left out because it conflicts in other files, merge
+  `origin/main` into it (or wait for the other PR), push and run the script
+  again.
+- To check your branch on its own, or for checks the user will not look at,
+  use a throwaway site of your own (the Docker image in `STANDARDS.md` →
+  Testing, step 4, on a free port), which no one else overwrites:
+  `rsync -a --delete --delete-excluded --exclude-from=.distignore ./ "<site>/wp-content/plugins/{slug}/"`.
 
 ## Set up
 

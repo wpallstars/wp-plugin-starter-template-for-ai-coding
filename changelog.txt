@@ -2,6 +2,9 @@
 
 Every change to WP Plugin Starter. readme.txt lists the latest version in short.
 
+= 1.0.19 =
+* Developers: STANDARDS.md is under 500 lines again (481), so plugins can sync it without failing the aidevops push gate for long Markdown files. How the preview site works, its conflicts and throwaway sites moved to DEVELOPMENT.md → Preview site; the rules stay in STANDARDS.md → Testing, and the starter sync bullet points to DEVELOPMENT.md → Starter sync. No rule changed. Nothing changes for users.
+
 = 1.0.18 =
 * Changed: WordPress.org gets each version 30 days after its GitHub release, not 90 (STANDARDS.md → Releases, RELEASING.md → WordPress.org), so its users do not wait too long for fixes. Security releases still go to WordPress.org at once. README.md → Updates and releases and the readme.txt FAQ say so.
 
