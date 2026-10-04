@@ -23,7 +23,8 @@
 
 // Replaced plugins that are not on WordPress.org but have GitHub releases.
 const GITHUB_SOURCES = array('git-updater' => 'afragen/git-updater');
-const README_LINE    = '/^WP Plugin Starter replaces \*\*(\d+) plugins\*\*.*$/m';
+// The name is quoted for the pattern: a renamed plugin's may hold ( . + etc.
+define('README_LINE', '/^' . preg_quote('WP Plugin Starter', '/') . ' replaces \*\*(\d+) plugins\*\*.*$/m');
 
 /**
  * Stop with a message.
