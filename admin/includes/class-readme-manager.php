@@ -5,6 +5,7 @@
  * Renders README.md with a small, escaping Markdown subset
  * (headings with GitHub-style IDs, lists, tables, bold, italic, inline code,
  * http(s) links, links to headings and images from the plugin's folder).
+ * HTML comments and the GitHub badges block are left out.
  *
  * @package WPStarter
  * @since 0.2.0
@@ -37,6 +38,9 @@ class WPStarter_Readme_Manager {
      */
     public static function parse_markdown($markdown) {
         $markdown = str_replace('{WPSTARTER_VERSION}', WPSTARTER_VERSION, $markdown);
+        // GitHub-only parts: the badges block (remote images) and HTML comments.
+        $markdown = (string) preg_replace('/^<!-- aidevops:badges:start -->$.*?^<!-- aidevops:badges:end -->$/ms', '', $markdown);
+        $markdown = (string) preg_replace('/^[ \t]*<!--(?:(?!-->).)*-->[ \t]*$/ms', '', $markdown);
         $lines    = preg_split('/\r\n|\r|\n/', $markdown);
         $html     = '';
         $list     = '';

@@ -64,7 +64,13 @@ How changes are made and checked: `DEVELOPMENT.md`. Releases: `RELEASING.md`.
   tables, bold, italic, inline code, links (http(s) and `#heading` links,
   with GitHub-style heading IDs) and images from the plugin folder on a line
   of their own (`![alt](admin/images/banner.svg)`). Use only that Markdown,
-  or extend the renderer in the same change.
+  or extend the renderer in the same change. It leaves out HTML comments and
+  the badges block under the title (`<!-- aidevops:badges:start -->` to
+  `<!-- aidevops:badges:end -->`), which is for GitHub only: CI, SonarCloud,
+  Codacy, CodeFactor, license, latest release, and the repository facts in
+  `docs/metrics/` that `.github/workflows/repo-metrics.yml` keeps up to date.
+  `scripts/rename-plugin.sh` rebuilds the block for the new repository; add
+  the new Codacy badge once Codacy has the repository.
 - Update `README.md` (feature section, hooks, changelog), `changelog.txt`
   (the user-facing changelog entry) and `readme.txt` in the same change.
   `readme.txt` must stay under 10 KB for WordPress.org: one short line per

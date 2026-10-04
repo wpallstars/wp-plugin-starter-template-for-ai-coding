@@ -2,6 +2,9 @@
 
 Every change to WP Plugin Starter. readme.txt lists the latest version in short.
 
+= Unreleased =
+* Developers: README.md shows badges on GitHub (CI, SonarCloud, Codacy, CodeFactor, license, latest release) and repository facts (lines of code, languages, dependencies) that .github/workflows/repo-metrics.yml keeps up to date in docs/metrics/. The Read Me tab leaves out the badges block and HTML comments, so it still loads nothing from other sites. scripts/rename-plugin.sh rebuilds the badges for the new repository. Nothing changes for users.
+
 = 1.0.4 =
 * Developers: a top-level setting with 'panel' => true shows its Options panel even without visible child settings, so a feature can render its own controls there (wpstarter_setting_panel), under its switch, instead of in a separate card. Nothing changes for users.
 * Developers: scripts/rename-plugin.sh starts the new plugin at version 0.1.0 (--version for another), with the changelogs in README.md, readme.txt and changelog.txt starting again from that version and readme.txt's upgrade notices removed. Before, a new plugin kept the starter's version and changelog.
