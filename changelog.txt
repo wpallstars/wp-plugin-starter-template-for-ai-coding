@@ -2,7 +2,7 @@
 
 Every change to WP Plugin Starter. readme.txt lists the latest version in short.
 
-= Unreleased =
+= 1.0.9 =
 * Developers: STANDARDS.md has a Performance section every plugin made from the starter follows: load only what is used, no full table scans (no unlimited queries, no lookups or sorting by meta_value, LIKE '%term%', REGEXP or ORDER BY RAND() on large tables, no_found_rows unless a total is shown, indexes on the plugin's own tables but never on WordPress's), one autoloaded settings array, caching with wp_cache_* and transients, bulk work in batches through cron, no request on every page view, and measuring on large data. Code rules add "WordPress first": core APIs before custom code, PHPCS findings fixed in the code.
 * Developers: PHPCS adds the performance sniffs of WordPress VIP's standard (automattic/vipwpcs, the WordPressVIPMinimum.Performance group only): unlimited queries, ORDER BY RAND(), REGEXP, post__not_in, cache times under five minutes and remote request timeouts over 3 seconds fail the lint. Plugins made from the starter need `composer update` after syncing composer.json.
 * Developers: scripts/smoke-test.sh seeds 10,000 posts with three meta rows each (--posts N), lists every request's query count and time, and runs EXPLAIN on the plugin's own queries: a full table or index scan, or a sort without an index, over 1,000 rows or more fails. A canary query proves the check works. The recorder is scripts/smoke-queries.php, a new core file.

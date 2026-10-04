@@ -109,6 +109,13 @@ Deleting the plugin removes its settings, its cached data, who hid lines of the 
 
 ## Changelog
 
+### 1.0.9
+
+- Developers: `STANDARDS.md` → Performance: load only what is used, no full table scans (no unlimited queries, no lookups or sorting by `meta_value`, `LIKE '%term%'`, `REGEXP` or `ORDER BY RAND()` on large tables, indexes on the plugin's own tables), one autoloaded settings array, caching, bulk work in batches through cron, no request on every page view. Code rules add "WordPress first".
+- Developers: PHPCS adds WordPress VIP's performance sniffs (`automattic/vipwpcs`, the `WordPressVIPMinimum.Performance` group only). Plugins made from the starter run `composer update` after syncing.
+- Developers: `scripts/smoke-test.sh` seeds 10,000 posts (`--posts N`), lists each request's queries, and fails on a full table or index scan, or a sort without an index, over 1,000 rows in the plugin's own queries (`EXPLAIN`, with a canary that proves the check works). New core file: `scripts/smoke-queries.php`.
+- Developers: `scripts/update-test.sh` accepts the release asset's API address the shared updater offers with `WPALLSTARS_GITHUB_TOKEN` set.
+
 ### 1.0.8
 
 - Changed: the Built with AI section sends questions to [aidevops](https://aidevops.sh), which reads the plugin's docs and code to answer and can report a problem for you, and credits the starter with a "Made from WP Plugin Starter" line. `readme.txt` gets a "Where do I get help?" answer.

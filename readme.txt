@@ -51,9 +51,8 @@ No. The WordPress.org build contacts nothing outside WordPress.
 
 == Changelog ==
 
-= 1.0.8 =
-* Changed: for questions, ask aidevops, which reads the plugin's docs and code to answer (Built with AI and the FAQ). The plugin also credits WP Plugin Starter, the starter it is made from.
-* Developers: scripts/update-test.sh checks a release updates from the previous one, and the preflight warns when a plugin's credits are missing.
+= 1.0.9 =
+* Developers: performance rules for every plugin made from the starter (STANDARDS.md → Performance), enforced by WordPress VIP's performance sniffs in PHPCS and by a smoke test on 10,000 posts that fails on a full table scan or large sort in the plugin's own queries. Nothing changes for users.
 
 Every change: changelog.txt.
 
