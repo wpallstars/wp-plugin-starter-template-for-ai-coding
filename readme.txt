@@ -49,7 +49,16 @@ Ask aidevops (https://aidevops.sh): open the plugin's repository, or your site, 
 
 No. The WordPress.org build contacts nothing outside WordPress.
 
+== Screenshots ==
+
+1. The settings screen (Settings → WP Plugin Starter) on the General tab, empty until features add settings.
+2. The Read Me tab, showing the plugin's README.md inside WordPress.
+3. The Plugins screen offering a new version from GitHub (GitHub build).
+
 == Changelog ==
+
+= Unreleased =
+* New: screenshots. Developers: README.md parts between github-only markers stay on GitHub, out of the Read Me tab.
 
 = 1.0.12 =
 * Fixed: Updates from GitHub handles repeated Location headers, and the settings screen's file versions and text splitting are sturdier.

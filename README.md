@@ -26,6 +26,22 @@ If this saves you time, headaches and costs, feel free to [buy me a coffee](http
 
 Version: {WPSTARTER_VERSION}
 
+<!-- github-only:start -->
+## Screenshots
+
+**Settings → WP Plugin Starter**: the General tab, empty until features add settings, with search and the Report a problem link.
+
+![The WP Plugin Starter settings screen on the General tab](.wordpress-org/screenshot-1.png)
+
+**The Read Me tab** shows this file inside WordPress, banner included.
+
+![The Read Me tab showing README.md](.wordpress-org/screenshot-2.png)
+
+**Updates from GitHub**: each GitHub release is offered on the Plugins screen as a normal WordPress update.
+
+![The Plugins screen offering WP Plugin Starter 1.0.12 from GitHub](.wordpress-org/screenshot-3.png)
+<!-- github-only:end -->
+
 ## What you get
 
 - **A settings screen** (Settings → WP Plugin Starter) that features fill by declaring their settings: switches, numbers, text, lists, choices and Media Library pictures, saved instantly with no Save button, searchable, in tabs. With no features yet it shows one empty tab.
@@ -41,7 +57,7 @@ Version: {WPSTARTER_VERSION}
 
 1. On GitHub, choose **Use this template** to make your repository, and clone it.
 2. Give it its names: `scripts/rename-plugin.sh --slug my-plugin --name "My Plugin" --prefix MyPlugin`. Add `--css mp` for a short CSS prefix and `--repo owner/repo` if it is not under wpallstars. Put in your own details too, or the plugin keeps the starter's: `--description`, `--author`, `--author-uri`, `--contributors` (WordPress.org usernames) and `--donate` (a link, or `none`); `--help` lists them all. The new plugin starts at version 0.1.0 (`--version` for another) with a changelog of its own. Review with `git diff`, then commit.
-3. Replace this README, `readme.txt`, `changelog.txt` and `AGENTS.md` with your plugin's own, and its banner (`.wordpress-org/banner.svg`, then `scripts/build-banner.sh`).
+3. Replace this README, `readme.txt`, `changelog.txt` and `AGENTS.md` with your plugin's own, and its banner (`.wordpress-org/banner.svg`, then `scripts/build-banner.sh`) and screenshots (`.wordpress-org/screenshot-N.png`, captions in `readme.txt`).
 4. Add features: a class in `includes/features/` listed in `MyPlugin_Setup::FEATURES` (see Developers below and `STANDARDS.md`).
 5. Keep the shared parts up to date: change them in the starter first, then run `scripts/sync-core.sh` in each plugin (`--check` lists what differs).
 
@@ -109,6 +125,11 @@ Read a setting with `WPStarter_Settings::get( 'key' )`.
 Deleting the plugin removes its settings, its cached data, who hid lines of the Plugins screen notice about replaced plugins, and the cached GitHub releases.
 
 ## Changelog
+
+### Unreleased
+
+- New: screenshots at the top of this README on GitHub and in `readme.txt` → Screenshots, saved as `.wordpress-org/screenshot-N.png` (WordPress.org's `assets/` names; not in the release zip).
+- Developers: the Read Me tab leaves out anything between `<!-- github-only:start -->` and `<!-- github-only:end -->`, like the badges block, for parts of `README.md` that only make sense on GitHub.
 
 ### 1.0.12
 

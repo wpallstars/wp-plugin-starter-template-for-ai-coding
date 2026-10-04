@@ -2,6 +2,10 @@
 
 Every change to WP Plugin Starter. readme.txt lists the latest version in short.
 
+= Unreleased =
+* New: screenshots at the top of README.md on GitHub and in readme.txt → Screenshots, saved as .wordpress-org/screenshot-N.png (WordPress.org's assets/ names; not in the release zip).
+* Developers: the Read Me tab leaves out anything between <!-- github-only:start --> and <!-- github-only:end -->, like the badges block, for parts of README.md that only make sense on GitHub.
+
 = 1.0.12 =
 * Fixed: Updates from GitHub reads the last Location header when GitHub sends more than one, instead of the text "Array" and a PHP warning, when it looks up the latest release and a private release's download.
 * Fixed: the settings screen's styles and script are versioned by their file times as text, falling back to the plugin version when a file time can't be read; empty script handles from the wpstarter_admin_script_deps filter are dropped.
