@@ -274,12 +274,15 @@ class WPStarter_Settings_Manager {
 
         /**
          * Filter whether a setting's Troubleshooting section starts open,
-         * for example after the feature fell back because of an error.
+         * for example after the feature fell back because of an error. Only
+         * asked while none of its settings differs from its default or
+         * matches the search, so it can open the section but never hide a
+         * saved choice.
          *
-         * @param bool   $open Whether it starts open.
+         * @param bool   $open Whether it starts open (false).
          * @param string $key  Parent setting key.
          */
-        return (bool) apply_filters('wpstarter_troubleshooting_open', $open, $key);
+        return $open || (bool) apply_filters('wpstarter_troubleshooting_open', $open, $key);
     }
 
     /**
