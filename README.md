@@ -24,7 +24,7 @@ WP Plugin Starter is what wpallstars plugins are made from. It has no features o
 
 If this saves you time, headaches and costs, feel free to [buy me a coffee](https://buymeacoffee.com/marcusquinn), or whatever you like, to invest in making more things open-source.
 
-Version: 1.0.19
+Version: 1.0.20
 
 <!-- github-only:start -->
 ## Screenshots
@@ -127,6 +127,10 @@ Read a setting with `WPStarter_Settings::get( 'key' )`.
 Deleting the plugin removes its settings, its cached data, who hid lines of the Plugins screen notice about replaced plugins, and the cached GitHub releases.
 
 ## Changelog
+
+### 1.0.20
+
+- Developers: `STANDARDS.md` → Performance no longer forbids indexes on WordPress's own tables. It forbids an index that duplicates one the table already has, which other plugins or the host may have added: check the keys (`SHOW INDEX`) first. An index on a table the plugin does not own is opt-in, and uninstall removes only the ones it added. Nothing changes for users.
 
 ### 1.0.19
 

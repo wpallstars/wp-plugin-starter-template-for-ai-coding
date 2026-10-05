@@ -274,8 +274,12 @@ a test site take the site down.
     indexes on the columns it searches, or taxonomies; full-text search
     uses a full-text index.
   - Index the plugin's own tables (created with `dbDelta()`) for every
-    lookup, join and sort. Never add indexes to WordPress's own tables:
-    that is a job for plugins that specialise in it.
+    lookup, join and sort. Never add an index that duplicates one a table
+    already has: other plugins or the host may have added it, and a copy
+    slows every write for no gain. Check the table's keys (`SHOW INDEX`)
+    first and skip any whose leading columns an existing key covers. An
+    index on a table the plugin does not own (WordPress's or another
+    plugin's) is opt-in, and uninstall removes only the ones it added.
   - Admin lists of large tables page, sort only on indexed columns, and
     cache their counts.
 - **Options:** one autoloaded settings array (`{prefix}_options`). Store
