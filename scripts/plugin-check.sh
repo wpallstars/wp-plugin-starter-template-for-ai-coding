@@ -139,6 +139,13 @@ check_zip() {
 		wp_cli plugin delete "$SLUG" --quiet || true
 		return 1
 	fi
+	if grep -Eq '^(PHP )?Fatal error:|Allowed memory size of' <<<"$report"; then
+		# It stopped part way after some findings: the expected ones, taken
+		# off below, must not make an unfinished run pass.
+		printf 'Plugin Check stopped part way (exit %s):\n%s\n' "$code" "$report"
+		wp_cli plugin delete "$SLUG" --quiet || true
+		return 1
+	fi
 	# The GitHub zip carries Updates from GitHub on purpose; Plugin Check
 	# reports it as an updater. Those findings are expected there (and only
 	# in those files); in the WordPress.org zip they stay errors. So are

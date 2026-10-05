@@ -141,11 +141,6 @@
 			this.pending[key] = seq;
 			this.status(key, 'saving', i18n.saving);
 
-			var run = function () {
-				return post('wpstarter_save_setting', { key: key, value: value })
-					.done(done)
-					.fail(failed);
-			};
 			var done = function (response) {
 				if (Settings.pending[key] !== seq) {
 					return; // A newer save for this key is queued.
@@ -178,6 +173,11 @@
 				if (Settings.pending[key] === seq) {
 					Settings.fail($input, key, previous, errorMessage(xhr, i18n.saveFailed));
 				}
+			};
+			var run = function () {
+				return post('wpstarter_save_setting', { key: key, value: value })
+					.done(done)
+					.fail(failed);
 			};
 
 			// A failed save must not block the ones after it.

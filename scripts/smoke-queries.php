@@ -149,15 +149,20 @@ function wpallstars_smoke_write() {
 
         $own[] = $query;
     }
+    // Invalid UTF-8 in a query would make json_encode() return false and
+    // drop the request; a failed write goes to debug.log, which fails the test.
     $line = json_encode(
         array(
             'where' => $where,
             'count' => count($queries),
             'time'  => array_sum($times),
             'own'   => $own,
-        )
+        ),
+        JSON_INVALID_UTF8_SUBSTITUTE
     );
-    file_put_contents(wpallstars_smoke_log_file(), $line . "\n", FILE_APPEND | LOCK_EX);
+    if (false === $line || false === file_put_contents(wpallstars_smoke_log_file(), $line . "\n", FILE_APPEND | LOCK_EX)) {
+        error_log('smoke-queries: could not record the queries of ' . $where); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- test tool: the debug.log check reports it.
+    }
 }
 add_action('shutdown', 'wpallstars_smoke_write', PHP_INT_MAX);
 
@@ -235,13 +240,14 @@ function wpallstars_smoke_step_problems(array $step, $rows) {
     $step     = array_merge(array('rows' => 0, 'table' => '', 'type' => '', 'Extra' => ''), $step);
     $count    = (int) $step['rows'];
     $table    = (string) $step['table'];
+    $type     = (string) $step['type']; // NULL for steps that read no table.
     $scans    = array(
         'ALL'   => 'full table scan',
         'index' => 'full index scan',
     );
     $problems = array();
-    if ($count >= $rows && isset($scans[$step['type']])) {
-        $problems[] = sprintf('%s of %s (%d rows)', $scans[$step['type']], $table, $count);
+    if ($count >= $rows && isset($scans[$type])) {
+        $problems[] = sprintf('%s of %s (%d rows)', $scans[$type], $table, $count);
     }
     if ($count >= $rows && false !== strpos((string) $step['Extra'], 'Using filesort')) {
         $problems[] = sprintf('sort of %d rows of %s without an index', $count, $table);
@@ -370,6 +376,11 @@ function wpallstars_smoke_report($rows) {
         wpallstars_smoke_print_query($query, $problems);
     }
     printf("  The plugin's own queries: %d different, slowest first (EXPLAIN, %d rows or more fail).\n", $mine, $rows);
+    if (0 === $mine) {
+        // The canary proves EXPLAIN works, not that queries are traced to the
+        // plugin: a plugin that makes queries should show some here.
+        printf("  Note: no query was traced to wp-content/plugins/%s (WPALLSTARS_SMOKE_PLUGIN); fine if the plugin makes none.\n", WPALLSTARS_SMOKE_PLUGIN);
+    }
     if (!$canary) {
         echo "  FAIL the canary query's full table scan was not found: the check does not work\n";
         $failed = true;

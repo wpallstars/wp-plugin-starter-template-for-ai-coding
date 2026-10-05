@@ -69,6 +69,20 @@ class WPStarter_Settings {
     private static $defaults = null;
 
     /**
+     * The value of the save lock this request holds, or '' (see lock()).
+     *
+     * @var string
+     */
+    private static $lock_value = '';
+
+    /**
+     * Whether maybe_migrate() is storing migrated settings (see sanitize_all()).
+     *
+     * @var bool
+     */
+    private static $migrating = false;
+
+    /**
      * Register hooks.
      */
     public static function init() {
@@ -203,11 +217,18 @@ class WPStarter_Settings {
      * @return array
      */
     public static function all() {
+        return array_merge(self::defaults(), array_intersect_key(self::stored_all(), self::schema()));
+    }
+
+    /**
+     * Everything stored in the option, including settings not registered on
+     * this request (a feature added by another plugin that is switched off).
+     *
+     * @return array
+     */
+    private static function stored_all() {
         $stored = get_option(self::OPTION, array());
-        if (!is_array($stored)) {
-            $stored = array();
-        }
-        return array_merge(self::defaults(), array_intersect_key($stored, self::schema()));
+        return is_array($stored) ? $stored : array();
     }
 
     /**
@@ -244,9 +265,10 @@ class WPStarter_Settings {
         }
         try {
             // Read what is stored now, not the copy loaded when this request
-            // began, so a save made meanwhile is not overwritten.
+            // began, so a save made meanwhile is not overwritten. Keep the
+            // settings not registered on this request (sanitize_all()).
             self::flush_cache();
-            $options       = self::all();
+            $options       = array_merge(self::defaults(), self::stored_all());
             $options[$key] = $clean;
             update_option(self::OPTION, $options);
             $saved = self::stored($key, $clean);
@@ -267,20 +289,28 @@ class WPStarter_Settings {
      * Waits up to about five seconds; a lock older than LOCK_TIMEOUT seconds
      * was left by a request that stopped, and is taken over.
      *
+     * The value is the time and a value unique to this request, so a request
+     * deletes only the lock it read or holds: of two requests that find the
+     * same stale lock, only one deletes it, and a request whose lock was
+     * taken over does not delete the new one.
+     *
      * @return bool Whether this request holds the lock.
      */
     private static function lock() {
         global $wpdb;
-        $name = self::OPTION . '_lock';
+        $name  = self::OPTION . '_lock';
+        $value = time() . ' ' . wp_generate_uuid4();
         for ($try = 0; $try < 50; $try++) {
             // phpcs:ignore WordPress.DB.DirectDatabaseQuery -- an atomic insert is the lock; the options API cannot do it.
-            if ($wpdb->query($wpdb->prepare("INSERT IGNORE INTO {$wpdb->options} (option_name, option_value, autoload) VALUES (%s, %s, 'no')", $name, (string) time()))) {
+            if ($wpdb->query($wpdb->prepare("INSERT IGNORE INTO {$wpdb->options} (option_name, option_value, autoload) VALUES (%s, %s, 'no')", $name, $value))) {
+                self::$lock_value = $value;
                 return true;
             }
             // phpcs:ignore WordPress.DB.DirectDatabaseQuery -- read past the options cache: the lock changes under it.
-            $since = (int) $wpdb->get_var($wpdb->prepare("SELECT option_value FROM {$wpdb->options} WHERE option_name = %s", $name));
+            $held  = (string) $wpdb->get_var($wpdb->prepare("SELECT option_value FROM {$wpdb->options} WHERE option_name = %s", $name));
+            $since = (int) strtok($held, ' ');
             if ($since && $since < time() - self::LOCK_TIMEOUT) {
-                self::unlock();
+                self::delete_lock($held);
                 continue;
             }
             usleep(100000);
@@ -289,12 +319,24 @@ class WPStarter_Settings {
     }
 
     /**
-     * Release the save lock.
+     * Release the save lock this request holds.
      */
     private static function unlock() {
+        if ('' !== self::$lock_value) {
+            self::delete_lock(self::$lock_value);
+            self::$lock_value = '';
+        }
+    }
+
+    /**
+     * Delete the save lock if it still has the given value.
+     *
+     * @param string $value Lock value.
+     */
+    private static function delete_lock($value) {
         global $wpdb;
         // phpcs:ignore WordPress.DB.DirectDatabaseQuery -- the lock row is never cached (see lock()).
-        $wpdb->query($wpdb->prepare("DELETE FROM {$wpdb->options} WHERE option_name = %s", self::OPTION . '_lock'));
+        $wpdb->query($wpdb->prepare("DELETE FROM {$wpdb->options} WHERE option_name = %s AND option_value = %s", self::OPTION . '_lock', $value));
     }
 
     /**
@@ -441,6 +483,17 @@ class WPStarter_Settings {
     }
 
     /**
+     * A raw value as text: '' for an array or object, which no text-like
+     * type accepts (a cast would give "Array" and a PHP notice).
+     *
+     * @param mixed $value Raw value.
+     * @return string
+     */
+    private static function to_text($value) {
+        return is_scalar($value) ? (string) $value : '';
+    }
+
+    /**
      * Sanitize a bool field.
      *
      * @param mixed $value Raw value.
@@ -554,8 +607,9 @@ class WPStarter_Settings {
      * @return string
      */
     private static function sanitize_url($value, array $field) {
-        $value = trim((string) $value);
-        if ('' === $value) {
+        $value = trim(self::to_text($value));
+        // Browsers read "/\" as "//", another site; no URL needs a backslash.
+        if ('' === $value || false !== strpos($value, '\\')) {
             return '';
         }
         if ('/' === $value[0] && '/' !== substr($value, 1, 1)) {
@@ -572,7 +626,7 @@ class WPStarter_Settings {
      * @return string
      */
     private static function sanitize_lines($value, array $field) {
-        $lines = preg_split('/[\r\n]+/', (string) $value) ?: array();
+        $lines = preg_split('/[\r\n]+/', self::to_text($value)) ?: array();
         // Not sanitize_text_field(): it strips %xx, which URL paths need.
         $lines = array_filter(array_map(function ($line) {
             return trim(preg_replace('/[\x00-\x1F\x7F]+/', '', wp_strip_all_tags($line)));
@@ -590,7 +644,7 @@ class WPStarter_Settings {
      * @return string
      */
     private static function sanitize_text($value, array $field) {
-        $value = (string) $value;
+        $value = self::to_text($value);
         if (empty($field['tokens'])) {
             return sanitize_text_field($value);
         }
@@ -611,7 +665,7 @@ class WPStarter_Settings {
      * @return string[]
      */
     public static function parse_domains($value) {
-        $lines   = preg_split('/[\r\n,]+/', (string) $value) ?: array();
+        $lines   = preg_split('/[\r\n,]+/', self::to_text($value)) ?: array();
         $domains = array();
 
         foreach ($lines as $line) {
@@ -657,7 +711,7 @@ class WPStarter_Settings {
      * @return string[]
      */
     public static function parse_times($value) {
-        preg_match_all('/(\d{1,2})(?:[:.](\d{2}))?\s*(am|pm)?/i', (string) $value, $matches, PREG_SET_ORDER);
+        preg_match_all('/(\d{1,2})(?:[:.](\d{2}))?\s*(am|pm)?/i', self::to_text($value), $matches, PREG_SET_ORDER);
         $times = array_values(array_unique(array_filter(array_map(array(__CLASS__, 'time_of'), $matches))));
         sort($times);
         return $times;
@@ -702,11 +756,24 @@ class WPStarter_Settings {
     public static function sanitize_all($input) {
         $input  = is_array($input) ? $input : array();
         $schema = self::schema();
+        $stored = self::stored_all();
         $clean  = self::all();
+        if (!self::$migrating) {
+            // Settings not registered on this request (their feature is
+            // switched off) keep their stored values, even when the input
+            // leaves them out. Not while migrating: there a key left out
+            // was removed by a migration.
+            $clean = array_merge($clean, array_diff_key($stored, $schema));
+        }
 
         foreach ($input as $key => $value) {
             if (isset($schema[$key])) {
                 $clean[$key] = self::sanitize_value($value, $schema[$key]);
+            } elseif (array_key_exists($key, $stored) && $stored[$key] === $value) {
+                // An unregistered setting given with its stored value (as
+                // set() and migrations pass it) is kept; new unknown keys
+                // and changed values of unregistered ones are not stored.
+                $clean[$key] = $value;
             }
         }
 
@@ -784,8 +851,15 @@ class WPStarter_Settings {
             $options = (array) $class::migrate($options, $from);
         }
 
-        $clean = self::sanitize_all($options);
-        update_option(self::OPTION, $clean);
+        // Keys the migrations removed stay removed (see sanitize_all()),
+        // also when update_option() runs it again.
+        self::$migrating = true;
+        try {
+            $clean = self::sanitize_all($options);
+            update_option(self::OPTION, $clean);
+        } finally {
+            self::$migrating = false;
+        }
 
         // Only record the version once the settings are stored, so a failed
         // write is retried on the next request instead of losing imports.

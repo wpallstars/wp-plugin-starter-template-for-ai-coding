@@ -44,7 +44,7 @@ UPDATER_FILES=""
 # The texts .wporg-links replaces in the WordPress.org build (affiliate links), one per line.
 WPORG_LINK_TEXTS=""
 # Referral parameters in addresses, which the WordPress.org build must not have.
-readonly REFERRAL_QUERY='https?://[^]"'"'"' <>)]*[?&](ref|refcode|referralcode|referral_code|aff|affid|aff_id|affiliate|affiliate_id|irpid|irgwc|via|fpr|tap_a|r|bta|deal|start)=[^]"'"'"' <>)&]*'
+readonly REFERRAL_QUERY='https?://[^]"'"'"' <>)]*([?&]|&amp;|&#038;)(ref|refcode|referralcode|referral_code|aff|affid|aff_id|affiliate|affiliate_id|irpid|irgwc|via|fpr|tap_a|r|bta|deal|start)=[^]"'"'"' <>)&]*'
 
 ERRORS=0
 WARNINGS=0
@@ -100,6 +100,12 @@ note() {
 section() {
 	local title="$1"
 	printf '\n%s\n' "$title"
+	return 0
+}
+
+# Indent standard input under a check's line (details of a warn or err).
+indent() {
+	sed 's/^/           /'
 	return 0
 }
 
@@ -172,7 +178,7 @@ check_readme_version() {
 	line="$(git show "$sha:README.md" | sed -nE 's/^Version:[[:space:]]*//p')"
 	line="${line%%$'\n'*}"
 	if [[ -z "$line" ]]; then
-		return 0
+		warn "README.md has no 'Version: $version' line under the intro (STANDARDS.md -> Structure)"
 	elif [[ "$line" = "$version" ]]; then
 		ok "README.md Version: matches"
 	elif [[ "$line" = "{${VERSION_CONSTANT}}" ]]; then
@@ -191,7 +197,9 @@ check_versions() {
 
 	local version constant stable
 	version="$(field "$plugin_header" "Version")"
-	constant="$(printf '%s\n' "$main_php" | sed -nE "/define\([[:space:]]*['\"]${VERSION_CONSTANT}['\"]/{s/.*,[[:space:]]*['\"]([^'\"]+)['\"].*/\1/p;q;}")"
+	# A here-string, not a pipe: sed quitting at the first match would end
+	# printf with SIGPIPE on a large file (pipefail, set -e).
+	constant="$(sed -nE "/define\([[:space:]]*['\"]${VERSION_CONSTANT}['\"]/{s/.*,[[:space:]]*['\"]([^'\"]+)['\"].*/\1/p;q;}" <<<"$main_php")"
 	stable="$(field "$readme" "Stable tag")"
 
 	if grep -Eq '^[0-9]+\.[0-9]+(\.[0-9]+)?$' <<<"$version"; then
@@ -370,11 +378,14 @@ check_wporg() {
 	fi
 
 	local contributors user status
+	local -a users=()
 	contributors="$(field "$readme" "Contributors")"
 	if [[ -z "$contributors" ]]; then
 		err "readme.txt has no Contributors"
 	fi
-	for user in $(printf '%s' "$contributors" | tr ',' ' '); do
+	# read -a splits without globbing (a name such as * stays as written).
+	read -r -a users <<<"${contributors//,/ }"
+	for user in ${users[@]+"${users[@]}"}; do
 		status="$(http_status "https://profiles.wordpress.org/$user/")"
 		case "$status" in
 		200) ok "contributor $user has a WordPress.org profile" ;;
@@ -500,12 +511,12 @@ check_syntax() {
 			err "$label: PHP lint checked $passed of $expected files"
 		else
 			err "$label: $php_label errors:"
-			printf '%s\n' "$problems" | sed 's/^/           /'
+			printf '%s\n' "$problems" | indent
 		fi
 	fi
 	if command -v node >/dev/null 2>&1; then
 		out="$(find "$dir" -name '*.js' -exec node --check {} \; 2>&1 || true)"
-		if [[ -z "$out" ]]; then ok "$label: JS syntax"; else err "$label: JS syntax errors:"; printf '%s\n' "$out" | sed 's/^/           /'; fi
+		if [[ -z "$out" ]]; then ok "$label: JS syntax"; else err "$label: JS syntax errors:"; printf '%s\n' "$out" | indent; fi
 	else
 		warn "$label: node not found, JS not checked"
 	fi
@@ -535,6 +546,58 @@ check_zip() {
 	return 0
 }
 
+# Each path in .distignore-wporg: in the GitHub build (present), not in the
+# WordPress.org build (absent). Read line by line, so no path is globbed
+# against the current folder; rsync patterns with wildcards are not checked.
+check_updater_files() {
+	local dir="$1"
+	local label="$2"
+	local want="$3"
+	local path
+	while IFS= read -r path; do
+		[[ -n "$path" ]] || continue
+		case "$path" in
+		*[\*\?\[]*)
+			note "$label: $path is a pattern, not checked"
+			continue
+			;;
+		*) ;;
+		esac
+		if [[ "$want" = "present" ]]; then
+			if [[ -e "$dir/$path" ]]; then ok "$label: has $path"; else err "$label: $path missing (listed in .distignore-wporg)"; fi
+		elif [[ -e "$dir/$path" ]]; then
+			err "$label: $path must not be in the WordPress.org build"
+		else
+			ok "$label: no $path"
+		fi
+	done <<<"$UPDATER_FILES"
+	return 0
+}
+
+# Whether a text from .wporg-links is still in a folder, matched as
+# build-release.sh (replace_wporg_links) replaces it: in its three & forms,
+# and, when it ends in a letter, digit or one of _ % / + ~ . -, not where
+# the link goes on. Returns 0 when it is found.
+wporg_text_left() {
+	local text="$1"
+	local dir="$2"
+	WPORG_TEXT="$text" perl -MFile::Find -e '
+		my $from = $ENV{WPORG_TEXT};
+		my $end  = $from =~ m{[A-Za-z0-9_%/+~.-]\z} ? q{(?![A-Za-z0-9_%/+~-]|\.[A-Za-z0-9_%/+~-])} : q{};
+		my @res  = map { (my $f = $from) =~ s/&/$_/g; qr/\Q$f\E$end/ } ("&", "&amp;", "&#038;");
+		my $found = 0;
+		find({ no_chdir => 1, wanted => sub {
+			return if $found || !-f $_;
+			open(my $fh, "<", $_) or return;
+			local $/;
+			my $content = <$fh>;
+			for my $re (@res) { if ($content =~ $re) { $found = 1; last } }
+		} }, $ARGV[0]);
+		exit($found ? 0 : 1);
+	' "$dir" || return 1
+	return 0
+}
+
 check_builds() {
 	local github_zip="$1"
 	local wporg_zip="$2"
@@ -553,13 +616,11 @@ check_builds() {
 
 	UNPACKED=""
 	check_zip "$github_zip" "github"
-	local github_dir="$UNPACKED" path
+	local github_dir="$UNPACKED"
 	if [[ -z "$UPDATER_FILES" ]]; then
 		note "no .distignore-wporg: both builds hold the same files"
 	fi
-	for path in $UPDATER_FILES; do
-		if [[ -e "$github_dir/$path" ]]; then ok "github: has $path"; else err "github: $path missing (listed in .distignore-wporg)"; fi
-	done
+	check_updater_files "$github_dir" "github" "present"
 	if grep -Eq "^[[:space:]*]*GitHub Plugin URI:" "$github_dir/$MAIN_FILE"; then ok "github: has the GitHub Plugin URI header"; else err "github: no GitHub Plugin URI header, sites cannot update it from GitHub"; fi
 	if grep -Eq "^[[:space:]*]*Update URI:[[:space:]]*https://github\.com/" "$github_dir/$MAIN_FILE"; then
 		ok "github: has an Update URI on github.com (WordPress.org never offers a same-slug plugin for it)"
@@ -569,16 +630,18 @@ check_builds() {
 
 	check_zip "$wporg_zip" "wporg"
 	local wporg_dir="$UNPACKED"
-	for path in $UPDATER_FILES; do
-		if [[ -e "$wporg_dir/$path" ]]; then err "wporg: $path must not be in the WordPress.org build"; else ok "wporg: no $path"; fi
-	done
+	check_updater_files "$wporg_dir" "wporg" "absent"
 	if grep -Eq "^[[:space:]*]*($UPDATER_HEADERS):" "$wporg_dir/$MAIN_FILE"; then err "wporg: GitHub updater header lines still in $MAIN_FILE"; else ok "wporg: no GitHub updater header lines"; fi
 	local text escaped left=""
 	if [[ -n "$WPORG_LINK_TEXTS" ]]; then
 		while IFS= read -r text; do
 			[[ -n "$text" ]] || continue
 			escaped="${text//&/&amp;}"
-			if grep -rFqs -e "$text" -e "$escaped" -e "${text//&/&#038;}" "$wporg_dir"; then left="$left $text"; fi
+			# A quick fixed-string search first; then the whole-link match
+			# build-release.sh replaces with (?ref=alice2 is not ?ref=alice).
+			if grep -rFqs -e "$text" -e "$escaped" -e "${text//&/&#038;}" "$wporg_dir" && wporg_text_left "$text" "$wporg_dir"; then
+				left="$left $text"
+			fi
 		done <<<"$WPORG_LINK_TEXTS"
 		if [[ -z "$left" ]]; then
 			ok "wporg: every text in .wporg-links replaced ($(grep -c . <<<"$WPORG_LINK_TEXTS"))"
@@ -587,12 +650,12 @@ check_builds() {
 		fi
 	fi
 	local hits
-	hits="$(grep -rEohi --include='*.php' --include='*.js' --include='*.txt' --include='*.json' --include='*.html' "$REFERRAL_QUERY" "$wporg_dir" 2>/dev/null | sort -u || true)"
+	hits="$(grep -rEohi --include='*.php' --include='*.js' --include='*.txt' --include='*.json' --include='*.html' --include='*.md' --include='*.css' --include='*.svg' --include='*.xml' --include='*.pot' --include='*.po' "$REFERRAL_QUERY" "$wporg_dir" 2>/dev/null | sort -u || true)"
 	if [[ -z "$hits" ]]; then
 		ok "wporg: no addresses with referral parameters"
 	else
 		warn "wporg: addresses with referral parameters (WordPress.org builds carry no affiliate links: list them in .wporg-links):"
-		printf '%s\n' "$hits" | cut -c1-160 | sed 's/^/           /'
+		printf '%s\n' "$hits" | cut -c1-160 | indent
 	fi
 	hits="$(grep -rEl --include='*.php' --include='*.js' 'gu_override_dot_org|api\.github\.com/repos|Plugin_Upgrader|Theme_Upgrader|site_transient_update_plugins|auto_update_(plugin|theme)' "$wporg_dir" 2>/dev/null | sed "s|^$wporg_dir/||" || true)"
 	if [[ -z "$hits" ]]; then
@@ -603,7 +666,7 @@ check_builds() {
 
 	section "Remote assets and services (WordPress.org build)"
 	hits="$(grep -rEn "(wp_(enqueue|register)_(script|style)|<script|<link)[^;]*['\"](https?:)?//" "$wporg_dir" --include='*.php' 2>/dev/null | sed "s|^$wporg_dir/||" | cut -c1-160 || true)"
-	if [[ -z "$hits" ]]; then ok "no scripts or styles loaded from other sites"; else warn "scripts or styles from other sites (guideline 8: ship them in the plugin unless they are part of a service):"; printf '%s\n' "$hits" | sed 's/^/           /'; fi
+	if [[ -z "$hits" ]]; then ok "no scripts or styles loaded from other sites"; else warn "scripts or styles from other sites (guideline 8: ship them in the plugin unless they are part of a service):"; printf '%s\n' "$hits" | indent; fi
 	local readme_text hosts host missing=""
 	readme_text="$(cat "$wporg_dir/readme.txt")"
 	hosts="$(grep -rEoh 'https?://[A-Za-z0-9.-]+\.[a-z]{2,}' "$wporg_dir/includes" "$wporg_dir/blocks" 2>/dev/null | sed -E 's|https?://||; s|^www\.||' | sort -u || true)"
