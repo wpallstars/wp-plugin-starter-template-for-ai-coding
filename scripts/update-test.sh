@@ -93,9 +93,22 @@ expect() {
 
 cleanup() {
 	if [[ "$STARTED" -eq 1 ]]; then
-		docker rm -f "$NAME-web" "$NAME-db" >/dev/null 2>&1 || true
-		docker volume rm "$NAME-wp" >/dev/null 2>&1 || true
-		docker network rm "$NAME" >/dev/null 2>&1 || true
+		local attempt id
+		# wp-cli containers still stopping (after Ctrl-C) keep the volume and
+		# network in use, so remove them first and retry.
+		for attempt in 1 2 3; do
+			docker ps -aq --filter "volume=$NAME-wp" | while IFS= read -r id; do
+				docker rm -f "$id" >/dev/null 2>&1 || true
+			done
+			docker rm -f "$NAME-web" "$NAME-db" >/dev/null 2>&1 || true
+			docker volume rm "$NAME-wp" >/dev/null 2>&1 || true
+			docker network rm "$NAME" >/dev/null 2>&1 || true
+			if ! docker volume inspect "$NAME-wp" >/dev/null 2>&1 && ! docker network inspect "$NAME" >/dev/null 2>&1; then
+				break
+			fi
+			[[ "$attempt" -eq 3 ]] && printf 'update-test: could not remove %s-wp or network %s\n' "$NAME" "$NAME" >&2
+			sleep 2
+		done
 	fi
 	if [[ -n "$TMP_DIR" ]] && [[ -d "$TMP_DIR" ]]; then
 		rm -rf "$TMP_DIR"
@@ -151,7 +164,9 @@ pick_versions() {
 # takes it for the plugin), which must verify against the zip.
 check_assets() {
 	local assets bundle="provenance-$SLUG-$TO.sigstore.json"
-	assets="$(gh release view "v$TO" --repo "$REPO" --json assets --jq '.assets[].name' | LC_ALL=C sort)"
+	assets="$(gh release view "v$TO" --repo "$REPO" --json assets --jq '.assets[].name')" ||
+		die "cannot read the assets of v$TO in $REPO"
+	assets="$(LC_ALL=C sort <<<"$assets")"
 	if [[ "$assets" == "$SLUG-$TO.zip" ]]; then
 		ok "v$TO has one asset, $SLUG-$TO.zip (no provenance bundle)"
 	elif [[ "$assets" == "$(printf '%s\n' "$SLUG-$TO.zip" "$bundle" | LC_ALL=C sort)" ]]; then
@@ -160,8 +175,10 @@ check_assets() {
 	else
 		fail "v$TO assets are not exactly $SLUG-$TO.zip (and $bundle): $(printf '%s' "$assets" | tr '\n' ' ')"
 	fi
-	ASSET_API="$(gh release view "v$TO" --repo "$REPO" --json assets \
-		--jq '.assets[] | select(.name == "'"$SLUG-$TO.zip"'") | .apiUrl')"
+	# The name goes to jq as data (env), not joined into the filter.
+	ASSET_API="$(ASSET_NAME="$SLUG-$TO.zip" gh release view "v$TO" --repo "$REPO" --json assets \
+		--jq '.assets[] | select(.name == env.ASSET_NAME) | .apiUrl')" ||
+		die "cannot read the assets of v$TO in $REPO"
 	gh release download "v$FROM" --repo "$REPO" --pattern "$SLUG-$FROM.zip" --dir "$TMP_DIR/zips" ||
 		die "v$FROM has no asset $SLUG-$FROM.zip"
 	chmod 644 "$TMP_DIR/zips/$SLUG-$FROM.zip"
@@ -182,7 +199,7 @@ check_provenance() {
 		--signer-workflow "$REPO/.github/workflows/release.yml" --source-ref "refs/tags/v$TO" >/dev/null; then
 		ok "provenance verifies: built by .github/workflows/release.yml from v$TO"
 	else
-		fail "provenance for $SLUG-$TO.zip does not verify (gh attestation verify)"
+		fail "provenance for $SLUG-$TO.zip does not verify (gh attestation verify; --source-ref needs a recent gh, this is $(gh --version | head -n 1))"
 	fi
 	return 0
 }
@@ -241,7 +258,10 @@ log_in() {
 # Load an admin page into $TMP_DIR/page; prints the HTTP status.
 admin_page() {
 	local path="$1"
-	curl -sS -o "$TMP_DIR/page" -w '%{http_code}' --max-time 120 -b "$TMP_DIR/cookies" "$BASE_URL$path" || printf '000'
+	local code
+	# curl prints 000 itself when it cannot connect, and exits non-zero.
+	code="$(curl -sS -o "$TMP_DIR/page" -w '%{http_code}' --max-time 120 -b "$TMP_DIR/cookies" "$BASE_URL$path" || true)"
+	printf '%s' "${code:-000}"
 	return 0
 }
 
@@ -267,10 +287,13 @@ install_from() {
 
 check_offer() {
 	printf '\nUpdate check (WP-CLI):\n'
-	local offer
+	local offer want
 	offer="$(update_offer)" || offer="error"
 	printf '  offer: %s\n' "$offer"
-	if [[ "$offer" == "$TO https://"*"/$SLUG-$TO.zip"* ]]; then
+	# Exactly the release asset; GitHub's own address may differ from the
+	# header's owner/repo in case only.
+	want="$TO https://github.com/$REPO/releases/download/v$TO/$SLUG-$TO.zip"
+	if [[ "$(tr '[:upper:]' '[:lower:]' <<<"$offer")" == "$(tr '[:upper:]' '[:lower:]' <<<"$want")" ]]; then
 		ok "offers $TO from the release asset"
 	elif [[ "${#TOKEN_ARGS[@]}" -gt 0 && -n "$ASSET_API" && "$offer" == "$TO $ASSET_API" ]]; then
 		ok "offers $TO from the release asset (its API address, with the token)"
@@ -287,7 +310,7 @@ check_screens() {
 	local name status
 	# The admin screens print the name HTML-escaped.
 	name="$(printf '%s' "$PLUGIN_NAME" | sed -e 's/&/\&amp;/g' -e 's/</\&lt;/g' -e 's/>/\&gt;/g')"
-	wp_cli transient delete update_plugins --network --quiet
+	wp_cli transient delete update_plugins --network --quiet || true
 	status="$(admin_page '/wp-admin/update-core.php?force-check=1')"
 	if [[ "$status" == "200" ]] && grep -qF "$name" "$TMP_DIR/page" && grep -qF "Update to $TO" "$TMP_DIR/page"; then
 		ok "Updates screen lists $PLUGIN_NAME: Update to $TO"

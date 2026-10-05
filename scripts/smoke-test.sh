@@ -77,9 +77,22 @@ fail() {
 
 cleanup() {
 	if [[ "$STARTED" -eq 1 ]]; then
-		docker rm -f "$NAME-web" "$NAME-db" >/dev/null 2>&1 || true
-		docker volume rm "$NAME-wp" >/dev/null 2>&1 || true
-		docker network rm "$NAME" >/dev/null 2>&1 || true
+		local attempt id
+		# wp-cli containers still stopping (after Ctrl-C) keep the volume and
+		# network in use, so remove them first and retry.
+		for attempt in 1 2 3; do
+			docker ps -aq --filter "volume=$NAME-wp" | while IFS= read -r id; do
+				docker rm -f "$id" >/dev/null 2>&1 || true
+			done
+			docker rm -f "$NAME-web" "$NAME-db" >/dev/null 2>&1 || true
+			docker volume rm "$NAME-wp" >/dev/null 2>&1 || true
+			docker network rm "$NAME" >/dev/null 2>&1 || true
+			if ! docker volume inspect "$NAME-wp" >/dev/null 2>&1 && ! docker network inspect "$NAME" >/dev/null 2>&1; then
+				break
+			fi
+			[[ "$attempt" -eq 3 ]] && printf 'smoke-test: could not remove %s-wp or network %s\n' "$NAME" "$NAME" >&2
+			sleep 2
+		done
 	fi
 	if [[ -n "$TMP_DIR" ]] && [[ -d "$TMP_DIR" ]]; then
 		rm -rf "$TMP_DIR"
@@ -220,11 +233,19 @@ switch_all_on() {
 check_uninstall() {
 	wp_cli plugin deactivate "$SLUG" --quiet || fail "deactivate"
 	wp_cli plugin uninstall "$SLUG" --quiet || fail "uninstall"
-	local left
-	left="$(wp_cli option list --search="*$PLUGIN_PREFIX*" --field=option_name 2>/dev/null || true)"
-	[[ -z "$left" ]] || fail "options left after uninstalling: $(printf '%s' "$left" | tr '\n' ' ')"
-	left="$(wp_cli cron event list --field=hook 2>/dev/null | grep -i "$PLUGIN_PREFIX" || true)"
-	[[ -z "$left" ]] || fail "cron events left after uninstalling: $(printf '%s' "$left" | tr '\n' ' ')"
+	local left hooks
+	# A failed listing must fail the check, not read as "nothing left".
+	if left="$(wp_cli option list --search="*$PLUGIN_PREFIX*" --field=option_name 2>/dev/null)"; then
+		[[ -z "$left" ]] || fail "options left after uninstalling: $(printf '%s' "$left" | tr '\n' ' ')"
+	else
+		fail "could not list the options after uninstalling"
+	fi
+	if hooks="$(wp_cli cron event list --field=hook 2>/dev/null)"; then
+		left="$(grep -i "$PLUGIN_PREFIX" <<<"$hooks" || true)"
+		[[ -z "$left" ]] || fail "cron events left after uninstalling: $(printf '%s' "$left" | tr '\n' ' ')"
+	else
+		fail "could not list the cron events after uninstalling"
+	fi
 	return 0
 }
 
@@ -250,11 +271,15 @@ add_query_checks() {
 # List the requests since the last reset and check the plugin's own queries;
 # the canary page proves the check finds a full table scan.
 check_queries() {
-	local report
+	local report code=0
 	fetch '/?smoke-query-canary' visitor
-	report="$(wp_cli eval "wpallstars_smoke_report( $SCAN_ROWS );" 2>&1)" || true
+	report="$(wp_cli eval "wpallstars_smoke_report( $SCAN_ROWS );" 2>&1)" || code=$?
 	printf '\n%s\n' "$report"
-	grep -q '^queries: ok$' <<<"$report" || fail "the plugin's own queries (see above)"
+	if [[ "$code" -ne 0 ]]; then
+		fail "the query report stopped (exit $code)"
+	elif ! grep -q '^queries: ok$' <<<"$report"; then
+		fail "the plugin's own queries (see above)"
+	fi
 	wp_cli eval 'wpallstars_smoke_reset();' || fail "resetting the query log"
 	return 0
 }
