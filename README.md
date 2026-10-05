@@ -24,7 +24,7 @@ WP Plugin Starter is what wpallstars plugins are made from. It has no features o
 
 If this saves you time, headaches and costs, feel free to [buy me a coffee](https://buymeacoffee.com/marcusquinn), or whatever you like, to invest in making more things open-source.
 
-Version: 1.0.21
+Version: 1.0.22
 
 <!-- github-only:start -->
 ## Screenshots
@@ -103,7 +103,7 @@ A feature is a class in `includes/features/class-wpstarter-{name}.php` that exte
 Filters:
 
 - `wpstarter_features`: register a feature class that extends `WPStarter_Feature`.
-- `wpstarter_settings_schema`: add or change settings. Each entry sets `type` (bool, int, text, url, lines, domains, select, multi, times or media, a picture from the Media Library stored as its attachment ID), `default`, `label`, `description` and either `tab` or `parent`; select and multi also take `options` (an array or a callable), and multi takes `open` to keep saved values that are not currently registered. A child setting can take `hidden` (true): it is not shown or searched, for wiring that code sets. `reload` (true) makes the saved message ask to reload the page, for changes that show only after a page load. `replaces` (slug => name) shows which plugin a feature replaces. Settings render and save automatically.
+- `wpstarter_settings_schema`: add or change settings. Each entry sets `type` (bool, int, text, url, lines, domains, select, multi, times or media, a picture from the Media Library stored as its attachment ID), `default`, `label`, `description` and either `tab` or `parent`; select and multi also take `options` (an array or a callable, which runs on every settings save, so keep it small: `STANDARDS.md` → Performance) and `open` to keep saved values that are not currently registered. A child setting can take `hidden` (true): it is not shown or searched, for wiring that code sets. `reload` (true) makes the saved message ask to reload the page, for changes that show only after a page load. `replaces` (slug => name) shows which plugin a feature replaces. Settings render and save automatically.
 - `wpstarter_admin_tabs`: add or reorder admin tabs. Each tab sets `label`, `group` (settings, discover or about), a `render` callback and an optional `capability`; tabs the current user lacks the capability for are hidden.
 - `wpstarter_admin_script_deps` and `wpstarter_admin_script_data`: the settings screen script’s dependencies and the data it reads as `wpstarterAdmin` (both with the active tab).
 - `wpstarter_can_change_settings`: return false to stop the current user changing WP Plugin Starter’s settings (on top of `manage_options`).
@@ -127,6 +127,10 @@ Read a setting with `WPStarter_Settings::get( 'key' )`.
 Deleting the plugin removes its settings, its cached data, who hid lines of the Plugins screen notice about replaced plugins, and the cached GitHub releases.
 
 ## Changelog
+
+### 1.0.22
+
+- Developers: `STANDARDS.md` → Performance has a new rule, Small choice lists. A select or multi setting's `options` callable runs on every settings save, because a save checks every setting, so it must never list what grows with the site (pages, posts, users). Mark the field `open` to keep any ID, and offer the list only where it is shown, paged or searched. From SEO Pro Stack, where one such list ran out of memory on every save on a site with 60,000 pages. The Developers section now says select takes `open` too, as it always has. Nothing changes for users.
 
 ### 1.0.21
 

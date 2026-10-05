@@ -2,6 +2,9 @@
 
 Every change to WP Plugin Starter. readme.txt lists the latest version in short.
 
+= 1.0.22 =
+* Developers: STANDARDS.md → Performance has a new rule, Small choice lists. A select or multi setting's options callable runs on every settings save, because a save checks every setting, so it must never list what grows with the site (pages, posts, users). Mark the field open to keep any ID, and offer the list only where it is shown, paged or searched. From SEO Pro Stack, where one such list ran out of memory on every save on a site with 60,000 pages. README.md → Developers now says select takes open too, as it always has. Nothing changes for users.
+
 = 1.0.21 =
 * Fixed: two saves that find the same stale save lock no longer both take it over, and a save whose lock was taken over no longer removes the new one. Saving keeps the settings of features switched off on this request. Text, URL, lines, domains and times settings turn an array into an empty value instead of the text "Array" and a PHP notice, and a URL with a backslash is refused (browsers read /\ as another site).
 * Fixed: GitHub updates find the release zip whatever the case of owner/repo in the GitHub Plugin URI header, and a renamed or moved repository is reported with its new name instead of reading as "no releases". With a token, every repository it is given for is read through the API (documented). Updater 1.1.1.
