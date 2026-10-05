@@ -92,7 +92,8 @@ sha256_of() {
 }
 
 # Zip <folder>/<SLUG> as <zip>, with the slug folder at the top. Fixed times,
-# modes (umask) and entry order make the same ref give the same zip anywhere.
+# modes (umask) and entry order make the same ref give the same zip with the
+# same zip tool (another zip or zlib version may compress differently).
 make_zip() {
 	local folder="$1"
 	local zip_path="$2"
@@ -134,11 +135,15 @@ add_update_uri() {
 	return 0
 }
 
-# Remove the GitHub updater header lines from the main file of a build.
+# Remove the GitHub updater header lines from the main file of a build: only
+# in the plugin header (up to the first */), not lines further down.
 strip_updater_headers() {
 	local main="$1"
 	local stripped="$main.tmp"
-	grep -Ev "^[[:space:]*]*($WPORG_STRIP_HEADERS):" "$main" >"$stripped"
+	awk -v re="^[[:space:]*]*($WPORG_STRIP_HEADERS):" '
+		!done && $0 ~ re { next }
+		!done && /\*\// { done = 1 }
+		{ print }' "$main" >"$stripped"
 	mv "$stripped" "$main"
 	return 0
 }
@@ -147,7 +152,9 @@ strip_updater_headers() {
 # files of a build. One pair per line, separated by a tab: the text (such as
 # an affiliate link, or only its referral query) and its replacement (the
 # plain address, or nothing). Lines starting with # are comments. Each text
-# is also replaced in its HTML-escaped forms (& as &amp; or &#038;).
+# is also replaced in its HTML-escaped forms (& as &amp; or &#038;). A text
+# that ends in a letter, digit, _, %, - or / is not replaced where the link
+# goes on (?ref=alice is left alone in ?ref=alice2, a different link).
 replace_wporg_links() {
 	local dir="$1"
 	local links="$2"
@@ -164,16 +171,17 @@ replace_wporg_links() {
 					my ($from, $to) = split /\t+/, $line, 2;
 					$to = "" unless defined $to;
 					die "build-release: no tab in .wporg-links line: $line\n" unless $line =~ /\t/ && length $from;
+					my $end = $from =~ m{[A-Za-z0-9_%/-]\z} ? q{(?![A-Za-z0-9_%/-])} : q{};
 					for my $amp ("&", "&amp;", "&#038;") {
 						(my $f = $from) =~ s/&/$amp/g;
 						(my $t = $to) =~ s/&/$amp/g;
-						push @pairs, [$f, $t];
+						push @pairs, [qr/\Q$f\E$end/, $t];
 					}
 				}
 			}
-			for my $pair (@pairs) { s/\Q$pair->[0]\E/$pair->[1]/g }
+			for my $pair (@pairs) { s/$pair->[0]/$pair->[1]/g }
 		' "$file"
-	done < <(find "$dir" -type f \( -name '*.php' -o -name '*.js' -o -name '*.css' -o -name '*.json' -o -name '*.html' -o -name '*.md' -o -name '*.txt' \) -print0)
+	done < <(find "$dir" -type f \( -name '*.php' -o -name '*.js' -o -name '*.css' -o -name '*.json' -o -name '*.html' -o -name '*.md' -o -name '*.txt' -o -name '*.svg' -o -name '*.xml' -o -name '*.pot' -o -name '*.po' \) -print0)
 	return 0
 }
 

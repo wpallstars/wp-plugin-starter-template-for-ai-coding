@@ -14,8 +14,8 @@ only when someone pushes a version tag.
 
 | Script | What it does |
 |--------|--------------|
-| `scripts/build-release.sh [--ref REF] [--out DIR]` | Builds both zips from a Git ref (default `HEAD`) into `dist/` (gitignored), with `SHA256SUMS`. Files come from Git, never the working tree. |
-| `scripts/preflight-release.sh [--ref REF] [--strict] [--offline]` | Checks versions, headers, readme, both zips (layout, development files, PHP 7.4 and JS syntax, updater code), remote assets, presets and starter data where the plugin has them, and the Git tag. Errors stop a release; `--strict` also fails on warnings, for a WordPress.org submission. |
+| `scripts/build-release.sh [--ref REF] [--out DIR] [--quiet]` | Builds both zips from a Git ref (default `HEAD`) into `dist/` (gitignored), with `SHA256SUMS`. Files come from Git, never the working tree. `--quiet` prints only the zips' paths. |
+| `scripts/preflight-release.sh [--ref REF] [--strict] [--offline] [--no-docker]` | Checks versions, headers, readme, both zips (layout, development files, PHP 7.4 and JS syntax, updater code), remote assets, presets and starter data where the plugin has them, and the Git tag. Errors stop a release; `--strict` also fails on warnings, for a WordPress.org submission. `--no-docker` lints PHP with the local `php` instead of PHP 7.4 in Docker. |
 | `scripts/plugin-check.sh [--ref REF] [--zip FILE]` | Runs Plugin Check on both zips in a disposable WordPress in Docker, then removes it. |
 | `scripts/update-test.sh [--from X.Y.Z] [--to X.Y.Z] [--wp VERSION] [--php VERSION] [--keep-log FILE]` | After a release: installs the previous GitHub release (default: the one before the newest) on a disposable WordPress in Docker and checks that it is offered the new one from its asset (WP-CLI, **Check again** on the Updates screen, the Plugins screen), that the update installs and the plugin stays active, and that `debug.log` stays empty. Then removes the site. Reads releases with `gh`. |
 
@@ -117,9 +117,11 @@ date, in the plugin's `LAUNCH.md`.
 
 The WordPress.org build replaces the affiliate links listed in
 `.wporg-links` (one per line: the link or its referral query, a tab, and
-the plain replacement, or nothing to remove a query). The preflight errors
-when one is left in that build and warns about other addresses with
-referral parameters (`ref=`, `aff=`, `irpid=`, `via=` and the like).
+the plain replacement, or nothing to remove a query), also where `&` is
+written `&amp;` or `&#038;`, and only as a whole link: a listed `?ref=alice`
+is left alone in `?ref=alice2`. The preflight errors when one is left in
+that build and warns about other addresses with referral parameters
+(`ref=`, `aff=`, `irpid=`, `via=` and the like).
 
 Before submitting, work through the plugin's `LAUNCH.md`: what
 `scripts/preflight-release.sh --strict` still reports, and a review of the
@@ -166,7 +168,7 @@ separate from the account password and is set on the WordPress.org profile
 6. Consider release confirmation emails (Plugin Handbook → Release
    Confirmation Emails), so a release goes out only after it is confirmed.
 
-Each later WordPress.org release: the GitHub tag that has been out for 90
+Each later WordPress.org release: the GitHub tag that has been out for 30
 days (or the security release), `--strict` preflight, Plugin Check, then
 steps 2 to 5. Readme-only changes
 (such as raising Tested up to) go to trunk and the current tag.

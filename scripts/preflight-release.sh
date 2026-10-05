@@ -535,6 +535,30 @@ check_zip() {
 	return 0
 }
 
+# Whether a text from .wporg-links is still in a folder, matched as
+# build-release.sh (replace_wporg_links) replaces it: in its three & forms,
+# and, when it ends in a letter, digit, _, %, - or /, not where the link
+# goes on. Returns 0 when it is found.
+wporg_text_left() {
+	local text="$1"
+	local dir="$2"
+	WPORG_TEXT="$text" perl -MFile::Find -e '
+		my $from = $ENV{WPORG_TEXT};
+		my $end  = $from =~ m{[A-Za-z0-9_%/-]\z} ? q{(?![A-Za-z0-9_%/-])} : q{};
+		my @res  = map { (my $f = $from) =~ s/&/$_/g; qr/\Q$f\E$end/ } ("&", "&amp;", "&#038;");
+		my $found = 0;
+		find({ no_chdir => 1, wanted => sub {
+			return if $found || !-f $_;
+			open(my $fh, "<", $_) or return;
+			local $/;
+			my $content = <$fh>;
+			for my $re (@res) { if ($content =~ $re) { $found = 1; last } }
+		} }, $ARGV[0]);
+		exit($found ? 0 : 1);
+	' "$dir" || return 1
+	return 0
+}
+
 check_builds() {
 	local github_zip="$1"
 	local wporg_zip="$2"
@@ -578,7 +602,11 @@ check_builds() {
 		while IFS= read -r text; do
 			[[ -n "$text" ]] || continue
 			escaped="${text//&/&amp;}"
-			if grep -rFqs -e "$text" -e "$escaped" -e "${text//&/&#038;}" "$wporg_dir"; then left="$left $text"; fi
+			# A quick fixed-string search first; then the whole-link match
+			# build-release.sh replaces with (?ref=alice2 is not ?ref=alice).
+			if grep -rFqs -e "$text" -e "$escaped" -e "${text//&/&#038;}" "$wporg_dir" && wporg_text_left "$text" "$wporg_dir"; then
+				left="$left $text"
+			fi
 		done <<<"$WPORG_LINK_TEXTS"
 		if [[ -z "$left" ]]; then
 			ok "wporg: every text in .wporg-links replaced ($(grep -c . <<<"$WPORG_LINK_TEXTS"))"
