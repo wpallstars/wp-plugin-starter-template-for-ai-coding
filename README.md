@@ -24,7 +24,7 @@ WP Plugin Starter is what wpallstars plugins are made from. It has no features o
 
 If this saves you time, headaches and costs, feel free to [buy me a coffee](https://buymeacoffee.com/marcusquinn), or whatever you like, to invest in making more things open-source.
 
-Version: 1.0.20
+Version: 1.0.21
 
 <!-- github-only:start -->
 ## Screenshots
@@ -127,6 +127,12 @@ Read a setting with `WPStarter_Settings::get( 'key' )`.
 Deleting the plugin removes its settings, its cached data, who hid lines of the Plugins screen notice about replaced plugins, and the cached GitHub releases.
 
 ## Changelog
+
+### 1.0.21
+
+- Fixed: two saves that find the same stale save lock no longer both take it over, and a save whose lock was taken over no longer removes the new one. Saving keeps the settings of features switched off on this request. Text, URL, lines, domains and times settings turn an array into an empty value instead of the text "Array" and a PHP notice, and a URL with a backslash is refused (browsers read `/\` as another site).
+- Fixed: GitHub updates find the release zip whatever the case of owner/repo in the `GitHub Plugin URI` header, and a renamed or moved repository is reported with its new name instead of reading as "no releases". With a token, every repository it is given for is read through the API (documented). Updater 1.1.1.
+- Developers: `.wporg-links` replaces whole links only, so a listed link no longer changes a longer one that starts with it, and also in SVG, XML and translation files; `build-release.sh` removes the updater headers only from the plugin header. `preflight-release.sh` finds referral links written with `&amp;` or `&#038;`, scans Markdown, CSS and SVG, warns when `README.md` has no Version line, and checks the updater files line by line. The smoke, update and Plugin Check scripts fail when they cannot check instead of passing, remove every container they started, and match the update offer exactly. `rename-plugin.sh` and `sync-core.sh` stop on a failed write and remove half-written files; `rename-plugin.sh` checks each value whole (a new line no longer passes) and sets the version `define` in either quote style; `sync-core.sh` refuses core paths outside the plugin and lists a core file whose executable bit differs.
 
 ### 1.0.20
 

@@ -5,7 +5,7 @@ Tags: starter, boilerplate, settings, developer, template
 Requires at least: 6.2
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 1.0.20
+Stable tag: 1.0.21
 License: GPLv3 or later
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 
@@ -60,8 +60,10 @@ GitHub releases are the stable beta channel: each version comes out there first.
 
 == Changelog ==
 
-= 1.0.20 =
-* Developers: STANDARDS.md forbids duplicate indexes instead of all indexes on WordPress tables. Nothing changes on sites.
+= 1.0.21 =
+* Fixed: settings saves at the same moment, settings of features switched off kept, array values refused in text settings.
+* Fixed: GitHub updates whatever the case of the repository name, and a moved repository is reported.
+* Developers: release, test, rename and sync script fixes.
 
 Every change: changelog.txt.
 
