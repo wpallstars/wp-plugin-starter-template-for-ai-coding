@@ -81,8 +81,10 @@ plugin_identity() {
 	PLUGIN_MAIN_FILE="$found"
 	PLUGIN_SLUG="${found%.php}"
 	PLUGIN_NAME="$(plugin_header_field "${text:0:8192}" "Plugin Name")"
-	PLUGIN_PACKAGE="$(printf '%s\n' "$text" | sed -nE '/^[[:space:]*]*@package[[:space:]]+[A-Za-z0-9_]+/{s/^[[:space:]*]*@package[[:space:]]+([A-Za-z0-9_]+).*/\1/p;q;}')"
-	PLUGIN_CONST="$(printf '%s\n' "$text" | sed -nE "/define\([[:space:]]*['\"][A-Z0-9_]+_VERSION['\"]/{s/.*define\([[:space:]]*['\"]([A-Z0-9_]+)_VERSION['\"].*/\1/p;q;}")"
+	# Here-strings, not pipes: sed quitting at the first match would end
+	# printf with SIGPIPE on a large file (pipefail).
+	PLUGIN_PACKAGE="$(sed -nE '/^[[:space:]*]*@package[[:space:]]+[A-Za-z0-9_]+/{s/^[[:space:]*]*@package[[:space:]]+([A-Za-z0-9_]+).*/\1/p;q;}' <<<"$text")"
+	PLUGIN_CONST="$(sed -nE "/define\([[:space:]]*['\"][A-Z0-9_]+_VERSION['\"]/{s/.*define\([[:space:]]*['\"]([A-Z0-9_]+)_VERSION['\"].*/\1/p;q;}" <<<"$text")"
 	if [[ -z "$PLUGIN_PACKAGE" ]]; then
 		printf 'plugin: %s has no @package tag (the class prefix)\n' "$found" >&2
 		return 1
