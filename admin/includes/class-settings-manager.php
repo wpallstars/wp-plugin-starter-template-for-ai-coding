@@ -33,6 +33,17 @@ class WPStarter_Settings_Manager {
         'bool'    => 'render_bool',
     );
 
+    /** Child settings with this `group` are shown last, in a closed Troubleshooting section. */
+    const TROUBLESHOOTING = 'troubleshooting';
+
+    /**
+     * The search being shown (render_search()), so a Troubleshooting
+     * section holding a match opens.
+     *
+     * @var string
+     */
+    private static $query = '';
+
     /**
      * Render matching settings from every tab, grouped by tab.
      *
@@ -78,9 +89,11 @@ class WPStarter_Settings_Manager {
                 </h3>
                 <div class="wps-cards">
                     <?php
+                    self::$query = (string) $query;
                     foreach ($fields as $key => $field) {
                         self::render_card($key, $field);
                     }
+                    self::$query = '';
                     ?>
                 </div>
             <?php endforeach; ?>
@@ -200,14 +213,95 @@ class WPStarter_Settings_Manager {
                      * @param array  $field Schema entry.
                      */
                     do_action('wpstarter_setting_panel', $key, $field);
-                    foreach ($children as $child_key => $child) {
-                        self::render_field($child_key, $child);
-                    }
+                    self::render_children($key, $children);
                     ?>
                 </div>
             <?php endif; ?>
         </section>
         <?php
+    }
+
+    /**
+     * Render a panel's child settings. Those in the Troubleshooting group
+     * come last, in a section that stays closed unless one of them is in
+     * use, so people are not asked about bypasses they do not need.
+     *
+     * @param string              $key      Parent setting key.
+     * @param array<string,array> $children Visible child settings.
+     */
+    private static function render_children($key, array $children) {
+        $troubleshooting = array_filter($children, function ($child) {
+            return isset($child['group']) && self::TROUBLESHOOTING === $child['group'];
+        });
+        foreach (array_diff_key($children, $troubleshooting) as $child_key => $child) {
+            self::render_field($child_key, $child);
+        }
+        if (!$troubleshooting) {
+            return;
+        }
+        ?>
+        <details class="wps-troubleshooting"<?php echo self::troubleshooting_open($key, $troubleshooting) ? ' open' : ''; ?>>
+            <summary class="wps-troubleshooting__summary"><?php esc_html_e('Troubleshooting', 'wp-plugin-starter-template'); ?></summary>
+            <p class="wps-troubleshooting__intro"><?php esc_html_e('Leave these as they are unless something is missing or broken.', 'wp-plugin-starter-template'); ?></p>
+            <?php
+            foreach ($troubleshooting as $child_key => $child) {
+                self::render_field($child_key, $child);
+            }
+            ?>
+        </details>
+        <?php
+    }
+
+    /**
+     * Whether a Troubleshooting section starts open: one of its settings
+     * differs from its default, so a saved choice is never hidden, or
+     * matches the search being shown.
+     *
+     * @param string              $key    Parent setting key.
+     * @param array<string,array> $fields The section's settings.
+     * @return bool
+     */
+    private static function troubleshooting_open($key, array $fields) {
+        $open = false;
+        foreach ($fields as $field_key => $field) {
+            $label = isset($field['label']) ? (string) $field['label'] : '';
+            if (!self::is_default(WPStarter_Settings::get($field_key), isset($field['default']) ? $field['default'] : null)
+                || ('' !== self::$query && false !== (function_exists('mb_stripos') ? mb_stripos($label, self::$query) : stripos($label, self::$query)))) {
+                $open = true;
+                break;
+            }
+        }
+
+        /**
+         * Filter whether a setting's Troubleshooting section starts open,
+         * for example after the feature fell back because of an error.
+         *
+         * @param bool   $open Whether it starts open.
+         * @param string $key  Parent setting key.
+         */
+        return (bool) apply_filters('wpstarter_troubleshooting_open', $open, $key);
+    }
+
+    /**
+     * Whether a stored value is the same as a default: lists in any order,
+     * switches as true or false, anything else as text.
+     *
+     * @param mixed $value   Value.
+     * @param mixed $default Default.
+     * @return bool
+     */
+    private static function is_default($value, $default) {
+        if (is_array($value) || is_array($default)) {
+            $value   = array_map('strval', array_filter((array) $value, 'is_scalar'));
+            $default = array_map('strval', array_filter((array) $default, 'is_scalar'));
+            sort($value);
+            sort($default);
+            return $value === $default;
+        }
+        if (is_bool($default)) {
+            return (bool) $value === $default;
+        }
+        return (is_scalar($value) ? (string) $value : '') === (is_scalar($default) ? (string) $default : '');
     }
 
     /**
