@@ -576,14 +576,14 @@ check_updater_files() {
 
 # Whether a text from .wporg-links is still in a folder, matched as
 # build-release.sh (replace_wporg_links) replaces it: in its three & forms,
-# and, when it ends in a letter, digit, _, %, - or /, not where the link
-# goes on. Returns 0 when it is found.
+# and, when it ends in a letter, digit or one of _ % / + ~ . -, not where
+# the link goes on. Returns 0 when it is found.
 wporg_text_left() {
 	local text="$1"
 	local dir="$2"
 	WPORG_TEXT="$text" perl -MFile::Find -e '
 		my $from = $ENV{WPORG_TEXT};
-		my $end  = $from =~ m{[A-Za-z0-9_%/-]\z} ? q{(?![A-Za-z0-9_%/-])} : q{};
+		my $end  = $from =~ m{[A-Za-z0-9_%/+~.-]\z} ? q{(?![A-Za-z0-9_%/+~-]|\.[A-Za-z0-9_%/+~-])} : q{};
 		my @res  = map { (my $f = $from) =~ s/&/$_/g; qr/\Q$f\E$end/ } ("&", "&amp;", "&#038;");
 		my $found = 0;
 		find({ no_chdir => 1, wanted => sub {
@@ -650,7 +650,7 @@ check_builds() {
 		fi
 	fi
 	local hits
-	hits="$(grep -rEohi --include='*.php' --include='*.js' --include='*.txt' --include='*.json' --include='*.html' --include='*.md' --include='*.css' --include='*.svg' "$REFERRAL_QUERY" "$wporg_dir" 2>/dev/null | sort -u || true)"
+	hits="$(grep -rEohi --include='*.php' --include='*.js' --include='*.txt' --include='*.json' --include='*.html' --include='*.md' --include='*.css' --include='*.svg' --include='*.xml' --include='*.pot' --include='*.po' "$REFERRAL_QUERY" "$wporg_dir" 2>/dev/null | sort -u || true)"
 	if [[ -z "$hits" ]]; then
 		ok "wporg: no addresses with referral parameters"
 	else

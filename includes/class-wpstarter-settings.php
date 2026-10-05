@@ -76,6 +76,13 @@ class WPStarter_Settings {
     private static $lock_value = '';
 
     /**
+     * Whether maybe_migrate() is storing migrated settings (see sanitize_all()).
+     *
+     * @var bool
+     */
+    private static $migrating = false;
+
+    /**
      * Register hooks.
      */
     public static function init() {
@@ -751,14 +758,21 @@ class WPStarter_Settings {
         $schema = self::schema();
         $stored = self::stored_all();
         $clean  = self::all();
+        if (!self::$migrating) {
+            // Settings not registered on this request (their feature is
+            // switched off) keep their stored values, even when the input
+            // leaves them out. Not while migrating: there a key left out
+            // was removed by a migration.
+            $clean = array_merge($clean, array_diff_key($stored, $schema));
+        }
 
         foreach ($input as $key => $value) {
             if (isset($schema[$key])) {
                 $clean[$key] = self::sanitize_value($value, $schema[$key]);
             } elseif (array_key_exists($key, $stored) && $stored[$key] === $value) {
-                // A setting not registered on this request (its feature is
-                // switched off) keeps its stored value; new unknown keys,
-                // and keys a migration removed, are dropped.
+                // An unregistered setting given with its stored value (as
+                // set() and migrations pass it) is kept; new unknown keys
+                // and changed values of unregistered ones are not stored.
                 $clean[$key] = $value;
             }
         }
@@ -837,8 +851,15 @@ class WPStarter_Settings {
             $options = (array) $class::migrate($options, $from);
         }
 
-        $clean = self::sanitize_all($options);
-        update_option(self::OPTION, $clean);
+        // Keys the migrations removed stay removed (see sanitize_all()),
+        // also when update_option() runs it again.
+        self::$migrating = true;
+        try {
+            $clean = self::sanitize_all($options);
+            update_option(self::OPTION, $clean);
+        } finally {
+            self::$migrating = false;
+        }
 
         // Only record the version once the settings are stored, so a failed
         // write is retried on the next request instead of losing imports.

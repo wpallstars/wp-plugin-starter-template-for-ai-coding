@@ -153,8 +153,10 @@ strip_updater_headers() {
 # an affiliate link, or only its referral query) and its replacement (the
 # plain address, or nothing). Lines starting with # are comments. Each text
 # is also replaced in its HTML-escaped forms (& as &amp; or &#038;). A text
-# that ends in a letter, digit, _, %, - or / is not replaced where the link
-# goes on (?ref=alice is left alone in ?ref=alice2, a different link).
+# that ends in a letter, digit or one of _ % / + ~ . - is not replaced where
+# the link goes on with one of those (?ref=alice is left alone in ?ref=alice2
+# and ?ref=alice+vip, different links); a . then a space or the end of the
+# text ends a sentence, not the link.
 replace_wporg_links() {
 	local dir="$1"
 	local links="$2"
@@ -171,7 +173,7 @@ replace_wporg_links() {
 					my ($from, $to) = split /\t+/, $line, 2;
 					$to = "" unless defined $to;
 					die "build-release: no tab in .wporg-links line: $line\n" unless $line =~ /\t/ && length $from;
-					my $end = $from =~ m{[A-Za-z0-9_%/-]\z} ? q{(?![A-Za-z0-9_%/-])} : q{};
+					my $end = $from =~ m{[A-Za-z0-9_%/+~.-]\z} ? q{(?![A-Za-z0-9_%/+~-]|\.[A-Za-z0-9_%/+~-])} : q{};
 					for my $amp ("&", "&amp;", "&#038;") {
 						(my $f = $from) =~ s/&/$amp/g;
 						(my $t = $to) =~ s/&/$amp/g;

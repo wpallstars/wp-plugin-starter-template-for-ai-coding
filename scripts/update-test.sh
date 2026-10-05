@@ -287,13 +287,19 @@ install_from() {
 
 check_offer() {
 	printf '\nUpdate check (WP-CLI):\n'
-	local offer want
+	local offer repo
 	offer="$(update_offer)" || offer="error"
 	printf '  offer: %s\n' "$offer"
-	# Exactly the release asset; GitHub's own address may differ from the
-	# header's owner/repo in case only.
-	want="$TO https://github.com/$REPO/releases/download/v$TO/$SLUG-$TO.zip"
-	if [[ "$(tr '[:upper:]' '[:lower:]' <<<"$offer")" == "$(tr '[:upper:]' '[:lower:]' <<<"$want")" ]]; then
+	# Exactly the release asset. GitHub's own address may differ from the
+	# header's owner/repo in case only, so only that part ignores case.
+	local start="$TO https://github.com/"
+	local end="/releases/download/v$TO/$SLUG-$TO.zip"
+	repo=""
+	if [[ "$offer" == "$start"*"$end" ]]; then
+		repo="${offer#"$start"}"
+		repo="${repo%"$end"}"
+	fi
+	if [[ -n "$repo" && "$(tr '[:upper:]' '[:lower:]' <<<"$repo")" == "$(tr '[:upper:]' '[:lower:]' <<<"$REPO")" ]]; then
 		ok "offers $TO from the release asset"
 	elif [[ "${#TOKEN_ARGS[@]}" -gt 0 && -n "$ASSET_API" && "$offer" == "$TO $ASSET_API" ]]; then
 		ok "offers $TO from the release asset (its API address, with the token)"

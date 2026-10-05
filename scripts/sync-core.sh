@@ -57,6 +57,20 @@ check_path() {
 	return 0
 }
 
+# A target is written only through real folders of the plugin: neither it
+# nor a folder above it may be a symbolic link, which could point outside.
+check_target() {
+	local target="$1"
+	local dir
+	[[ ! -L "$target" ]] || die "$target is a symbolic link; core files are written only inside the plugin"
+	dir="$(dirname "$target")"
+	while [[ "$dir" != "." && "$dir" != "/" ]]; do
+		[[ ! -L "$dir" ]] || die "$dir is a symbolic link; core files are written only inside the plugin"
+		dir="$(dirname "$dir")"
+	done
+	return 0
+}
+
 # Whether a file's executable bit matches a Git mode (100755 or 100644).
 same_mode() {
 	local file="$1"
@@ -88,7 +102,7 @@ core_paths() {
 	while IFS= read -r line; do
 		case "$line" in
 		*/)
-			files="$(git -C "$from" ls-tree -r --name-only "$ref" -- "$line")" ||
+			files="$(git --literal-pathspecs -C "$from" ls-tree -r --name-only "$ref" -- "$line")" ||
 				die "cannot list $line in the starter at $ref"
 			[[ -n "$files" ]] || die "scripts/core-files.txt lists $line, which has no files in the starter at $ref"
 			printf '%s\n' "$files" >>"$out"
@@ -159,8 +173,14 @@ main() {
 		check_path "$path"
 		target="$(printf '%s' "$path" | plugin_map)"
 		check_path "$target"
+		check_target "$target"
+		# A literal pathspec: a name such as file[1].php is that file only.
+		mode="$(git --literal-pathspecs -C "$from" ls-tree "$ref" -- "$path" | awk '{ print $1 }')"
+		case "$mode" in
+		100644 | 100755) ;;
+		*) die "$path in the starter at $ref is not one regular file (mode '$mode')" ;;
+		esac
 		git -C "$from" show "$ref:$path" | plugin_map "$target" >"$tmp"
-		mode="$(git -C "$from" ls-tree "$ref" -- "$path" | awk '{ print $1 }')"
 		count=$((count + 1))
 		if [[ -f "$target" ]] && cmp -s "$tmp" "$target" && same_mode "$target" "$mode"; then
 			continue
@@ -180,6 +200,8 @@ main() {
 		# Replace by rename, never in place: bash reads a running script as it
 		# goes, so rewriting scripts/sync-core.sh itself would break this run.
 		NEW_FILE="$target.sync-core-new"
+		# Never write through a leftover file or link of that name.
+		rm -f "$NEW_FILE"
 		cp "$tmp" "$NEW_FILE"
 		if [[ "$mode" = "100755" ]]; then chmod 755 "$NEW_FILE"; else chmod 644 "$NEW_FILE"; fi
 		mv -f "$NEW_FILE" "$target"
