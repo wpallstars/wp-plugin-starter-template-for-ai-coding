@@ -26,8 +26,10 @@
  *   a token.
  * - Private repositories need a GitHub token in wp-config.php
  *   (WPALLSTARS_GITHUB_TOKEN) or from the `wpallstars_github_token` filter,
- *   and are read through the API. The token is sent only to api.github.com,
- *   never stored and never shown.
+ *   and are read through the API. With a token, every repository it is
+ *   given for is read through the API, public ones too (the filter can
+ *   return it for some repositories only). The token is sent only to
+ *   api.github.com, never stored and never shown.
  * - The GitHub build's main file has an `Update URI` header on github.com
  *   (scripts/build-release.sh adds it; the WordPress.org build has none).
  *   WordPress.org then never offers its own plugin of the same slug for it,
@@ -445,6 +447,12 @@ final class WPAllStars_GitHub_Updater {
         if ($code < 300 || $code > 399) {
             return self::status_error($code);
         }
+        if (preg_match('#^https://github\.com/([A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+)/#i', $location, $moved) && 0 !== strcasecmp($moved[1], $repo)) {
+            // A renamed or moved repository: say where, so the plugin's
+            // header can be changed (requests never follow redirects).
+            /* translators: 1: owner/repo in the plugin's header, 2: owner/repo GitHub points to */
+            return new WP_Error('wpallstars_github_moved', sprintf(__('GitHub repository %1$s has moved to %2$s; change the plugin\'s GitHub Plugin URI header.', 'wp-plugin-starter-template'), $repo, $moved[1]));
+        }
         if (!preg_match('#^https://github\.com/' . preg_quote($repo, '#') . '/releases/tag/([^/?\#]+)$#i', $location, $match)) {
             // No releases yet: GitHub sends the releases list instead.
             return null;
@@ -582,7 +590,8 @@ final class WPAllStars_GitHub_Updater {
             }
             $public = isset($asset['browser_download_url']) ? (string) $asset['browser_download_url'] : '';
             $api    = isset($asset['id']) ? self::API_REPOS . $repo . '/releases/assets/' . (int) $asset['id'] : '';
-            if (0 === strpos($public, self::GITHUB . $repo . '/releases/download/')) {
+            // GitHub writes owner/repo in its own case, which the header may not.
+            if (0 === stripos($public, self::GITHUB . $repo . '/releases/download/')) {
                 return array('public' => $public, 'api' => $api);
             }
         }
