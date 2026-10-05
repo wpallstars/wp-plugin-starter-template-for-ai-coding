@@ -2,6 +2,9 @@
 
 Every change to WP Plugin Starter. readme.txt lists the latest version in short.
 
+= 1.0.23 =
+* Developers: STANDARDS.md → Structure now says where a replacing feature keeps its list: in a class constant on the feature class, const REPLACES = array(slug => name);, passed as 'replaces' => self::REPLACES, so migrations, audits and checks for active plugins read the same list instead of repeating it (SonarCloud flags the repeats as duplication). scripts/replaced-plugins.php already reads it. README.md → Developers points to the rule. Nothing changes for users.
+
 = 1.0.22 =
 * Developers: STANDARDS.md → Performance has a new rule, Small choice lists. A select or multi setting's options callable runs on every settings save, because a save checks every setting, so it must never list what grows with the site (pages, posts, users). Mark the field open to keep any ID, and offer the list only where it is shown, paged or searched. From SEO Pro Stack, where one such list ran out of memory on every save on a site with 60,000 pages. README.md → Developers now says select takes open too, as it always has. Nothing changes for users.
 
