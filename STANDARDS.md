@@ -286,6 +286,12 @@ a test site take the site down.
   large or rarely used data with autoload off (`update_option( $name,
   $value, false )`) or in the plugin's own table. Never write an option or
   transient on every page load.
+- **Small choice lists:** a `select` or `multi` setting's `options`
+  callable runs on every settings save, not only on its screen, because a
+  save checks every setting. Never list what grows with the site (pages,
+  posts, users) there: one such list ran out of memory on every save with
+  60,000 pages. Mark the field `open` to keep any ID, and offer the list
+  only where it is shown, paged or searched.
 - **Cache repeated work:** `wp_cache_*` for lookups repeated within a
   request (a persistent object cache keeps them between requests), and
   transients that expire for results that are slow to build. Cache times
