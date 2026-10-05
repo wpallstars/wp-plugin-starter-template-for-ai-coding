@@ -37,10 +37,35 @@ die() {
 
 TMP_FILE=""
 LIST_FILE=""
+# The file being swapped in, removed if the run stops.
+NEW_FILE=""
 
 cleanup() {
 	[[ -z "$TMP_FILE" ]] || rm -f "$TMP_FILE"
 	[[ -z "$LIST_FILE" ]] || rm -f "$LIST_FILE"
+	[[ -z "$NEW_FILE" ]] || rm -f "$NEW_FILE"
+	return 0
+}
+
+# A core path must stay inside the plugin: not absolute, no .. segment.
+check_path() {
+	local path="$1"
+	case "/$path/" in
+	//* | */../*) die "scripts/core-files.txt lists $path, which is outside the plugin" ;;
+	*) ;;
+	esac
+	return 0
+}
+
+# Whether a file's executable bit matches a Git mode (100755 or 100644).
+same_mode() {
+	local file="$1"
+	local mode="$2"
+	if [[ "$mode" = "100755" ]]; then
+		[[ -x "$file" ]] || return 1
+	elif [[ -x "$file" ]]; then
+		return 1
+	fi
 	return 0
 }
 
@@ -131,28 +156,34 @@ main() {
 	core_paths "$from" "$ref" "$LIST_FILE"
 	local tmp="$TMP_FILE"
 	while IFS= read -r path; do
+		check_path "$path"
 		target="$(printf '%s' "$path" | plugin_map)"
+		check_path "$target"
 		git -C "$from" show "$ref:$path" | plugin_map "$target" >"$tmp"
+		mode="$(git -C "$from" ls-tree "$ref" -- "$path" | awk '{ print $1 }')"
 		count=$((count + 1))
-		if [[ -f "$target" ]] && cmp -s "$tmp" "$target"; then
+		if [[ -f "$target" ]] && cmp -s "$tmp" "$target" && same_mode "$target" "$mode"; then
 			continue
 		fi
 		differ=$((differ + 1))
 		if [[ "$check" -eq 1 ]]; then
-			if [[ -f "$target" ]]; then
-				printf '  differs  %s\n' "$target"
-			else
+			if [[ ! -f "$target" ]]; then
 				printf '  missing  %s\n' "$target"
+			elif cmp -s "$tmp" "$target"; then
+				printf '  mode     %s (executable bit)\n' "$target"
+			else
+				printf '  differs  %s\n' "$target"
 			fi
 			continue
 		fi
 		mkdir -p "$(dirname "$target")"
 		# Replace by rename, never in place: bash reads a running script as it
 		# goes, so rewriting scripts/sync-core.sh itself would break this run.
-		cp "$tmp" "$target.sync-core-new"
-		mode="$(git -C "$from" ls-tree "$ref" -- "$path" | awk '{ print $1 }')"
-		if [[ "$mode" = "100755" ]]; then chmod 755 "$target.sync-core-new"; else chmod 644 "$target.sync-core-new"; fi
-		mv -f "$target.sync-core-new" "$target"
+		NEW_FILE="$target.sync-core-new"
+		cp "$tmp" "$NEW_FILE"
+		if [[ "$mode" = "100755" ]]; then chmod 755 "$NEW_FILE"; else chmod 644 "$NEW_FILE"; fi
+		mv -f "$NEW_FILE" "$target"
+		NEW_FILE=""
 		printf '  updated  %s\n' "$target"
 	done <"$LIST_FILE"
 

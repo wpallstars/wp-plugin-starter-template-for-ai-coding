@@ -51,9 +51,12 @@ die() {
 }
 
 TMP_FILE=""
+# The file being swapped in (replace_with_tmp), removed if the run stops.
+NEW_FILE=""
 
 cleanup() {
 	[[ -z "$TMP_FILE" ]] || rm -f "$TMP_FILE"
+	[[ -z "$NEW_FILE" ]] || rm -f "$NEW_FILE"
 	return 0
 }
 
@@ -67,7 +70,9 @@ need() {
 	local value="$2"
 	local pattern="$3"
 	[[ -n "$value" ]] || die "$flag is needed (see --help)"
-	grep -Eq "$pattern" <<<"$value" || die "$flag '$value' must match $pattern"
+	# The whole value, not line by line as grep would: a value with a new
+	# line must not pass an anchored pattern.
+	[[ "$value" =~ $pattern ]] || die "$flag '$value' must match $pattern"
 	return 0
 }
 
@@ -81,13 +86,19 @@ allow() {
 }
 
 # Swap in $TMP_FILE by rename, never in place: bash reads a running script as
-# it goes, and this file is one of those changed.
+# it goes, and this file is one of those changed. Returns 1 when the file is
+# unchanged. Callers add || true for that, which also turns off set -e in
+# here, so each step stops the run itself when it fails.
 replace_with_tmp() {
 	local file="$1"
+	local mode=644
 	cmp -s "$TMP_FILE" "$file" && return 1
-	cp "$TMP_FILE" "$file.rename-new"
-	if [[ -x "$file" ]]; then chmod 755 "$file.rename-new"; else chmod 644 "$file.rename-new"; fi
-	mv -f "$file.rename-new" "$file"
+	[[ -x "$file" ]] && mode=755
+	NEW_FILE="$file.rename-new"
+	cp "$TMP_FILE" "$NEW_FILE" || die "cannot write $NEW_FILE"
+	chmod "$mode" "$NEW_FILE" || die "cannot set the mode of $NEW_FILE"
+	mv -f "$NEW_FILE" "$file" || die "cannot replace $file"
+	NEW_FILE=""
 	return 0
 }
 
@@ -176,14 +187,22 @@ set_version() {
 		set_field "$file" "Version" "$VERSION"
 	done
 	set_field readme.txt "Stable tag" "$VERSION"
-	CONST="${TO_CONST}_VERSION" VALUE="$VERSION" awk '
-		!done && match($0, "^define\\(\047" ENVIRON["CONST"] "\047,[ \t]*\047") {
+	# The define() forms scripts/lib/plugin.sh reads: either quote, spaces
+	# allowed. What follows the old value (its quote, ");", a comment) stays.
+	if CONST="${TO_CONST}_VERSION" VALUE="$VERSION" awk '
+		!done && match($0, "^[ \t]*define\\([ \t]*[\047\"]" ENVIRON["CONST"] "[\047\"][ \t]*,[ \t]*[\047\"]") {
 			done = 1
-			print substr($0, 1, RLENGTH) ENVIRON["VALUE"] "\047);"
+			quote = substr($0, RLENGTH, 1)
+			rest = substr($0, RLENGTH + 1)
+			print substr($0, 1, RLENGTH) ENVIRON["VALUE"] substr(rest, index(rest, quote))
 			next
 		}
-		{ print }' "$main_file" >"$TMP_FILE"
-	replace_with_tmp "$main_file" || true
+		{ print }
+		END { if (!done) exit 3 }' "$main_file" >"$TMP_FILE"; then
+		replace_with_tmp "$main_file" || true
+	else
+		printf 'rename-plugin: no define of %s_VERSION in %s; set it to %s by hand\n' "$TO_CONST" "$main_file" "$VERSION" >&2
+	fi
 	set_section readme.txt "== Upgrade Notice ==" '^== ' ""
 	set_section readme.txt "== Changelog ==" '^== ' "= $VERSION =
 * $first
