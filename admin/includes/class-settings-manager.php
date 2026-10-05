@@ -262,13 +262,9 @@ class WPStarter_Settings_Manager {
      * @return bool
      */
     private static function troubleshooting_open($key, array $fields) {
-        $open = false;
         foreach ($fields as $field_key => $field) {
-            $label = isset($field['label']) ? (string) $field['label'] : '';
-            if (!self::is_default(WPStarter_Settings::get($field_key), isset($field['default']) ? $field['default'] : null)
-                || ('' !== self::$query && false !== (function_exists('mb_stripos') ? mb_stripos($label, self::$query) : stripos($label, self::$query)))) {
-                $open = true;
-                break;
+            if (self::troubleshooting_shows($field_key, $field)) {
+                return true;
             }
         }
 
@@ -282,7 +278,26 @@ class WPStarter_Settings_Manager {
          * @param bool   $open Whether it starts open (false).
          * @param string $key  Parent setting key.
          */
-        return $open || (bool) apply_filters('wpstarter_troubleshooting_open', $open, $key);
+        return (bool) apply_filters('wpstarter_troubleshooting_open', false, $key);
+    }
+
+    /**
+     * Whether a Troubleshooting setting must be seen: it differs from its
+     * default, or its label matches the search being shown.
+     *
+     * @param string $key   Setting key.
+     * @param array  $field Setting.
+     * @return bool
+     */
+    private static function troubleshooting_shows($key, array $field) {
+        if (!self::is_default(WPStarter_Settings::get($key), isset($field['default']) ? $field['default'] : null)) {
+            return true;
+        }
+        if ('' === self::$query) {
+            return false;
+        }
+        $label = isset($field['label']) ? (string) $field['label'] : '';
+        return false !== (function_exists('mb_stripos') ? mb_stripos($label, self::$query) : stripos($label, self::$query));
     }
 
     /**
