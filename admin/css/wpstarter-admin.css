@@ -507,6 +507,33 @@
 	max-width: 480px;
 }
 
+/* Child settings with 'group' => 'troubleshooting', last in the panel. */
+.wps-field + .wps-troubleshooting {
+	border-block-start: 1px solid #f0f0f1;
+}
+
+.wps-troubleshooting__summary {
+	padding: 14px 0;
+	font-weight: 600;
+	color: var(--wps-text);
+	cursor: pointer;
+}
+
+.wps-troubleshooting__summary:hover {
+	color: var(--wps-accent);
+}
+
+.wps-troubleshooting__summary:focus-visible {
+	outline: none;
+	border-radius: 2px;
+	box-shadow: var(--wps-focus);
+}
+
+.wps-troubleshooting__intro {
+	margin: 0;
+	color: var(--wps-muted);
+}
+
 .wps-media {
 	display: flex;
 	flex-wrap: wrap;

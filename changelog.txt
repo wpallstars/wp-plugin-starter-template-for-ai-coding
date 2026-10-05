@@ -2,6 +2,9 @@
 
 Every change to WP Plugin Starter. readme.txt lists the latest version in short.
 
+= 1.0.24 =
+* Developers: a child setting with 'group' => 'troubleshooting' is shown last in its parent's Options panel, in a closed Troubleshooting section, so bypass lists and switches are there as a last resort without asking people to choose. The section opens by itself when one of its settings differs from its default, when a search matched one of its labels, or when the new wpstarter_troubleshooting_open filter (open, setting key) returns true, for a feature that fell back after an error. Values and saving are unchanged. STANDARDS.md → Code rules puts bypasses there. Nothing changes for users until a plugin uses it.
+
 = 1.0.23 =
 * Developers: STANDARDS.md → Structure now says where a replacing feature keeps its list: in a class constant on the feature class, const REPLACES = array(slug => name);, passed as 'replaces' => self::REPLACES, so migrations, audits and checks for active plugins read the same list instead of repeating it (SonarCloud flags the repeats as duplication). scripts/replaced-plugins.php already reads it. README.md → Developers points to the rule. Nothing changes for users.
 

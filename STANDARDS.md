@@ -223,7 +223,8 @@ adds docs as it grows.
   (which plugins, screens or items it applies to) from what it can detect.
   Settings are there to bypass something that causes a problem, not choices
   people need to understand first. A new setting must earn its place;
-  prefer detecting the right behaviour plus a short bypass list.
+  prefer detecting the right behaviour plus a short bypass list. Put
+  bypasses under Troubleshooting (`'group' => 'troubleshooting'`).
 - Site owner in control, performance first: the owner decides what their site
   sends, contacts and shows. Calls to outside services are opt-in where they
   are not the point of the feature, made only as often and for as long as
