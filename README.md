@@ -24,7 +24,7 @@ WP Plugin Starter is what wpallstars plugins are made from. It has no features o
 
 If this saves you time, headaches and costs, feel free to [buy me a coffee](https://buymeacoffee.com/marcusquinn), or whatever you like, to invest in making more things open-source.
 
-Version: 1.0.24
+Version: 1.0.25
 
 <!-- github-only:start -->
 ## Screenshots
@@ -128,6 +128,11 @@ Read a setting with `WPStarter_Settings::get( 'key' )`.
 Deleting the plugin removes its settings, its cached data, who hid lines of the Plugins screen notice about replaced plugins, and the cached GitHub releases.
 
 ## Changelog
+
+### 1.0.25
+
+- New: GitHub updates show the plugin's icon on the Updates screen, and its banner in **View details**, instead of WordPress's grey plug. The shared updater (version 1.2.0) looks in each installed plugin's folder for WordPress.org's listing image names (`icon.svg`, `icon-256x256.png`, `icon-128x128.png`, `banner-772x250.png`, `banner-1544x500.png`, or `banner.svg`) in `admin/images/`, `assets/` or `.wordpress-org/`, and uses the installed files, so nothing is fetched from GitHub when the screen loads and private repositories work too. The icon shows from the update after the one that brings this version, as the installed copy of the updater builds the entry.
+- Developers: `scripts/build-banner.sh` also writes `admin/images/icon.svg` (shipped, about 9 KB) from `.wordpress-org/icon.svg`, and `scripts/preflight-release.sh` warns when a plugin with `.wordpress-org/icon.svg` does not ship it. `STANDARDS.md` → Structure and Updates from GitHub say so.
 
 ### 1.0.24
 

@@ -446,7 +446,15 @@ check_wporg_assets() {
 			warn "$found is $size, not ${spec#*:}"
 		fi
 	done
-	if grep -qxF "icon.svg" <<<"$files"; then ok "icon.svg"; fi
+	if grep -qxF "icon.svg" <<<"$files"; then
+		ok "icon.svg"
+		# The shipped copy the GitHub updater shows on the Updates screen.
+		if git cat-file -e "$sha:admin/images/icon.svg" 2>/dev/null; then
+			ok "admin/images/icon.svg (Updates screen icon)"
+		else
+			warn "no admin/images/icon.svg; the Updates screen shows WordPress's plug for GitHub updates (scripts/build-banner.sh builds it from .wordpress-org/icon.svg)"
+		fi
+	fi
 
 	local shots captions
 	shots="$(grep -E '^screenshot-[0-9]+\.(png|jpe?g|gif)$' <<<"$files" | sed -E 's/^screenshot-([0-9]+)\..*/\1/' | sort -n || true)"

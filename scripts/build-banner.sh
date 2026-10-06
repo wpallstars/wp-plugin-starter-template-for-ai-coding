@@ -15,6 +15,9 @@
 #   .wordpress-org/icon-256x256.png
 #   .wordpress-org/icon-128x128.png
 #       For assets/ too, with icon.svg itself.
+#   admin/images/icon.svg
+#       Shipped with the plugin: the shared GitHub updater shows it on the
+#       Updates screen (and admin/images/banner.svg in View details).
 #
 # Usage: scripts/build-banner.sh
 #
@@ -87,7 +90,9 @@ main() {
 	if [[ -f "$ICON_SOURCE" ]]; then
 		export_png "$inkscape" "$ICON_SOURCE" icon 256 256
 		export_png "$inkscape" "$ICON_SOURCE" icon 128 128
-		ls -l .wordpress-org/icon-256x256.png .wordpress-org/icon-128x128.png
+		"$inkscape" "$ICON_SOURCE" --export-text-to-path --export-plain-svg \
+			--export-filename=admin/images/icon.svg
+		ls -l .wordpress-org/icon-256x256.png .wordpress-org/icon-128x128.png admin/images/icon.svg
 	else
 		printf 'build-banner: no %s, so no icons (WordPress.org needs them)\n' "$ICON_SOURCE" >&2
 	fi
