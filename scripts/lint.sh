@@ -11,6 +11,9 @@
 #              compatibility (phpcs.xml.dist).
 #   phpstan    Static analysis (phpstan.neon.dist): no new findings beyond
 #              phpstan-baseline.neon.
+#   build      Plugins with a JavaScript build (a "build" script in
+#              package.json): its "check" script (types, lint) if any, then a
+#              fresh build, which must match the built files in assets/build/.
 # With no CHECK, runs them all. phpcs and phpstan need `composer install`.
 #
 # Exit status: 0 when every check passes, 1 when any fails, 2 on bad usage.
@@ -21,13 +24,16 @@
 
 set -euo pipefail
 
-readonly ALL_CHECKS="php js shell workflows phpcs phpstan"
+readonly ALL_CHECKS="php js shell workflows phpcs phpstan build"
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 readonly ROOT
+# Built JavaScript and CSS that ship (release zips are made from Git, with
+# no build step, so they are committed): DEVELOPMENT.md → JavaScript builds.
+readonly BUILD_DIR="assets/build"
 FAILED=""
 
 usage() {
-	sed -n '2,17p' "$0" | sed 's/^# \{0,1\}//'
+	sed -n '2,20p' "$0" | sed 's/^# \{0,1\}//'
 	return 0
 }
 
@@ -99,6 +105,48 @@ check_phpstan() {
 	need_vendor phpstan || return 1
 	vendor/bin/phpstan analyse --memory-limit=4G --no-progress
 	return $?
+}
+
+# Whether package.json has a script of this name.
+has_npm_script() {
+	local name="$1"
+	[[ -f "$ROOT/package.json" ]] || return 1
+	node -e 'const s = require(process.argv[1]).scripts || {}; process.exit(s[process.argv[2]] ? 0 : 1);' "$ROOT/package.json" "$name"
+	return $?
+}
+
+# Fingerprint of every file in BUILD_DIR (names and contents).
+build_fingerprint() {
+	[[ -d "$ROOT/$BUILD_DIR" ]] || return 0
+	find "$BUILD_DIR" -type f -print0 | LC_ALL=C sort -z | xargs -0 -r shasum -a 256
+	return 0
+}
+
+check_build() {
+	if ! has_npm_script build; then
+		printf 'no "build" script in package.json; skipped\n'
+		return 0
+	fi
+	if [[ ! -f "$ROOT/package-lock.json" ]]; then
+		printf 'lint: package-lock.json is missing; run npm install and commit it\n' >&2
+		return 1
+	fi
+	# A clean install in CI; locally only when nothing is installed yet.
+	if [[ -n "${CI:-}" || ! -d "$ROOT/node_modules" ]]; then
+		npm ci --no-audit --no-fund --loglevel=error || return 1
+	fi
+	if has_npm_script check; then
+		npm run --silent check || return 1
+	fi
+	local before after
+	before="$(build_fingerprint)"
+	npm run --silent build || return 1
+	after="$(build_fingerprint)"
+	if [[ "$before" != "$after" ]]; then
+		printf 'lint: %s differed from a fresh build; it is rebuilt now: commit it\n' "$BUILD_DIR" >&2
+		return 1
+	fi
+	return 0
 }
 
 main() {
