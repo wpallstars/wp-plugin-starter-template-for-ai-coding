@@ -44,6 +44,10 @@
  *   icon-256x256.png, banner-772x250.png and so on, or banner.svg) in
  *   admin/images/, assets/ or .wordpress-org/. Only the installed files are
  *   used, so nothing is fetched from GitHub when those screens load.
+ * - View details also shows the installed readme.txt, as WordPress.org
+ *   would: the Description, Installation, FAQ, Screenshots (screenshot-N
+ *   files in the same folders, with the readme's captions) and Changelog
+ *   tabs, Compatible up to and the donate link.
  *
  * SPDX-License-Identifier: GPL-3.0-or-later
  * SPDX-FileCopyrightText: 2026 Marcus Quinn
@@ -96,6 +100,26 @@ final class WPAllStars_GitHub_Updater {
         'low'  => array('banner-772x250.png', 'banner-772x250.jpg', 'banner.svg'),
         'high' => array('banner-1544x500.png', 'banner-1544x500.jpg', 'banner.svg'),
     );
+
+    /** Screenshot file types, best first (screenshot-N.webp and so on). */
+    const SCREENSHOT_TYPES = array('webp', 'png', 'jpg', 'jpeg', 'gif');
+
+    /**
+     * readme.txt sections by their names there => View details tab ('' to
+     * leave out). Other sections go in Other Notes.
+     */
+    const SECTIONS = array(
+        'description'                => 'description',
+        'installation'               => 'installation',
+        'frequently asked questions' => 'faq',
+        'faq'                        => 'faq',
+        'screenshots'                => 'screenshots',
+        'changelog'                  => 'changelog',
+        'upgrade notice'             => '',
+    );
+
+    /** Most of a readme.txt read. */
+    const README_BYTES = 262144;
 
     /**
      * Release answers read this request.
@@ -755,7 +779,8 @@ final class WPAllStars_GitHub_Updater {
             'package'       => self::package($plugin['repo'], $release, $plugin['asset_only']),
             'requires'      => $release['requires'],
             'requires_php'  => $release['requires_php'],
-            'tested'        => '',
+            // The installed readme's: the Updates screen shows it as the author's compatibility.
+            'tested'        => self::readme($file)['tested'],
             'icons'         => self::images($file, self::ICONS),
             'banners'       => self::images($file, self::BANNERS),
             'banners_rtl'   => array(),
@@ -823,31 +848,197 @@ final class WPAllStars_GitHub_Updater {
         $plugin  = $plugins[$file];
         $release = self::release($plugin['repo'], dirname($file), basename($file));
         $data    = get_plugin_data(WP_PLUGIN_DIR . '/' . $file, false, true);
-
-        $sections = array(
-            'description' => wpautop(esc_html(isset($data['Description']) ? wp_strip_all_tags($data['Description']) : '')),
-        );
-        if ($release) {
-            $sections['changelog'] = '<h4>' . esc_html($release['version']) . '</h4>'
-                . ('' !== trim($release['notes']) ? self::notes_html($release['notes']) : '')
-                . sprintf('<p><a href="%1$s" target="_blank" rel="noopener noreferrer">%2$s</a></p>', esc_url($release['url']), esc_html__('Release notes on GitHub', 'wp-plugin-starter-template'));
-        }
+        $readme  = self::readme($file);
+        // The newer of the release and the installed copy (a development copy can be ahead).
+        $newer   = $release && version_compare($release['version'], $plugin['version'], '>');
 
         return (object) array(
             'name'          => $plugin['name'],
             'slug'          => dirname($file),
-            'version'       => $release ? $release['version'] : $plugin['version'],
-            'author'        => isset($data['Author']) ? $data['Author'] : '',
+            'version'       => $newer ? $release['version'] : $plugin['version'],
+            'author'        => self::author_html($data),
             'homepage'      => self::GITHUB . $plugin['repo'],
             'requires'      => $release ? $release['requires'] : '',
             'requires_php'  => $release ? $release['requires_php'] : '',
+            'tested'        => $readme['tested'],
+            'donate_link'   => $readme['donate_link'],
             'last_updated'  => $release ? $release['published'] : '',
             'download_link' => $release ? self::package($plugin['repo'], $release, $plugin['asset_only']) : '',
-            'sections'      => $sections,
+            'sections'      => self::sections($file, $plugin['version'], $data, $readme, $release),
             'icons'         => self::images($file, self::ICONS),
             'banners'       => self::images($file, self::BANNERS),
             'external'      => true,
         );
+    }
+
+    /**
+     * The author, linked to the Author URI when there is one.
+     *
+     * @param array $data Plugin header data.
+     * @return string HTML.
+     */
+    private static function author_html(array $data) {
+        $name = isset($data['Author']) ? trim(wp_strip_all_tags((string) $data['Author'])) : '';
+        $url  = isset($data['AuthorURI']) ? esc_url((string) $data['AuthorURI'], array('http', 'https')) : '';
+        if ('' === $name || '' === $url) {
+            return esc_html($name);
+        }
+        return sprintf('<a href="%1$s">%2$s</a>', $url, esc_html($name));
+    }
+
+    /**
+     * The installed plugin's readme.txt: Tested up to, Donate link and its
+     * sections. Only the local file is read, once a request.
+     *
+     * @param string $file Plugin file.
+     * @return array{tested:string,donate_link:string,sections:array<string,array{title:string,text:string}>}
+     *         Sections are keyed by their lower-case names.
+     */
+    private static function readme($file) {
+        static $found = array();
+        if (isset($found[$file])) {
+            return $found[$file];
+        }
+
+        $readme = array('tested' => '', 'donate_link' => '', 'sections' => array());
+        $path   = WP_PLUGIN_DIR . '/' . dirname($file) . '/readme.txt';
+        $text   = '.' !== dirname($file) && is_file($path) && is_readable($path)
+            ? (string) file_get_contents($path, false, null, 0, self::README_BYTES) // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- local file.
+            : '';
+        $text   = str_replace(array("\r\n", "\r"), "\n", (string) preg_replace('/^\xEF\xBB\xBF/', '', $text));
+        // "== Name ==" starts a section; the "=== Plugin Name ===" title does not.
+        $parts = preg_split('/^==[ \t]*([^=\n]+?)[ \t]*==[ \t]*$/m', $text, -1, PREG_SPLIT_DELIM_CAPTURE) ?: array('');
+
+        if (preg_match('/^[ \t]*Tested up to:[ \t]*(\S+)/mi', $parts[0], $match) && preg_match(self::VERSION_PATTERN, $match[1])) {
+            $readme['tested'] = $match[1];
+            // As WordPress.org does, "7.1" covers every 7.1.x: core compares
+            // it with the full version and would call 7.1.2 untested.
+            $wp = (string) preg_replace('/-.*$/', '', (string) get_bloginfo('version'));
+            if (preg_match('/^\d+\.\d+$/', $match[1]) && 0 === strpos($wp . '.', $match[1] . '.')) {
+                $readme['tested'] = $wp;
+            }
+        }
+        if (preg_match('/^[ \t]*Donate link:[ \t]*(\S+)/mi', $parts[0], $match)) {
+            $readme['donate_link'] = esc_url_raw($match[1], array('http', 'https'));
+        }
+        for ($i = 1, $count = count($parts); $i + 1 < $count; $i += 2) {
+            $title = trim($parts[$i]);
+            $readme['sections'][strtolower($title)] = array('title' => $title, 'text' => trim($parts[$i + 1]));
+        }
+
+        $found[$file] = $readme;
+        return $readme;
+    }
+
+    /**
+     * View details tabs: the readme's sections (Description, Installation,
+     * FAQ, Screenshots, Changelog, then Other Notes for the rest), or the
+     * header's description when there is no readme. Core filters the HTML
+     * again (wp_kses() with its own tags) before showing it.
+     *
+     * @param string     $file      Plugin file.
+     * @param string     $installed Installed version.
+     * @param array      $data      Plugin header data.
+     * @param array      $readme    readme().
+     * @param array|null $release   GitHub release.
+     * @return array<string,string> Tab => HTML.
+     */
+    private static function sections($file, $installed, array $data, array $readme, $release) {
+        $sections = array();
+        $other    = '';
+        foreach ($readme['sections'] as $name => $section) {
+            $tab = array_key_exists($name, self::SECTIONS) ? self::SECTIONS[$name] : 'other_notes';
+            if ('changelog' === $tab) {
+                // Filled in below; this keeps the readme's order.
+                $sections['changelog'] = '';
+            }
+            if ('' === $tab || 'changelog' === $tab) {
+                continue;
+            }
+            $html = 'screenshots' === $tab ? self::screenshots_html($file, $section['text']) : self::text_html($section['text']);
+            if ('' === $html) {
+                continue;
+            }
+            if ('other_notes' === $tab) {
+                $other .= '<h3>' . esc_html($section['title']) . '</h3>' . $html;
+            } else {
+                $sections[$tab] = (isset($sections[$tab]) ? $sections[$tab] : '') . $html;
+            }
+        }
+        if (!isset($sections['description'])) {
+            $description = isset($data['Description']) ? wp_strip_all_tags($data['Description']) : '';
+            $sections    = array('description' => wpautop(esc_html($description))) + $sections;
+        }
+
+        $changelog = self::changelog_html($installed, $release, isset($readme['sections']['changelog']) ? $readme['sections']['changelog']['text'] : '');
+        if ('' !== $changelog) {
+            $sections['changelog'] = $changelog;
+        } else {
+            unset($sections['changelog']);
+        }
+        if ('' !== $other) {
+            $sections['other_notes'] = $other;
+        }
+
+        // Links leave the View details window instead of loading inside it.
+        return array_map(function ($html) {
+            return links_add_target($html, '_blank');
+        }, $sections);
+    }
+
+    /**
+     * Changelog tab: the newer release (its notes from GitHub, when there
+     * are any, and a link to them), then the installed readme's changelog.
+     * Without a readme changelog, the latest release as before.
+     *
+     * @param string     $installed Installed version.
+     * @param array|null $release   GitHub release.
+     * @param string     $text      readme.txt changelog.
+     * @return string HTML.
+     */
+    private static function changelog_html($installed, $release, $text) {
+        $readme = self::text_html($text);
+        $html   = '';
+        if ($release && ('' === $readme || version_compare($release['version'], $installed, '>'))) {
+            $html = '<h4>' . esc_html($release['version']) . '</h4>'
+                . self::text_html($release['notes'])
+                . sprintf('<p><a href="%1$s">%2$s</a></p>', esc_url($release['url']), esc_html__('Release notes on GitHub', 'wp-plugin-starter-template'));
+        }
+        return $html . $readme;
+    }
+
+    /**
+     * Screenshots tab: each readme caption ("1. The settings screen") with
+     * its screenshot-N file from the plugin's own folder (IMAGE_FOLDERS), in
+     * the markup core styles. Captions without a file are left out.
+     *
+     * @param string $file     Plugin file.
+     * @param string $captions readme.txt Screenshots section.
+     * @return string HTML, or '' when no screenshot is shipped.
+     */
+    private static function screenshots_html($file, $captions) {
+        if (!preg_match_all('/^[ \t]*(\d+)\.[ \t]+(.+?)[ \t]*$/m', $captions, $rows, PREG_SET_ORDER)) {
+            return '';
+        }
+        $html = '';
+        foreach ($rows as $row) {
+            $names = array();
+            foreach (self::SCREENSHOT_TYPES as $type) {
+                $names[] = 'screenshot-' . (int) $row[1] . '.' . $type;
+            }
+            $found = self::images($file, array('shot' => $names));
+            if (empty($found['shot'])) {
+                continue;
+            }
+            $html .= sprintf(
+                '<li><a href="%1$s"><img src="%1$s" alt="%2$s" /></a><p>%3$s</p></li>',
+                // With a scheme: core's wp_kses() drops //host:port addresses.
+                esc_url(set_url_scheme($found['shot'])),
+                esc_attr(str_replace(array('**', '`'), '', $row[2])),
+                self::inline_html($row[2])
+            );
+        }
+        return '' === $html ? '' : '<ol>' . $html . '</ol>';
     }
 
     /**
@@ -880,41 +1071,74 @@ final class WPAllStars_GitHub_Updater {
     }
 
     /**
-     * Release notes (Markdown) as simple HTML: headings, lists, paragraphs,
-     * bold and code. Everything is escaped first.
+     * readme.txt text or release notes (Markdown) as simple HTML: headings
+     * ("= Heading =" and "# Heading"), lists, paragraphs, bold, italics,
+     * code and http(s) links. Everything is escaped first.
      *
-     * @param string $markdown Release notes.
-     * @return string
+     * @param string $text readme.txt section or release notes.
+     * @return string HTML.
      */
-    private static function notes_html($markdown) {
+    private static function text_html($text) {
         $html = '';
-        $list = false;
-        foreach (preg_split('/\r\n|\r|\n/', (string) $markdown) ?: array() as $line) {
-            $line = rtrim($line);
-            $text = esc_html(ltrim(preg_replace('/^(#{1,6}|[-*+])\s+/', '', trim($line))));
-            $text = preg_replace('/\*\*(.+?)\*\*/', '<strong>$1</strong>', $text);
-            $text = preg_replace('/`([^`]+)`/', '<code>$1</code>', $text);
-            $item = (bool) preg_match('/^\s*[-*+]\s+/', $line);
-            if ($list && !$item) {
-                $html .= '</ul>';
-                $list  = false;
+        $list = '';
+        $para = array();
+        foreach (explode("\n", str_replace(array("\r\n", "\r"), "\n", (string) $text)) as $line) {
+            $trim = trim($line);
+            $kind = 'p';
+            $body = $trim;
+            if ('' === $trim) {
+                $kind = '';
+            } elseif (preg_match('/^(?:=+[ \t]*(.+?)[ \t]*=+|#{1,6}[ \t]+(.+))$/', $trim, $match)) {
+                $kind = 'h';
+                // A "# Heading" fills group 2; "= Heading =" only group 1.
+                $body = isset($match[2]) ? $match[2] : $match[1];
+            } elseif (preg_match('/^(?:([-*+])|\d+\.)[ \t]+(.+)$/', $trim, $match)) {
+                $kind = '' === $match[1] ? 'ol' : 'ul';
+                $body = $match[2];
             }
-            if ('' === trim($line)) {
-                continue;
+
+            if ('p' !== $kind && $para) {
+                $html .= '<p>' . self::inline_html(implode(' ', $para)) . '</p>';
+                $para  = array();
             }
-            if ($item) {
-                if (!$list) {
-                    $html .= '<ul>';
-                    $list  = true;
+            if ('' !== $list && $kind !== $list) {
+                $html .= '</' . $list . '>';
+                $list  = '';
+            }
+            if ('p' === $kind) {
+                $para[] = $body;
+            } elseif ('h' === $kind) {
+                $html .= '<h4>' . self::inline_html($body) . '</h4>';
+            } elseif ('' !== $kind) {
+                if ('' === $list) {
+                    $html .= '<' . $kind . '>';
+                    $list  = $kind;
                 }
-                $html .= '<li>' . $text . '</li>';
-            } elseif (preg_match('/^#{1,6}\s/', $line)) {
-                $html .= '<h4>' . $text . '</h4>';
-            } else {
-                $html .= '<p>' . $text . '</p>';
+                $html .= '<li>' . self::inline_html($body) . '</li>';
             }
         }
-        return $html . ($list ? '</ul>' : '');
+        if ($para) {
+            $html .= '<p>' . self::inline_html(implode(' ', $para)) . '</p>';
+        }
+        return $html . ('' !== $list ? '</' . $list . '>' : '');
+    }
+
+    /**
+     * Inline readme and Markdown text as HTML: bold, italics, code and
+     * [text](https://…) links. Everything is escaped first.
+     *
+     * @param string $text Text.
+     * @return string HTML.
+     */
+    private static function inline_html($text) {
+        $text = esc_html($text);
+        $text = (string) preg_replace('/`([^`]+)`/', '<code>$1</code>', $text);
+        $text = (string) preg_replace('/\*\*(.+?)\*\*/', '<strong>$1</strong>', $text);
+        $text = (string) preg_replace('/(?<![*\w])\*(?!\s)(.+?)(?<!\s)\*(?![*\w])/', '<em>$1</em>', $text);
+        return (string) preg_replace_callback('/\[([^\]]+)\]\((https?:\/\/[^)\s]+)\)/i', function ($match) {
+            $url = esc_url(html_entity_decode($match[2], ENT_QUOTES), array('http', 'https'));
+            return '' === $url ? $match[1] : sprintf('<a href="%1$s">%2$s</a>', $url, $match[1]);
+        }, $text);
     }
 
     /**

@@ -24,7 +24,7 @@ WP Plugin Starter is what wpallstars plugins are made from. It has no features o
 
 If this saves you time, headaches and costs, feel free to [buy me a coffee](https://buymeacoffee.com/marcusquinn), or whatever you like, to invest in making more things open-source.
 
-Version: 1.0.26
+Version: 1.0.27
 
 <!-- github-only:start -->
 ## Screenshots
@@ -128,6 +128,11 @@ Read a setting with `WPStarter_Settings::get( 'key' )`.
 Deleting the plugin removes its settings, its cached data, who hid lines of the Plugins screen notice about replaced plugins, and the cached GitHub releases.
 
 ## Changelog
+
+### 1.0.27
+
+- New: **View details** for plugins updated from GitHub shows what WordPress.org would. The shared updater (version 1.3.0) reads the installed `readme.txt`: the Description, Installation, FAQ, Screenshots and Changelog tabs (Other Notes for other sections), Compatible up to and the donate link, with the author linked to `Author URI`. The Changelog tab starts with a newer release's notes from GitHub, when there are any, then the readme's changelog. "Tested up to: 7.1" counts for every 7.1.x, as on WordPress.org, so the Updates screen shows the author's compatibility instead of "Not tested". Nothing more is fetched from GitHub.
+- Developers: `scripts/build-banner.sh` also writes `admin/images/screenshot-N.webp` (about 25 to 75 KB each) from `.wordpress-org/screenshot-N.png` for View details; `scripts/build-release.sh` leaves them out of the WordPress.org build, and `scripts/preflight-release.sh` warns when one is missing and errors if the WordPress.org zip has one. `STANDARDS.md` → Structure and Updates from GitHub say so.
 
 ### 1.0.26
 

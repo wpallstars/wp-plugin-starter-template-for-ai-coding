@@ -476,6 +476,20 @@ check_wporg_assets() {
 	else
 		err "screenshot files ($(number_list "$numbers")) and readme.txt Screenshots captions ($(number_list "$captions")) do not match: one caption per .wordpress-org/screenshot-N file; GitHub-only pictures go in docs/images/"
 	fi
+
+	# The shipped copies the GitHub updater shows in View details.
+	local shipped missing number
+	shipped="$(git ls-tree --name-only "$sha" admin/images/ | sed -nE 's|^admin/images/screenshot-([0-9]+)\.webp$|\1|p' | sort -n)"
+	missing=""
+	while IFS= read -r number; do
+		[[ -n "$number" ]] || continue
+		grep -qxF "$number" <<<"$shipped" || missing="$missing$number"$'\n'
+	done <<<"$numbers"
+	if [[ -n "$missing" ]]; then
+		warn "no admin/images/screenshot-N.webp for $(number_list "$missing"); View details for GitHub updates has no Screenshots tab (scripts/build-banner.sh builds them)"
+	elif [[ "$count" -gt 0 ]]; then
+		ok "admin/images/screenshot-N.webp (View details screenshots)"
+	fi
 	return 0
 }
 
@@ -640,6 +654,11 @@ check_builds() {
 	local wporg_dir="$UNPACKED"
 	check_updater_files "$wporg_dir" "wporg" "absent"
 	if grep -Eq "^[[:space:]*]*($UPDATER_HEADERS):" "$wporg_dir/$MAIN_FILE"; then err "wporg: GitHub updater header lines still in $MAIN_FILE"; else ok "wporg: no GitHub updater header lines"; fi
+	if compgen -G "$wporg_dir/admin/images/screenshot-*" >/dev/null; then
+		err "wporg: admin/images/screenshot-* in the WordPress.org build (only the GitHub updater shows them)"
+	elif compgen -G "$github_dir/admin/images/screenshot-*" >/dev/null; then
+		ok "wporg: no admin/images/screenshot-* (GitHub build only)"
+	fi
 	local text escaped left=""
 	if [[ -n "$WPORG_LINK_TEXTS" ]]; then
 		while IFS= read -r text; do
@@ -672,6 +691,27 @@ check_builds() {
 		warn "wporg: check these install or update code (guideline 8 allows only WordPress.org sources): $(printf '%s' "$hits" | tr '\n' ' ')"
 	fi
 
+	check_remote_assets "$wporg_dir"
+
+	# Checks for parts only some plugins have; each runs when its files exist.
+	# A plugin's own checks: scripts/preflight-plugin.sh defines plugin_preflight,
+	# which gets the unpacked GitHub build and can use section, ok, warn and err.
+	if [[ -f "$SCRIPT_DIR/preflight-plugin.sh" ]]; then
+		# shellcheck source=/dev/null
+		. "$SCRIPT_DIR/preflight-plugin.sh"
+		plugin_preflight "$github_dir"
+	fi
+	if [[ -f "$SCRIPT_DIR/replaced-plugins.php" ]]; then
+		check_replaced_count "$github_dir"
+	fi
+	return 0
+}
+
+# Scripts and styles from other sites, and hosts in code that readme.txt
+# does not name (guideline 8), in the unpacked WordPress.org build.
+check_remote_assets() {
+	local wporg_dir="$1"
+	local hits
 	section "Remote assets and services (WordPress.org build)"
 	hits="$(grep -rEn "(wp_(enqueue|register)_(script|style)|<script|<link)[^;]*['\"](https?:)?//" "$wporg_dir" --include='*.php' 2>/dev/null | sed "s|^$wporg_dir/||" | cut -c1-160 || true)"
 	if [[ -z "$hits" ]]; then ok "no scripts or styles loaded from other sites"; else warn "scripts or styles from other sites (guideline 8: ship them in the plugin unless they are part of a service):"; printf '%s\n' "$hits" | indent; fi
@@ -689,18 +729,6 @@ check_builds() {
 		ok "every host in includes/ and blocks/ is named in readme.txt"
 	else
 		note "hosts in code not named in readme.txt (fine if they are only links; services the plugin contacts need an External services entry):$missing"
-	fi
-
-	# Checks for parts only some plugins have; each runs when its files exist.
-	# A plugin's own checks: scripts/preflight-plugin.sh defines plugin_preflight,
-	# which gets the unpacked GitHub build and can use section, ok, warn and err.
-	if [[ -f "$SCRIPT_DIR/preflight-plugin.sh" ]]; then
-		# shellcheck source=/dev/null
-		. "$SCRIPT_DIR/preflight-plugin.sh"
-		plugin_preflight "$github_dir"
-	fi
-	if [[ -f "$SCRIPT_DIR/replaced-plugins.php" ]]; then
-		check_replaced_count "$github_dir"
 	fi
 	return 0
 }
