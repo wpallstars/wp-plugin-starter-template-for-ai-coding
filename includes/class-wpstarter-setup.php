@@ -56,6 +56,13 @@ final class WPStarter_Setup {
     const RENAMED_TABS = array();
 
     /**
+     * Slug of the plugin's own top-level menu (add_menu_page()), when it
+     * has one: the settings screen is then Settings, the last item in that
+     * menu, and not in WordPress's Settings menu. Empty: Settings → WP Plugin Starter.
+     */
+    const MENU_PARENT = '';
+
+    /**
      * Links in the settings screen header; leave one out for no button.
      *
      * - source:  the plugin's code (its GitHub repository)

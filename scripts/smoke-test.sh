@@ -19,7 +19,8 @@
 #
 # Fails on any PHP error, warning, notice or deprecation in debug.log (from
 # the pages loaded, WP-CLI and cron), a page that fails to load (HTTP 500 or
-# WordPress's critical error page), a full table or index scan, or a sort,
+# WordPress's critical error page; for admin pages, any 4xx too, so the
+# plugin's own screens must open), a full table or index scan, or a sort,
 # over 1000 rows or more in the plugin's own queries (EXPLAIN, see
 # scripts/smoke-queries.php), or settings, cron events or database tables
 # ({prefix}_*) left after uninstalling. Lists each request's query count and
@@ -50,6 +51,8 @@ DB_PASSWORD=""
 ADMIN_PASSWORD=""
 FAILED=0
 POSTS=10000
+# The plugin's own admin screens (find_plugin_pages).
+PLUGIN_PAGES=()
 # Options (parse_args).
 REF="HEAD"
 ZIP=""
@@ -181,8 +184,26 @@ fetch() {
 		fail "$status $who $path: critical error page"
 	elif [[ "$status" -ge 500 ]]; then
 		fail "$status $who $path"
+	elif [[ "$who" = "admin" && "$status" -ge 400 ]]; then
+		# Every admin page listed opens for an administrator.
+		fail "$status $who $path"
 	else
 		printf '  %s %s %s\n' "$status" "$who" "$path"
+	fi
+	return 0
+}
+
+# Sets PLUGIN_PAGES, the plugin's own admin screens: the settings screen, and
+# the plugin's top-level menu page when {Prefix}_Setup::MENU_PARENT names one
+# (the settings screen is then in that menu).
+find_plugin_pages() {
+	local parent
+	# shellcheck disable=SC2016 # PHP code: its $variables are PHP's, not the shell's.
+	parent="$(wp_cli eval '$c = "'"$PLUGIN_PACKAGE"'_Setup::MENU_PARENT"; echo defined($c) ? (string) constant($c) : "";')" || return 1
+	if [[ -n "$parent" ]]; then
+		PLUGIN_PAGES=("/wp-admin/admin.php?page=$parent" "/wp-admin/admin.php?page=$SLUG")
+	else
+		PLUGIN_PAGES=("/wp-admin/options-general.php?page=$SLUG")
 	fi
 	return 0
 }
@@ -194,7 +215,7 @@ load_pages() {
 		'/wp-json/' '/wp-json/wp/v2/posts' '/wp-sitemap.xml' '/no-such-page/' '/wp-login.php'
 	)
 	local admin_pages=(
-		'/' '/hello-world/' '/wp-admin/' '/wp-admin/plugins.php' "/wp-admin/options-general.php?page=$SLUG"
+		'/' '/hello-world/' '/wp-admin/' '/wp-admin/plugins.php' "${PLUGIN_PAGES[@]}"
 		'/wp-admin/edit.php' '/wp-admin/edit.php?post_type=page' '/wp-admin/post-new.php'
 		'/wp-admin/post.php?post=1&action=edit' '/wp-admin/upload.php' '/wp-admin/edit-comments.php'
 		'/wp-admin/themes.php' '/wp-admin/users.php' '/wp-admin/profile.php' '/wp-admin/tools.php'
@@ -415,6 +436,7 @@ main() {
 	printf '\nInstalling %s\n' "$(basename "$zip")"
 	wp_cli plugin install "/zips/$SLUG.zip" --activate --quiet || die "could not install and activate the plugin"
 	log_in
+	find_plugin_pages || die "could not tell where the plugin's admin screens are"
 	wp_cli eval 'wpallstars_smoke_reset();' || die "could not reset the query log"
 
 	printf '\nDefault settings:\n'
