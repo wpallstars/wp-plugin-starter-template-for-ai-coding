@@ -131,6 +131,7 @@ Deleting the plugin removes its settings, its cached data, who hid lines of the 
 
 ### Unreleased
 
+- Developers: `scripts/rename-plugin.sh` now resets `LAUNCH.md` to the new plugin's private pre-launch state, with no release or WordPress.org submission yet.
 - Developers: Git ignores the files AI tools make in each checkout (`.clinerules`, `.cursorrules`, `.windsurfrules`, `MODELS.md`), so they no longer reach release zips, where Plugin Check fails hidden files. `scripts/plugin-check.sh` also expects `missing_direct_file_access_protection` in GitHub-only files (`.distignore-wporg`) in the GitHub zip: such a file may be an endpoint requested directly; WordPress.org never gets it.
 
 ### 1.0.27
