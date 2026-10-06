@@ -184,7 +184,7 @@ adds docs as it grows.
     there with the plugin's case, then comes back with
     `scripts/sync-core.sh`. Only the plugin's own files (`{Prefix}_Setup`,
     features, `phpstan-plugin.neon`, `scripts/preflight-plugin.sh`,
-    `AGENTS.md`, `docs/`) take changes for this plugin alone.
+    `AGENTS.md`, `LAUNCH.md`, `docs/`) take changes for this plugin alone.
   - Steps that need the owner's accounts or make secrets (SonarCloud,
     Codacy, `SYNC_PAT`: `DEVELOPMENT.md` → Services setup) are listed for
     the owner, not done by an agent.
