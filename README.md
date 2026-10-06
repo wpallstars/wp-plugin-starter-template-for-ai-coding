@@ -98,7 +98,7 @@ Mark test builds as pre-releases on GitHub (or tag them with letters, such as `v
 
 ## Developers
 
-A feature is a class in `includes/features/class-wpstarter-{name}.php` that extends `WPStarter_Feature`, listed in `WPStarter_Setup::FEATURES`. It declares its settings in `settings()`, adds its hooks in `boot()` (returning early unless `self::enabled()`), and can import another plugin’s settings once in `migrate()` with `self::import_setting()`. Anything only this plugin needs goes in `WPStarter_Setup` (`includes/class-wpstarter-setup.php`): features, settings tabs, header links, settings version and its own helpers. The other files in `includes/` and `admin/` are the starter’s core files: `STANDARDS.md` → Structure.
+A feature is a class in `includes/features/class-wpstarter-{name}.php` that extends `WPStarter_Feature`, listed in `WPStarter_Setup::FEATURES`. It declares its settings in `settings()`, adds its hooks in `boot()` (returning early unless `self::enabled()`), and can import another plugin’s settings once in `migrate()` with `self::import_setting()`. Anything only this plugin needs goes in `WPStarter_Setup` (`includes/class-wpstarter-setup.php`): features, settings tabs, header links, settings version, `MENU_PARENT` (its own top-level menu, if any, which then holds the settings screen as **Settings**) and its own helpers. Link to the settings screen with `WPStarter_Admin_Manager::page_url()` or `tab_url()`. The other files in `includes/` and `admin/` are the starter’s core files: `STANDARDS.md` → Structure.
 
 Filters:
 
@@ -131,6 +131,7 @@ Deleting the plugin removes its settings, its cached data, who hid lines of the 
 
 ### Unreleased
 
+- Developers: a plugin with its own top-level menu sets `WPStarter_Setup::MENU_PARENT` to that menu's slug, and its settings screen becomes **Settings**, the last item in that menu, instead of a second entry under WordPress's Settings. Its links (`WPStarter_Admin_Manager::page_url()`, `tab_url()`, the Plugins screen's Settings link, search) follow it, and an old `options-general.php?page=…` address redirects there. `WPStarter_Admin_Manager::hook()` gives the screen's hook suffix wherever it is; `HOOK` stays the one under Settings. Nothing changes for plugins that leave `MENU_PARENT` empty, or whose Setup does not have it. `scripts/smoke-test.sh` loads the plugin's top-level menu page too, and fails when one of its admin pages answers 4xx; `scripts/update-test.sh` opens the settings screen where it is.
 - Developers: Git ignores the files AI tools make in each checkout (`.clinerules`, `.cursorrules`, `.windsurfrules`, `MODELS.md`), so they no longer reach release zips, where Plugin Check fails hidden files. `scripts/plugin-check.sh` also expects `missing_direct_file_access_protection` in GitHub-only files (`.distignore-wporg`) in the GitHub zip: such a file may be an endpoint requested directly; WordPress.org never gets it.
 
 ### 1.0.27

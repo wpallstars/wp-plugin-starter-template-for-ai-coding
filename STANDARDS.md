@@ -107,6 +107,9 @@ How changes are made and checked: `DEVELOPMENT.md`. Releases: `RELEASING.md`.
   screenshot copies ship, and that each `screenshot-N` has a caption.
   The `Version: X.Y.Z` line under the intro holds the version itself (GitHub
   shows it as written) and changes with every release (`RELEASING.md`).
+- Settings → {Name} is the settings screen; with its own top-level menu, a plugin names it in `{Prefix}_Setup::MENU_PARENT`
+  and the screen is **Settings**, last in that menu (not also under Settings). Link to it with
+  `{Prefix}_Admin_Manager::page_url()` or `tab_url()`, never a fixed `options-general.php` address.
 - The settings screen's header links come from `{Prefix}_Setup::header_links()`:
   `source` (the GitHub repository, **Source code**), `support` (its issues,
   **Support**) and `donate` (**Buy me a coffee**); leave one out for no
@@ -169,8 +172,7 @@ adds docs as it grows.
 - `AGENTS.md` holds the plugin's names (the placeholder table), the rules
   for this plugin that apply to any change (a line or two each, such as
   features the owner asked to be on), and one line for each doc saying when
-  to read it. Near the top it tells agents to read this file before any
-  change.
+  to read it. Near the top it tells agents to read this file before any change.
 - Agents keep the plugin at the starter's standard; the starter is where
   the standard is set, not the plugin's copy of it:
   - Before work, look for an open `starter-sync` issue. If one is open,
@@ -216,8 +218,7 @@ adds docs as it grows.
   `PluginCheck.Security.DirectDB.UnescapedDBParameter` otherwise.
 - A notice shown once after an action, read from a query argument
   (`?{prefix}_done=…`), adds that argument to `removable_query_args`, so
-  WordPress takes it out of the address and a reload does not show the
-  notice again.
+  WordPress takes it out of the address and a reload does not show the notice again.
 - Prefix everything global with `{prefix}_`, `{Prefix}_` or `{PREFIX}_`. The
   shared GitHub updater is the one exception: its `wpallstars_` names are the
   same in every plugin, so that one copy can stand in for the others.
@@ -234,8 +235,7 @@ adds docs as it grows.
   needed (cache answers, never on every page load), and never block a
   visitor's page when they can run later. Features that rein in other
   plugins hand the choice to the owner instead of deciding for them.
-  WordPress update checks and downloads are the exception: leave them alone
-  (next rule).
+  WordPress update checks and downloads are the exception: leave them alone (next rule).
 - Do not change WordPress update behaviour (update transients, `auto_update_*`
   filters, update checks) outside the shared GitHub updater. Plugin Check
   reports `plugin_updater_detected` as an error, and WordPress.org asks plugins

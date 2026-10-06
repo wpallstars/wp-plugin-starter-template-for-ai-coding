@@ -340,7 +340,12 @@ check_update() {
 	expect "$(wp_cli plugin get "$SLUG" --field=status)" "active" "status after the update"
 	offer="$(update_offer)" || offer="error"
 	expect "$offer" "none" "update offered after updating"
-	status="$(admin_page "/wp-admin/options-general.php?page=$SLUG")"
+	# Settings → {Name}, or Settings in the plugin's own menu when
+	# {Prefix}_Setup::MENU_PARENT names one.
+	local screen
+	# shellcheck disable=SC2016 # PHP code: its $variables are PHP's, not the shell's.
+	screen="$(wp_cli eval '$c = "'"$PLUGIN_PACKAGE"'_Setup::MENU_PARENT"; echo defined($c) && constant($c) ? "admin.php" : "options-general.php";')" || screen="options-general.php"
+	status="$(admin_page "/wp-admin/$screen?page=$SLUG")"
 	if [[ "$status" == "200" ]] && ! grep -q 'There has been a critical error' "$TMP_DIR/page"; then
 		ok "settings screen loads"
 	else
