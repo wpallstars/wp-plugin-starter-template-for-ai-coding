@@ -133,6 +133,7 @@ Deleting the plugin removes its settings, its cached data, who hid lines of the 
 
 - Developers: `scripts/smoke-test.sh` lists the plugin's own database tables (`{$wpdb->prefix}{prefix}_*`) before uninstalling and fails if any is left afterwards, as it already did for options and cron events.
 - Developers: support for plugins with a JavaScript build. Sources in `packages/` and `package.json`, `package-lock.json` and build tool configuration stay out of release zips (`.distignore`, `.gitattributes`; the preflight fails if one gets in); built files in `assets/build/` are committed and ship. `scripts/lint.sh build` runs the plugin's npm `check` script, then a fresh build, and fails if `assets/build/` differs; CI runs it when `package-lock.json` exists; packages' install scripts never run. `package-lock.json` is no longer ignored by Git. `DEVELOPMENT.md` → JavaScript builds has the rules. Nothing changes for plugins without a build.
+- Developers: Git ignores the files AI tools make in each checkout (`.clinerules`, `.cursorrules`, `.windsurfrules`, `MODELS.md`), so they no longer reach release zips, where Plugin Check fails hidden files. `scripts/plugin-check.sh` also expects `missing_direct_file_access_protection` in GitHub-only files (`.distignore-wporg`) in the GitHub zip: such a file may be an endpoint requested directly; WordPress.org never gets it.
 
 ### 1.0.27
 

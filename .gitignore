@@ -70,5 +70,12 @@ wp-content/uploads/
 # aidevops runtime state
 .agents/loop-state/
 
+# Made by AI tools in each checkout (pointers to AGENTS.md, model lists);
+# AGENTS.md is the source. Hidden files in a zip fail Plugin Check.
+.clinerules
+.cursorrules
+.windsurfrules
+MODELS.md
+
 # Release builds (scripts/build-release.sh)
 /dist/

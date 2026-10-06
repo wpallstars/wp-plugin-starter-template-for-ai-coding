@@ -38,6 +38,10 @@ Plugin Check reports the GitHub updater as an updater
 raw.githubusercontent.com address) and its shared `wpallstars_` names as
 unprefixed, in the GitHub zip; `scripts/plugin-check.sh` lists those as
 expected there and fails on the updater findings in the WordPress.org zip.
+A file a plugin lists in `.distignore-wporg` because WordPress.org must not
+get it (such as an endpoint requested directly, without WordPress) may lack
+the `ABSPATH` guard: `missing_direct_file_access_protection` in it is
+expected in the GitHub zip too.
 
 ## GitHub release
 
