@@ -129,6 +129,10 @@ Deleting the plugin removes its settings, its cached data, who hid lines of the 
 
 ## Changelog
 
+### Unreleased
+
+- Developers: support for plugins with a JavaScript build. Sources in `packages/` and `package.json`, `package-lock.json` and build tool configuration stay out of release zips (`.distignore`, `.gitattributes`; the preflight fails if one gets in); built files in `assets/build/` are committed and ship. `scripts/lint.sh build` runs the plugin's npm `check` script, then a fresh build, and fails if `assets/build/` differs; CI runs it when `package-lock.json` exists; packages' install scripts never run. `package-lock.json` is no longer ignored by Git. `DEVELOPMENT.md` → JavaScript builds has the rules. Nothing changes for plugins without a build.
+
 ### 1.0.27
 
 - New: **View details** for plugins updated from GitHub shows what WordPress.org would. The shared updater (version 1.3.0) reads the installed `readme.txt`: the Description, Installation, FAQ, Screenshots and Changelog tabs (Other Notes for other sections), Compatible up to and the donate link, with the author linked to `Author URI`. The Changelog tab starts with a newer release's notes from GitHub, when there are any, then the readme's changelog. "Tested up to: 7.1" counts for every 7.1.x, as on WordPress.org, so the Updates screen shows the author's compatibility instead of "Not tested". Nothing more is fetched from GitHub.

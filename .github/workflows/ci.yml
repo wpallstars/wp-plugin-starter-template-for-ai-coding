@@ -61,6 +61,18 @@ jobs:
       - name: PHP syntax (7.4), JavaScript syntax, ShellCheck, PHPCS, PHPStan
         run: scripts/lint.sh php js shell phpcs phpstan
 
+      # Plugins with a JavaScript build only (DEVELOPMENT.md → JavaScript
+      # builds): types and lint, then a fresh build must match assets/build/.
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        if: hashFiles('package-lock.json') != ''
+        with:
+          node-version: lts/*
+          cache: npm
+
+      - name: JavaScript build
+        if: hashFiles('package-lock.json') != ''
+        run: scripts/lint.sh build
+
       - name: actionlint
         run: docker run --rm -v "$PWD:/repo" --workdir /repo rhysd/actionlint:1.7.12 -color
 

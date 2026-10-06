@@ -53,8 +53,8 @@ the branch you run it from is missing or has commits that are not pushed.
 
 ## Set up
 
-Needs PHP 7.4 or later, Composer 2, Node.js (syntax checks only),
-ShellCheck and Docker (release checks, smoke test and update test), and
+Needs PHP 7.4 or later, Composer 2, Node.js (syntax checks, and the build
+in plugins that have one: JavaScript builds below), ShellCheck and Docker (release checks, smoke test and update test), and
 the GitHub CLI `gh` for releases. actionlint is optional locally; CI runs
 it.
 
@@ -87,11 +87,12 @@ Every pull request and every push to `main` runs these in GitHub Actions
 | Workflows | `scripts/lint.sh workflows` | actionlint findings in `.github/workflows/`. |
 | Coding standards | `scripts/lint.sh phpcs` | WordPress Coding Standards: escaping, sanitising, nonces, prepared SQL, i18n, PHP 7.4 and WordPress 6.2 compatibility; slow and unlimited queries, `ORDER BY RAND()`, short cache times and long remote timeouts (`phpcs.xml.dist`). |
 | Static analysis | `scripts/lint.sh phpstan` | Unknown functions, classes and methods, wrong argument counts and types, dead code, `false` and `null` results used as values (PHPStan level 7 without the `missingType.*` checks, `phpstan.neon.dist`). |
+| JavaScript build | `scripts/lint.sh build` | Plugins with a build only: the `check` script's findings (types, lint), and built files in `assets/build/` that differ from a fresh build. |
 | Release build | `scripts/preflight-release.sh --offline` | Versions, headers, `readme.txt`, presets (where the plugin has them) and the contents of both zips. |
 | Plugin Check | `scripts/plugin-check.sh` | The WordPress.org review tool, on both zips. |
 | Smoke test | `scripts/smoke-test.sh --wp 6.2 --php 7.4` and `scripts/smoke-test.sh` | Installs the GitHub zip on a site with 10,000 posts, loads the site and admin screens with default settings and with every feature on, runs cron, uninstalls. Lists each page's queries. Fails on any PHP message, a failed page, a full table scan or large sort in the plugin's own queries, or leftover options. |
 
-`scripts/lint.sh` with no arguments runs the first six.
+`scripts/lint.sh` with no arguments runs the first seven.
 
 The scripts work out which plugin they are in from its main file
 (`scripts/lib/plugin.sh`): the PHP file at the top of the repository with a
@@ -136,6 +137,38 @@ identifier, the file and the reason: in `phpstan.neon.dist` for the files
 every plugin made from the starter shares, in `phpstan-plugin.neon` for the
 plugin's own files and extra paths. Never put findings in the baseline to
 get a change through.
+
+### JavaScript builds
+
+Most plugins need none: plain JavaScript and CSS in `assets/` ship as
+written. A plugin whose admin screens or front-end script need a build
+(TypeScript, React with WordPress's packages, bundling) follows these rules,
+so release zips stay buildless and the shared scripts work unchanged:
+
+- Sources live in `packages/` (one folder per package; npm workspaces when
+  there are several), with `package.json`, `package-lock.json` and the tool
+  configuration at the top of the repository. None of them ship
+  (`.distignore`; the preflight fails if one gets in).
+- `npm run build` writes everything that ships to `assets/build/`, and the
+  built files are committed with the source change that made them: release
+  zips and the preview site are made from Git without a build step.
+  `.gitattributes` marks them as generated, so GitHub folds them in diffs.
+- Scripts made with `@wordpress/scripts` come with a `*.asset.php` file
+  listing their WordPress dependencies and version; register them with it
+  rather than by hand. Use WordPress's own React and components (externals),
+  never a second copy.
+- An optional `npm run check` runs the type check and linters.
+- `scripts/lint.sh build` runs `check`, then the build, and fails if
+  `assets/build/` changed, so a stale or hand-edited build never merges.
+  CI runs it when `package-lock.json` exists. Locally it installs only when
+  `node_modules/` is missing; run `npm ci --ignore-scripts` after a
+  dependency change. Packages' install scripts never run (a supply-chain
+  risk); a package that needs one is set up by the plugin's `build` script
+  (`npm rebuild <name>`).
+- Dependabot does not update npm packages (`.github/` is a core file, and
+  the starter has no `package.json`); Socket still checks them. Run
+  `npm outdated` and update in a pull request of its own, at least before
+  each release.
 
 ### Secrets in history
 

@@ -15,3 +15,8 @@
 /TESTING.md        export-ignore
 /docs              export-ignore
 /scripts           export-ignore
+/packages          export-ignore
+
+# Built JavaScript and CSS (DEVELOPMENT.md → JavaScript builds): shipped, but
+# made by the build, so GitHub folds them in diffs and language counts.
+/assets/build/**   linguist-generated=true

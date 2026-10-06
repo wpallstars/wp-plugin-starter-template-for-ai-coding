@@ -39,8 +39,9 @@ $RECYCLE.BIN/
 project-documents/
 reference-plugins/
 *.bak*
+# JavaScript builds commit package-lock.json (npm ci needs it) and the built
+# files in assets/build/ (DEVELOPMENT.md → JavaScript builds).
 node_modules/
-package-lock.json
 .cache/
 vendor/
 
