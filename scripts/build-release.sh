@@ -9,12 +9,13 @@
 #       "GitHub Plugin URI", so WordPress.org never offers another plugin
 #       with the same slug in its place.
 #   wordpress-org-{slug}-X.Y.Z.zip
-#       WordPress.org build: the same, less the files in .distignore-wporg and
-#       the GitHub updater header lines, and without Update URI. Each text
-#       listed in .wporg-links (affiliate links) is replaced by its plain
-#       one. Its name is not {slug}-X.Y.Z.zip, so no updater installs it even
-#       if it is attached to a GitHub release by mistake. Never attach it to
-#       one.
+#       WordPress.org build: the same, less the files in .distignore-wporg,
+#       the screenshot copies in admin/images/ (for the GitHub updater's
+#       View details) and the GitHub updater header lines, and without
+#       Update URI. Each text listed in .wporg-links (affiliate links) is
+#       replaced by its plain one. Its name is not {slug}-X.Y.Z.zip, so no
+#       updater installs it even if it is attached to a GitHub release by
+#       mistake. Never attach it to one.
 #   SHA256SUMS
 #
 # Files come from the Git ref (git archive), never from the working tree, so
@@ -45,6 +46,8 @@ readonly WPORG_IGNORE=".distignore-wporg"
 readonly WPORG_LINKS=".wporg-links"
 # Header lines read only by GitHub updaters (ours and Git Updater); left out of the WordPress.org build.
 readonly WPORG_STRIP_HEADERS='GitHub Plugin URI|Primary Branch|Release Asset'
+# Screenshot copies for the GitHub updater's View details (rsync pattern); left out of the WordPress.org build.
+readonly WPORG_SCREENSHOTS='/admin/images/screenshot-*'
 
 TMP_DIR=""
 SLUG=""
@@ -57,7 +60,7 @@ die() {
 }
 
 usage() {
-	sed -n '2,29p' "$0" | sed 's/^# \{0,1\}//'
+	sed -n '2,30p' "$0" | sed 's/^# \{0,1\}//'
 	return 0
 }
 
@@ -253,6 +256,9 @@ main() {
 	else
 		: >"$TMP_DIR/wporg-ignore"
 	fi
+	# Screenshot copies only the GitHub updater shows (View details):
+	# WordPress.org shows its own, from the SVN assets/ folder.
+	printf '%s\n' "$WPORG_SCREENSHOTS" >>"$TMP_DIR/wporg-ignore"
 	rsync -a --exclude-from="$TMP_DIR/wporg-ignore" "$TMP_DIR/github/$SLUG/" "$TMP_DIR/wporg/$SLUG/"
 	strip_updater_headers "$TMP_DIR/wporg/$SLUG/$MAIN_FILE"
 	if git cat-file -e "$sha:$WPORG_LINKS" 2>/dev/null; then

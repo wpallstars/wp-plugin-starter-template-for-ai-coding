@@ -98,12 +98,13 @@ How changes are made and checked: `DEVELOPMENT.md`. Releases: `RELEASING.md`.
   Updates from GitHub, go in `docs/images/` with no caption in `readme.txt`.
   The other listing images are in `.wordpress-org/` too: the banner
   (`banner.svg`) and the icon (`icon.svg`, the banner's picture alone, with
-  no words), which `scripts/build-banner.sh` turns into `banner-772x250.png`,
-  `banner-1544x500.png`, `icon-128x128.png` and `icon-256x256.png`, and
-  into the shipped `admin/images/banner.svg` and `admin/images/icon.svg`,
+  no words). `scripts/build-banner.sh` turns them into `banner-772x250.png`,
+  `banner-1544x500.png`, `icon-128x128.png` and `icon-256x256.png`, and the
+  shipped `admin/images/banner.svg` and `admin/images/icon.svg`, and the
+  screenshots into `admin/images/screenshot-N.webp` (GitHub build only),
   which the GitHub updater shows on the Updates screen and in View details.
-  `scripts/preflight-release.sh` checks their sizes, that the icon ships,
-  and that each `screenshot-N` has a caption.
+  `scripts/preflight-release.sh` checks their sizes, that the icon and
+  screenshot copies ship, and that each `screenshot-N` has a caption.
   The `Version: X.Y.Z` line under the intro holds the version itself (GitHub
   shows it as written) and changes with every release (`RELEASING.md`).
 - The settings screen's header links come from `{Prefix}_Setup::header_links()`:
@@ -333,7 +334,8 @@ It replaces Git Updater.
 - It adds GitHub releases of those plugins to core's own update check and
   `plugins_api`, and leaves the download, install, auto-updates and rollback
   to core. It only adds entries for those plugins; it never removes or blocks
-  other updates. Its icon and banner are the installed plugin's own files.
+  other updates. Its icon, banner and View details (`readme.txt` and the
+  screenshots) are the installed plugin's own files.
 - It is the same in every plugin apart from its text domain and `@package`.
   Change it in the starter, raise the version in its `load.php`, and copy it
   to each plugin. Plugins change what it does only through its filters
