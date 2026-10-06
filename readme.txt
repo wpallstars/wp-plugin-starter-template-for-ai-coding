@@ -5,7 +5,7 @@ Tags: starter, boilerplate, settings, developer, template
 Requires at least: 6.2
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 1.0.26
+Stable tag: 1.0.27
 License: GPLv3 or later
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 
@@ -60,8 +60,8 @@ GitHub releases are the stable beta channel: each version comes out there first.
 
 == Changelog ==
 
-= 1.0.26 =
-* Fixed: a plugin deleted while still listed as active no longer makes a feature that replaces it wait.
+= 1.0.27 =
+* New: View details for GitHub updates shows the plugin's readme: Description, Installation, FAQ, Screenshots and Changelog, Compatible up to and the donate link.
 
 Every change: changelog.txt.
 
