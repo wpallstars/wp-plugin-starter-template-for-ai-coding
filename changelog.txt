@@ -4,6 +4,11 @@ Every change to WP Plugin Starter. readme.txt lists the latest version in short.
 
 = Unreleased =
 * Developers: scripts/smoke-test.sh lists the plugin's own database tables ({$wpdb->prefix}{prefix}_*) before uninstalling and fails if any is left afterwards, as it already did for options and cron events.
+* Developers: support for plugins with a JavaScript build. Sources in packages/ and package.json, package-lock.json and build tool configuration stay out of release zips (.distignore, .gitattributes; the preflight fails if one gets in); built files in assets/build/ are committed and ship. scripts/lint.sh build runs the plugin's npm check script, then a fresh build, and fails if assets/build/ differs; CI runs it when package-lock.json exists; packages' install scripts never run. package-lock.json is no longer ignored by Git. DEVELOPMENT.md → JavaScript builds has the rules. Nothing changes for plugins without a build.
+
+= 1.0.27 =
+* New: View details for plugins updated from GitHub shows what WordPress.org would. The shared updater (version 1.3.0) reads the installed readme.txt: the Description, Installation, FAQ, Screenshots and Changelog tabs (Other Notes for other sections), Compatible up to and the donate link, with the author linked to Author URI. The Changelog tab starts with a newer release's notes from GitHub, when there are any, then the readme's changelog. "Tested up to: 7.1" counts for every 7.1.x, as on WordPress.org, so the Updates screen shows the author's compatibility instead of "Not tested". Nothing more is fetched from GitHub.
+* Developers: scripts/build-banner.sh also writes admin/images/screenshot-N.webp (about 25 to 75 KB each) from .wordpress-org/screenshot-N.png for View details; scripts/build-release.sh leaves them out of the WordPress.org build, and scripts/preflight-release.sh warns when one is missing and errors if the WordPress.org zip has one. STANDARDS.md → Structure and Updates from GitHub say so.
 
 = 1.0.26 =
 * Fixed: a plugin deleted while still listed as active no longer makes a feature that replaces it wait. The base feature checks that each site or network-wide plugin has a valid path and its file still exists; installed plugins skipped on a request still count as active.

@@ -54,3 +54,18 @@ reference-plugins
 project-documents
 node_modules
 /vendor
+# JavaScript build sources and tools; only the built files in assets/build/
+# ship (DEVELOPMENT.md → JavaScript builds).
+/packages
+/package.json
+/package-lock.json
+/pnpm-lock.yaml
+/pnpm-workspace.yaml
+/tsconfig.json
+/tsconfig.*.json
+/webpack.config.js
+/eslint.config.js
+/eslint.config.mjs
+/.npmrc
+/.nvmrc
+/.browserslistrc

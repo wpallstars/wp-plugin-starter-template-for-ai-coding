@@ -19,10 +19,16 @@
 #       Shipped with the plugin: the shared GitHub updater shows it on the
 #       Updates screen (and admin/images/banner.svg in View details).
 #
+# And smaller copies of the screenshots, .wordpress-org/screenshot-N.png:
+#
+#   admin/images/screenshot-N.webp
+#       In the GitHub build only (scripts/build-release.sh leaves them out of
+#       the WordPress.org one): the GitHub updater's View details shows them.
+#
 # Usage: scripts/build-banner.sh
 #
 # Needs Inkscape 1.x (INKSCAPE=/path/to/inkscape to choose one) and the Zilla Slab
-# font installed (wpallstars.com's heading font).
+# font installed (wpallstars.com's heading font), and cwebp for the screenshots.
 #
 # SPDX-License-Identifier: GPL-3.0-or-later
 # SPDX-FileCopyrightText: 2026 Marcus Quinn
@@ -95,6 +101,33 @@ main() {
 		ls -l .wordpress-org/icon-256x256.png .wordpress-org/icon-128x128.png admin/images/icon.svg
 	else
 		printf 'build-banner: no %s, so no icons (WordPress.org needs them)\n' "$ICON_SOURCE" >&2
+	fi
+
+	build_screenshots
+	return 0
+}
+
+# Write admin/images/screenshot-N.webp from each .wordpress-org/screenshot-N
+# image, and remove copies whose source is gone.
+build_screenshots() {
+	local source name copy
+	local made=()
+	for copy in admin/images/screenshot-*.webp; do
+		[[ -e "$copy" ]] || continue
+		name="$(basename "$copy" .webp)"
+		if ! compgen -G ".wordpress-org/$name.*" >/dev/null; then
+			rm -f "$copy"
+		fi
+	done
+	for source in .wordpress-org/screenshot-*.png .wordpress-org/screenshot-*.jpg .wordpress-org/screenshot-*.jpeg; do
+		[[ -e "$source" ]] || continue
+		command -v cwebp >/dev/null 2>&1 || die "cwebp not found (brew install webp, or apt install webp) for $source"
+		name="$(basename "${source%.*}")"
+		cwebp -quiet -q 80 -m 6 "$source" -o "admin/images/$name.webp"
+		made+=("admin/images/$name.webp")
+	done
+	if [[ ${#made[@]} -gt 0 ]]; then
+		ls -l "${made[@]}"
 	fi
 	return 0
 }
