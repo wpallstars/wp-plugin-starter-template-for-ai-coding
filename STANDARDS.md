@@ -333,10 +333,7 @@ It replaces Git Updater.
 - It adds GitHub releases of those plugins to core's own update check and
   `plugins_api`, and leaves the download, install, auto-updates and rollback
   to core. It only adds entries for those plugins; it never removes or blocks
-  other updates.
-- Its entries carry the plugin's own icon and banner, from the installed
-  plugin's folder (`admin/images/icon.svg` and `banner.svg`; see Structure),
-  never from GitHub, so the Updates screen loads nothing from elsewhere.
+  other updates. Its icon and banner are the installed plugin's own files.
 - It is the same in every plugin apart from its text domain and `@package`.
   Change it in the starter, raise the version in its `load.php`, and copy it
   to each plugin. Plugins change what it does only through its filters
