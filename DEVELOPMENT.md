@@ -90,7 +90,7 @@ Every pull request and every push to `main` runs these in GitHub Actions
 | JavaScript build | `scripts/lint.sh build` | Plugins with a build only: the `check` script's findings (types, lint), and built files in `assets/build/` that differ from a fresh build. |
 | Release build | `scripts/preflight-release.sh --offline` | Versions, headers, `readme.txt`, presets (where the plugin has them) and the contents of both zips. |
 | Plugin Check | `scripts/plugin-check.sh` | The WordPress.org review tool, on both zips. |
-| Smoke test | `scripts/smoke-test.sh --wp 6.2 --php 7.4` and `scripts/smoke-test.sh` | Installs the GitHub zip on a site with 10,000 posts, loads the site and admin screens with default settings and with every feature on, runs cron, uninstalls. Lists each page's queries. Fails on any PHP message, a failed page, a full table scan or large sort in the plugin's own queries, or leftover options. |
+| Smoke test | `scripts/smoke-test.sh --wp 6.2 --php 7.4` and `scripts/smoke-test.sh` | Installs the GitHub zip on a site with 10,000 posts, loads the site and admin screens with default settings and with every feature on, runs cron, uninstalls. Lists each page's queries. Fails on any PHP message, a failed page, a full table scan or large sort in the plugin's own queries, or leftover options, cron events or tables (`{prefix}_*`). |
 
 `scripts/lint.sh` with no arguments runs the first seven.
 

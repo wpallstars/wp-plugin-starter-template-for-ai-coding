@@ -21,8 +21,9 @@
 # the pages loaded, WP-CLI and cron), a page that fails to load (HTTP 500 or
 # WordPress's critical error page), a full table or index scan, or a sort,
 # over 1000 rows or more in the plugin's own queries (EXPLAIN, see
-# scripts/smoke-queries.php), or settings left after uninstalling. Lists each
-# request's query count and time, and the plugin's own queries.
+# scripts/smoke-queries.php), or settings, cron events or database tables
+# ({prefix}_*) left after uninstalling. Lists each request's query count and
+# time, the plugin's own queries, and its tables before uninstalling.
 # Needs Docker, curl and internet access (WordPress is downloaded).
 #
 # SPDX-License-Identifier: GPL-3.0-or-later
@@ -230,10 +231,32 @@ switch_all_on() {
 	return $?
 }
 
+# The plugin's own database tables ({$wpdb->prefix}{prefix}_*), one per line.
+# PLUGIN_PREFIX is lower-case letters, digits and underscores (plugin.sh).
+plugin_tables() {
+	local php
+	# shellcheck disable=SC2016 # PHP variables, expanded by PHP.
+	php='global $wpdb; foreach ($wpdb->get_col($wpdb->prepare("SHOW TABLES LIKE %s", $wpdb->esc_like($wpdb->prefix . "'"$PLUGIN_PREFIX"'_") . "%")) as $t) { echo $t, "\n"; }'
+	wp_cli eval "$php"
+	return $?
+}
+
 check_uninstall() {
+	local left hooks tables
+	if tables="$(plugin_tables)"; then
+		if [[ -n "$tables" ]]; then
+			printf '  tables before uninstalling: %s\n' "$(printf '%s' "$tables" | tr '\n' ' ')"
+		fi
+	else
+		fail "could not list the plugin's tables"
+	fi
 	wp_cli plugin deactivate "$SLUG" --quiet || fail "deactivate"
 	wp_cli plugin uninstall "$SLUG" --quiet || fail "uninstall"
-	local left hooks
+	if left="$(plugin_tables)"; then
+		[[ -z "$left" ]] || fail "tables left after uninstalling: $(printf '%s' "$left" | tr '\n' ' ')"
+	else
+		fail "could not list the plugin's tables after uninstalling"
+	fi
 	# A failed listing must fail the check, not read as "nothing left".
 	if left="$(wp_cli option list --search="*$PLUGIN_PREFIX*" --field=option_name 2>/dev/null)"; then
 		[[ -z "$left" ]] || fail "options left after uninstalling: $(printf '%s' "$left" | tr '\n' ' ')"
