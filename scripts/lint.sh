@@ -107,11 +107,17 @@ check_phpstan() {
 	return $?
 }
 
-# Whether package.json has a script of this name.
+# Whether package.json has a script of this name: 0 yes, 1 no (or no
+# package.json), 2 when package.json cannot be read (no Node, bad JSON), so
+# a broken setup fails instead of reading as "no build".
 has_npm_script() {
 	local name="$1"
 	[[ -f "$ROOT/package.json" ]] || return 1
-	node -e 'const s = require(process.argv[1]).scripts || {}; process.exit(s[process.argv[2]] ? 0 : 1);' "$ROOT/package.json" "$name"
+	if ! command -v node >/dev/null 2>&1; then
+		printf 'lint: package.json exists but node is not installed\n' >&2
+		return 2
+	fi
+	node -e 'let s; try { s = require(process.argv[1]).scripts || {}; } catch (e) { console.error("lint: cannot read package.json: " + e.message); process.exit(2); } process.exit(s[process.argv[2]] ? 0 : 1);' "$ROOT/package.json" "$name"
 	return $?
 }
 
@@ -123,10 +129,13 @@ build_fingerprint() {
 }
 
 check_build() {
-	if ! has_npm_script build; then
+	local status=0
+	has_npm_script build || status=$?
+	if [[ "$status" -eq 1 ]]; then
 		printf 'no "build" script in package.json; skipped\n'
 		return 0
 	fi
+	[[ "$status" -eq 0 ]] || return 1
 	if [[ ! -f "$ROOT/package-lock.json" ]]; then
 		printf 'lint: package-lock.json is missing; run npm install and commit it\n' >&2
 		return 1
@@ -137,13 +146,21 @@ check_build() {
 	if [[ -n "${CI:-}" || ! -d "$ROOT/node_modules" ]]; then
 		npm ci --ignore-scripts --no-audit --no-fund --loglevel=error || return 1
 	fi
-	if has_npm_script check; then
+	status=0
+	has_npm_script check || status=$?
+	if [[ "$status" -eq 0 ]]; then
 		npm run --silent check || return 1
+	elif [[ "$status" -ne 1 ]]; then
+		return 1
 	fi
 	local before after
 	before="$(build_fingerprint)"
 	npm run --silent build || return 1
 	after="$(build_fingerprint)"
+	if [[ -z "$after" ]]; then
+		printf 'lint: the build wrote nothing to %s\n' "$BUILD_DIR" >&2
+		return 1
+	fi
 	if [[ "$before" != "$after" ]]; then
 		printf 'lint: %s differed from a fresh build; it is rebuilt now: commit it\n' "$BUILD_DIR" >&2
 		return 1
