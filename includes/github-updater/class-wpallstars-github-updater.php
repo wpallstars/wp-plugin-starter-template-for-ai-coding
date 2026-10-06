@@ -39,6 +39,11 @@
  *   returns true.
  * - While Git Updater is active, this waits and Git Updater does the job.
  *   The `wpallstars_github_updater_enabled` filter can turn it off too.
+ * - The Updates screen shows the plugin's icon, and View details its banner,
+ *   when the plugin ships them under WordPress.org's names (icon.svg,
+ *   icon-256x256.png, banner-772x250.png and so on, or banner.svg) in
+ *   admin/images/, assets/ or .wordpress-org/. Only the installed files are
+ *   used, so nothing is fetched from GitHub when those screens load.
  *
  * SPDX-License-Identifier: GPL-3.0-or-later
  * SPDX-FileCopyrightText: 2026 Marcus Quinn
@@ -73,6 +78,24 @@ final class WPAllStars_GitHub_Updater {
 
     /** Hosts GitHub sends signed downloads from. */
     const DOWNLOAD_HOSTS = '/^(?:github\.com|codeload\.github\.com|[a-z0-9-]+\.githubusercontent\.com)$/';
+
+    /** Folders of a plugin its listing images may be in, best first. */
+    const IMAGE_FOLDERS = array('admin/images/', 'assets/', '.wordpress-org/');
+
+    /**
+     * Listing images by WordPress.org's file names, best first: icons for
+     * the Updates screen (core takes svg, then 2x, then 1x), banners for
+     * View details.
+     */
+    const ICONS = array(
+        'svg' => array('icon.svg'),
+        '2x'  => array('icon-256x256.png', 'icon-256x256.jpg'),
+        '1x'  => array('icon-128x128.png', 'icon-128x128.jpg'),
+    );
+    const BANNERS = array(
+        'low'  => array('banner-772x250.png', 'banner-772x250.jpg', 'banner.svg'),
+        'high' => array('banner-1544x500.png', 'banner-1544x500.jpg', 'banner.svg'),
+    );
 
     /**
      * Release answers read this request.
@@ -733,8 +756,8 @@ final class WPAllStars_GitHub_Updater {
             'requires'      => $release['requires'],
             'requires_php'  => $release['requires_php'],
             'tested'        => '',
-            'icons'         => array(),
-            'banners'       => array(),
+            'icons'         => self::images($file, self::ICONS),
+            'banners'       => self::images($file, self::BANNERS),
             'banners_rtl'   => array(),
             'compatibility' => new stdClass(),
         );
@@ -821,9 +844,39 @@ final class WPAllStars_GitHub_Updater {
             'last_updated'  => $release ? $release['published'] : '',
             'download_link' => $release ? self::package($plugin['repo'], $release, $plugin['asset_only']) : '',
             'sections'      => $sections,
-            'banners'       => array(),
+            'icons'         => self::images($file, self::ICONS),
+            'banners'       => self::images($file, self::BANNERS),
             'external'      => true,
         );
+    }
+
+    /**
+     * Addresses of a plugin's own listing images (ICONS or BANNERS), from its
+     * installed folder. Never GitHub's copies: nothing is fetched from
+     * elsewhere when the Updates screen loads, and private repositories work
+     * too. The addresses have no scheme (//host/...): an update check run by
+     * WP-CLI or cron, where is_ssl() is false, would otherwise save http
+     * addresses for an https admin.
+     *
+     * @param string                 $file  Plugin file.
+     * @param array<string,string[]> $names Key => file names, best first.
+     * @return array<string,string> Key => address.
+     */
+    private static function images($file, array $names) {
+        $main  = WP_PLUGIN_DIR . '/' . $file;
+        $dir   = dirname($main) . '/';
+        $found = array();
+        foreach ($names as $key => $files) {
+            foreach (self::IMAGE_FOLDERS as $folder) {
+                foreach ($files as $name) {
+                    if (is_file($dir . $folder . $name)) {
+                        $found[$key] = (string) preg_replace('#^https?:#i', '', plugins_url($folder . $name, $main));
+                        continue 3;
+                    }
+                }
+            }
+        }
+        return $found;
     }
 
     /**
