@@ -10,9 +10,9 @@
 #   --keep-output DIR  Save each full report as JSON in DIR.
 #
 # Exit status: 0 when no zip has Plugin Check errors. Warnings are listed;
-# review them before a WordPress.org submission. Updater findings in the
-# GitHub zip's updater files (.distignore-wporg) and its main file's Update
-# URI header are expected and not counted.
+# review them before a WordPress.org submission. In the GitHub zip, updater
+# and direct-access findings in GitHub-only files (.distignore-wporg) and
+# the main file's Update URI header are expected and not counted.
 # Needs Docker and internet access (WordPress and Plugin Check are downloaded).
 #
 # SPDX-License-Identifier: GPL-3.0-or-later
@@ -151,6 +151,9 @@ check_zip() {
 	# in those files); in the WordPress.org zip they stay errors. So are
 	# prefix warnings there: the shared updater's names (wpallstars_) are the
 	# same in every plugin, so that one copy can stand in for the others.
+	# A GitHub-only file may also be an endpoint requested directly (such as
+	# a fast collector that runs without WordPress), so a missing
+	# direct-access guard in one is expected too; WordPress.org never gets it.
 	local expected=0
 	local expected_warnings=0
 	local counts
@@ -173,7 +176,7 @@ check_zip() {
 				main = (current == ENVIRON["MAIN"])
 				n = split($0, items, "},{")
 				for (i = 1; i <= n; i++) {
-					if (items[i] ~ /"type":"ERROR"/ && items[i] ~ /"code":"(plugin_updater_detected|update_modification_detected|PluginCheck\.CodeAnalysis\.Offloading\.OffloadedContent)"/ && (!main || items[i] ~ /plugin_updater_detected/)) { count++ }
+					if (items[i] ~ /"type":"ERROR"/ && items[i] ~ /"code":"(plugin_updater_detected|update_modification_detected|PluginCheck\.CodeAnalysis\.Offloading\.OffloadedContent|missing_direct_file_access_protection)"/ && (!main || items[i] ~ /plugin_updater_detected/)) { count++ }
 					if (!main && items[i] ~ /"type":"WARNING"/ && items[i] ~ /"code":"WordPress\.NamingConventions\.PrefixAllGlobals\./) { prefix++ }
 				}
 			}
@@ -184,7 +187,7 @@ check_zip() {
 	*) ;; # The WordPress.org zip: every finding counts.
 	esac
 	if [[ "$expected" -gt 0 ]] || [[ "$expected_warnings" -gt 0 ]]; then
-		printf '%s updater error(s) and %s prefix warning(s) in %s are expected in the GitHub zip.\n' "$expected" "$expected_warnings" "$MAIN_FILE (Update URI) $(printf '%s' "$UPDATER_FILES" | tr '\n' ' ')"
+		printf '%s updater or direct-access error(s) and %s prefix warning(s) in %s are expected in the GitHub zip.\n' "$expected" "$expected_warnings" "$MAIN_FILE (Update URI) $(printf '%s' "$UPDATER_FILES" | tr '\n' ' ')"
 		errors=$((errors - expected))
 		warnings=$((warnings - expected_warnings))
 	fi
