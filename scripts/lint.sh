@@ -132,8 +132,10 @@ check_build() {
 		return 1
 	fi
 	# A clean install in CI; locally only when nothing is installed yet.
+	# Packages' install scripts never run (supply-chain risk); a package that
+	# needs one is set up in the plugin's own build script (npm rebuild NAME).
 	if [[ -n "${CI:-}" || ! -d "$ROOT/node_modules" ]]; then
-		npm ci --no-audit --no-fund --loglevel=error || return 1
+		npm ci --ignore-scripts --no-audit --no-fund --loglevel=error || return 1
 	fi
 	if has_npm_script check; then
 		npm run --silent check || return 1

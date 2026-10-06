@@ -161,7 +161,10 @@ so release zips stay buildless and the shared scripts work unchanged:
 - `scripts/lint.sh build` runs `check`, then the build, and fails if
   `assets/build/` changed, so a stale or hand-edited build never merges.
   CI runs it when `package-lock.json` exists. Locally it installs only when
-  `node_modules/` is missing; run `npm ci` after a dependency change.
+  `node_modules/` is missing; run `npm ci --ignore-scripts` after a
+  dependency change. Packages' install scripts never run (a supply-chain
+  risk); a package that needs one is set up by the plugin's `build` script
+  (`npm rebuild <name>`).
 - Dependabot does not update npm packages (`.github/` is a core file, and
   the starter has no `package.json`); Socket still checks them. Run
   `npm outdated` and update in a pull request of its own, at least before
