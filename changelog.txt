@@ -2,6 +2,9 @@
 
 Every change to WP Plugin Starter. readme.txt lists the latest version in short.
 
+= Unreleased =
+* Developers: scripts/smoke-test.sh lists the plugin's own database tables ({$wpdb->prefix}{prefix}_*) before uninstalling and fails if any is left afterwards, as it already did for options and cron events.
+
 = 1.0.26 =
 * Fixed: a plugin deleted while still listed as active no longer makes a feature that replaces it wait. The base feature checks that each site or network-wide plugin has a valid path and its file still exists; installed plugins skipped on a request still count as active.
 * Developers: WPStarter_Feature::plugin_installed($file) checks whether a listed plugin file exists at a valid path, as WordPress does when loading active plugins.

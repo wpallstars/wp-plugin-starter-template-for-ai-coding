@@ -129,6 +129,10 @@ Deleting the plugin removes its settings, its cached data, who hid lines of the 
 
 ## Changelog
 
+### Unreleased
+
+- Developers: `scripts/smoke-test.sh` lists the plugin's own database tables (`{$wpdb->prefix}{prefix}_*`) before uninstalling and fails if any is left afterwards, as it already did for options and cron events.
+
 ### 1.0.26
 
 - Fixed: a plugin deleted while still listed as active no longer makes a feature that replaces it wait. The base feature checks that each site or network-wide plugin has a valid path and its file still exists; installed plugins skipped on a request still count as active.
