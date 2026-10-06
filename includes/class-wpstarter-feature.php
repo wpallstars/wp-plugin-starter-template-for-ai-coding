@@ -77,7 +77,22 @@ abstract class WPStarter_Feature {
     }
 
     /**
+     * Whether a listed plugin file is one WordPress would load: a valid path
+     * to a file that exists, as wp_get_active_and_valid_plugins() checks. A
+     * plugin deleted while active stays listed until the Plugins screen is
+     * opened.
+     *
+     * @param string $file Plugin file, such as "akismet/akismet.php".
+     * @return bool
+     */
+    public static function plugin_installed($file) {
+        $file = (string) $file;
+        return '' !== $file && 0 === validate_file($file) && is_file(WP_PLUGIN_DIR . '/' . $file);
+    }
+
+    /**
      * Plugins active on this site or network-wide, keyed by folder name.
+     * Listed plugins whose files are gone are left out.
      *
      * @return array<string,string> slug => plugin file
      */
@@ -91,7 +106,7 @@ abstract class WPStarter_Feature {
             $active = array();
             foreach ($files as $file) {
                 $slug = dirname((string) $file);
-                if ('.' !== $slug) {
+                if ('.' !== $slug && self::plugin_installed($file)) {
                     $active[$slug] = (string) $file;
                 }
             }
