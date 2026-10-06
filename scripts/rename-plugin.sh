@@ -31,7 +31,7 @@
 #                   button; none takes both out.
 #
 # Needs a clean working tree. Then update README.md, readme.txt,
-# changelog.txt, AGENTS.md and the banner (STANDARDS.md and DEVELOPMENT.md say how).
+# changelog.txt, AGENTS.md, LAUNCH.md and the banner (STANDARDS.md and DEVELOPMENT.md say how).
 #
 # SPDX-License-Identifier: GPL-3.0-or-later
 # SPDX-FileCopyrightText: 2026 Marcus Quinn
@@ -215,6 +215,34 @@ Every change: changelog.txt."
 	set_section README.md "## Changelog" '^## ' "### $VERSION
 
 - $first"
+	# Launch state belongs to this plugin, not the repository it was copied from.
+	cat >"$TMP_FILE" <<EOF
+# $TO_NAME launch state
+
+Version: $VERSION
+
+In development; no release yet. The repository is private. Making it public
+needs the owner's say.
+
+## While private
+
+Follow \`DEVELOPMENT.md\` → While private. No branch protection or repository
+rules, CodeQL, secret scanning or Scorecard are on: they need a public
+repository or a paid GitHub plan. Connect Codacy, CodeFactor and SonarCloud
+at public launch. \`SYNC_PAT\` is needed only once \`main\` is protected
+(\`DEVELOPMENT.md\` → Services setup, step 4).
+
+## At public launch
+
+First follow \`DEVELOPMENT.md\` → Secrets in history, then
+\`DEVELOPMENT.md\` → At public launch. Update this file with what is on.
+
+## WordPress.org
+
+Not submitted. Follow \`RELEASING.md\` → WordPress.org when the owner says,
+and record the submission here.
+EOF
+	replace_with_tmp LAUNCH.md || true
 	return 0
 }
 
