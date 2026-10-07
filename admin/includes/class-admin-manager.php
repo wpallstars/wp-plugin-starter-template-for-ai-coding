@@ -2,14 +2,20 @@
 /**
  * WP Plugin Starter admin screen.
  *
- * Owns the settings screen: tab registry, page chrome and the single admin
- * script/stylesheet. Tab content is delegated to the manager classes.
+ * Owns the settings screen: tab registry, page chrome and the admin
+ * script and stylesheets. Its markup (header, navigation, panels) is in
+ * WPStarter_Admin_Page; tab content is delegated to the manager classes.
  * Settings tabs and header links come from WPStarter_Setup; add other tabs
  * with the `wpstarter_admin_tabs` filter.
  *
+ * The screen draws the active tab with the other tabs of its group
+ * (page_tabs()), so the script switches between them without a reload.
+ *
  * The screen is Settings → WP Plugin Starter, or Settings in the plugin's own
  * top-level menu when WPStarter_Setup::MENU_PARENT names that menu. Build
- * its links with page_url() or tab_url(), which follow where it is.
+ * its links with page_url() or tab_url(), which follow where it is. The
+ * plugin's own screens show the same header with enqueue_header() and
+ * render_header().
  *
  * SPDX-License-Identifier: GPL-3.0-or-later
  * SPDX-FileCopyrightText: 2026 Marcus Quinn
@@ -34,9 +40,15 @@ class WPStarter_Admin_Manager {
      */
     const HOOK = 'settings_page_' . self::PAGE;
 
-    /** Admin stylesheet and script, relative to the plugin folder. */
-    const CSS_FILE = 'admin/css/wpstarter-admin.css';
-    const JS_FILE  = 'admin/js/wpstarter-admin.js';
+    /**
+     * Admin stylesheets and script, relative to the plugin folder. The
+     * header stylesheet (colour tokens, the full-width screen and its
+     * header) is also for the plugin's own screens; the settings one
+     * depends on it.
+     */
+    const HEADER_CSS_FILE = 'admin/css/wpstarter-header.css';
+    const CSS_FILE        = 'admin/css/wpstarter-admin.css';
+    const JS_FILE         = 'admin/js/wpstarter-admin.js';
 
     /** Hook suffix WordPress gave the screen when it was registered. */
     private static $hook = '';
@@ -106,9 +118,10 @@ class WPStarter_Admin_Manager {
     }
 
     /**
-     * Registered tabs.
+     * Registered tabs. Settings tabs and Read Me preload: they are drawn
+     * with the other tabs of their group (page_tabs()).
      *
-     * @return array<string,array{label:string,group:string,render:callable}>
+     * @return array<string,array{label:string,group:string,render:callable,preload?:bool,capability?:string}>
      */
     public static function get_tabs() {
         $tabs = array();
@@ -132,9 +145,10 @@ class WPStarter_Admin_Manager {
                 break;
             }
             $tabs[$slug] = array(
-                'label'  => $tab['label'],
-                'group'  => 'settings',
-                'render' => function () use ($slug, $tab) {
+                'label'   => $tab['label'],
+                'group'   => 'settings',
+                'preload' => true,
+                'render'  => function () use ($slug, $tab) {
                     WPStarter_Settings_Manager::render_tab($slug, $tab['label'], $tab['description']);
                 },
             );
@@ -142,9 +156,10 @@ class WPStarter_Admin_Manager {
 
         $tabs += array(
             'readme' => array(
-                'label'  => __('Read Me', 'wp-plugin-starter-template'),
-                'group'  => 'about',
-                'render' => array('WPStarter_Readme_Manager', 'display_tab_content'),
+                'label'   => __('Read Me', 'wp-plugin-starter-template'),
+                'group'   => 'about',
+                'preload' => true,
+                'render'  => array('WPStarter_Readme_Manager', 'display_tab_content'),
             ),
         );
 
@@ -152,7 +167,10 @@ class WPStarter_Admin_Manager {
          * Filter the admin tabs.
          *
          * @param array $tabs Tabs keyed by slug: label, group (settings|discover|about),
-         *                    render callback, optional capability.
+         *                    render callback, optional capability, optional
+         *                    preload (true: drawn with the other tabs of its
+         *                    group, so switching to it is instant; its script
+         *                    must then work while its panel is hidden).
          */
         $tabs = (array) apply_filters('wpstarter_admin_tabs', $tabs);
 
@@ -180,6 +198,27 @@ class WPStarter_Admin_Manager {
             $tab = (string) key($tabs);
         }
         return $tab;
+    }
+
+    /**
+     * Tabs drawn on this page, the active one first: the active tab and the
+     * other tabs of its group that preload. The script switches between
+     * them without a reload; a link to any other tab loads its page. Search
+     * results are drawn alone.
+     *
+     * @return string[]
+     */
+    public static function page_tabs() {
+        $active = self::get_active_tab();
+        $tabs   = self::get_tabs();
+        $group  = isset($tabs[$active]['group']) ? (string) $tabs[$active]['group'] : '';
+        if (self::SEARCH === $active || '' === $group) {
+            return array($active);
+        }
+        $preload = array_filter($tabs, function ($tab, $slug) use ($active, $group) {
+            return (string) $slug !== $active && !empty($tab['preload']) && isset($tab['group']) && $tab['group'] === $group;
+        }, ARRAY_FILTER_USE_BOTH);
+        return array_merge(array($active), array_map('strval', array_keys($preload)));
     }
 
     /**
@@ -263,7 +302,27 @@ class WPStarter_Admin_Manager {
     }
 
     /**
-     * Enqueue the admin stylesheet and script on our screen only.
+     * Version of an admin file: its file time, so edits bust caches, or the
+     * plugin version when that can't be read.
+     *
+     * @param string $file Path relative to the plugin folder.
+     * @return string
+     */
+    private static function asset_version($file) {
+        $time = file_exists(WPSTARTER_DIR . $file) ? filemtime(WPSTARTER_DIR . $file) : false;
+        return false === $time ? WPSTARTER_VERSION : (string) $time;
+    }
+
+    /**
+     * Enqueue the header's stylesheet (render_header()), for the plugin's
+     * own screens; the settings screen loads it with its own.
+     */
+    public static function enqueue_header() {
+        wp_enqueue_style('wpstarter-header', WPSTARTER_URL . self::HEADER_CSS_FILE, array('dashicons'), self::asset_version(self::HEADER_CSS_FILE));
+    }
+
+    /**
+     * Enqueue the admin stylesheets and script on our screen only.
      *
      * @param string $hook Current admin page hook.
      */
@@ -272,32 +331,39 @@ class WPStarter_Admin_Manager {
             return;
         }
 
-        $tab = self::get_active_tab();
-        // File times bust caches after edits; the version is the fallback.
-        $css = file_exists(WPSTARTER_DIR . self::CSS_FILE) ? filemtime(WPSTARTER_DIR . self::CSS_FILE) : false;
-        $css = false === $css ? WPSTARTER_VERSION : (string) $css;
-        $js  = file_exists(WPSTARTER_DIR . self::JS_FILE) ? filemtime(WPSTARTER_DIR . self::JS_FILE) : false;
-        $js  = false === $js ? WPSTARTER_VERSION : (string) $js;
+        $tab       = self::get_active_tab();
+        $page_tabs = self::page_tabs();
 
-        wp_enqueue_style('wpstarter-admin', WPSTARTER_URL . self::CSS_FILE, array('dashicons'), $css);
+        self::enqueue_header();
+        wp_enqueue_style('wpstarter-admin', WPSTARTER_URL . self::CSS_FILE, array('wpstarter-header'), self::asset_version(self::CSS_FILE));
 
-        /**
-         * Filter the admin script's dependencies; enqueue what a tab needs.
-         *
-         * @param string[] $deps Script handles.
-         * @param string   $tab  Active tab.
-         */
-        $deps = array_values(array_filter(array_map('strval', (array) apply_filters('wpstarter_admin_script_deps', array('jquery', 'wp-a11y', 'wp-i18n'), $tab))));
+        $deps = array('jquery', 'wp-a11y', 'wp-i18n');
+        foreach ($page_tabs as $page_tab) {
+            /**
+             * Filter the admin script's dependencies; enqueue what a tab
+             * needs. Runs for each tab drawn on the page (page_tabs()), the
+             * active tab first.
+             *
+             * @param string[] $deps Script handles.
+             * @param string   $tab  Tab slug.
+             */
+            $deps = (array) apply_filters('wpstarter_admin_script_deps', $deps, $page_tab);
+        }
+        $deps = array_values(array_unique(array_filter(array_map('strval', $deps))));
 
-        if (self::shows_media_field($tab)) {
-            wp_enqueue_media();
+        foreach ($page_tabs as $page_tab) {
+            if (self::shows_media_field($page_tab)) {
+                wp_enqueue_media();
+                break;
+            }
         }
 
-        wp_enqueue_script('wpstarter-admin', WPSTARTER_URL . self::JS_FILE, $deps, $js, true);
+        wp_enqueue_script('wpstarter-admin', WPSTARTER_URL . self::JS_FILE, $deps, self::asset_version(self::JS_FILE), true);
         wp_set_script_translations('wpstarter-admin', 'wp-plugin-starter-template');
 
         /**
-         * Filter the data the admin script reads (wpstarterAdmin).
+         * Filter the data the admin script reads (wpstarterAdmin). Its tab
+         * follows the tab shown; tabs lists the tabs drawn on the page.
          *
          * @param array  $data Script data.
          * @param string $tab  Active tab.
@@ -306,6 +372,7 @@ class WPStarter_Admin_Manager {
             'ajaxUrl' => admin_url('admin-ajax.php'),
             'nonce'   => wp_create_nonce(WPStarter_Settings::NONCE),
             'tab'     => $tab,
+            'tabs'    => $page_tabs,
             'i18n'    => array(
                 'saving'      => __('Saving…', 'wp-plugin-starter-template'),
                 'saved'       => __('Saved', 'wp-plugin-starter-template'),
@@ -315,13 +382,18 @@ class WPStarter_Admin_Manager {
             ),
         ), $tab));
 
-        /**
-         * Fires after the admin stylesheet and script are enqueued: enqueue
-         * the plugin's own, depending on 'wpstarter-admin'.
-         *
-         * @param string $tab Active tab.
-         */
-        do_action('wpstarter_admin_enqueue', $tab);
+        foreach ($page_tabs as $page_tab) {
+            /**
+             * Fires after the admin stylesheets and script are enqueued:
+             * enqueue the plugin's own, depending on 'wpstarter-admin'. Fires
+             * for each tab drawn on the page (page_tabs()), the active tab
+             * first; WordPress loads each handle once, but guard inline code
+             * with the tab.
+             *
+             * @param string $tab Tab slug.
+             */
+            do_action('wpstarter_admin_enqueue', $page_tab);
+        }
     }
 
     /**
@@ -352,140 +424,55 @@ class WPStarter_Admin_Manager {
     }
 
     /**
-     * Render the page chrome and the active tab.
+     * Render the page chrome and the tabs drawn on the page (page_tabs()),
+     * each in its own panel; only the active tab's shows.
      */
     public static function render_settings_page() {
         if (!current_user_can('manage_options')) {
             return;
         }
 
-        $tabs   = self::get_tabs();
-        $active = self::get_active_tab();
-        $links  = WPStarter_Setup::header_links();
+        $tabs      = self::get_tabs();
+        $active    = self::get_active_tab();
+        $page_tabs = self::page_tabs();
         ?>
         <div class="wrap wps-wrap">
-            <header class="wps-header">
-                <div class="wps-header__brand">
-                    <span class="wps-header__logo dashicons dashicons-star-filled" aria-hidden="true"></span>
-                    <h1 class="wps-header__title"><?php esc_html_e('WP Plugin Starter', 'wp-plugin-starter-template'); ?></h1>
-                    <span class="wps-badge"><?php echo esc_html('v' . WPSTARTER_VERSION); ?></span>
-                </div>
-                <form class="wps-search" role="search" method="get" action="<?php echo esc_url(admin_url(self::screen_file())); ?>">
-                    <input type="hidden" name="page" value="<?php echo esc_attr(self::PAGE); ?>" />
-                    <input type="hidden" name="tab" value="<?php echo esc_attr(self::SEARCH); ?>" />
-                    <label class="screen-reader-text" for="wps-search-input"><?php esc_html_e('Search features', 'wp-plugin-starter-template'); ?></label>
-                    <span class="wps-search__field">
-                        <span class="wps-search__icon dashicons dashicons-search" aria-hidden="true"></span>
-                        <input type="search"
-                               id="wps-search-input"
-                               class="wps-search__input"
-                               name="s"
-                               maxlength="100"
-                               value="<?php echo esc_attr(self::search_query()); ?>"
-                               placeholder="<?php esc_attr_e('Search features', 'wp-plugin-starter-template'); ?>" />
-                    </span>
-                    <button type="submit" class="button wps-search__button"><?php esc_html_e('Search', 'wp-plugin-starter-template'); ?></button>
-                </form>
-                <div class="wps-header__actions">
-                    <?php if (!empty($links['source'])) : ?>
-                        <a class="button wps-header__support" href="<?php echo esc_url($links['source']); ?>" target="_blank" rel="noopener noreferrer">
-                            <span class="dashicons dashicons-editor-code" aria-hidden="true"></span>
-                            <?php esc_html_e('Source code', 'wp-plugin-starter-template'); ?>
-                            <span class="screen-reader-text"><?php esc_html_e('(opens in a new tab)', 'wp-plugin-starter-template'); ?></span>
-                        </a>
-                    <?php elseif (!empty($links['website'])) : ?>
-                        <?php // Older {Prefix}_Setup classes link the maker's website instead. ?>
-                        <a class="button" href="<?php echo esc_url($links['website']); ?>" target="_blank" rel="noopener noreferrer">
-                            <?php esc_html_e('Visit website', 'wp-plugin-starter-template'); ?>
-                            <span class="screen-reader-text"><?php esc_html_e('(opens in a new tab)', 'wp-plugin-starter-template'); ?></span>
-                        </a>
-                    <?php endif; ?>
-                    <?php if (!empty($links['support'])) : ?>
-                        <a class="button wps-header__support" href="<?php echo esc_url($links['support']); ?>" target="_blank" rel="noopener noreferrer">
-                            <span class="dashicons dashicons-sos" aria-hidden="true"></span>
-                            <?php esc_html_e('Support', 'wp-plugin-starter-template'); ?>
-                            <span class="screen-reader-text"><?php esc_html_e('(opens in a new tab)', 'wp-plugin-starter-template'); ?></span>
-                        </a>
-                    <?php endif; ?>
-                    <?php if (!empty($links['donate'])) : ?>
-                        <a class="button wps-header__support wps-header__donate" href="<?php echo esc_url($links['donate']); ?>" target="_blank" rel="noopener noreferrer">
-                            <span class="dashicons dashicons-coffee" aria-hidden="true"></span>
-                            <?php esc_html_e('Buy me a coffee', 'wp-plugin-starter-template'); ?>
-                            <span class="screen-reader-text"><?php esc_html_e('(opens in a new tab)', 'wp-plugin-starter-template'); ?></span>
-                        </a>
-                    <?php endif; ?>
-                </div>
-            </header>
+            <?php WPStarter_Admin_Page::header(); ?>
 
-            <?php self::render_nav($tabs, $active); ?>
+            <?php WPStarter_Admin_Page::nav($tabs, $active, $page_tabs); ?>
 
             <?php // Core moves admin notices after this marker instead of into the header. ?>
             <hr class="wp-header-end" />
 
             <?php settings_errors(); ?>
 
-            <?php // Not <main>: core's #wpbody already carries role="main". ?>
-            <div class="wps-main wps-tab-<?php echo esc_attr($active); ?>" id="wps-tab-<?php echo esc_attr($active); ?>">
-                <?php
-                if (self::SEARCH === $active) {
-                    WPStarter_Settings_Manager::render_search(self::search_query(), $tabs);
-                } elseif (isset($tabs[$active]['render']) && is_callable($tabs[$active]['render'])) {
-                    call_user_func($tabs[$active]['render']);
-                }
-                ?>
-            </div>
-        </div>
-        <?php
-    }
-
-    /**
-     * Render the tab navigation: one labelled group of links per section
-     * that has tabs.
-     *
-     * @param array  $tabs   Tabs (get_tabs()).
-     * @param string $active Active tab slug.
-     */
-    private static function render_nav(array $tabs, $active) {
-        $groups = array(
-            'settings' => __('Settings', 'wp-plugin-starter-template'),
-            'discover' => __('Discover', 'wp-plugin-starter-template'),
-            'about'    => __('About', 'wp-plugin-starter-template'),
-        );
-        ?>
-        <nav class="wps-nav" aria-label="<?php esc_attr_e('WP Plugin Starter sections', 'wp-plugin-starter-template'); ?>">
             <?php
-            foreach ($groups as $group => $group_label) {
-                $group_tabs = array_filter($tabs, function ($tab) use ($group) {
-                    return isset($tab['group']) && $tab['group'] === $group;
-                });
-                if ($group_tabs) {
-                    self::render_nav_group($group_label, $group_tabs, $active);
+            if (self::SEARCH === $active) {
+                WPStarter_Admin_Page::panel($active, function () use ($tabs) {
+                    WPStarter_Settings_Manager::render_search(self::search_query(), $tabs);
+                }, true);
+            } else {
+                foreach ($page_tabs as $slug) {
+                    if (isset($tabs[$slug]['render']) && is_callable($tabs[$slug]['render'])) {
+                        WPStarter_Admin_Page::panel($slug, $tabs[$slug]['render'], $slug === $active);
+                    }
                 }
             }
             ?>
-        </nav>
+        </div>
         <?php
     }
 
     /**
-     * Render one navigation group. A group of links, not form controls, so
-     * role="group" with a label rather than <fieldset>.
-     *
-     * @param string $label  Group label.
-     * @param array  $tabs   The group's tabs.
-     * @param string $active Active tab slug.
+     * Render the screen's header: the plugin's name and version, the feature
+     * search (for people who can open the settings screen) and the links
+     * WPStarter_Setup::header_links() gives. The plugin's own screens can show
+     * it too: enqueue_header() on their admin_enqueue_scripts, then print
+     * it first in `<div class="wrap wps-wrap">`, followed by
+     * `<hr class="wp-header-end">` so admin notices go below it, and their
+     * content in `<div class="wps-main">`.
      */
-    private static function render_nav_group($label, array $tabs, $active) {
-        ?>
-        <div class="wps-nav__group" role="group" aria-label="<?php echo esc_attr($label); ?>">
-            <?php foreach ($tabs as $slug => $tab) : ?>
-                <a href="<?php echo esc_url(self::tab_url($slug)); ?>"
-                   class="wps-nav__tab<?php echo $slug === $active ? ' is-active' : ''; ?>"
-                   <?php echo $slug === $active ? 'aria-current="page"' : ''; ?>>
-                    <?php echo esc_html($tab['label']); ?>
-                </a>
-            <?php endforeach; ?>
-        </div>
-        <?php
+    public static function render_header() {
+        WPStarter_Admin_Page::header();
     }
 }

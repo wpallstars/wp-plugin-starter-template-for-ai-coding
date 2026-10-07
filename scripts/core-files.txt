@@ -16,9 +16,11 @@ includes/github-updater/
 admin/settings.php
 admin/data/readme.php
 admin/includes/class-admin-manager.php
+admin/includes/class-admin-page.php
 admin/includes/class-settings-manager.php
 admin/includes/class-readme-manager.php
 admin/includes/class-replaced-plugins.php
+admin/css/wpstarter-header.css
 admin/css/wpstarter-admin.css
 admin/js/wpstarter-admin.js
 

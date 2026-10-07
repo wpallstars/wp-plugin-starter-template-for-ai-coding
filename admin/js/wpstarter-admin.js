@@ -6,6 +6,7 @@
  * - Panels: expandable setting options.
  * - Tokens: insert pattern tokens into text fields.
  * - Media fields: choose a Media Library picture with the media dialog.
+ * - Tabs: switch between the tabs drawn on the page without a reload.
  *
  * The plugin's own tabs bring their own script (wpstarter_admin_enqueue),
  * which can use window.wpstarterAdmin.api.
@@ -318,6 +319,70 @@
 		}
 	};
 
+	/* ------------------------------------------------------------------ */
+	/* Tabs: switch between the tabs drawn on the page                     */
+	/* ------------------------------------------------------------------ */
+
+	// The screen draws the active tab with the other tabs of its group
+	// (WPStarter_Admin_Manager::page_tabs()), each in a [data-wps-panel].
+	// Their links carry data-wps-tab: choosing one shows its panel and puts
+	// the tab's address in the location bar, so Back, reload and bookmarks
+	// work as with page loads. Other links load their page.
+	var Tabs = {
+		init: function () {
+			if ($('[data-wps-panel]').length === 0 || !window.history || !window.history.pushState) {
+				return;
+			}
+			// Remember the tab of the first page, for Back.
+			window.history.replaceState($.extend({}, window.history.state, { wpsTab: cfg.tab }), '');
+
+			$(document).on('click', 'a[data-wps-tab]', function (event) {
+				var slug = this.getAttribute('data-wps-tab');
+				// A new tab or window (modifier keys, middle click) loads the page.
+				if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey || Tabs.panel(slug).length === 0) {
+					return;
+				}
+				event.preventDefault();
+				if (slug !== cfg.tab) {
+					// Address first, so wpstarter:tab-shown listeners read the new one.
+					window.history.pushState({ wpsTab: slug }, '', this.href);
+					Tabs.show(slug);
+				}
+			});
+
+			window.addEventListener('popstate', function (event) {
+				var slug = event.state && event.state.wpsTab;
+				if (slug && slug !== cfg.tab && Tabs.panel(slug).length > 0) {
+					Tabs.show(slug);
+				}
+			});
+		},
+
+		panel: function (slug) {
+			return $('[data-wps-panel]').filter(function () {
+				return this.getAttribute('data-wps-panel') === slug;
+			});
+		},
+
+		show: function (slug) {
+			$('[data-wps-panel]').each(function () {
+				this.hidden = this.getAttribute('data-wps-panel') !== slug;
+			});
+			$('.wps-nav__tab').each(function () {
+				var current = this.getAttribute('data-wps-tab') === slug;
+				$(this).toggleClass('is-active', current);
+				if (current) {
+					this.setAttribute('aria-current', 'page');
+				} else {
+					this.removeAttribute('aria-current');
+				}
+			});
+			cfg.tab = slug;
+			// For the plugin's own scripts: the tab now shown.
+			$(document).trigger('wpstarter:tab-shown', [slug]);
+		}
+	};
+
 	// For the plugin's own admin scripts, which load after this one
 	// (wpstarter_admin_enqueue): the same AJAX, screen reader and error helpers.
 	cfg.api = { post: post, speak: speak, errorMessage: errorMessage };
@@ -326,5 +391,6 @@
 		Settings.init();
 		Panels.init();
 		MediaField.init();
+		Tabs.init();
 	});
 })(jQuery, window.wp, window.wpstarterAdmin);

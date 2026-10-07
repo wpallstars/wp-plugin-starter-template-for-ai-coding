@@ -1,0 +1,254 @@
+/**
+ * WP Plugin Starter screen header.
+ *
+ * The colour tokens, the full-width screen (.wps-wrap), its header and the
+ * main area: shared by the settings screen, whose stylesheet depends on
+ * this one, and the plugin's own screens
+ * (WPStarter_Admin_Manager::enqueue_header() and render_header()). Only
+ * .wps-wrap, the header and .wps-main are styled here, so a screen's
+ * content keeps its styles. Uses core admin tokens so the header follows the active admin
+ * colour scheme; logical properties keep RTL working.
+ *
+ * SPDX-License-Identifier: GPL-3.0-or-later
+ * SPDX-FileCopyrightText: 2026 Marcus Quinn
+ * Additional terms (GPL-3.0 section 7(b)): ATTRIBUTION.txt
+ */
+
+.wps-wrap {
+	--wps-accent: var(--wp-admin-theme-color, #2271b1);
+	--wps-accent-dark: var(--wp-admin-theme-color-darker-10, #135e96);
+	--wps-text: #1d2327;
+	--wps-muted: #646970;
+	--wps-border: #dcdcde;
+	--wps-surface: #fff;
+	--wps-subtle: #f6f7f7;
+	--wps-success: #008a20;
+	--wps-error: #d63638;
+	--wps-radius: 8px;
+	--wps-shadow: 0 1px 2px rgb(0 0 0 / 4%);
+	--wps-focus: 0 0 0 2px var(--wps-surface), 0 0 0 4px var(--wps-accent);
+
+	margin-block-start: 0;
+	margin-inline: -20px 0;
+	color: var(--wps-text);
+
+	/* Start below the Screen Options / Notices tabs, so they never narrow the header. */
+	clear: both;
+}
+
+.wps-header,
+.wps-header *,
+.wps-header *::before,
+.wps-header *::after {
+	box-sizing: border-box;
+}
+
+/* Header ------------------------------------------------------------- */
+
+.wps-header {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 12px 24px;
+	padding: 14px 24px;
+	background: var(--wps-surface);
+	border-block-end: 1px solid var(--wps-border);
+}
+
+.wps-header__brand {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+}
+
+.wps-header__logo {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: 32px;
+	height: 32px;
+	font-size: 20px;
+	color: #fff;
+	background: var(--wps-accent);
+	border-radius: 6px;
+}
+
+.wps-wrap .wps-header__title {
+	margin: 0;
+	padding: 0;
+	font-size: 20px;
+	font-weight: 600;
+	line-height: 1.3;
+}
+
+.wps-header__actions {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 8px;
+	margin-inline-start: auto;
+}
+
+.wps-wrap .wps-header__support {
+	display: inline-flex;
+	align-items: center;
+	gap: 4px;
+}
+
+/* line-height: 1 stops the icon taking the button's taller line height,
+   which draws the glyph below the middle of its box. */
+.wps-wrap .wps-header__support .dashicons {
+	width: 18px;
+	height: 18px;
+	font-size: 18px;
+	line-height: 1;
+}
+
+.wps-badge {
+	display: inline-block;
+	padding: 2px 8px;
+	font-size: 11px;
+	font-weight: 500;
+	line-height: 1.6;
+	color: var(--wps-muted);
+	vertical-align: middle;
+	background: var(--wps-subtle);
+	border: 1px solid var(--wps-border);
+	border-radius: 999px;
+}
+
+.wps-badge--success {
+	color: #00450c;
+	background: #edfaef;
+	border-color: #b8e6bf;
+}
+
+/* Search ------------------------------------------------------------- */
+
+/* Stretch, so the field always matches the button's height, whatever
+   size the admin colour scheme or WordPress version gives buttons. */
+.wps-search {
+	display: flex;
+	align-items: stretch;
+	gap: 6px;
+}
+
+.wps-search__field {
+	position: relative;
+	display: flex;
+	align-items: stretch;
+}
+
+.wps-wrap .wps-search__icon {
+	position: absolute;
+	inset-block: 0;
+	inset-inline-start: 9px;
+	margin-block: auto;
+	color: var(--wps-muted);
+	pointer-events: none;
+}
+
+.wps-wrap .wps-search__input {
+	width: 260px;
+	max-width: 100%;
+	height: auto;
+	min-height: 30px;
+	margin: 0;
+	padding-block: 0;
+	padding-inline: 34px 10px;
+	font-size: 14px;
+	line-height: normal;
+	color: var(--wps-text);
+	background: var(--wps-surface);
+
+	/* Border and corners stay core's, so they match core buttons in each version. */
+	box-shadow: none;
+	transition: border-color 0.1s ease-in-out, box-shadow 0.1s ease-in-out;
+}
+
+.wps-wrap .wps-search__input::placeholder {
+	color: var(--wps-muted);
+	opacity: 1;
+}
+
+.wps-wrap .wps-search__input:hover {
+	border-color: var(--wps-accent);
+}
+
+.wps-wrap .wps-search__input:focus {
+	border-color: var(--wps-accent);
+	box-shadow: 0 0 0 1px var(--wps-accent);
+	outline: 2px solid transparent;
+}
+
+.wps-wrap .wps-search__field:focus-within .wps-search__icon {
+	color: var(--wps-accent);
+}
+
+.wps-wrap .wps-search__button {
+	margin: 0;
+}
+
+/* Main --------------------------------------------------------------- */
+
+.wps-wrap > .notice,
+.wps-wrap > div.updated,
+.wps-wrap > div.error {
+	margin: 16px 24px 0;
+}
+
+.wps-main {
+	max-width: 1200px;
+	padding: 24px;
+}
+
+/* Tabs drawn on the page but not shown. */
+.wps-main[hidden] {
+	display: none;
+}
+
+/* Responsive --------------------------------------------------------- */
+
+@media screen and (width <= 782px) {
+	.wps-wrap {
+		margin-inline-start: -10px;
+	}
+
+	.wps-header,
+	.wps-main {
+		padding-inline: 12px;
+	}
+
+	/* Brand and website link on the first row, search across the second. */
+	.wps-search {
+		order: 1;
+		flex: 1 1 100%;
+		min-width: 0;
+	}
+
+	.wps-search__field {
+		flex: 1 1 0;
+		min-width: 0;
+	}
+
+	.wps-wrap .wps-search__input {
+		flex: 1 1 0;
+		width: auto;
+		min-width: 0;
+		min-height: 40px;
+		font-size: 16px;
+	}
+
+	.wps-search .button {
+		flex-shrink: 0;
+	}
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.wps-header *,
+	.wps-header *::before,
+	.wps-header *::after {
+		transition: none !important;
+		animation: none !important;
+	}
+}

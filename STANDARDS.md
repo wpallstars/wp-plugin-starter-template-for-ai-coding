@@ -113,7 +113,12 @@ How changes are made and checked: `DEVELOPMENT.md`. Releases: `RELEASING.md`.
 - The settings screen's header links come from `{Prefix}_Setup::header_links()`:
   `source` (the GitHub repository, **Source code**), `support` (its issues,
   **Support**) and `donate` (**Buy me a coffee**); leave one out for no
-  button. Keep the labels short so the buttons fit on one row.
+  button, and keep labels short so they fit one row. The plugin's own
+  screens show the same header: `{Prefix}_Admin_Manager::enqueue_header()`
+  and `render_header()`.
+- Settings tabs in one group (between dividers) switch without a reload. A
+  `{prefix}_admin_tabs` tab joins with `'preload' => true` once it is cheap
+  to draw and its script works with its panel hidden.
 - Update `README.md` (feature section, hooks, changelog), `changelog.txt`
   (the user-facing changelog entry) and `readme.txt` in the same change.
   `readme.txt` must stay under 10 KB for WordPress.org: one short line per
@@ -148,26 +153,22 @@ How changes are made and checked: `DEVELOPMENT.md`. Releases: `RELEASING.md`.
   differ, and warns when the licence is not GPL-3.0-or-later, when
   `ATTRIBUTION.txt` is missing, or when a copyright line or a source file's
   SPDX copyright line is missing.
-- Every plugin except SEO Pro Stack keeps the line starting "Works well
-  with " that recommends SEO Pro Stack
+- Every plugin except SEO Pro Stack ends `README.md` → **Built with AI** with
+  the line starting "Works well with " that recommends SEO Pro Stack
   (<https://github.com/wpallstars/seoprostack>), the base plugin for every
-  site, at the end of `README.md` → **Built with AI**. Keep it out of
-  `readme.txt`, admin notices and the plugin's own screens other than the
-  Read Me tab: WordPress.org's guidelines are strict about plugins promoting
-  other plugins, and those are the places its reviewers check.
-  `scripts/preflight-release.sh` warns when the line is missing from
-  `README.md` or appears in `readme.txt`.
+  site. Keep it out of `readme.txt`, admin notices and the plugin's screens
+  other than the Read Me tab: WordPress.org's reviewers check those places
+  for plugins promoting others. `scripts/preflight-release.sh` warns when the
+  line is missing from `README.md` or appears in `readme.txt`.
 - `.distignore` lists files kept out of the release zip. Add new
   development-only files there (the preflight fails when a known one gets in),
   then check the build with Plugin Check.
 
 ## Agent docs
 
-AI agents read `AGENTS.md` in every session, whatever the task, so every
-line there costs every session. Keep it a short map; put the detail where
-only the task that needs it reads it. This works the same for a small
-plugin and a large one: a small plugin has only `AGENTS.md`, a large one
-adds docs as it grows.
+AI agents read `AGENTS.md` in every session, so every line there costs every
+session: keep it a short map and put the detail where only the task that needs
+it reads it. A small plugin has only `AGENTS.md`; a large one adds docs.
 
 - `AGENTS.md` holds the plugin's names (the placeholder table), the rules
   for this plugin that apply to any change (a line or two each, such as
@@ -240,11 +241,10 @@ adds docs as it grows.
   filters, update checks) outside the shared GitHub updater. Plugin Check
   reports `plugin_updater_detected` as an error, and WordPress.org asks plugins
   not to interfere with the updater.
-- Leave no PHP errors, warnings, notices or deprecations behind. Fix any that
-  the plugin causes as you find them, in the same change when it is small,
-  or as a tracked issue. That includes ones in other plugins that only happen
-  because of this one. Messages that other plugins cause on their own are
-  theirs: mention them, do not hide them.
+- Leave no PHP errors, warnings, notices or deprecations behind. Fix any the
+  plugin causes, including ones in other plugins that happen only because of
+  this one, in the same change when small or as a tracked issue. Messages
+  other plugins cause on their own are theirs: mention them, do not hide them.
 - WordPress first: use core's APIs (options, transients, the object cache,
   `WP_Query`, cron, the HTTP API, the Settings and REST APIs) before writing
   your own, and follow the WordPress Coding Standards (`phpcs.xml.dist`).
@@ -288,8 +288,7 @@ a test site take the site down.
     first and skip any whose leading columns an existing key covers. An
     index on a table the plugin does not own (WordPress's or another
     plugin's) is opt-in, and uninstall removes only the ones it added.
-  - Admin lists of large tables page, sort only on indexed columns, and
-    cache their counts.
+  - Admin lists of large tables page, sort only on indexed columns and cache counts.
 - **Options:** one autoloaded settings array (`{prefix}_options`). Store
   large or rarely used data with autoload off (`update_option( $name,
   $value, false )`) or in the plugin's own table. Never write an option or
@@ -315,10 +314,9 @@ a test site take the site down.
   site seeded with thousands of posts and meta rows, reports query counts
   and times, and fails on a full table or index scan, or a large sort, in
   the plugin's own queries (`DEVELOPMENT.md` → Smoke test). PHPCS flags the
-  patterns above as you write them (`WordPress.DB.SlowDBQuery` and
-  WordPress VIP's performance sniffs, `phpcs.xml.dist`). An exception, such
-  as an unlimited query over a list that cannot grow, needs an inline
-  `phpcs:ignore` with the reason.
+  patterns above as you write them (`WordPress.DB.SlowDBQuery` and VIP's
+  performance sniffs, `phpcs.xml.dist`); an exception, such as an unlimited
+  query over a list that cannot grow, needs an inline `phpcs:ignore` with why.
 
 ## Updates from GitHub
 
@@ -354,12 +352,10 @@ It replaces Git Updater.
 - Tokens for private repositories come only from `wp-config.php`
   (`WPALLSTARS_GITHUB_TOKEN`) or the filter, go only to api.github.com and
   are never stored.
-- Release answers are cached for 12 hours (an hour after a failed request).
-  "Check again" on the Updates screen, or a core update check starting without
-  the `update_plugins` site transient, asks GitHub again, at most once a minute.
-  Clearing that transient with `wp transient delete update_plugins --network`
-  also refreshes GitHub releases on the next check; ordinary admin pages and
-  cron checks keep using the cache.
+- Release answers are cached for 12 hours (an hour after a failure). "Check
+  again" on the Updates screen, or a core check that starts without the
+  `update_plugins` site transient (cleared, say, with `wp transient delete
+  update_plugins --network`), asks GitHub again, at most once a minute.
 
 ## Releases
 
@@ -455,8 +451,7 @@ While a repository is private, CI and review apps only advise: nothing is
 required to merge, for speed. Fix failures your change causes before merging;
 open an issue for any other failure and merge anyway. Do not turn on branch
 protection, required checks or paid reviewers. At public launch (owner's say),
-run the full sweep in `DEVELOPMENT.md` → At public launch, which makes the
-checks required.
+run the sweep in `DEVELOPMENT.md` → At public launch, which makes them required.
 
 The checks catch errors, not wrong behaviour, so also verify on real
 WordPress:
@@ -502,5 +497,4 @@ WordPress:
    Check text, backgrounds, borders and palette colours chosen in block
    settings in both.
 
-Note: since WordPress 5.6, posts restored from the Bin become drafts. Republish
-test posts after bulk-trash tests.
+Note: since WordPress 5.6, posts restored from the Bin become drafts; republish test posts after.
