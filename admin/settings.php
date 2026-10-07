@@ -22,6 +22,7 @@ $wpstarter_admin_files = array(
     'admin/data/readme.php',
     'admin/includes/class-settings-manager.php',
     'admin/includes/class-readme-manager.php',
+    'admin/includes/class-admin-page.php',
     'admin/includes/class-admin-manager.php',
     'admin/includes/class-replaced-plugins.php',
 );

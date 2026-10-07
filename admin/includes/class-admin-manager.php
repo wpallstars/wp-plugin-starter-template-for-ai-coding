@@ -3,7 +3,8 @@
  * WP Plugin Starter admin screen.
  *
  * Owns the settings screen: tab registry, page chrome and the admin
- * script and stylesheets. Tab content is delegated to the manager classes.
+ * script and stylesheets. Its markup (header, navigation, panels) is in
+ * WPStarter_Admin_Page; tab content is delegated to the manager classes.
  * Settings tabs and header links come from WPStarter_Setup; add other tabs
  * with the `wpstarter_admin_tabs` filter.
  *
@@ -440,9 +441,9 @@ class WPStarter_Admin_Manager {
         $page_tabs = self::page_tabs();
         ?>
         <div class="wrap wps-wrap">
-            <?php self::render_header(); ?>
+            <?php WPStarter_Admin_Page::header(); ?>
 
-            <?php self::render_nav($tabs, $active, $page_tabs); ?>
+            <?php WPStarter_Admin_Page::nav($tabs, $active, $page_tabs); ?>
 
             <?php // Core moves admin notices after this marker instead of into the header. ?>
             <hr class="wp-header-end" />
@@ -451,34 +452,17 @@ class WPStarter_Admin_Manager {
 
             <?php
             if (self::SEARCH === $active) {
-                self::render_panel($active, function () use ($tabs) {
+                WPStarter_Admin_Page::panel($active, function () use ($tabs) {
                     WPStarter_Settings_Manager::render_search(self::search_query(), $tabs);
                 }, true);
             } else {
                 foreach ($page_tabs as $slug) {
                     if (isset($tabs[$slug]['render']) && is_callable($tabs[$slug]['render'])) {
-                        self::render_panel($slug, $tabs[$slug]['render'], $slug === $active);
+                        WPStarter_Admin_Page::panel($slug, $tabs[$slug]['render'], $slug === $active);
                     }
                 }
             }
             ?>
-        </div>
-        <?php
-    }
-
-    /**
-     * Render one tab's panel. The script shows another tab's panel when its
-     * link is chosen.
-     *
-     * @param string   $slug   Tab slug.
-     * @param callable $render The tab's render callback.
-     * @param bool     $shown  Whether it is the active tab.
-     */
-    private static function render_panel($slug, $render, $shown) {
-        // Not <main>: core's #wpbody already carries role="main".
-        ?>
-        <div class="wps-main wps-tab-<?php echo esc_attr($slug); ?>" id="wps-tab-<?php echo esc_attr($slug); ?>" data-wps-panel="<?php echo esc_attr($slug); ?>"<?php echo $shown ? '' : ' hidden'; ?>>
-            <?php call_user_func($render); ?>
         </div>
         <?php
     }
@@ -493,118 +477,6 @@ class WPStarter_Admin_Manager {
      * content in `<div class="wps-main">`.
      */
     public static function render_header() {
-        $links = WPStarter_Setup::header_links();
-        ?>
-            <header class="wps-header">
-                <div class="wps-header__brand">
-                    <span class="wps-header__logo dashicons dashicons-star-filled" aria-hidden="true"></span>
-                    <h1 class="wps-header__title"><?php esc_html_e('WP Plugin Starter', 'wp-plugin-starter-template'); ?></h1>
-                    <span class="wps-badge"><?php echo esc_html('v' . WPSTARTER_VERSION); ?></span>
-                </div>
-                <?php if (current_user_can('manage_options')) : ?>
-                <form class="wps-search" role="search" method="get" action="<?php echo esc_url(admin_url(self::screen_file())); ?>">
-                    <input type="hidden" name="page" value="<?php echo esc_attr(self::PAGE); ?>" />
-                    <input type="hidden" name="tab" value="<?php echo esc_attr(self::SEARCH); ?>" />
-                    <label class="screen-reader-text" for="wps-search-input"><?php esc_html_e('Search features', 'wp-plugin-starter-template'); ?></label>
-                    <span class="wps-search__field">
-                        <span class="wps-search__icon dashicons dashicons-search" aria-hidden="true"></span>
-                        <input type="search"
-                               id="wps-search-input"
-                               class="wps-search__input"
-                               name="s"
-                               maxlength="100"
-                               value="<?php echo esc_attr(self::search_query()); ?>"
-                               placeholder="<?php esc_attr_e('Search features', 'wp-plugin-starter-template'); ?>" />
-                    </span>
-                    <button type="submit" class="button wps-search__button"><?php esc_html_e('Search', 'wp-plugin-starter-template'); ?></button>
-                </form>
-                <?php endif; ?>
-                <div class="wps-header__actions">
-                    <?php if (!empty($links['source'])) : ?>
-                        <a class="button wps-header__support" href="<?php echo esc_url($links['source']); ?>" target="_blank" rel="noopener noreferrer">
-                            <span class="dashicons dashicons-editor-code" aria-hidden="true"></span>
-                            <?php esc_html_e('Source code', 'wp-plugin-starter-template'); ?>
-                            <span class="screen-reader-text"><?php esc_html_e('(opens in a new tab)', 'wp-plugin-starter-template'); ?></span>
-                        </a>
-                    <?php elseif (!empty($links['website'])) : ?>
-                        <?php // Older {Prefix}_Setup classes link the maker's website instead. ?>
-                        <a class="button" href="<?php echo esc_url($links['website']); ?>" target="_blank" rel="noopener noreferrer">
-                            <?php esc_html_e('Visit website', 'wp-plugin-starter-template'); ?>
-                            <span class="screen-reader-text"><?php esc_html_e('(opens in a new tab)', 'wp-plugin-starter-template'); ?></span>
-                        </a>
-                    <?php endif; ?>
-                    <?php if (!empty($links['support'])) : ?>
-                        <a class="button wps-header__support" href="<?php echo esc_url($links['support']); ?>" target="_blank" rel="noopener noreferrer">
-                            <span class="dashicons dashicons-sos" aria-hidden="true"></span>
-                            <?php esc_html_e('Support', 'wp-plugin-starter-template'); ?>
-                            <span class="screen-reader-text"><?php esc_html_e('(opens in a new tab)', 'wp-plugin-starter-template'); ?></span>
-                        </a>
-                    <?php endif; ?>
-                    <?php if (!empty($links['donate'])) : ?>
-                        <a class="button wps-header__support wps-header__donate" href="<?php echo esc_url($links['donate']); ?>" target="_blank" rel="noopener noreferrer">
-                            <span class="dashicons dashicons-coffee" aria-hidden="true"></span>
-                            <?php esc_html_e('Buy me a coffee', 'wp-plugin-starter-template'); ?>
-                            <span class="screen-reader-text"><?php esc_html_e('(opens in a new tab)', 'wp-plugin-starter-template'); ?></span>
-                        </a>
-                    <?php endif; ?>
-                </div>
-            </header>
-        <?php
-    }
-
-    /**
-     * Render the tab navigation: one labelled group of links per section
-     * that has tabs. Links to tabs drawn on the page carry their slug, for
-     * the script.
-     *
-     * @param array    $tabs      Tabs (get_tabs()).
-     * @param string   $active    Active tab slug.
-     * @param string[] $page_tabs Tabs drawn on the page (page_tabs()).
-     */
-    private static function render_nav(array $tabs, $active, array $page_tabs) {
-        $groups = array(
-            'settings' => __('Settings', 'wp-plugin-starter-template'),
-            'discover' => __('Discover', 'wp-plugin-starter-template'),
-            'about'    => __('About', 'wp-plugin-starter-template'),
-        );
-        ?>
-        <nav class="wps-nav" aria-label="<?php esc_attr_e('WP Plugin Starter sections', 'wp-plugin-starter-template'); ?>">
-            <?php
-            foreach ($groups as $group => $group_label) {
-                $group_tabs = array_filter($tabs, function ($tab) use ($group) {
-                    return isset($tab['group']) && $tab['group'] === $group;
-                });
-                if ($group_tabs) {
-                    self::render_nav_group($group_label, $group_tabs, $active, $page_tabs);
-                }
-            }
-            ?>
-        </nav>
-        <?php
-    }
-
-    /**
-     * Render one navigation group. A group of links, not form controls, so
-     * role="group" with a label rather than <fieldset>.
-     *
-     * @param string   $label     Group label.
-     * @param array    $tabs      The group's tabs.
-     * @param string   $active    Active tab slug.
-     * @param string[] $page_tabs Tabs drawn on the page (page_tabs()).
-     */
-    private static function render_nav_group($label, array $tabs, $active, array $page_tabs) {
-        ?>
-        <div class="wps-nav__group" role="group" aria-label="<?php echo esc_attr($label); ?>">
-            <?php foreach ($tabs as $slug => $tab) : ?>
-                <?php $slug = (string) $slug; ?>
-                <a href="<?php echo esc_url(self::tab_url($slug)); ?>"
-                   class="wps-nav__tab<?php echo $slug === $active ? ' is-active' : ''; ?>"
-                   <?php echo in_array($slug, $page_tabs, true) ? 'data-wps-tab="' . esc_attr($slug) . '"' : ''; ?>
-                   <?php echo $slug === $active ? 'aria-current="page"' : ''; ?>>
-                    <?php echo esc_html($tab['label']); ?>
-                </a>
-            <?php endforeach; ?>
-        </div>
-        <?php
+        WPStarter_Admin_Page::header();
     }
 }
