@@ -113,7 +113,14 @@ How changes are made and checked: `DEVELOPMENT.md`. Releases: `RELEASING.md`.
 - The settings screen's header links come from `{Prefix}_Setup::header_links()`:
   `source` (the GitHub repository, **Source code**), `support` (its issues,
   **Support**) and `donate` (**Buy me a coffee**); leave one out for no
-  button. Keep the labels short so the buttons fit on one row.
+  button. Keep the labels short so the buttons fit on one row. The
+  plugin's own admin screens show the same header:
+  `{Prefix}_Admin_Manager::enqueue_header()` and `render_header()`.
+- Tabs in one group of the settings screen (between two dividers) switch
+  without a reload: the screen draws the group at once. A tab added with
+  `{prefix}_admin_tabs` joins in with `'preload' => true` once its script
+  works with its panel hidden and its markup is cheap to draw; otherwise it
+  stays a page of its own.
 - Update `README.md` (feature section, hooks, changelog), `changelog.txt`
   (the user-facing changelog entry) and `readme.txt` in the same change.
   `readme.txt` must stay under 10 KB for WordPress.org: one short line per
