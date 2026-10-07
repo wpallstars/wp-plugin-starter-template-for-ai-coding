@@ -15,6 +15,10 @@
  *   exists and where its zip is. The Updates screen, auto-updates, "View
  *   details", the download, the install and the rollback on failure are
  *   WordPress's own. Nothing is removed from or blocked in its update check.
+ * - Update checks that fall due while someone opens an admin screen run in
+ *   WP-Cron instead, so the screen does not wait for the update servers
+ *   (checks_in_cron(); the `wpallstars_github_updater_checks_in_cron`
+ *   filter turns it off). Every check still runs, as often as before.
  * - The latest release of each repository is asked for at most every 12
  *   hours (an hour after a failure), when WordPress checks for updates, and
  *   again when someone presses "Check again" on the Updates screen or clears
@@ -70,6 +74,22 @@ final class WPAllStars_GitHub_Updater {
     const FRESH  = 12 * HOUR_IN_SECONDS;
     const RETRY  = HOUR_IN_SECONDS;
     const RECENT = MINUTE_IN_SECONDS;
+
+    /**
+     * Core's checks on admin screens (on admin_init) => the WP-Cron event
+     * that runs the same check, and the site transient it keeps.
+     */
+    const CRON_CHECKS = array(
+        '_maybe_update_core'    => array('wp_version_check', 'update_core'),
+        '_maybe_update_plugins' => array('wp_update_plugins', 'update_plugins'),
+        '_maybe_update_themes'  => array('wp_update_themes', 'update_themes'),
+    );
+
+    /** A check's cron event this late means WP-Cron is not running it. */
+    const CRON_LATE = 15 * MINUTE_IN_SECONDS;
+
+    /** A stored check this old is due, as in core's _maybe_update_*(). */
+    const CHECK_AGE = 12 * HOUR_IN_SECONDS;
 
     /** Update IDs this file adds, so its own entries can be told apart. */
     const ID_PREFIX = 'github.com/';
@@ -169,6 +189,68 @@ final class WPAllStars_GitHub_Updater {
         add_filter('upgrader_package_options', array(__CLASS__, 'private_package'));
         add_filter('upgrader_pre_download', array(__CLASS__, 'private_download'), 10, 3);
         add_filter('upgrader_source_selection', array(__CLASS__, 'fix_folder'), 10, 4);
+
+        /**
+         * Whether update checks that fall due run in WP-Cron instead of on
+         * the admin screen being opened.
+         *
+         * @param bool $in_cron Default true.
+         */
+        if (apply_filters('wpallstars_github_updater_checks_in_cron', true)) {
+            // Before core's own checks (admin_init, priority 10).
+            add_action('admin_init', array(__CLASS__, 'checks_in_cron'), 1);
+        }
+    }
+
+    /**
+     * Run due update checks in WP-Cron, not on this admin screen.
+     *
+     * When WordPress's stored core, plugin or theme check is missing or 12
+     * hours old, core runs it on admin_init (_maybe_update_core() and the
+     * like): the screen being opened waits while WordPress and every
+     * plugin's own updater ask their servers, often for seconds. This takes
+     * those callbacks off and schedules core's own cron event for the check
+     * to run now instead; wp_schedule_single_event() refuses a second one
+     * within 10 minutes. Cron loads every plugin, so their updaters take
+     * part as before.
+     *
+     * Left alone: the checks on the Plugins, Themes, Updates and update-core
+     * screens, the twice-daily cron checks, the checks after updating, and
+     * automatic updates. While a check's cron event is missing or over 15
+     * minutes late (WP-Cron not running, or the event scheduled here not
+     * run), that check stays on admin screens as in core.
+     */
+    public static function checks_in_cron() {
+        if (wp_installing()) {
+            return;
+        }
+        foreach (self::CRON_CHECKS as $inline => $check) {
+            $priority = has_action('admin_init', $inline);
+            $next     = wp_next_scheduled($check[0]);
+            if (false === $priority || !$next || $next < time() - self::CRON_LATE) {
+                continue;
+            }
+            remove_action('admin_init', $inline, (int) $priority);
+            if (self::check_due($check[1])) {
+                wp_schedule_single_event(time(), $check[0]);
+            }
+        }
+    }
+
+    /**
+     * Whether a stored update check is due, as core's _maybe_update_*() decide.
+     *
+     * @param string $name update_core, update_plugins or update_themes.
+     * @return bool
+     */
+    private static function check_due($name) {
+        $current = get_site_transient($name);
+        if (!is_object($current) || !isset($current->last_checked) || self::CHECK_AGE <= time() - (int) $current->last_checked) {
+            return true;
+        }
+        // Core checks again at once after WordPress itself is updated.
+        $version = function_exists('wp_get_wp_version') ? wp_get_wp_version() : (string) get_bloginfo('version');
+        return 'update_core' === $name && (!isset($current->version_checked) || $version !== $current->version_checked);
     }
 
     /**
