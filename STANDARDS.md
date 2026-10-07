@@ -30,8 +30,8 @@ How changes are made and checked: `DEVELOPMENT.md`. Releases: `RELEASING.md`.
   scripts, the CI workflow and tool configuration, and the shared docs (this
   file, `DEVELOPMENT.md`, `RELEASING.md`, `CONTRIBUTING.md`,
   `CODE_OF_CONDUCT.md`, `SECURITY.md`).
-  A plugin's copy differs from the starter's only in the names above. They
-  hold no code for one plugin: they read `{Prefix}_Setup`
+  A plugin's own lines in a core file go only between its `{css}-own` markers.
+  Core files hold no code for one plugin: they read `{Prefix}_Setup`
   (`includes/class-{prefix}-setup.php`: features, settings tabs, header
   links, settings version and history, the plugin's own helpers and admin
   parts) or use hooks (`{prefix}_admin_tabs` for tabs,
