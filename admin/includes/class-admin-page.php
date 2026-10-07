@@ -25,10 +25,6 @@ class WPStarter_Admin_Page {
      * WPStarter_Setup::header_links() gives.
      */
     public static function header() {
-        $links = WPStarter_Setup::header_links();
-        // The search form sends page and tab itself, so its action is the
-        // screen's file alone.
-        $action = remove_query_arg('page', WPStarter_Admin_Manager::page_url());
         ?>
             <header class="wps-header">
                 <div class="wps-header__brand">
@@ -36,7 +32,23 @@ class WPStarter_Admin_Page {
                     <h1 class="wps-header__title"><?php esc_html_e('WP Plugin Starter', 'wp-plugin-starter-template'); ?></h1>
                     <span class="wps-badge"><?php echo esc_html('v' . WPSTARTER_VERSION); ?></span>
                 </div>
-                <?php if (current_user_can('manage_options')) : ?>
+                <?php
+                if (current_user_can('manage_options')) {
+                    self::search_form();
+                }
+                self::header_links(WPStarter_Setup::header_links());
+                ?>
+            </header>
+        <?php
+    }
+
+    /**
+     * Render the header's feature search. It sends page and tab itself, so
+     * its action is the screen's file alone.
+     */
+    private static function search_form() {
+        $action = remove_query_arg('page', WPStarter_Admin_Manager::page_url());
+        ?>
                 <form class="wps-search" role="search" method="get" action="<?php echo esc_url($action); ?>">
                     <input type="hidden" name="page" value="<?php echo esc_attr(WPStarter_Admin_Manager::PAGE); ?>" />
                     <input type="hidden" name="tab" value="<?php echo esc_attr(WPStarter_Admin_Manager::SEARCH); ?>" />
@@ -53,37 +65,42 @@ class WPStarter_Admin_Page {
                     </span>
                     <button type="submit" class="button wps-search__button"><?php esc_html_e('Search', 'wp-plugin-starter-template'); ?></button>
                 </form>
-                <?php endif; ?>
+        <?php
+    }
+
+    /**
+     * Render the header's buttons: Source code (or, from older
+     * {Prefix}_Setup classes, the maker's website), Support and Buy me a
+     * coffee, each only when its link is set.
+     *
+     * @param array<string,string> $links WPStarter_Setup::header_links().
+     */
+    private static function header_links(array $links) {
+        $buttons = array();
+        if (!empty($links['source'])) {
+            $buttons[] = array($links['source'], __('Source code', 'wp-plugin-starter-template'), 'editor-code', 'wps-header__support');
+        } elseif (!empty($links['website'])) {
+            $buttons[] = array($links['website'], __('Visit website', 'wp-plugin-starter-template'), '', '');
+        }
+        if (!empty($links['support'])) {
+            $buttons[] = array($links['support'], __('Support', 'wp-plugin-starter-template'), 'sos', 'wps-header__support');
+        }
+        if (!empty($links['donate'])) {
+            $buttons[] = array($links['donate'], __('Buy me a coffee', 'wp-plugin-starter-template'), 'coffee', 'wps-header__support wps-header__donate');
+        }
+        ?>
                 <div class="wps-header__actions">
-                    <?php if (!empty($links['source'])) : ?>
-                        <a class="button wps-header__support" href="<?php echo esc_url($links['source']); ?>" target="_blank" rel="noopener noreferrer">
-                            <span class="dashicons dashicons-editor-code" aria-hidden="true"></span>
-                            <?php esc_html_e('Source code', 'wp-plugin-starter-template'); ?>
+                    <?php foreach ($buttons as $button) : ?>
+                        <?php list($url, $label, $icon, $class) = $button; ?>
+                        <a class="<?php echo esc_attr(trim('button ' . $class)); ?>" href="<?php echo esc_url($url); ?>" target="_blank" rel="noopener noreferrer">
+                            <?php if ('' !== $icon) : ?>
+                                <span class="dashicons dashicons-<?php echo esc_attr($icon); ?>" aria-hidden="true"></span>
+                            <?php endif; ?>
+                            <?php echo esc_html($label); ?>
                             <span class="screen-reader-text"><?php esc_html_e('(opens in a new tab)', 'wp-plugin-starter-template'); ?></span>
                         </a>
-                    <?php elseif (!empty($links['website'])) : ?>
-                        <?php // Older {Prefix}_Setup classes link the maker's website instead. ?>
-                        <a class="button" href="<?php echo esc_url($links['website']); ?>" target="_blank" rel="noopener noreferrer">
-                            <?php esc_html_e('Visit website', 'wp-plugin-starter-template'); ?>
-                            <span class="screen-reader-text"><?php esc_html_e('(opens in a new tab)', 'wp-plugin-starter-template'); ?></span>
-                        </a>
-                    <?php endif; ?>
-                    <?php if (!empty($links['support'])) : ?>
-                        <a class="button wps-header__support" href="<?php echo esc_url($links['support']); ?>" target="_blank" rel="noopener noreferrer">
-                            <span class="dashicons dashicons-sos" aria-hidden="true"></span>
-                            <?php esc_html_e('Support', 'wp-plugin-starter-template'); ?>
-                            <span class="screen-reader-text"><?php esc_html_e('(opens in a new tab)', 'wp-plugin-starter-template'); ?></span>
-                        </a>
-                    <?php endif; ?>
-                    <?php if (!empty($links['donate'])) : ?>
-                        <a class="button wps-header__support wps-header__donate" href="<?php echo esc_url($links['donate']); ?>" target="_blank" rel="noopener noreferrer">
-                            <span class="dashicons dashicons-coffee" aria-hidden="true"></span>
-                            <?php esc_html_e('Buy me a coffee', 'wp-plugin-starter-template'); ?>
-                            <span class="screen-reader-text"><?php esc_html_e('(opens in a new tab)', 'wp-plugin-starter-template'); ?></span>
-                        </a>
-                    <?php endif; ?>
+                    <?php endforeach; ?>
                 </div>
-            </header>
         <?php
     }
 

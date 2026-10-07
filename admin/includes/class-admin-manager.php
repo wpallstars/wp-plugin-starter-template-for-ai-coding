@@ -212,17 +212,13 @@ class WPStarter_Admin_Manager {
         $active = self::get_active_tab();
         $tabs   = self::get_tabs();
         $group  = isset($tabs[$active]['group']) ? (string) $tabs[$active]['group'] : '';
-        $page   = array($active);
         if (self::SEARCH === $active || '' === $group) {
-            return $page;
+            return array($active);
         }
-        foreach ($tabs as $slug => $tab) {
-            $slug = (string) $slug;
-            if ($slug !== $active && !empty($tab['preload']) && isset($tab['group']) && $tab['group'] === $group) {
-                $page[] = $slug;
-            }
-        }
-        return $page;
+        $preload = array_filter($tabs, function ($tab, $slug) use ($active, $group) {
+            return (string) $slug !== $active && !empty($tab['preload']) && isset($tab['group']) && $tab['group'] === $group;
+        }, ARRAY_FILTER_USE_BOTH);
+        return array_merge(array($active), array_map('strval', array_keys($preload)));
     }
 
     /**

@@ -330,7 +330,7 @@
 	// work as with page loads. Other links load their page.
 	var Tabs = {
 		init: function () {
-			if (!$('[data-wps-panel]').length || !window.history || !window.history.pushState) {
+			if ($('[data-wps-panel]').length === 0 || !window.history || !window.history.pushState) {
 				return;
 			}
 			// Remember the tab of the first page, for Back.
@@ -339,7 +339,7 @@
 			$(document).on('click', 'a[data-wps-tab]', function (event) {
 				var slug = this.getAttribute('data-wps-tab');
 				// A new tab or window (modifier keys, middle click) loads the page.
-				if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey || !Tabs.panel(slug).length) {
+				if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey || Tabs.panel(slug).length === 0) {
 					return;
 				}
 				event.preventDefault();
@@ -351,7 +351,7 @@
 
 			window.addEventListener('popstate', function (event) {
 				var slug = event.state && event.state.wpsTab;
-				if (slug && slug !== cfg.tab && Tabs.panel(slug).length) {
+				if (slug && slug !== cfg.tab && Tabs.panel(slug).length > 0) {
 					Tabs.show(slug);
 				}
 			});

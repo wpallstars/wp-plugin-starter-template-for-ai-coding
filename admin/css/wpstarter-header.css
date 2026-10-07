@@ -209,7 +209,7 @@
 
 /* Responsive --------------------------------------------------------- */
 
-@media screen and (max-width: 782px) {
+@media screen and (width <= 782px) {
 	.wps-wrap {
 		margin-inline-start: -10px;
 	}
