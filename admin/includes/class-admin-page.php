@@ -163,7 +163,7 @@ class WPStarter_Admin_Page {
      */
     private static function nav_group($label, array $tabs, $active, array $page_tabs) {
         ?>
-        <div class="wps-nav__group" role="group" aria-label="<?php echo esc_attr($label); ?>"><?php // NOSONAR: links, not form controls, so not <fieldset>. ?>
+        <div class="wps-nav__group" role="group" aria-label="<?php echo esc_attr($label); ?>">
             <?php foreach ($tabs as $slug => $tab) : ?>
                 <?php $slug = (string) $slug; ?>
                 <a href="<?php echo esc_url(WPStarter_Admin_Manager::tab_url($slug)); ?>"

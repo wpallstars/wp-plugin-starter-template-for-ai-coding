@@ -344,8 +344,9 @@
 				}
 				event.preventDefault();
 				if (slug !== cfg.tab) {
-					Tabs.show(slug);
+					// Address first, so wpstarter:tab-shown listeners read the new one.
 					window.history.pushState({ wpsTab: slug }, '', this.href);
+					Tabs.show(slug);
 				}
 			});
 
