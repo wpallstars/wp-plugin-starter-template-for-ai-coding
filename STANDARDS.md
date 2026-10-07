@@ -113,9 +113,9 @@ How changes are made and checked: `DEVELOPMENT.md`. Releases: `RELEASING.md`.
 - The settings screen's header links come from `{Prefix}_Setup::header_links()`:
   `source` (the GitHub repository, **Source code**), `support` (its issues,
   **Support**) and `donate` (**Buy me a coffee**); leave one out for no
-  button, and keep labels short so they fit one row. The plugin's own
-  screens show the same header: `{Prefix}_Admin_Manager::enqueue_header()`
-  and `render_header()`.
+  button, and keep labels short so they fit one row. The plugin's own screens show
+  the same header (`{Prefix}_Admin_Manager::enqueue_header()`, `render_header()`)
+  and their sections as the same tabs (`.{css}-nav`, `.{css}-nav__tab`, `is-active`).
 - Settings tabs in one group (between dividers) switch without a reload. A
   `{prefix}_admin_tabs` tab joins with `'preload' => true` once it is cheap
   to draw and its script works with its panel hidden.

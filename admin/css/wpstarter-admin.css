@@ -4,8 +4,8 @@
  * Scoped to .wps-wrap. Uses core admin tokens so the screen follows the
  * active admin colour scheme; core buttons, notices and plugin cards keep
  * their native styles. Logical properties keep RTL working without a
- * separate stylesheet. The colour tokens, header and main area are in
- * wpstarter-header.css, which loads first.
+ * separate stylesheet. The colour tokens, header, tab bar and main area
+ * are in wpstarter-header.css, which loads first.
  *
  * SPDX-License-Identifier: GPL-3.0-or-later
  * SPDX-FileCopyrightText: 2026 Marcus Quinn
@@ -28,63 +28,6 @@
 
 .wps-wrap .wps-search__group:first-of-type {
 	margin-block-start: 8px;
-}
-
-/* Navigation --------------------------------------------------------- */
-
-.wps-nav {
-	display: flex;
-	flex-wrap: wrap;
-	align-items: stretch;
-	padding-inline: 12px;
-	background: var(--wps-surface);
-	border-block-end: 1px solid var(--wps-border);
-	overflow-x: auto;
-}
-
-.wps-nav__group {
-	display: flex;
-	align-items: stretch;
-}
-
-.wps-nav__group + .wps-nav__group {
-	margin-inline-start: 8px;
-	padding-inline-start: 8px;
-	border-inline-start: 1px solid var(--wps-border);
-}
-
-.wps-nav__tab {
-	display: inline-flex;
-	align-items: center;
-	padding: 14px 12px 11px;
-	font-size: 14px;
-	font-weight: 500;
-	color: var(--wps-muted);
-	text-decoration: none;
-	white-space: nowrap;
-	border-block-end: 3px solid transparent;
-	transition: color 0.1s ease, border-color 0.1s ease;
-}
-
-.wps-nav__tab:hover {
-	color: var(--wps-text);
-}
-
-.wps-nav__tab:focus {
-	outline: none;
-	box-shadow: none;
-}
-
-.wps-nav__tab:focus-visible {
-	outline: 2px solid var(--wps-accent);
-	outline-offset: -4px;
-	border-radius: 4px;
-}
-
-.wps-nav__tab.is-active {
-	color: var(--wps-text);
-	font-weight: 600;
-	border-block-end-color: var(--wps-accent);
 }
 
 /* Sections ----------------------------------------------------------- */
@@ -643,10 +586,6 @@
 /* Responsive --------------------------------------------------------- */
 
 @media screen and (width <= 782px) {
-	.wps-nav {
-		flex-wrap: nowrap;
-	}
-
 	.wps-setting__header {
 		grid-template-columns: auto 1fr;
 	}

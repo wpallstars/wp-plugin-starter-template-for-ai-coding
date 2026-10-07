@@ -1,13 +1,14 @@
 /**
  * WP Plugin Starter screen header.
  *
- * The colour tokens, the full-width screen (.wps-wrap), its header and the
- * main area: shared by the settings screen, whose stylesheet depends on
- * this one, and the plugin's own screens
- * (WPStarter_Admin_Manager::enqueue_header() and render_header()). Only
- * .wps-wrap, the header and .wps-main are styled here, so a screen's
- * content keeps its styles. Uses core admin tokens so the header follows the active admin
- * colour scheme; logical properties keep RTL working.
+ * The colour tokens, the full-width screen (.wps-wrap), its header, the
+ * tab bar under it (.wps-nav) and the main area: shared by the settings
+ * screen, whose stylesheet depends on this one, and the plugin's own
+ * screens (WPStarter_Admin_Manager::enqueue_header() and render_header()),
+ * so their tabs look the same. Only .wps-wrap, the header, .wps-nav and
+ * .wps-main are styled here, so a screen's content keeps its styles. Uses
+ * core admin tokens so the header follows the active admin colour scheme;
+ * logical properties keep RTL working.
  *
  * SPDX-License-Identifier: GPL-3.0-or-later
  * SPDX-FileCopyrightText: 2026 Marcus Quinn
@@ -39,7 +40,9 @@
 .wps-header,
 .wps-header *,
 .wps-header *::before,
-.wps-header *::after {
+.wps-header *::after,
+.wps-nav,
+.wps-nav * {
 	box-sizing: border-box;
 }
 
@@ -189,6 +192,65 @@
 	margin: 0;
 }
 
+/* Navigation --------------------------------------------------------- */
+
+/* The tab bar under the header: the settings screen's groups of tabs, or
+   a plugin screen's own sections, in one look. */
+.wps-nav {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: stretch;
+	padding-inline: 12px;
+	background: var(--wps-surface);
+	border-block-end: 1px solid var(--wps-border);
+	overflow-x: auto;
+}
+
+.wps-nav__group {
+	display: flex;
+	align-items: stretch;
+}
+
+.wps-nav__group + .wps-nav__group {
+	margin-inline-start: 8px;
+	padding-inline-start: 8px;
+	border-inline-start: 1px solid var(--wps-border);
+}
+
+.wps-nav__tab {
+	display: inline-flex;
+	align-items: center;
+	padding: 14px 12px 11px;
+	font-size: 14px;
+	font-weight: 500;
+	color: var(--wps-muted);
+	text-decoration: none;
+	white-space: nowrap;
+	border-block-end: 3px solid transparent;
+	transition: color 0.1s ease, border-color 0.1s ease;
+}
+
+.wps-nav__tab:hover {
+	color: var(--wps-text);
+}
+
+.wps-nav__tab:focus {
+	outline: none;
+	box-shadow: none;
+}
+
+.wps-nav__tab:focus-visible {
+	outline: 2px solid var(--wps-accent);
+	outline-offset: -4px;
+	border-radius: 4px;
+}
+
+.wps-nav__tab.is-active {
+	color: var(--wps-text);
+	font-weight: 600;
+	border-block-end-color: var(--wps-accent);
+}
+
 /* Main --------------------------------------------------------------- */
 
 .wps-wrap > .notice,
@@ -212,6 +274,11 @@
 @media screen and (width <= 782px) {
 	.wps-wrap {
 		margin-inline-start: -10px;
+	}
+
+	/* One row that scrolls sideways. */
+	.wps-nav {
+		flex-wrap: nowrap;
 	}
 
 	.wps-header,
@@ -247,7 +314,8 @@
 @media (prefers-reduced-motion: reduce) {
 	.wps-header *,
 	.wps-header *::before,
-	.wps-header *::after {
+	.wps-header *::after,
+	.wps-nav__tab {
 		transition: none !important;
 		animation: none !important;
 	}

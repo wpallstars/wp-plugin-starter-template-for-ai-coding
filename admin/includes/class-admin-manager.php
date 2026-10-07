@@ -470,7 +470,10 @@ class WPStarter_Admin_Manager {
      * it too: enqueue_header() on their admin_enqueue_scripts, then print
      * it first in `<div class="wrap wps-wrap">`, followed by
      * `<hr class="wp-header-end">` so admin notices go below it, and their
-     * content in `<div class="wps-main">`.
+     * content in `<div class="wps-main">`. A screen with sections puts them
+     * between the two as the settings screen's tabs: `<nav class="wps-nav">`
+     * holding `<a class="wps-nav__tab">` links, the one shown `is-active`
+     * with `aria-current="page"`.
      */
     public static function render_header() {
         WPStarter_Admin_Page::header();
