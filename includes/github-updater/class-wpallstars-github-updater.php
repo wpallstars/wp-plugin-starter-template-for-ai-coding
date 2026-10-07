@@ -210,31 +210,58 @@ final class WPAllStars_GitHub_Updater {
      * like): the screen being opened waits while WordPress and every
      * plugin's own updater ask their servers, often for seconds. This takes
      * those callbacks off and schedules core's own cron event for the check
-     * to run now instead; wp_schedule_single_event() refuses a second one
-     * within 10 minutes. Cron loads every plugin, so their updaters take
-     * part as before.
+     * to run now instead, then lets WP-Cron start it. Cron loads every
+     * plugin, so their updaters take part as before.
      *
      * Left alone: the checks on the Plugins, Themes, Updates and update-core
      * screens, the twice-daily cron checks, the checks after updating, and
      * automatic updates. While a check's cron event is missing or over 15
      * minutes late (WP-Cron not running, or the event scheduled here not
-     * run), that check stays on admin screens as in core.
+     * run), or a due check cannot be scheduled, that check stays on this
+     * admin screen as in core.
      */
     public static function checks_in_cron() {
         if (wp_installing()) {
             return;
         }
+        $scheduled = false;
         foreach (self::CRON_CHECKS as $inline => $check) {
             $priority = has_action('admin_init', $inline);
             $next     = wp_next_scheduled($check[0]);
             if (false === $priority || !$next || $next < time() - self::CRON_LATE) {
                 continue;
             }
-            remove_action('admin_init', $inline, (int) $priority);
             if (self::check_due($check[1])) {
-                wp_schedule_single_event(time(), $check[0]);
+                $added = wp_schedule_single_event(time(), $check[0]);
+                if (true !== $added && !self::scheduled_soon($check[0])) {
+                    // Not in cron: core's own check runs on this screen.
+                    continue;
+                }
+                if (true === $added) {
+                    $scheduled = true;
+                }
             }
+            remove_action('admin_init', $inline, (int) $priority);
         }
+        if ($scheduled) {
+            // WordPress 6.9 and later start WP-Cron at shutdown and this
+            // only queues that again; earlier versions started it on
+            // wp_loaded, before this hook, so it starts the new event now.
+            // Either way core's own rules apply (DISABLE_WP_CRON and so on).
+            wp_cron();
+        }
+    }
+
+    /**
+     * Whether a cron event for a hook is already due within 10 minutes, the
+     * window in which wp_schedule_single_event() refuses another.
+     *
+     * @param string $hook Cron hook.
+     * @return bool
+     */
+    private static function scheduled_soon($hook) {
+        $next = wp_next_scheduled($hook);
+        return false !== $next && $next <= time() + 10 * MINUTE_IN_SECONDS;
     }
 
     /**
