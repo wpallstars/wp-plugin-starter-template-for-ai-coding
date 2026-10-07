@@ -238,9 +238,11 @@ it reads it. A small plugin has only `AGENTS.md`; a large one adds docs.
   plugins hand the choice to the owner instead of deciding for them.
   WordPress update checks and downloads are the exception: leave them alone (next rule).
 - Do not change WordPress update behaviour (update transients, `auto_update_*`
-  filters, update checks) outside the shared GitHub updater. Plugin Check
-  reports `plugin_updater_detected` as an error, and WordPress.org asks plugins
-  not to interfere with the updater.
+  filters, update checks, including when and where they run) outside the
+  shared GitHub updater. Plugin Check reports `plugin_updater_detected` as an
+  error, and WordPress.org asks plugins not to interfere with the updater. A
+  change to update behaviour goes in the shared updater, so it reaches GitHub
+  builds only.
 - Leave no PHP errors, warnings, notices or deprecations behind. Fix any the
   plugin causes, including ones in other plugins that happen only because of
   this one, in the same change when small or as a tracked issue. Messages
@@ -309,7 +311,16 @@ a test site take the site down.
   `wp_suspend_cache_invalidation()`, then turn them back on.
 - **No request per page view.** No admin-ajax, REST or remote request on
   every visitor page unless the feature needs it; remote requests a page
-  waits on have a short timeout (at most 3 seconds).
+  waits on have a short timeout (at most 3 seconds). Admin screens do not
+  wait on remote requests either when the answer can be fetched in cron
+  and cached: licence and update servers are the usual cause of slow admin
+  screens.
+- **Clear only your own cache.** Delete the plugin's own object-cache keys
+  or groups, never the whole object cache (`wp_cache_flush()`): on many
+  hosts every site on the account shares one memcached server, so a flush
+  empties every site's cache, and each of their pages is slower on its next
+  uncached load (measured on a host with 14 sites: about 0.2 seconds a
+  page, up to 0.5).
 - **Measure on large data.** `scripts/smoke-test.sh` loads every page on a
   site seeded with thousands of posts and meta rows, reports query counts
   and times, and fails on a full table or index scan, or a large sort, in
@@ -334,6 +345,15 @@ It replaces Git Updater.
   to core. It only adds entries for those plugins; it never removes or blocks
   other updates. Its icon, banner and View details (`readme.txt` and the
   screenshots) are the installed plugin's own files.
+- Update checks that fall due while someone opens an admin screen run in
+  WP-Cron instead. Core runs them on `admin_init` when its stored check is
+  12 hours old, so that screen waits while WordPress and every plugin's own
+  updater ask their servers (seconds on hosts with many premium plugins).
+  The updater moves only those three checks (`_maybe_update_core`,
+  `_maybe_update_plugins`, `_maybe_update_themes`) to core's own cron events,
+  and leaves them where they are while WP-Cron is not running. The checks on
+  the Plugins, Themes and Updates screens, the twice-daily checks, the checks
+  after updating and automatic updates stay as in core.
 - It is the same in every plugin apart from its text domain and `@package`.
   Change it in the starter, raise the version in its `load.php`, and copy it
   to each plugin. Plugins change what it does only through its filters

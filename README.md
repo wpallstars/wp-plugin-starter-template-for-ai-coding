@@ -48,7 +48,7 @@ Version: 1.0.27
 - **A Read Me tab** that shows this file, banner included, so users read the same guide inside WordPress as on GitHub.
 - **Features as classes**: one file per feature, off by default, with settings, hooks, one-off imports from the plugins it replaces and clean uninstall.
 - **Replaced plugins**: a feature that does another plugin's job imports its settings once, waits while that plugin is active, and the Plugins screen suggests deactivating and deleting it.
-- **Updates from GitHub**: the shared wpallstars updater (`includes/github-updater/`). Sites get each GitHub release as a normal WordPress update. Every wpallstars plugin carries a copy and only the newest copy on a site runs, so they are all checked together, once.
+- **Updates from GitHub**: the shared wpallstars updater (`includes/github-updater/`). Sites get each GitHub release as a normal WordPress update. Every wpallstars plugin carries a copy and only the newest copy on a site runs, so they are all checked together, once. Update checks that fall due while someone opens an admin screen run in WP-Cron instead, so the screen does not wait for update servers.
 - **Two builds of each version**: the GitHub release, and a WordPress.org build without the updater, as WordPress.org requires.
 - **Scripts and CI**: lint (PHP 7.4, WordPress coding and security rules, PHPStan), a smoke test on a real WordPress, the release build, a preflight check of both zips, Plugin Check, a preview site, the banner and icon build, and `scripts/sync-core.sh` to keep each plugin's shared parts the same as the starter's.
 - **Shared rules for people and AI**: `STANDARDS.md` (structure, code rules, performance, releases, styling, testing), `DEVELOPMENT.md` (set-up and checks) and `RELEASING.md`, the same in every plugin made from the starter.
@@ -113,6 +113,7 @@ Filters:
 - `wpallstars_github_plugins` (GitHub builds, shared updater): change which plugins update from GitHub releases (plugin file => `repo` as owner/repo, `asset_only`, `version`, `name`).
 - `wpallstars_github_token` (GitHub builds, shared updater): GitHub token for a repository (token, owner/repo), for private repositories; defaults to the `WPALLSTARS_GITHUB_TOKEN` constant.
 - `wpallstars_github_updater_enabled` and `wpallstars_github_updater_early` (GitHub builds, shared updater): whether it runs (false while Git Updater is active) and whether plugins also on WordPress.org take GitHub releases first.
+- `wpallstars_github_updater_checks_in_cron` (GitHub builds, shared updater): return false to let update checks that fall due run on the admin screen being opened, as in core, instead of in WP-Cron.
 
 Actions:
 
@@ -130,6 +131,9 @@ Deleting the plugin removes its settings, its cached data, who hid lines of the 
 ## Changelog
 
 ### Unreleased
+
+- New (GitHub builds): admin screens no longer wait for update servers. When WordPress's stored core, plugin or theme update check is 12 hours old, the next admin screen opened ran it, waiting while WordPress and every plugin's own updater asked their servers (seconds on sites with many premium plugins). The shared updater (version 1.4.0) schedules that check as core's own cron event instead, and WP-Cron starts it in the background as the screen finishes. The Plugins, Themes and Updates screens still check as before, as do the twice-daily checks, the checks after updating and automatic updates; while WP-Cron is not running, or when a check cannot be scheduled, checks stay on admin screens. The `wpallstars_github_updater_checks_in_cron` filter turns this off. It replaces the separate "Update checks in cron" must-use file some sites had.
+- Developers: `STANDARDS.md` says changes to when and where update checks run belong in the shared updater too, admin screens do not wait on remote requests that can run in cron, and plugins clear only their own object-cache keys, never the whole cache (`wp_cache_flush()`), which many hosts share between every site on the account.
 
 - New: tabs in the same group of the settings screen (between two dividers) switch at once, without loading the page again. The screen draws the group's tabs together; the address follows the tab shown, so Back, reload and bookmarks work as before. Search results and tabs in other groups still open as pages.
 - Developers: a tab added with `wpstarter_admin_tabs` joins its group's instant switching with `'preload' => true`; others still load on their own. `wpstarter_admin_enqueue` and `wpstarter_admin_script_deps` run once for each tab drawn on the page (`WPStarter_Admin_Manager::page_tabs()`), the active tab first; `wpstarterAdmin.tab` follows the tab shown, `wpstarterAdmin.tabs` lists the tabs drawn, and `wpstarter:tab-shown` fires on `document` when another tab is shown.
