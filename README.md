@@ -132,6 +132,8 @@ Deleting the plugin removes its settings, its cached data, who hid lines of the 
 
 ### Unreleased
 
+- Developers: `scripts/sync-core.sh` keeps a plugin's own lines between its `{css}-own:start` / `{css}-own:end` comment markers in core files, including `.distignore`, `DEVELOPMENT.md` and `RELEASING.md`. Check mode ignores those lines as drift; malformed or excess blocks stop the sync before any core files are written.
+
 - New (GitHub builds): admin screens no longer wait for update servers. When WordPress's stored core, plugin or theme update check is 12 hours old, the next admin screen opened ran it, waiting while WordPress and every plugin's own updater asked their servers (seconds on sites with many premium plugins). The shared updater (version 1.4.0) schedules that check as core's own cron event instead, and WP-Cron starts it in the background as the screen finishes. The Plugins, Themes and Updates screens still check as before, as do the twice-daily checks, the checks after updating and automatic updates; while WP-Cron is not running, or when a check cannot be scheduled, checks stay on admin screens. The `wpallstars_github_updater_checks_in_cron` filter turns this off. It replaces the separate "Update checks in cron" must-use file some sites had.
 - Developers: `STANDARDS.md` says changes to when and where update checks run belong in the shared updater too, admin screens do not wait on remote requests that can run in cron, and plugins clear only their own object-cache keys, never the whole cache (`wp_cache_flush()`), which many hosts share between every site on the account.
 

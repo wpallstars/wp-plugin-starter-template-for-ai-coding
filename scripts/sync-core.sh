@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Copy the core files (scripts/core-files.txt) from the starter plugin into
 # this plugin, with this plugin's names. Core files hold no code for one
-# plugin, so after a sync they match the starter apart from the names.
+# plugin, so they match the starter apart from names and marked own blocks.
 #
 # Usage: scripts/sync-core.sh [--check] [--from DIR] [--ref REF]
 #   --check     Change nothing; list core files that differ from the starter's
@@ -37,12 +37,14 @@ die() {
 
 TMP_FILE=""
 LIST_FILE=""
+OWN_FILE=""
 # The file being swapped in, removed if the run stops.
 NEW_FILE=""
 
 cleanup() {
 	[[ -z "$TMP_FILE" ]] || rm -f "$TMP_FILE"
 	[[ -z "$LIST_FILE" ]] || rm -f "$LIST_FILE"
+	[[ -z "$OWN_FILE" ]] || rm -f "$OWN_FILE"
 	[[ -z "$NEW_FILE" ]] || rm -f "$NEW_FILE"
 	return 0
 }
@@ -168,7 +170,13 @@ main() {
 	trap cleanup EXIT
 	TMP_FILE="$(mktemp "${TMPDIR:-/tmp}/sync-core.XXXXXX")"
 	LIST_FILE="$(mktemp "${TMPDIR:-/tmp}/sync-core-list.XXXXXX")"
+	OWN_FILE="$(mktemp "${TMPDIR:-/tmp}/sync-core-own.XXXXXX")"
 	core_paths "$from" "$ref" "$LIST_FILE"
+	# Validate every file before writing any: a late malformed block must
+	# not leave the plugin partly synced.
+	while IFS= read -r path; do
+		sync_file "$from" "$ref" "$path" 2
+	done <"$LIST_FILE"
 	while IFS= read -r path; do
 		sync_file "$from" "$ref" "$path" "$check"
 		count=$((count + 1))
@@ -189,8 +197,57 @@ main() {
 # Core files that differ from the starter (sync_file counts them).
 DIFFER=0
 
+# Keep each target block in the corresponding starter block, in order.
+# Recognise whole comment lines only, including indented release steps.
+preserve_own() {
+	local target="$1"
+	grep -Fq "$TO_CSS-own:" "$target" || return 0
+	awk -v marker="$TO_CSS-own" '
+		function fail(message) {
+			print "sync-core: " FILENAME ": " message > "/dev/stderr"
+			failed = 1
+			exit 1
+		}
+		function boundary(line, suffix) {
+			sub(/^[[:space:]]*/, "", line)
+			sub(/[[:space:]]*$/, "", line)
+			return line == "# " marker suffix || line == "<!-- " marker suffix " -->"
+		}
+		FILENAME != previous {
+			if (inside) fail("own start marker has no end marker")
+			inside = 0
+			count = 0
+			previous = FILENAME
+		}
+		{
+			target = (FILENAME == ARGV[1])
+			if (boundary($0, ":start")) {
+				if (inside) fail("nested own start marker")
+				inside = 1
+				count++
+				if (target) target_count = count
+				else { starter_count = count; print; printf "%s", content[count] }
+			} else if (boundary($0, ":end")) {
+				if (!inside) fail("own end marker has no start marker")
+				inside = 0
+				if (!target) print
+			} else if (inside) {
+				if (target) content[count] = content[count] $0 ORS
+			} else if (!target) print
+		}
+		END {
+			if (!failed) {
+				if (inside) fail("own start marker has no end marker")
+				if (target_count > starter_count) fail("target has more own blocks than the starter")
+			}
+		}
+	' "$target" "$TMP_FILE" >"$OWN_FILE" || die "cannot preserve own blocks in $target; no core files written"
+	cp "$OWN_FILE" "$TMP_FILE"
+	return 0
+}
+
 # Compare one core file with the starter's, with this plugin's names; list
-# it (CHECK 1) or replace it when it differs, adding one to DIFFER.
+# it (CHECK 1), validate only (CHECK 2), or replace it when it differs.
 sync_file() {
 	local from="$1"
 	local ref="$2"
@@ -208,6 +265,8 @@ sync_file() {
 	*) die "$path in the starter at $ref is not one regular file (mode '$mode')" ;;
 	esac
 	git -C "$from" show "$ref:$path" | plugin_map "$target" >"$TMP_FILE"
+	if [[ -f "$target" ]]; then preserve_own "$target"; fi
+	if [[ "$check" -eq 2 ]]; then return 0; fi
 	if [[ -f "$target" ]] && cmp -s "$TMP_FILE" "$target" && same_mode "$target" "$mode"; then
 		return 0
 	fi
