@@ -17,7 +17,8 @@
  *   WordPress's own. Nothing is removed from or blocked in its update check.
  * - The latest release of each repository is asked for at most every 12
  *   hours (an hour after a failure), when WordPress checks for updates, and
- *   again when someone presses "Check again" on the Updates screen.
+ *   again when someone presses "Check again" on the Updates screen or clears
+ *   WordPress's update_plugins site transient (at most once a minute).
  * - Public repositories are read from github.com's own pages (the
  *   releases/latest redirect, the asset's download address and the main
  *   file on raw.githubusercontent.com), not the API: without a token the API
@@ -127,6 +128,13 @@ final class WPAllStars_GitHub_Updater {
      * @var array|null
      */
     private static $cache = null;
+
+    /**
+     * Whether core's update cache was empty before its first save this request.
+     *
+     * @var bool|null
+     */
+    private static $updates_cleared = null;
 
     /**
      * Signed download addresses (or errors) found this request, by package.
@@ -383,11 +391,14 @@ final class WPAllStars_GitHub_Updater {
     }
 
     /**
-     * Whether someone pressed "Check again" on the Updates screen.
+     * Whether core's update cache was cleared or someone pressed "Check again".
      *
      * @return bool
      */
     private static function forced() {
+        if (true === self::$updates_cleared) {
+            return true;
+        }
         global $pagenow;
         // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- core's own link; it only refreshes data.
         return is_admin() && 'update-core.php' === $pagenow && !empty($_GET['force-check']) && current_user_can('update_plugins');
@@ -431,7 +442,7 @@ final class WPAllStars_GitHub_Updater {
     /**
      * Whether a stored answer can still be used: younger than 12 hours (an
      * hour after a failure), and not older than a minute when someone
-     * pressed "Check again".
+     * pressed "Check again" or cleared core's update cache.
      *
      * @param array $entry Stored answer.
      * @return bool
@@ -718,6 +729,11 @@ final class WPAllStars_GitHub_Updater {
     public static function add_updates($transient) {
         if (!is_object($transient)) {
             return $transient;
+        }
+        if (null === self::$updates_cleared) {
+            // Core saves twice: first last_checked, then the update answers.
+            // Read before that first save, not after it has filled the cache.
+            self::$updates_cleared = !get_site_transient('update_plugins');
         }
         /** @var \stdClass $transient Core saves update_plugins as a stdClass. */
         /**
