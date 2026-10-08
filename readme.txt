@@ -5,7 +5,7 @@ Tags: starter, boilerplate, settings, developer, template
 Requires at least: 6.2
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 1.0.27
+Stable tag: 1.0.28
 License: GPLv3 or later
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 
@@ -60,8 +60,9 @@ GitHub releases are the stable beta channel: each version comes out there first.
 
 == Changelog ==
 
-= 1.0.27 =
-* New: View details for GitHub updates shows the plugin's readme: Description, Installation, FAQ, Screenshots and Changelog, Compatible up to and the donate link.
+= 1.0.28 =
+* New: tabs in the same group of the settings screen switch at once, without loading the page again.
+* New (GitHub builds): admin screens no longer wait for update servers; update checks that fall due run in WP-Cron instead.
 
 Every change: changelog.txt.
 
