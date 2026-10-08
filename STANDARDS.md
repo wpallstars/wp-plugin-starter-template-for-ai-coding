@@ -203,8 +203,8 @@ it reads it. A small plugin has only `AGENTS.md`; a large one adds docs.
   has its own format, and a doc serves every tool. Add one only when agents
   keep getting a task wrong even with its doc, and have it read that doc.
 - `scripts/preflight-release.sh` warns when `AGENTS.md` is over 150 lines,
-  does not name `STANDARDS.md`, names a doc that does not exist, or leaves
-  out one in `docs/`.
+  does not name `STANDARDS.md`, still describes the starter (in a plugin),
+  names a doc that does not exist, or leaves out one in `docs/`.
 
 ## Code rules
 

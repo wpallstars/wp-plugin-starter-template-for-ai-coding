@@ -36,7 +36,9 @@ in `docs/` (`STANDARDS.md` → Agent docs); the starter has none yet.
   core change in a plugin that uses it, then here.
 - `scripts/rename-plugin.sh` must keep working on a fresh copy: after a
   change to names in core files, try it on a throwaway clone (rename, lint,
-  smoke test).
+  smoke test). It writes a new plugin its own `AGENTS.md` and `LAUNCH.md`
+  (`set_agents`, `set_version`): change those too when a section every
+  plugin shares changes here.
 - The banner source is `.wordpress-org/banner.svg`: the wpallstars plugin
   stack picture in red only, on wpallstars branding. The icon source,
   `.wordpress-org/icon.svg`, is that picture alone. Rebuild both with
