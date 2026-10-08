@@ -433,6 +433,40 @@ where still active, reads `Version:` on `main` instead), so:
 
 Details: `RELEASING.md`; the plugin's own submission state: `LAUNCH.md`.
 
+## Admin screens: spacing and forms
+
+React forms and modals in wp-admin use WordPress components. The container
+owns the spacing, not the controls. Scope these rules to the plugin's form
+classes (`.{css}-form`, `.{css}-fieldset`, `.{css}-form__row`,
+`.{css}-form__actions`), never to all admin forms.
+
+- Remove controls' outer margins. Use `__nextHasNoMarginBottom` on
+  `TextControl`, `SelectControl`, `TextareaControl`, `CheckboxControl` and
+  `ToggleControl`, and `__next40pxDefaultSize` on inputs, selects and adjacent
+  buttons, where the component version supports those props. On older
+  versions, use scoped CSS for the same spacing and height; do not pass
+  unsupported props to DOM elements.
+- Forms and groups use `display: grid; gap: 16px`. Related buttons have an
+  8px gap; help text sits 4px below its field. Use WordPress's 4px spacing
+  scale: 4, 8, 12, 16 and 24px. Reset `margin: 0` on paragraphs, headings
+  and lists inside these containers; never mix browser margins with `gap`.
+- Group fields with `<fieldset>` and `<legend>`, not headings with ad-hoc
+  margins. Set the legend to `float: left; width: 100%` so it participates
+  in the grid. Separate groups with a `1px solid #dcdcde` top border.
+- Short fields sit side by side in a row with
+  `grid-template-columns: repeat(auto-fit, minmax(200px, 1fr))` and
+  `align-items: start`: labels line up and fields wrap on narrow screens.
+- A notice containing content and actions has a content grid with `gap: 8px`.
+  Show a read-only URL in a full-width monospace input, with **Copy** and
+  **Open in a new window** buttons together on one wrapping row.
+- A disabled control always explains why in help text below it, or, for a
+  button that supports it, with `accessibleWhenDisabled` and a `title`.
+  Validate required fields on submit and show a message instead of silently
+  disabling the submit button.
+- Modals use the plugin's `.{css}-modal` class: a fixed width at WordPress's
+  small breakpoint (600px) and above, a full-width sheet below. End with
+  right-aligned **Cancel** (tertiary) and the primary action.
+
 ## Front-end styling and dark mode
 
 Block, shortcode and other front-end styles must work with the Kadence Pro
