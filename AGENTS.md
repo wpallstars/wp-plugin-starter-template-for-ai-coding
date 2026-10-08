@@ -5,9 +5,10 @@ It has no features of its own, only the parts every plugin needs.
 
 **Read `STANDARDS.md` before any change.** It holds the rules every plugin
 made from the starter shares: structure and core files, code rules,
-performance, Updates from GitHub, releases, front-end styling and dark mode, and testing. This
-repository holds the master copy of it and of every core file
-(`scripts/core-files.txt`). This file holds only what is the starter's own.
+performance, Updates from GitHub, releases and testing; styling (admin
+forms, front-end dark mode) is in `STYLING.md`. This repository holds the
+master copy of both and of every core file (`scripts/core-files.txt`). This
+file holds only what is the starter's own.
 
 | Placeholder in `STANDARDS.md` | WP Plugin Starter |
 |---|---|

@@ -55,6 +55,7 @@ phpstan.neon.dist
 
 # Shared docs.
 STANDARDS.md
+STYLING.md
 DEVELOPMENT.md
 RELEASING.md
 CONTRIBUTING.md

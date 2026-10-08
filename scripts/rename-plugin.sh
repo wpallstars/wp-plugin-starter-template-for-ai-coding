@@ -262,9 +262,10 @@ two, what it does and who it is for.
 
 **Read \`STANDARDS.md\` before any change.** It holds the rules every plugin
 made from the starter shares: structure and core files, code rules,
-performance, Updates from GitHub, releases, front-end styling and dark mode,
-and testing. The starter holds the master copy of it and of every core file
-(\`scripts/core-files.txt\`). This file holds only what is $TO_NAME's own.
+performance, Updates from GitHub, releases and testing; styling (admin
+forms, front-end dark mode) is in \`STYLING.md\`. The starter holds the
+master copy of both and of every core file (\`scripts/core-files.txt\`).
+This file holds only what is $TO_NAME's own.
 
 | Placeholder in \`STANDARDS.md\` | $TO_NAME |
 |---|---|
