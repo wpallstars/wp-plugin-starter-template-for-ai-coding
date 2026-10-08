@@ -24,7 +24,7 @@ WP Plugin Starter is what wpallstars plugins are made from. It has no features o
 
 If this saves you time, headaches and costs, feel free to [buy me a coffee](https://buymeacoffee.com/marcusquinn), or whatever you like, to invest in making more things open-source.
 
-Version: 1.0.28
+Version: 1.0.29
 
 <!-- github-only:start -->
 ## Screenshots
@@ -130,7 +130,7 @@ Deleting the plugin removes its settings, its cached data, who hid lines of the 
 
 ## Changelog
 
-### Unreleased
+### 1.0.29
 
 - Developers: `STANDARDS.md` is shorter (under 500 lines, so plugins can push their core sync again) with every rule kept. The admin form spacing and front-end dark mode rules moved to a new core file, `STYLING.md` (`scripts/sync-core.sh` adds it; it stays out of both zips); the WordPress.org build's affiliate-link format and checks are now only in `RELEASING.md` → WordPress.org.
 - Developers: `scripts/rename-plugin.sh` now writes the new plugin its own `AGENTS.md`: its names in the placeholder table (including `{css}`, which kept the starter's), what belongs in the plugin, and the test sites, instead of the starter's own guide. `scripts/preflight-release.sh` warns when a plugin's `AGENTS.md` still describes the starter.
