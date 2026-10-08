@@ -3,8 +3,8 @@
 How changes are made and checked in every plugin made from the wpallstars
 starter plugin. This file is the same in each of them (names as
 placeholders: `STANDARDS.md` lists them, and the plugin's `AGENTS.md` gives
-its values). Rules for features, code, styling and testing: `STANDARDS.md`;
-the plugin's own rules: `AGENTS.md`. Releases: `RELEASING.md`.
+its values). Rules for features, code and testing: `STANDARDS.md`; styling:
+`STYLING.md`; the plugin's own rules: `AGENTS.md`. Releases: `RELEASING.md`.
 
 ## Workflow
 
@@ -259,6 +259,11 @@ git -C ../<starter> pull
 scripts/sync-core.sh --check   # list what differs
 scripts/sync-core.sh           # copy the starter's core files, renamed
 ```
+
+When a sync adds a core doc at the top of the repository (such as
+`STYLING.md`) and the aidevops commit hook rejects it as a new root file,
+add its name to `root_files.allow` in the plugin's `.aidevops.json`, as for
+`STANDARDS.md`.
 
 ## Services setup
 
