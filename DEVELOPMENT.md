@@ -301,6 +301,15 @@ without its secret, and nothing fails.
    Check: the next pull request gets a **Codacy Static Code Analysis**
    check. Then add the repository's Codacy badge to the badges block in
    `README.md` (`STANDARDS.md` → Structure).
+   Then, in the repository's **Code patterns**, turn on **Configuration
+   file** for **ESLint** (it reads `.eslintrc.json`) and **PHP Mess
+   Detector** (`phpmd.xml.dist`). Codacy's defaults for them are written
+   for other code: ES5 compatibility, imports without the TypeScript
+   resolver, camelCase names and static calls, a few thousand findings
+   that say nothing about a WordPress plugin. The files keep the rules
+   that do (`eslint:recommended`, TypeScript's recommended rules, code
+   size and unused code); each left-out PHPMD rule says why. An
+   organization coding standard still decides which tools run.
 3. **CodeFactor**: its GitHub app is installed for the whole organization,
    but CodeFactor analyses a repository, and serves its badge, only once
    the repository is added on codefactor.io (signed in with GitHub).

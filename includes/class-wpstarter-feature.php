@@ -234,6 +234,9 @@ abstract class WPStarter_Feature {
      * @param float $start  microtime(true) when the batch began.
      * @param int   $budget Seconds the batch may run.
      * @return bool
+     *
+     * Hosts may disable set_time_limit(); its warning is not an error here.
+     * @SuppressWarnings("PHPMD.ErrorControlOperator")
      */
     public static function more_time($start, $budget) {
         $now = microtime(true);

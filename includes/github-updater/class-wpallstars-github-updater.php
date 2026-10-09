@@ -940,7 +940,7 @@ final class WPAllStars_GitHub_Updater {
      */
     private static function file_for_slug($slug) {
         $updates = get_site_transient('update_plugins');
-        foreach (self::plugins() as $file => $plugin) {
+        foreach (array_keys(self::plugins()) as $file) {
             if (dirname($file) !== $slug) {
                 continue;
             }

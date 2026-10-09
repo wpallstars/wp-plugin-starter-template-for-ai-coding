@@ -1,0 +1,47 @@
+<?xml version="1.0"?>
+<ruleset name="WordPress plugin"
+	xmlns="http://pmd.sf.net/ruleset/1.0.0"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://pmd.sf.net/ruleset/1.0.0 http://pmd.sf.net/ruleset_xml_schema.xsd"
+	xsi:noNamespaceSchemaLocation="http://pmd.sf.net/ruleset_xml_schema.xsd">
+	<description>
+		PHP Mess Detector rules for a WordPress plugin. Codacy reads this file
+		(Code patterns → PHP Mess Detector → Configuration file). Left out are
+		the rules that WordPress's own conventions break by design.
+	</description>
+
+	<rule ref="rulesets/cleancode.xml">
+		<!-- Plugins are static classes calling WordPress's static API. -->
+		<exclude name="StaticAccess"/>
+		<!-- Style; WordPress Coding Standards allow else. -->
+		<exclude name="ElseExpression"/>
+		<!-- WordPress functions take boolean flags ($echo, $network_wide). -->
+		<exclude name="BooleanArgumentFlag"/>
+		<!-- No namespaces: classes are global, with the plugin's prefix. -->
+		<exclude name="MissingImport"/>
+	</rule>
+	<rule ref="rulesets/codesize.xml"/>
+	<rule ref="rulesets/design.xml">
+		<!-- exit after wp_redirect() and wp_send_json() is how WordPress ends a request. -->
+		<exclude name="ExitExpression"/>
+	</rule>
+	<rule ref="rulesets/naming.xml">
+		<!-- $id, $wp, $i: WordPress names. -->
+		<exclude name="ShortVariable"/>
+		<exclude name="LongVariable"/>
+		<!-- Prefix_Name class names are long by convention. -->
+		<exclude name="LongClassName"/>
+	</rule>
+	<rule ref="rulesets/unusedcode.xml">
+		<!-- WordPress calls methods by name (array( __CLASS__, 'name' ) for
+		     hooks, array_map() and field-type maps), which this rule cannot
+		     follow; PHPStan does, and reports private methods nothing calls. -->
+		<exclude name="UnusedPrivateMethod"/>
+		<!-- Hook, WP-CLI ($args, $assoc_args) and field-type callbacks take
+		     the parameters their caller passes, used or not. -->
+		<exclude name="UnusedFormalParameter"/>
+	</rule>
+	<!-- controversial.xml is left out: its camelCase rules contradict
+	     WordPress's snake_case, and Superglobals is covered by phpcs's
+	     nonce and sanitizing checks (phpcs.xml.dist). -->
+</ruleset>
