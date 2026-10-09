@@ -583,6 +583,24 @@
 	background: rgb(127 127 127 / 8%);
 }
 
+.wps-readme-code {
+	margin: 8px 0 16px;
+	padding: 12px 16px;
+	overflow-x: auto;
+	font-size: 13px;
+	line-height: 1.5;
+	background: rgb(127 127 127 / 8%);
+	border: 1px solid rgb(127 127 127 / 25%);
+	border-radius: var(--wps-radius);
+}
+
+.wps-readme-code code {
+	margin: 0;
+	padding: 0;
+	font-size: inherit;
+	background: none;
+}
+
 /* Responsive --------------------------------------------------------- */
 
 @media screen and (width <= 782px) {
