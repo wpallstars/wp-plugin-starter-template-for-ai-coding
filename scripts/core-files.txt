@@ -48,6 +48,8 @@ scripts/update-test.sh
 .gitignore
 .gitleaks.toml
 .codacy.yml
+.eslintrc.json
+phpmd.xml.dist
 sonar-project.properties
 composer.json
 phpcs.xml.dist

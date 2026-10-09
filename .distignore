@@ -15,6 +15,8 @@
 .editorconfig
 .gitleaks.toml
 .codacy.yml
+.eslintrc.json
+phpmd.xml.dist
 sonar-project.properties
 .aidevops.json
 composer.json

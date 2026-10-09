@@ -135,6 +135,7 @@ Deleting the plugin removes its settings, its cached data, who hid lines of the 
 - Fix: the Read Me tab shows a paragraph or list item written over several lines (Markdown wrapped at a fixed width) as one paragraph, as GitHub does, instead of a separate paragraph for every line, which also split inline code across lines. Fenced code blocks (backticks or tildes) show as code instead of their fence lines and text.
 - Fix: the Read Me tab keeps a line's text, unformatted, when its bold, italic, code or link formatting cannot be read (such as invalid UTF-8), instead of showing nothing.
 - Developers: PHPStan runs at level 8 (`phpstan.neon.dist`): `null` used as a value is also a finding. Plugins made from the starter fix their own level-8 findings before syncing `phpstan.neon.dist`.
+- Developers: Codacy settings that fit a WordPress plugin: `.eslintrc.json` and `phpmd.xml.dist` (core files, not in either zip). Turn on **Configuration file** for ESLint and PHP Mess Detector in Codacy's Code patterns (`DEVELOPMENT.md` → Services setup).
 
 ### 1.0.29
 
