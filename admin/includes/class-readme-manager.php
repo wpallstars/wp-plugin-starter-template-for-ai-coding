@@ -96,34 +96,48 @@ class WPStarter_Readme_Manager {
         $fence = false;
         $open  = false; // Whether the last line is a paragraph or list item.
         foreach (explode("\n", $markdown) as $line) {
-            $trim = trim($line);
-            if (self::is_fence($trim)) {
+            $kind = self::line_kind(trim($line));
+            if ('fence' === $kind) {
                 $fence = !$fence;
-                $open  = false;
-            } elseif (!$fence && $open && '' !== $trim && !self::starts_block($trim)) {
-                $lines[count($lines) - 1] .= ' ' . $trim;
+            }
+            if ($fence || 'fence' === $kind) {
+                $lines[] = $line;
+                $open    = false;
                 continue;
-            } else {
-                $open = !$fence && '' !== $trim && (!self::starts_block($trim) || preg_match('/^(?:[-*]|\d+\.)\s/', $trim));
+            }
+            if ($open && 'text' === $kind) {
+                $lines[count($lines) - 1] .= ' ' . trim($line);
+                continue;
             }
             $lines[] = $line;
+            $open    = in_array($kind, array('text', 'item'), true);
         }
 
         return $lines;
     }
 
     /**
-     * Whether a line starts a block of its own rather than continuing a
-     * paragraph: a heading, list item, table line, image or code fence.
+     * What a line is, for joining wrapped lines: 'blank', 'fence', 'item'
+     * (a list item), 'block' (a heading, table line or image, which never
+     * continues a paragraph) or 'text'.
      *
      * @param string $trim Line without surrounding whitespace.
-     * @return bool
+     * @return string
      */
-    private static function starts_block($trim) {
-        return '#' === $trim
-            || self::is_table_line($trim)
-            || self::is_fence($trim)
-            || 1 === preg_match('/^(?:#{1,6}\s|[-*]\s|\d+\.\s|!\[[^\]]*\]\([^)\s]+\)$)/', $trim);
+    private static function line_kind($trim) {
+        if ('' === $trim) {
+            return 'blank';
+        }
+        if (self::is_fence($trim)) {
+            return 'fence';
+        }
+        if (preg_match('/^(?:[-*]|\d+\.)\s/', $trim)) {
+            return 'item';
+        }
+        if (self::is_table_line($trim) || preg_match('/^(?:#{1,6}(?:\s.*)?|!\[[^\]]*\]\([^)\s]+\))$/', $trim)) {
+            return 'block';
+        }
+        return 'text';
     }
 
     /**
