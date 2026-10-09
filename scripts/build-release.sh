@@ -10,8 +10,9 @@
 #       with the same slug in its place.
 #   wordpress-org-{slug}-X.Y.Z.zip
 #       WordPress.org build: the same, less the files in .distignore-wporg,
-#       the screenshot copies in admin/images/ (for the GitHub updater's
-#       View details) and the GitHub updater header lines, and without
+#       the screenshot copies and banner-details.svg in admin/images/ (for
+#       the GitHub updater's View details) and the GitHub updater header
+#       lines, and without
 #       Update URI. Each text listed in .wporg-links (affiliate links) is
 #       replaced by its plain one. Its name is not {slug}-X.Y.Z.zip, so no
 #       updater installs it even if it is attached to a GitHub release by
@@ -48,6 +49,8 @@ readonly WPORG_LINKS=".wporg-links"
 readonly WPORG_STRIP_HEADERS='GitHub Plugin URI|Primary Branch|Release Asset'
 # Screenshot copies for the GitHub updater's View details (rsync pattern); left out of the WordPress.org build.
 readonly WPORG_SCREENSHOTS='/admin/images/screenshot-*'
+# The GitHub updater's View details banner (rsync pattern); left out of the WordPress.org build.
+readonly WPORG_DETAILS_BANNER='/admin/images/banner-details.svg'
 
 TMP_DIR=""
 SLUG=""
@@ -256,9 +259,9 @@ main() {
 	else
 		: >"$TMP_DIR/wporg-ignore"
 	fi
-	# Screenshot copies only the GitHub updater shows (View details):
-	# WordPress.org shows its own, from the SVN assets/ folder.
-	printf '%s\n' "$WPORG_SCREENSHOTS" >>"$TMP_DIR/wporg-ignore"
+	# Screenshot copies and the banner only the GitHub updater shows (View
+	# details): WordPress.org shows its own, from the SVN assets/ folder.
+	printf '%s\n' "$WPORG_SCREENSHOTS" "$WPORG_DETAILS_BANNER" >>"$TMP_DIR/wporg-ignore"
 	rsync -a --exclude-from="$TMP_DIR/wporg-ignore" "$TMP_DIR/github/$SLUG/" "$TMP_DIR/wporg/$SLUG/"
 	strip_updater_headers "$TMP_DIR/wporg/$SLUG/$MAIN_FILE"
 	if git cat-file -e "$sha:$WPORG_LINKS" 2>/dev/null; then

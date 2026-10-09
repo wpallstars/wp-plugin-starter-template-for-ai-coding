@@ -47,8 +47,10 @@
  * - The Updates screen shows the plugin's icon, and View details its banner,
  *   when the plugin ships them under WordPress.org's names (icon.svg,
  *   icon-256x256.png, banner-772x250.png and so on, or banner.svg) in
- *   admin/images/, assets/ or .wordpress-org/. Only the installed files are
- *   used, so nothing is fetched from GitHub when those screens load.
+ *   admin/images/, assets/ or .wordpress-org/. banner-details.svg comes
+ *   first: a banner with its words clear of the plugin name WordPress
+ *   writes over the lower left. Only the installed files are used, so
+ *   nothing is fetched from GitHub when those screens load.
  * - View details also shows the installed readme.txt, as WordPress.org
  *   would: the Description, Installation, FAQ, Screenshots (screenshot-N
  *   files in the same folders, with the readme's captions) and Changelog
@@ -118,8 +120,8 @@ final class WPAllStars_GitHub_Updater {
         '1x'  => array('icon-128x128.png', 'icon-128x128.jpg'),
     );
     const BANNERS = array(
-        'low'  => array('banner-772x250.png', 'banner-772x250.jpg', 'banner.svg'),
-        'high' => array('banner-1544x500.png', 'banner-1544x500.jpg', 'banner.svg'),
+        'low'  => array('banner-details.svg', 'banner-772x250.png', 'banner-772x250.jpg', 'banner.svg'),
+        'high' => array('banner-details.svg', 'banner-1544x500.png', 'banner-1544x500.jpg', 'banner.svg'),
     );
 
     /** Screenshot file types, best first (screenshot-N.webp and so on). */

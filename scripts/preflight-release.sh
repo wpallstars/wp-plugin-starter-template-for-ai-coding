@@ -460,6 +460,15 @@ check_wporg_assets() {
 			warn "no admin/images/icon.svg; the Updates screen shows WordPress's plug for GitHub updates (scripts/build-banner.sh builds it from .wordpress-org/icon.svg)"
 		fi
 	fi
+	# The View details banner (words clear of WordPress's name box), when
+	# banner.svg has that layout.
+	if git show "$sha:.wordpress-org/banner.svg" 2>/dev/null | grep -q '<g id="words-details"'; then
+		if git cat-file -e "$sha:admin/images/banner-details.svg" 2>/dev/null; then
+			ok "admin/images/banner-details.svg (View details banner)"
+		else
+			warn "no admin/images/banner-details.svg; View details for GitHub updates shows the Read Me banner, under WordPress's name box (scripts/build-banner.sh builds it)"
+		fi
+	fi
 
 	local shots captions
 	shots="$(grep -E '^screenshot-[0-9]+\.(png|jpe?g|gif)$' <<<"$files" | sed -E 's/^screenshot-([0-9]+)\..*/\1/' | sort -n || true)"
@@ -663,6 +672,11 @@ check_builds() {
 		err "wporg: admin/images/screenshot-* in the WordPress.org build (only the GitHub updater shows them)"
 	elif compgen -G "$github_dir/admin/images/screenshot-*" >/dev/null; then
 		ok "wporg: no admin/images/screenshot-* (GitHub build only)"
+	fi
+	if [[ -e "$wporg_dir/admin/images/banner-details.svg" ]]; then
+		err "wporg: admin/images/banner-details.svg in the WordPress.org build (only the GitHub updater shows it)"
+	elif [[ -e "$github_dir/admin/images/banner-details.svg" ]]; then
+		ok "wporg: no admin/images/banner-details.svg (GitHub build only)"
 	fi
 	local text escaped left=""
 	if [[ -n "$WPORG_LINK_TEXTS" ]]; then
