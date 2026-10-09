@@ -86,7 +86,7 @@ Every pull request and every push to `main` runs these in GitHub Actions
 | Shell scripts | `scripts/lint.sh shell` | ShellCheck findings in `scripts/`. |
 | Workflows | `scripts/lint.sh workflows` | actionlint findings in `.github/workflows/`. |
 | Coding standards | `scripts/lint.sh phpcs` | WordPress Coding Standards: escaping, sanitising, nonces, prepared SQL, i18n, PHP 7.4 and WordPress 6.2 compatibility; slow and unlimited queries, `ORDER BY RAND()`, short cache times and long remote timeouts (`phpcs.xml.dist`). |
-| Static analysis | `scripts/lint.sh phpstan` | Unknown functions, classes and methods, wrong argument counts and types, dead code, `false` and `null` results used as values (PHPStan level 7 without the `missingType.*` checks, `phpstan.neon.dist`). |
+| Static analysis | `scripts/lint.sh phpstan` | Unknown functions, classes and methods, wrong argument counts and types, dead code, `false` and `null` results used as values (PHPStan level 8 without the `missingType.*` checks, `phpstan.neon.dist`). |
 | JavaScript build | `scripts/lint.sh build` | Plugins with a build only: the `check` script's findings (types, lint), and built files in `assets/build/` that differ from a fresh build. |
 | Release build | `scripts/preflight-release.sh --offline` | Versions, headers, `readme.txt`, presets (where the plugin has them) and the contents of both zips. |
 | Plugin Check | `scripts/plugin-check.sh` | The WordPress.org review tool, on both zips. |
@@ -407,8 +407,9 @@ it at that standard:
 2. Fix what they find in the code, in small pull requests by area
    (security first). Each finding is either fixed, explained in an inline
    comment, or marked as a false positive in that service with the reason.
-3. Raise the PHPStan level one step at a time (8 next, if the findings
-   are real bugs and not noise). The baseline is already empty.
+3. Raise the PHPStan level one step at a time (9 next, if the findings
+   are real bugs and not noise). The level is in `phpstan.neon.dist`, a
+   core file, so it changes in the starter. The baseline is already empty.
 4. Require the CI checks on `main` (Lint, Release build, both Smoke
    tests) with a branch ruleset, without "branch must be up to date": the
    checks are fast, and changelog lines conflict on every merge.

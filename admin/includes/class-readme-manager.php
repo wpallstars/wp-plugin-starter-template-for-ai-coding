@@ -289,11 +289,13 @@ class WPStarter_Readme_Manager {
      * @return string ID.
      */
     private static function anchor($text, array &$ids) {
-        $text = preg_replace('/\[([^\]]+)\]\([^)]*\)/', '$1', $text);
+        // preg_replace() gives null on a failed match (invalid UTF-8): the
+        // text as it was, or no ID, so the heading becomes "section".
+        $text = preg_replace('/\[([^\]]+)\]\([^)]*\)/', '$1', $text) ?? $text;
         $text = str_replace(array('`', '*'), '', $text);
         $id   = function_exists('mb_strtolower') ? mb_strtolower($text, 'UTF-8') : strtolower($text);
-        $id   = preg_replace('/[^\p{L}\p{N}\s_-]/u', '', $id);
-        $id   = preg_replace('/\s/u', '-', trim($id));
+        $id   = (string) preg_replace('/[^\p{L}\p{N}\s_-]/u', '', $id);
+        $id   = (string) preg_replace('/\s/u', '-', trim($id));
         $base = '' === $id ? 'section' : $id;
         $id   = $base;
         $n    = 0;
@@ -356,10 +358,11 @@ class WPStarter_Readme_Manager {
      * @return string HTML.
      */
     private static function inline($text) {
+        // A failed match (null) leaves the escaped text unformatted.
         $text = esc_html($text);
-        $text = preg_replace('/`([^`]+)`/', '<code>$1</code>', $text);
-        $text = preg_replace('/\*\*(.+?)\*\*/', '<strong>$1</strong>', $text);
-        $text = preg_replace('/(?<![*\w])\*(?!\s)(.+?)(?<!\s)\*(?![*\w])/', '<em>$1</em>', $text);
+        $text = preg_replace('/`([^`]+)`/', '<code>$1</code>', $text) ?? $text;
+        $text = preg_replace('/\*\*(.+?)\*\*/', '<strong>$1</strong>', $text) ?? $text;
+        $text = preg_replace('/(?<![*\w])\*(?!\s)(.+?)(?<!\s)\*(?![*\w])/', '<em>$1</em>', $text) ?? $text;
 
         return preg_replace_callback('/\[([^\]]+)\]\(([^)\s]+)\)/', function ($m) {
             $url = esc_url(html_entity_decode($m[2]), array('http', 'https'));
@@ -370,6 +373,6 @@ class WPStarter_Readme_Manager {
                 return $m[1];
             }
             return sprintf('<a href="%1$s" target="_blank" rel="noopener noreferrer">%2$s</a>', $url, $m[1]);
-        }, $text);
+        }, $text) ?? $text;
     }
 }

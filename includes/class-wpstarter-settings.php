@@ -613,7 +613,7 @@ class WPStarter_Settings {
             return '';
         }
         if ('/' === $value[0] && '/' !== substr($value, 1, 1)) {
-            return '/' . ltrim(preg_replace('/\s+/', '', sanitize_text_field($value)), '/');
+            return '/' . ltrim((string) preg_replace('/\s+/', '', sanitize_text_field($value)), '/');
         }
         return esc_url_raw($value, array('http', 'https'));
     }
@@ -629,7 +629,7 @@ class WPStarter_Settings {
         $lines = preg_split('/[\r\n]+/', self::to_text($value)) ?: array();
         // Not sanitize_text_field(): it strips %xx, which URL paths need.
         $lines = array_filter(array_map(function ($line) {
-            return trim(preg_replace('/[\x00-\x1F\x7F]+/', '', wp_strip_all_tags($line)));
+            return trim((string) preg_replace('/[\x00-\x1F\x7F]+/', '', wp_strip_all_tags($line)));
         }, $lines), function ($line) {
             return '' !== $line;
         });
@@ -675,7 +675,7 @@ class WPStarter_Settings {
             }
             // A bare domain gets a scheme-relative "//" so the host is found.
             $host = wp_parse_url(false === strpos($line, '://') ? '//' . $line : $line, PHP_URL_HOST);
-            $host = $host ? strtolower(preg_replace('/^www\./i', '', $host)) : '';
+            $host = $host ? strtolower((string) preg_replace('/^www\./i', '', $host)) : '';
             if ('' !== $host && preg_match('/^[a-z0-9.-]+$/', $host)) {
                 $domains[] = $host;
             }
@@ -692,7 +692,7 @@ class WPStarter_Settings {
      * @return bool
      */
     public static function host_matches($host, array $domains) {
-        $host = strtolower(preg_replace('/^www\./i', '', (string) $host));
+        $host = strtolower((string) preg_replace('/^www\./i', '', (string) $host));
         foreach ($domains as $domain) {
             if ($host === $domain || substr($host, -strlen('.' . $domain)) === '.' . $domain) {
                 return true;

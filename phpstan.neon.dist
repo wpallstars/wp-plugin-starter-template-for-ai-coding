@@ -14,8 +14,10 @@ includes:
 
 parameters:
 	# Level 7: also union types, such as false from preg_split() or
-	# filemtime(), and arrays and objects of the wrong shape.
-	level: 7
+	# filemtime(), and arrays and objects of the wrong shape. Level 8: also
+	# null, such as preg_replace()'s on a failed match or a getter's for
+	# something not there, used as a value.
+	level: 8
 	ignoreErrors:
 		# Level 6 asks every parameter, return and property, and every array's
 		# contents, to carry a type. That is a large, low-value change to

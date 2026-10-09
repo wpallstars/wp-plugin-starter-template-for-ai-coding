@@ -4,6 +4,8 @@ Every change to WP Plugin Starter. readme.txt lists the latest version in short.
 
 = Unreleased =
 * Fix: the Read Me tab shows a paragraph or list item written over several lines (Markdown wrapped at a fixed width) as one paragraph, as GitHub does, instead of a separate paragraph for every line, which also split inline code across lines. Fenced code blocks (``` or ~~~) show as code instead of their fence lines and text.
+* Fix: the Read Me tab keeps a line's text, unformatted, when its bold, italic, code or link formatting cannot be read (such as invalid UTF-8), instead of showing nothing (WPStarter_Readme_Manager::inline() and anchor()).
+* Developers: PHPStan runs at level 8 (phpstan.neon.dist): null used as a value is also a finding. The settings store and Updates from GitHub handle preg_replace()'s null on a failed match. Plugins made from the starter fix their own level-8 findings (vendor/bin/phpstan analyse --level=8) before syncing phpstan.neon.dist.
 
 = 1.0.29 =
 * Developers: STANDARDS.md is shorter (under 500 lines, so plugins can push their core sync again) with every rule kept. The admin form spacing and front-end dark mode rules moved to a new core file, STYLING.md (scripts/sync-core.sh adds it; it stays out of both zips); the WordPress.org build's affiliate-link format and checks are now only in RELEASING.md → WordPress.org.
