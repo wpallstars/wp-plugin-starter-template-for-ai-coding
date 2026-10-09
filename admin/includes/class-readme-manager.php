@@ -96,7 +96,11 @@ class WPStarter_Readme_Manager {
         foreach (explode("\n", $markdown) as $line) {
             $kind = self::line_kind(trim($line));
             if ('' !== $fence || 'fence' === $kind) {
-                $fence   = '' === $fence ? self::fence_opens(trim($line)) : (self::fence_closes(trim($line), $fence) ? '' : $fence);
+                if ('' === $fence) {
+                    $fence = self::fence_opens(trim($line));
+                } elseif (self::fence_closes(trim($line), $fence)) {
+                    $fence = '';
+                }
                 $lines[] = $line;
                 $open    = false;
                 continue;
