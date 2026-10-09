@@ -137,6 +137,7 @@ Deleting the plugin removes its settings, its cached data, who hid lines of the 
 - Developers: PHPStan runs at level 8 (`phpstan.neon.dist`): `null` used as a value is also a finding. Plugins made from the starter fix their own level-8 findings before syncing `phpstan.neon.dist`.
 - Developers: Codacy settings that fit a WordPress plugin: `.eslintrc.json` and `phpmd.xml.dist` (core files, not in either zip). Turn on **Configuration file** for ESLint and PHP Mess Detector in Codacy's Code patterns (`DEVELOPMENT.md` → Services setup).
 - Developers: SonarCloud and Codacy leave out `assets/build/`, the JavaScript build's output; they analyse its sources in `packages/`.
+- Developers: a wpallstars-branded banner keeps the starter's words layout (four lines centred top to bottom, at the starter's sizes and baselines), so every plugin's banner matches (`STANDARDS.md` → Structure).
 
 ### 1.0.29
 
