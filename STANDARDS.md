@@ -106,6 +106,13 @@ How changes are made and checked: `DEVELOPMENT.md`. Releases: `RELEASING.md`.
   updater shows on the Updates screen and in View details.
   `scripts/preflight-release.sh` checks their sizes, that the icon and
   screenshot copies ship, and that each `screenshot-N` has a caption.
+- A wpallstars-branded banner keeps the starter's words layout, so every
+  plugin's banner matches: the four lines on the left, centred top to
+  bottom against the picture, at the starter's sizes and baselines
+  (WPALLSTARS 27 at y 128, the name 104 at y 240, the gold line 72 at
+  y 326, the tagline 33 at y 396; the `gold-text` gradient from y 280 to
+  340). Change only the words; when a name or line is too long, shorten
+  it rather than move or resize the lines.
 - Settings → {Name} is the settings screen. A plugin with its own top-level
   menu names it in `{Prefix}_Setup::MENU_PARENT`, and the screen is
   **Settings**, last in that menu (not also under Settings). Link to it with
