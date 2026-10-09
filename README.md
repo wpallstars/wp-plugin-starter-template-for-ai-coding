@@ -132,7 +132,7 @@ Deleting the plugin removes its settings, its cached data, who hid lines of the 
 
 ### Unreleased
 
-- Fix: the Read Me tab shows a paragraph or list item written over several lines (Markdown wrapped at a fixed width) as one paragraph, as GitHub does, instead of a separate paragraph for every line, which also split inline code across lines. Fenced code blocks show as code instead of their fence lines and text.
+- Fix: the Read Me tab shows a paragraph or list item written over several lines (Markdown wrapped at a fixed width) as one paragraph, as GitHub does, instead of a separate paragraph for every line, which also split inline code across lines. Fenced code blocks (backticks or tildes) show as code instead of their fence lines and text.
 
 ### 1.0.29
 

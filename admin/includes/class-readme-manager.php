@@ -54,26 +54,24 @@ class WPStarter_Readme_Manager {
         // then 'body') and the heading IDs used so far.
         $state = array('list' => '', 'table' => '', 'ids' => array());
         $html  = '';
-        // The open fenced code block: its fence's indent and its lines.
+        // The open fenced code block: its fence, the fence's indent and its lines.
         $code = null;
         foreach (self::join_wrapped_lines($markdown) as $line) {
             $trim = trim($line);
-            if (self::is_fence($trim)) {
-                if (null === $code) {
-                    $html .= self::close_blocks($state);
-                    $code  = array('indent' => strlen($line) - strlen(ltrim($line)), 'lines' => array());
-                } else {
-                    $html .= self::code_block($code['lines']);
-                    $code  = null;
-                }
+            if (null === $code && '' !== self::fence_opens($trim)) {
+                $html .= self::close_blocks($state);
+                $code  = array('fence' => self::fence_opens($trim), 'indent' => strlen($line) - strlen(ltrim($line)), 'lines' => array());
                 continue;
             }
-            if (null !== $code) {
+            if (null === $code) {
+                $html .= self::block($trim, $state);
+            } elseif (self::fence_closes($trim, $code['fence'])) {
+                $html .= self::code_block($code['lines']);
+                $code  = null;
+            } else {
                 // Keep the code's own indent, less the fence's.
                 $code['lines'][] = (string) preg_replace('/^ {0,' . $code['indent'] . '}/', '', $line);
-                continue;
             }
-            $html .= self::block($trim, $state);
         }
         if (null !== $code) {
             $html .= self::code_block($code['lines']);
@@ -93,14 +91,12 @@ class WPStarter_Readme_Manager {
      */
     private static function join_wrapped_lines($markdown) {
         $lines = array();
-        $fence = false;
+        $fence = ''; // The open code block's fence.
         $open  = false; // Whether the last line is a paragraph or list item.
         foreach (explode("\n", $markdown) as $line) {
             $kind = self::line_kind(trim($line));
-            if ('fence' === $kind) {
-                $fence = !$fence;
-            }
-            if ($fence || 'fence' === $kind) {
+            if ('' !== $fence || 'fence' === $kind) {
+                $fence   = '' === $fence ? self::fence_opens(trim($line)) : (self::fence_closes(trim($line), $fence) ? '' : $fence);
                 $lines[] = $line;
                 $open    = false;
                 continue;
@@ -128,7 +124,7 @@ class WPStarter_Readme_Manager {
         if ('' === $trim) {
             return 'blank';
         }
-        if (self::is_fence($trim)) {
+        if ('' !== self::fence_opens($trim)) {
             return 'fence';
         }
         if (preg_match('/^(?:[-*]|\d+\.)\s/', $trim)) {
@@ -141,14 +137,26 @@ class WPStarter_Readme_Manager {
     }
 
     /**
-     * Whether a line opens or closes a fenced code block (```, with or
-     * without a language).
+     * The fence a line opens a fenced code block with: three or more ` or
+     * ~, then perhaps a language. '' when it opens none.
      *
      * @param string $trim Line without surrounding whitespace.
+     * @return string The fence, such as ``` or ~~~~.
+     */
+    private static function fence_opens($trim) {
+        return preg_match('/^(`{3,}(?!.*`)|~{3,})/', $trim, $m) ? $m[1] : '';
+    }
+
+    /**
+     * Whether a line closes the code block a fence opened: the same
+     * character, at least as many times, and nothing else.
+     *
+     * @param string $trim  Line without surrounding whitespace.
+     * @param string $fence The opening fence.
      * @return bool
      */
-    private static function is_fence($trim) {
-        return 0 === strncmp($trim, '```', 3);
+    private static function fence_closes($trim, $fence) {
+        return 1 === preg_match('/^' . preg_quote($fence[0], '/') . '{' . strlen($fence) . ',}$/', $trim);
     }
 
     /**
@@ -158,7 +166,7 @@ class WPStarter_Readme_Manager {
      * @return string HTML.
      */
     private static function code_block(array $lines) {
-        return '<pre class="wps-readme-code"><code>' . esc_html(implode("\n", $lines)) . '</code></pre>';
+        return '<pre class="wps-readme-code"><code>' . esc_html(rtrim(implode("\n", $lines), "\n")) . '</code></pre>';
     }
 
     /**
