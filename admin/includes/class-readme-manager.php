@@ -3,9 +3,11 @@
  * WP Plugin Starter Read Me tab.
  *
  * Renders README.md with a small, escaping Markdown subset
- * (headings with GitHub-style IDs, lists, tables, bold, italic, inline code,
- * http(s) links, links to headings and images from the plugin's folder).
- * HTML comments, the GitHub badges block and github-only blocks are left out.
+ * (headings with GitHub-style IDs, paragraphs and list items that wrap over
+ * several lines, lists, tables, fenced code blocks, bold, italic, inline
+ * code, http(s) links, links to headings and images from the plugin's
+ * folder). HTML comments, the GitHub badges block and github-only blocks are
+ * left out.
  *
  * SPDX-License-Identifier: GPL-3.0-or-later
  * SPDX-FileCopyrightText: 2026 Marcus Quinn
@@ -52,11 +54,97 @@ class WPStarter_Readme_Manager {
         // then 'body') and the heading IDs used so far.
         $state = array('list' => '', 'table' => '', 'ids' => array());
         $html  = '';
-        foreach (preg_split('/\r\n|\r|\n/', $markdown) ?: array() as $line) {
-            $html .= self::block(trim($line), $state);
+        // The open fenced code block: its fence's indent and its lines.
+        $code = null;
+        foreach (self::join_wrapped_lines($markdown) as $line) {
+            $trim = trim($line);
+            if (self::is_fence($trim)) {
+                if (null === $code) {
+                    $html .= self::close_blocks($state);
+                    $code  = array('indent' => strlen($line) - strlen(ltrim($line)), 'lines' => array());
+                } else {
+                    $html .= self::code_block($code['lines']);
+                    $code  = null;
+                }
+                continue;
+            }
+            if (null !== $code) {
+                // Keep the code's own indent, less the fence's.
+                $code['lines'][] = (string) preg_replace('/^ {0,' . $code['indent'] . '}/', '', $line);
+                continue;
+            }
+            $html .= self::block($trim, $state);
+        }
+        if (null !== $code) {
+            $html .= self::code_block($code['lines']);
         }
 
         return $html . self::close_blocks($state);
+    }
+
+    /**
+     * Lines of Markdown, with each line that only continues a paragraph or
+     * list item (Markdown wrapped at a fixed width) joined to the line it
+     * continues, as GitHub shows them. Lines in fenced code blocks stay as
+     * they are.
+     *
+     * @param string $markdown Markdown with "\n" line ends.
+     * @return string[] Lines.
+     */
+    private static function join_wrapped_lines($markdown) {
+        $lines = array();
+        $fence = false;
+        $open  = false; // Whether the last line is a paragraph or list item.
+        foreach (explode("\n", $markdown) as $line) {
+            $trim = trim($line);
+            if (self::is_fence($trim)) {
+                $fence = !$fence;
+                $open  = false;
+            } elseif (!$fence && $open && '' !== $trim && !self::starts_block($trim)) {
+                $lines[count($lines) - 1] .= ' ' . $trim;
+                continue;
+            } else {
+                $open = !$fence && '' !== $trim && (!self::starts_block($trim) || preg_match('/^(?:[-*]|\d+\.)\s/', $trim));
+            }
+            $lines[] = $line;
+        }
+
+        return $lines;
+    }
+
+    /**
+     * Whether a line starts a block of its own rather than continuing a
+     * paragraph: a heading, list item, table line, image or code fence.
+     *
+     * @param string $trim Line without surrounding whitespace.
+     * @return bool
+     */
+    private static function starts_block($trim) {
+        return '#' === $trim
+            || self::is_table_line($trim)
+            || self::is_fence($trim)
+            || 1 === preg_match('/^(?:#{1,6}\s|[-*]\s|\d+\.\s|!\[[^\]]*\]\([^)\s]+\)$)/', $trim);
+    }
+
+    /**
+     * Whether a line opens or closes a fenced code block (```, with or
+     * without a language).
+     *
+     * @param string $trim Line without surrounding whitespace.
+     * @return bool
+     */
+    private static function is_fence($trim) {
+        return 0 === strncmp($trim, '```', 3);
+    }
+
+    /**
+     * A fenced code block, escaped.
+     *
+     * @param string[] $lines Its lines.
+     * @return string HTML.
+     */
+    private static function code_block(array $lines) {
+        return '<pre class="wps-readme-code"><code>' . esc_html(implode("\n", $lines)) . '</code></pre>';
     }
 
     /**

@@ -130,6 +130,10 @@ Deleting the plugin removes its settings, its cached data, who hid lines of the 
 
 ## Changelog
 
+### Unreleased
+
+- Fix: the Read Me tab shows a paragraph or list item written over several lines (Markdown wrapped at a fixed width) as one paragraph, as GitHub does, instead of a separate paragraph for every line, which also split inline code across lines. Fenced code blocks show as code instead of their fence lines and text.
+
 ### 1.0.29
 
 - Developers: `STANDARDS.md` is shorter (under 500 lines, so plugins can push their core sync again) with every rule kept. The admin form spacing and front-end dark mode rules moved to a new core file, `STYLING.md` (`scripts/sync-core.sh` adds it; it stays out of both zips); the WordPress.org build's affiliate-link format and checks are now only in `RELEASING.md` → WordPress.org.
