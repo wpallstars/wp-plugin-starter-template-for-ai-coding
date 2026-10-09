@@ -137,7 +137,8 @@ Deleting the plugin removes its settings, its cached data, who hid lines of the 
 - Developers: PHPStan runs at level 8 (`phpstan.neon.dist`): `null` used as a value is also a finding. Plugins made from the starter fix their own level-8 findings before syncing `phpstan.neon.dist`.
 - Developers: Codacy settings that fit a WordPress plugin: `.eslintrc.json` and `phpmd.xml.dist` (core files, not in either zip). Turn on **Configuration file** for ESLint and PHP Mess Detector in Codacy's Code patterns (`DEVELOPMENT.md` → Services setup).
 - Developers: SonarCloud and Codacy leave out `assets/build/`, the JavaScript build's output; they analyse its sources in `packages/`.
-- Developers: a wpallstars-branded banner keeps the starter's words layout (four lines centred top to bottom, at the starter's sizes and baselines), so every plugin's banner matches (`STANDARDS.md` → Structure).
+- New: **View details** (Plugins and Updates screens) shows a banner with its words above the plugin name WordPress writes over its lower left, instead of under it; this README and the Read Me tab keep the banner with its words centred. GitHub builds ship it as `admin/images/banner-details.svg`, which the shared updater (version 1.5.0) shows first; the WordPress.org banners have that layout too, as WordPress.org's View details shows them.
+- Developers: `.wordpress-org/banner.svg` holds the words twice, `<g id="words">` (centred) and `<g id="words-details">` (above y 340), and `scripts/build-banner.sh` builds each output from one of them. Every wpallstars-branded banner keeps the starter's two layouts (`STANDARDS.md` → Structure).
 
 ### 1.0.29
 

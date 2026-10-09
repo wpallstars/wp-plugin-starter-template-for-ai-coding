@@ -3,11 +3,21 @@
 #
 #   admin/images/banner.svg
 #       Shipped with the plugin, shown at the top of the Read Me tab (and of
-#       README.md on GitHub). Text is turned into shapes, so it looks the same
-#       without the Zilla Slab font.
+#       README.md on GitHub), with the words centred top to bottom (the
+#       source's "words" group). Text is turned into shapes, so it looks the
+#       same without the Zilla Slab font.
+#   admin/images/banner-details.svg
+#       Shipped in the GitHub build only: the GitHub updater's View details
+#       banner, with the words above WordPress's plugin name box (the
+#       source's "words-details" group).
 #   .wordpress-org/banner-772x250.png
 #   .wordpress-org/banner-1544x500.png
-#       For the WordPress.org SVN assets/ folder (not in the plugin zip).
+#       For the WordPress.org SVN assets/ folder (not in the plugin zip), with
+#       the "words-details" layout too: WordPress's View details shows them
+#       for plugins updated from WordPress.org.
+#
+# A source with one words group (no id="words-details") gives every output
+# that one layout.
 #
 # And the icons from .wordpress-org/icon.svg (the banner's picture on its
 # own, with no words), when the plugin has one:
@@ -38,6 +48,14 @@ set -euo pipefail
 
 SOURCE=".wordpress-org/banner.svg"
 ICON_SOURCE=".wordpress-org/icon.svg"
+# The source's two words groups (STANDARDS.md → Structure, listing images):
+# centred for the Read Me banner, above WordPress's name box for View details.
+README_GROUP='<g id="words" '
+DETAILS_GROUP='<g id="words-details" '
+# The shipped View details banner (GitHub build only).
+DETAILS_OUT="admin/images/banner-details.svg"
+# Scratch folder for the two words layouts, removed on exit.
+WORK_DIR=""
 
 die() {
 	local message="$1"
@@ -59,6 +77,26 @@ find_inkscape() {
 		return 0
 	fi
 	return 1
+}
+
+# Write a copy of SOURCE to TARGET with one words group: "readme" keeps
+# <g id="words">, "details" keeps <g id="words-details"> (shown). Each group
+# is one <g ...> line, its <text> lines and a </g> line, with no group inside.
+words_layout() {
+	local source="$1"
+	local layout="$2"
+	local target="$3"
+	local drop="$DETAILS_GROUP"
+	[[ "$layout" = details ]] && drop="$README_GROUP"
+	grep -qF "$README_GROUP" "$source" || die "$source has $DETAILS_GROUP ...> but no $README_GROUP...> group"
+	sed -e "\\|$drop|,\\|</g>|d" \
+		-e "s|${DETAILS_GROUP}display=\"none\" |$DETAILS_GROUP|" \
+		"$source" >"$target"
+	grep -q '<text ' "$target" || die "no words left in the $layout banner; check the groups in $source"
+	if grep -qF "${DETAILS_GROUP}display=" "$target"; then
+		die "the words-details group is still hidden; write it as $DETAILS_GROUP""display=\"none\" ...> in $source"
+	fi
+	return 0
 }
 
 # Export SOURCE as .wordpress-org/NAME-WIDTHxHEIGHT.png.
@@ -87,11 +125,30 @@ main() {
 		grep -qi '^Zilla Slab' <<<"$families" || die "the Zilla Slab font is not installed"
 	fi
 
-	"$inkscape" "$SOURCE" --export-text-to-path --export-plain-svg \
+	WORK_DIR="$(mktemp -d)"
+	trap 'rm -rf "$WORK_DIR"' EXIT
+	local readme="$SOURCE"
+	local details="$SOURCE"
+	local outputs=(admin/images/banner.svg)
+	if grep -qF "$DETAILS_GROUP" "$SOURCE"; then
+		readme="$WORK_DIR/banner-readme.svg"
+		details="$WORK_DIR/banner-details.svg"
+		words_layout "$SOURCE" readme "$readme"
+		words_layout "$SOURCE" details "$details"
+		outputs+=("$DETAILS_OUT")
+	else
+		rm -f "$DETAILS_OUT"
+	fi
+
+	"$inkscape" "$readme" --export-text-to-path --export-plain-svg \
 		--export-filename=admin/images/banner.svg
-	export_png "$inkscape" "$SOURCE" banner 1544 500
-	export_png "$inkscape" "$SOURCE" banner 772 250
-	ls -l admin/images/banner.svg .wordpress-org/banner-1544x500.png .wordpress-org/banner-772x250.png
+	if [[ "$details" != "$SOURCE" ]]; then
+		"$inkscape" "$details" --export-text-to-path --export-plain-svg \
+			--export-filename="$DETAILS_OUT"
+	fi
+	export_png "$inkscape" "$details" banner 1544 500
+	export_png "$inkscape" "$details" banner 772 250
+	ls -l "${outputs[@]}" .wordpress-org/banner-1544x500.png .wordpress-org/banner-772x250.png
 
 	if [[ -f "$ICON_SOURCE" ]]; then
 		export_png "$inkscape" "$ICON_SOURCE" icon 256 256
