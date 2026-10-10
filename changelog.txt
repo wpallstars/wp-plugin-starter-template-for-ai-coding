@@ -2,7 +2,7 @@
 
 Every change to WP Plugin Starter. readme.txt lists the latest version in short.
 
-= Unreleased =
+= 1.0.31 =
 * Developers: the workflows (ci.yml, release.yml, sonarcloud.yml, starter-sync.yml and repo-metrics.yml) run on a self-hosted runner when the repository variable CI_RUNNER holds its label, and on GitHub-hosted runners otherwise, so private plugins can use the organization's runners while their core files stay the same as the starter's (DEVELOPMENT.md → Services setup, step 6). Scorecard stays GitHub-hosted; it runs only in public repositories. CI's lint job installs a pinned, checksum-verified ShellCheck 0.11.0 when the runner has another version or none. Nothing changes for public repositories.
 * Developers: Qlty is no longer used (owner's decision), so DEVELOPMENT.md no longer lists it among the organization's review apps or the public-launch reviewers.
 * Fix (GitHub builds): Check again on the Updates screen offers a release published since the last check. Opening the Updates screen runs WordPress's plugin check, which uses the release answer the shared updater keeps for 12 hours, and WordPress skips its plugin check for a minute after that, so pressing Check again straight after found nothing new. The shared updater (version 1.6.0) now asks GitHub on Check again even then (at most once a minute), without asking WordPress.org again.
