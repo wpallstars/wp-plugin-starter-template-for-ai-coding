@@ -35,6 +35,15 @@ readonly AGENTS_MD_MAX_LINES=150
 # plugin its own).
 readonly STARTER_REPO="wpallstars/wp-plugin-""starter-template-for-ai-coding"
 readonly STARTER_AGENTS_LINE="starter plugin: what every wpallstars plugin is made from"
+# What a plugin made from the starter still has of the starter's own until
+# it is replaced (check_starter_leftovers): banner words, the plug on the
+# stack, the description, and the screenshots' Git blob ids. Split, so
+# scripts/rename-plugin.sh leaves them unchanged.
+readonly STARTER_HEADLINE=">Built with ""AI</text>"
+readonly STARTER_TAGLINE="A clean start for ""WordPress plugins"
+readonly STARTER_PLUG="The WordPress Plugins icon (Dashicons ""admin-plugins"
+readonly STARTER_DESCRIPTION="A clean start for a ""WordPress plugin"
+readonly STARTER_SCREENSHOTS="screenshot-1.png:f6c4b1fdc4b2440263193056ab03f78c5dd3a3b8 screenshot-2.png:94e0c48d55b5f126d02b2b81a4a00d6eac4b5718"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 readonly SCRIPT_DIR
 # shellcheck source=scripts/lib/plugin.sh disable=SC1091 # followed only with -x
@@ -834,6 +843,74 @@ check_agent_docs() {
 	return 0
 }
 
+# What a plugin still has of the starter's own (LAUNCH.md → Before 1.0):
+# the banner's words, the plug on the stack in the banner and icon, the
+# description, and the screenshots. Warnings: a plugin may keep a credit on
+# purpose, and only a person writes its own.
+check_starter_leftovers() {
+	local sha="$1"
+	local plugin_header="$2"
+	local readme="$3"
+	section "Starter leftovers"
+	if [[ "$PLUGIN_REPO" = "$STARTER_REPO" ]]; then
+		note "this is the starter"
+		return 0
+	fi
+	local problems=0 banner file svg short
+	# A missing banner or icon is not a leftover (WordPress.org assets warns).
+	banner="$(file_at "$sha" .wordpress-org/banner.svg)"
+	if grep -qF "$STARTER_HEADLINE" <<<"$banner" || grep -qF "$STARTER_TAGLINE" <<<"$banner"; then
+		warn ".wordpress-org/banner.svg still has the starter's words (Built with AI, A clean start for WordPress plugins): write this plugin's headline and tagline in both words groups, then scripts/build-banner.sh"
+		problems=1
+	fi
+	for file in banner.svg icon.svg; do
+		svg="$(file_at "$sha" ".wordpress-org/$file")"
+		if grep -qF "$STARTER_PLUG" <<<"$svg"; then
+			warn ".wordpress-org/$file still has the starter's plug on the stack: draw this plugin's own mark, then scripts/build-banner.sh"
+			problems=1
+		fi
+	done
+	if grep -qF "$STARTER_DESCRIPTION" <<<"$(field "$plugin_header" "Description")"; then
+		warn "$MAIN_FILE's Description: is still the starter's: say what this plugin does"
+		problems=1
+	fi
+	short="$(awk 'NR == 1 { next } !h && /^[ \t]*$/ { h = 1; next } h && /^==/ { exit } h && !/^[ \t]*$/ { print; exit }' <<<"$readme")"
+	if grep -qF "$STARTER_DESCRIPTION" <<<"$short"; then
+		warn "readme.txt's short description is still the starter's: say what this plugin does (150 characters at most)"
+		problems=1
+	fi
+	starter_screenshots "$sha" || problems=1
+	[[ "$problems" -eq 1 ]] || ok "no starter banner words, plug, description or screenshots"
+	return 0
+}
+
+# A file's contents at the ref; nothing when it is not there.
+file_at() {
+	local sha="$1"
+	local path="$2"
+	local blob
+	blob="$(git rev-parse --verify --quiet "$sha:$path")" || return 0
+	git cat-file blob "$blob"
+	return 0
+}
+
+# Warn for each .wordpress-org/screenshot-N.png that is still the starter's
+# file (the same Git blob). Returns 1 when one is.
+starter_screenshots() {
+	local sha="$1"
+	local spec path blob found=0
+	for spec in $STARTER_SCREENSHOTS; do
+		path=".wordpress-org/${spec%%:*}"
+		blob="$(git rev-parse --verify --quiet "$sha:$path")" || blob=""
+		if [[ "$blob" = "${spec#*:}" ]]; then
+			warn "$path is still the starter's screenshot: show this plugin (and caption it in readme.txt)"
+			found=1
+		fi
+	done
+	[[ "$found" -eq 0 ]] || return 1
+	return 0
+}
+
 # Every plugin keeps two credits in README.md and readme.txt (STANDARDS.md →
 # Structure): Built with AI, linking aidevops, and the line starting
 # "Made from " that links the starter. Warnings: a person writes them.
@@ -1039,6 +1116,7 @@ main() {
 		check_core_files
 	fi
 	check_agent_docs "$sha"
+	check_starter_leftovers "$sha" "$plugin_header" "$readme"
 	check_credits "$sha"
 	check_licence "$sha"
 	check_recommendation "$sha"
