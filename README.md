@@ -27,7 +27,7 @@ WP Plugin Starter is what wpallstars plugins are made from. It has no features o
 
 If this saves you time, headaches and costs, feel free to [buy me a coffee](https://buymeacoffee.com/marcusquinn), or whatever you like, to invest in making more things open-source.
 
-Version: 1.0.30
+Version: 1.0.31
 
 <!-- github-only:start -->
 ## Screenshots
@@ -133,7 +133,7 @@ Deleting the plugin removes its settings, its cached data, who hid lines of the 
 
 ## Changelog
 
-### Unreleased
+### 1.0.31
 
 - Developers: the workflows run on a self-hosted runner when the repository variable `CI_RUNNER` holds its label, and on GitHub-hosted runners otherwise, so private plugins can use the organization's runners while their core files stay the same as the starter's (`DEVELOPMENT.md` → Services setup, step 6). CI's lint job installs a pinned, checksum-verified ShellCheck 0.11.0 when the runner has another version or none. Nothing changes for public repositories.
 - Fix (GitHub builds): **Check again** on the Updates screen offers a release published since the last check. WordPress skips its plugin check for a minute after the last one, which opening the Updates screen runs, so pressing **Check again** straight after found nothing new. The shared updater (version 1.6.0) now asks GitHub on **Check again** even then (at most once a minute), without asking WordPress.org again.
