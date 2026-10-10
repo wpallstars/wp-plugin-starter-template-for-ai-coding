@@ -290,7 +290,10 @@
   <g
      transform="translate(1214 248) scale(0.86) translate(-1214 -248)"
      id="g50">
-    <!-- The stack: red, cream and blue layers, each with a top face and two sides -->
+    <!-- The stack: three red tiles, each with a top face and two sides. The
+       gradient names (top-blue, top-cream, top-red, bottom to top) are the
+       layers of plugins with red, cream and blue tiles: plugins vary only
+       the tiles' colours and the top tile's picture (STANDARDS.md → Structure). -->
     <g
        stroke-linejoin="round"
        id="g45">
@@ -358,7 +361,11 @@
         <!-- The WordPress Plugins icon (Dashicons admin-plugins, GPLv2 or later),
            laid flat on the top face: icon x runs along the top-right edge and
            icon y along the top-left edge, each 20-unit side 66% of the face.
-           Turned 45 degrees so the plug points along the back-left edge. -->
+           Turned 45 degrees so the plug points along the back-left edge.
+           This face matrix is the one every plugin's top-tile picture uses:
+           draw the picture in a 20-unit space (0 to 20 on both axes, centre
+           10,10) inside it, so its straight edges run parallel to the tile's
+           (STANDARDS.md → Structure). -->
         <g
            transform="matrix(4.95 2.871 -4.95 2.871 1214 -57.42)"
            id="g43">
