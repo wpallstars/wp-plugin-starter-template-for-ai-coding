@@ -4,6 +4,7 @@ Every change to WP Plugin Starter. readme.txt lists the latest version in short.
 
 = Unreleased =
 * Developers: repository metrics refresh again. repo-metrics.yml uses aidevops v3.39.1, whose metrics helper decides whether the metrics are under a day old from their `generated_at` date. The pinned v3.38.4 used the file's modified time, which a fresh checkout always makes new, so every run skipped and docs/metrics/ stayed as first written. A metrics push still rejected after its retries (such as a missing SYNC_PAT) now fails the run instead of only warning (GH#442).
+* Developers: qlty stays (owner's decision, reversing 1.0.31): DEVELOPMENT.md lists it again among the organization's review apps and the public-launch reviewers, and says that a qlty check that fails because the organization's free monthly minutes ran out is billing, not a finding, so merge without it; never make it a required check (GH#446).
 
 = 1.0.31 =
 * Developers: the workflows (ci.yml, release.yml, sonarcloud.yml, starter-sync.yml and repo-metrics.yml) run on a self-hosted runner when the repository variable CI_RUNNER holds its label, and on GitHub-hosted runners otherwise, so private plugins can use the organization's runners while their core files stay the same as the starter's (DEVELOPMENT.md → Services setup, step 6). Scorecard stays GitHub-hosted; it runs only in public repositories. CI's lint job installs a pinned, checksum-verified ShellCheck 0.11.0 when the runner has another version or none. Nothing changes for public repositories.
