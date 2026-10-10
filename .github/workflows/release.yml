@@ -26,7 +26,8 @@ concurrency:
 jobs:
   release:
     name: Build, attest and publish
-    runs-on: ubuntu-latest
+    # GitHub-hosted unless CI_RUNNER names a self-hosted label (ci.yml).
+    runs-on: ${{ vars.CI_RUNNER || 'ubuntu-latest' }}
     timeout-minutes: 20
     permissions:
       contents: write # create the release

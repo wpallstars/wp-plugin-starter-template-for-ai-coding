@@ -330,6 +330,19 @@ without its secret, and nothing fails.
 5. **Starter sync**: Actions → **Starter sync** → **Run workflow**, once,
    to see that it runs. It needs no secret. Set the repository variable
    `STARTER_REPO` only to follow a fork of the starter.
+6. **Self-hosted runners**, private repositories only. The workflows run on
+   GitHub-hosted runners unless the repository variable `CI_RUNNER` holds
+   a self-hosted runner label (such as `4cpu-8gb`); private repositories
+   pay for GitHub-hosted minutes. Set it per repository:
+   `gh variable set CI_RUNNER --repo {owner}/{repo} --body 4cpu-8gb`, and
+   add the repository to the runner group. An organization variable does
+   not reach private repositories on GitHub's Free plan. Never set it in a
+   public repository, or in a private one that runs workflows from fork
+   pull requests (Settings → Actions → General): a pull request from a
+   fork could run code on the runner. Check:
+   `gh api repos/{owner}/{repo}/actions/permissions/fork-pr-workflows-private-repos`
+   shows `"run_workflows_from_fork_pull_requests":false`, and the next
+   **CI** run's jobs show the self-hosted runner's name.
 
 `gh secret list --repo {owner}/{repo}` shows which secrets are set (names
 only). CodeRabbit, Socket and qlty are GitHub apps installed for the whole

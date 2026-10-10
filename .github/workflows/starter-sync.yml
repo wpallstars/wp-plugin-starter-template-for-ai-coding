@@ -25,7 +25,8 @@ concurrency:
 
 jobs:
   check:
-    runs-on: ubuntu-latest
+    # GitHub-hosted unless CI_RUNNER names a self-hosted label (ci.yml).
+    runs-on: ${{ vars.CI_RUNNER || 'ubuntu-latest' }}
     timeout-minutes: 10
     permissions:
       contents: read

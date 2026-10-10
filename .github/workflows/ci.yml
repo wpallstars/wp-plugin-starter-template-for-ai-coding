@@ -5,6 +5,11 @@
 # Lint runs on every push. The release and smoke-test jobs take longer, so
 # draft pull requests skip them until they are marked ready for review.
 # Actions are pinned to commit SHAs; Dependabot keeps them up to date.
+#
+# Jobs run on GitHub-hosted runners unless the repository variable CI_RUNNER
+# holds a self-hosted runner label, for example 4cpu-8gb (DEVELOPMENT.md →
+# Services setup). Set it only in private repositories: in a public one a
+# pull request from a fork could run code on the runner.
 name: CI
 
 on:
@@ -24,7 +29,7 @@ concurrency:
 jobs:
   lint:
     name: Lint (PHP 7.4)
-    runs-on: ubuntu-latest
+    runs-on: ${{ vars.CI_RUNNER || 'ubuntu-latest' }}
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -58,6 +63,23 @@ jobs:
           key: phpstan-${{ github.run_id }}
           restore-keys: phpstan-
 
+      # A pinned, checksum-verified ShellCheck: self-hosted runners may have
+      # none, and Ubuntu's 0.9.0 package reports findings that current
+      # releases do not.
+      - name: ShellCheck
+        env:
+          SC_VERSION: "0.11.0"
+          SC_SHA256: b7af85e41cc99489dcc21d66c6d5f3685138f06d34651e6d34b42ec6d54fe6f6
+        run: |
+          if [[ "$(shellcheck --version 2>/dev/null | sed -n 's/^version: //p')" != "$SC_VERSION" ]]; then
+            archive="$RUNNER_TEMP/shellcheck.tar.gz"
+            curl -fsSL --proto '=https' --tlsv1.2 -o "$archive" "https://github.com/koalaman/shellcheck/releases/download/v$SC_VERSION/shellcheck-v$SC_VERSION.linux.x86_64.tar.gz"
+            echo "$SC_SHA256  $archive" | sha256sum -c -
+            tar -xzf "$archive" -C "$RUNNER_TEMP"
+            sudo install -m 755 "$RUNNER_TEMP/shellcheck-v$SC_VERSION/shellcheck" /usr/local/bin/shellcheck
+          fi
+          shellcheck --version
+
       - name: PHP syntax (7.4), JavaScript syntax, ShellCheck, PHPCS, PHPStan
         run: scripts/lint.sh php js shell phpcs phpstan
 
@@ -80,7 +102,7 @@ jobs:
     name: Release build, preflight and Plugin Check
     needs: lint
     if: github.event_name != 'pull_request' || !github.event.pull_request.draft
-    runs-on: ubuntu-latest
+    runs-on: ${{ vars.CI_RUNNER || 'ubuntu-latest' }}
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -121,7 +143,7 @@ jobs:
     name: Smoke test (WordPress ${{ matrix.wp }}, PHP ${{ matrix.php }})
     needs: lint
     if: github.event_name != 'pull_request' || !github.event.pull_request.draft
-    runs-on: ubuntu-latest
+    runs-on: ${{ vars.CI_RUNNER || 'ubuntu-latest' }}
     timeout-minutes: 20
     strategy:
       fail-fast: false
