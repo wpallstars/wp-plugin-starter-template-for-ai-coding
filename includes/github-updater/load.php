@@ -31,7 +31,7 @@ if (!isset($GLOBALS['wpallstars_github_updater']) || !is_array($GLOBALS['wpallst
     $GLOBALS['wpallstars_github_updater'] = array();
 }
 // Version of this copy => its class file.
-$GLOBALS['wpallstars_github_updater']['1.5.0'] = __DIR__ . '/class-wpallstars-github-updater.php';
+$GLOBALS['wpallstars_github_updater']['1.6.0'] = __DIR__ . '/class-wpallstars-github-updater.php';
 
 if (!function_exists('wpallstars_github_updater_load')) {
     /**
