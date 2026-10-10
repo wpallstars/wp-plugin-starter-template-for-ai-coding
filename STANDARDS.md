@@ -138,9 +138,9 @@ How changes are made and checked: `DEVELOPMENT.md`. Releases: `RELEASING.md`.
   background with red and cream stripes. Never replace the stack with
   another picture.
   - Vary only two things: the tiles' colours (with the matching stars and
-    glow) and the picture on the top tile. WP Plugin Starter has all red
-    tiles with the WordPress Plugins icon; SEO Pro Stats has rising bars;
-    SEO Pro Stack has red, cream and blue tiles with a gold lightning bolt.
+    glow) and the picture on the top tile. The starter has all red tiles
+    with the WordPress Plugins icon; other plugins have, say, rising bars,
+    or red, cream and blue tiles with a gold lightning bolt.
   - Draw the top tile's picture on the tile's isometric axes, in a 20-unit
     space (0 to 20 on both axes, centre 10,10) through the starter's face
     matrix, `matrix(4.95 2.871 -4.95 2.871 1214 -57.42)` in the top tile's
@@ -149,7 +149,7 @@ How changes are made and checked: `DEVELOPMENT.md`. Releases: `RELEASING.md`.
     straight edges stay parallel to the tile's. Squashing upright art
     (`scale(1 0.58)`) is not enough: its edges stay level and look wrong.
     Strokes scale with the matrix: about 0.35 units draws a 2 px line.
-  - Raised art (optional, as SEO Pro Stats' bars and SEO Pro Stack's bolt):
+  - Raised art (optional, such as bars or a bolt standing on the tile):
     a dark shadow copy offset `translate(5 3)`, then darker side copies
     stepped up 1 px at a time, then the top copy with a light outline, all
     in tile coordinates (a `<use>` translate applies outside the matrix).

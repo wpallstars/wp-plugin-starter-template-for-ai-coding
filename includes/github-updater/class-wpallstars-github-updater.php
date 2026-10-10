@@ -1025,7 +1025,7 @@ final class WPAllStars_GitHub_Updater {
         if (!$failures) {
             return;
         }
-        echo '<div class="notice notice-warning"><p>' . esc_html__('Could not check GitHub for updates to these plugins. Until a check succeeds, the release found before is offered:', 'wp-plugin-starter-template') . '</p><ul class="ul-disc">';
+        echo '<div class="notice notice-warning"><p>' . esc_html__('Could not check GitHub for updates to these plugins, so a newer release may be missing here until a check succeeds:', 'wp-plugin-starter-template') . '</p><ul class="ul-disc">';
         foreach ($failures as $failure) {
             printf(
                 '<li><strong>%1$s</strong> (%2$s): %3$s.</li>',
@@ -1079,7 +1079,7 @@ final class WPAllStars_GitHub_Updater {
             (int) $columns,
             esc_html(sprintf(
                 /* translators: 1: time since the check, such as "5 mins ago", 2: error message */
-                __('Could not check GitHub for updates (%1$s): %2$s. Until a check succeeds, the release found before is offered; WordPress tries again within an hour.', 'wp-plugin-starter-template'),
+                __('Could not check GitHub for updates (%1$s): %2$s. A newer release may not be shown until a check succeeds; WordPress tries again within an hour.', 'wp-plugin-starter-template'),
                 self::failed_ago($failure['checked']),
                 $failure['failed']
             )),
