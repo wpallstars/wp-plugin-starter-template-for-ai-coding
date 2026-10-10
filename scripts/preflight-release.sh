@@ -1087,15 +1087,20 @@ badge_tall_images() {
 		{ if (gap || !n) n++; gap = 0
 		  if (match($0, /^\[!\[[^]]*\]\([^)]+\)/)) {
 			s = substr($0, RSTART, RLENGTH); sub(/^\[!\[[^]]*\]\(/, "", s); sub(/\)$/, "", s)
-			if (s !~ /^https?:/) print n " " s
+			print n " " s
 		  } }' <<<"$block")"
 	last="$(awk '/^[[:space:]]*$/ { gap = 1; next } /<!--/ { next } { if (gap || !n) n++; gap = 0 } END { print n + 0 }' <<<"$block")"
 	while read -r row path; do
-		[[ -n "$path" ]] || continue
+		# Only pictures in the repository have a height to read.
+		if [[ -z "$path" ]] || [[ "$path" == http* ]]; then
+			continue
+		fi
 		# Here-strings, not a pipe: sed stops at the first <svg (pipefail).
 		svg="$(file_at "$sha" "$path")"
 		height="$(sed -nE '/<svg/{s/.*<svg[^>]* height="([0-9]+).*/\1/p;q;}' <<<"$svg")"
-		[[ -n "$height" ]] && [[ "$height" -gt 30 ]] || continue
+		if [[ -z "$height" ]] || [[ "$height" -le 30 ]]; then
+			continue
+		fi
 		count="$(grep -c "^$row " <<<"$pictures" || true)"
 		if [[ "$row" != "$last" ]] || [[ "$count" -gt 1 ]]; then
 			warn "$path is $height px high, so the badges beside it misalign: put it alone in the badges block's last row"
