@@ -5,7 +5,7 @@ Tags: starter, boilerplate, settings, developer, template
 Requires at least: 6.2
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 1.0.29
+Stable tag: 1.0.30
 License: GPLv3 or later
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 
@@ -60,8 +60,10 @@ GitHub releases are the stable beta channel: each version comes out there first.
 
 == Changelog ==
 
-= 1.0.29 =
-* Developers: styling rules moved from STANDARDS.md to a new core file, STYLING.md, and plugins made with scripts/rename-plugin.sh get their own AGENTS.md.
+= 1.0.30 =
+* New: View details shows a banner with its words clear of the plugin name WordPress writes over it.
+* Fix: the Read Me tab joins Markdown lines wrapped at a fixed width into one paragraph, shows fenced code blocks as code, and keeps a line's text when its formatting cannot be read.
+* Developers: one three-row README badges block for every plugin (scripts/readme-badges.sh), a Before 1.0 checklist for new plugins, PHPStan level 8 and Codacy settings that fit WordPress plugins.
 
 Every change: changelog.txt.
 

@@ -27,7 +27,7 @@ WP Plugin Starter is what wpallstars plugins are made from. It has no features o
 
 If this saves you time, headaches and costs, feel free to [buy me a coffee](https://buymeacoffee.com/marcusquinn), or whatever you like, to invest in making more things open-source.
 
-Version: 1.0.29
+Version: 1.0.30
 
 <!-- github-only:start -->
 ## Screenshots
@@ -133,7 +133,7 @@ Deleting the plugin removes its settings, its cached data, who hid lines of the 
 
 ## Changelog
 
-### Unreleased
+### 1.0.30
 
 - Developers: two SonarCloud code smells in core files: the Read Me manager's nested ternary, and a repeated character range in Updates from GitHub's redirect check. No change in behaviour.
 - Fix: the Read Me tab shows a paragraph or list item written over several lines (Markdown wrapped at a fixed width) as one paragraph, as GitHub does, instead of a separate paragraph for every line, which also split inline code across lines. Fenced code blocks (backticks or tildes) show as code instead of their fence lines and text.
