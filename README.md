@@ -12,6 +12,9 @@
 [![License: GPL v3 or later](https://img.shields.io/badge/License-GPL%20v3%20or%20later-blue.svg)](LICENSE)
 [![Latest release](https://img.shields.io/github/v/release/wpallstars/wp-plugin-starter-template-for-ai-coding)](https://github.com/wpallstars/wp-plugin-starter-template-for-ai-coding/releases)
 
+[![Requires WordPress](https://img.shields.io/badge/WordPress-6.2%2B-21759B.svg?logo=wordpress)](readme.txt)
+[![Tested up to](https://img.shields.io/badge/tested%20up%20to-7.1-21759B.svg?logo=wordpress)](readme.txt)
+[![Requires PHP](https://img.shields.io/badge/PHP-7.4%2B-777BB4.svg?logo=php)](readme.txt)
 [![Lines of code](docs/metrics/badges/loc.svg)](docs/metrics/repo-metrics.md)
 [![Dependencies](docs/metrics/badges/dependencies.svg)](docs/metrics/repo-metrics.md)
 
@@ -141,6 +144,7 @@ Deleting the plugin removes its settings, its cached data, who hid lines of the 
 - New: **View details** (Plugins and Updates screens) shows a banner with its words above the plugin name WordPress writes over its lower left, instead of under it; this README and the Read Me tab keep the banner with its words centred. GitHub builds ship it as `admin/images/banner-details.svg`, which the shared updater (version 1.5.0) shows first; the WordPress.org banners have that layout too, as WordPress.org's View details shows them.
 - Developers: `.wordpress-org/banner.svg` holds the words twice, `<g id="words">` (centred) and `<g id="words-details">` (above y 340), and `scripts/build-banner.sh` builds each output from one of them. Every wpallstars-branded banner keeps the starter's two layouts (`STANDARDS.md` → Structure).
 - Developers: `scripts/rename-plugin.sh` writes a **Before 1.0** checklist into the new plugin's `LAUNCH.md`: its own description, README and readme, banner, icon and screenshots, version 1.0.0, checks and the owner's approval. `scripts/preflight-release.sh` warns under Starter leftovers when a plugin still has the starter's banner words, the plug on its banner or icon, the starter's description or screenshots. `RELEASING.md` → First release points to both. Plugins made before this keep their `LAUNCH.md`; copy the checklist from `scripts/rename-plugin.sh` if you want it.
+- Developers: one README badges block for every plugin, in three rows on GitHub: status (CI, SonarCloud, Codacy, CodeFactor, OpenSSF Scorecard, licence, latest release), requirements from `readme.txt` (Requires WordPress, Tested up to, Requires PHP) with lines of code and dependencies, then the languages chart alone. A new core script, `scripts/readme-badges.sh`, rewrites an existing plugin's block (it keeps the services the block shows; `--add` and `--codacy` add one; `--check` changes nothing), and `scripts/rename-plugin.sh` writes the same rows. `scripts/preflight-release.sh` warns when the block has a comment or blank line splitting a row, a chart beside badges, or requirement badges that disagree with `readme.txt`. The block is the starter's: other tools leave it alone (`STANDARDS.md` → Structure).
 
 ### 1.0.29
 

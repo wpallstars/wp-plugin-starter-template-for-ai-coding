@@ -83,15 +83,20 @@ How changes are made and checked: `DEVELOPMENT.md`. Releases: `RELEASING.md`.
   between `<!-- github-only:start -->` and `<!-- github-only:end -->`
   (GitHub-only parts such as the screenshots section) and the badges block
   under the title (`<!-- aidevops:badges:start -->` to
-  `<!-- aidevops:badges:end -->`): CI, SonarCloud, Codacy, CodeFactor,
-  license, latest release, and the repository facts in `docs/metrics/` that
-  `.github/workflows/repo-metrics.yml` keeps up to date.
-  `scripts/rename-plugin.sh` rebuilds the block for the new repository; add
-  the Codacy and CodeFactor badges once those services have the repository
-  (`DEVELOPMENT.md` → Services setup), never before: a badge for a
-  repository they don't have is a broken image. The `Version: X.Y.Z` line
-  under the intro holds the version itself (GitHub shows it as written) and
-  changes with every release (`RELEASING.md`).
+  `<!-- aidevops:badges:end -->`). The `Version: X.Y.Z` line under the
+  intro holds the version itself (GitHub shows it as written) and changes
+  with every release (`RELEASING.md`).
+- The badges block is the starter's, the same in every plugin, and other
+  tools leave it alone: `scripts/readme-badges.sh` writes it
+  (`scripts/rename-plugin.sh` for a new repository). Three rows, one blank
+  line between them: status (CI, SonarCloud, Codacy, CodeFactor, OpenSSF
+  Scorecard, licence, latest release); requirements from `readme.txt`
+  (Requires WordPress, Tested up to, Requires PHP) and size (the facts in
+  `docs/metrics/` that `.github/workflows/repo-metrics.yml` keeps up to
+  date); then the languages chart alone. Add a service's badge
+  (`--add`, `--codacy`) once it has the repository (`DEVELOPMENT.md` →
+  Services setup), never before: it would be a broken image.
+  `scripts/preflight-release.sh` warns when the block differs.
 - Listing images are in `.wordpress-org/`. Screenshots are
   `.wordpress-org/screenshot-N.png` (WordPress.org's `assets/` names,
   captions in `readme.txt` → Screenshots), which the release zip leaves
