@@ -6,10 +6,10 @@
 # draft pull requests skip them until they are marked ready for review.
 # Actions are pinned to commit SHAs; Dependabot keeps them up to date.
 #
-# Jobs run on GitHub-hosted runners unless the repository (or an
-# organization variable shared with it) sets the variable CI_RUNNER to a
-# self-hosted runner label, for example 4cpu-8gb. Public repositories should
-# leave it unset.
+# Jobs run on GitHub-hosted runners unless the repository variable CI_RUNNER
+# holds a self-hosted runner label, for example 4cpu-8gb (DEVELOPMENT.md →
+# Services setup). Set it only in private repositories: in a public one a
+# pull request from a fork could run code on the runner.
 name: CI
 
 on:
