@@ -23,11 +23,11 @@ permissions:
 
 jobs:
   metrics:
-    uses: marcusquinn/aidevops/.github/workflows/loc-badge-reusable.yml@90993053f1e9c41edc4c49d126a7180bc7f3c664 # v3.38.4
+    uses: marcusquinn/aidevops/.github/workflows/loc-badge-reusable.yml@821b82a18712bb74b72ec9b55d9ae0a98adb46e9 # v3.39.1
     permissions:
       contents: write
     with:
-      aidevops_ref: 90993053f1e9c41edc4c49d126a7180bc7f3c664 # v3.38.4, the same commit as uses:
+      aidevops_ref: 821b82a18712bb74b72ec9b55d9ae0a98adb46e9 # v3.39.1, the same commit as uses:
       # Everything in docs/metrics/, nothing in .github/ (a core folder that
       # scripts/sync-core.sh copies to every plugin).
       legacy_badge_dir: docs/metrics/badges
