@@ -31,5 +31,7 @@ jobs:
       # Everything in docs/metrics/, nothing in .github/ (a core folder that
       # scripts/sync-core.sh copies to every plugin).
       legacy_badge_dir: docs/metrics/badges
+      # GitHub-hosted unless CI_RUNNER names a self-hosted label (ci.yml).
+      runner: ${{ vars.CI_RUNNER || 'ubuntu-latest' }}
     secrets:
       SYNC_PAT: ${{ secrets.SYNC_PAT }}

@@ -133,6 +133,10 @@ Deleting the plugin removes its settings, its cached data, who hid lines of the 
 
 ## Changelog
 
+### Unreleased
+
+- Developers: the workflows run on a self-hosted runner when the repository or organization variable `CI_RUNNER` holds its label, and on GitHub-hosted runners otherwise, so private plugins can use the organization's runners while their core files stay the same as the starter's (`DEVELOPMENT.md` → Services setup, step 6). CI's lint job installs a pinned, checksum-verified ShellCheck 0.11.0 when the runner has another version or none. Nothing changes for public repositories.
+
 ### 1.0.30
 
 - Developers: two SonarCloud code smells in core files: the Read Me manager's nested ternary, and a repeated character range in Updates from GitHub's redirect check. No change in behaviour.

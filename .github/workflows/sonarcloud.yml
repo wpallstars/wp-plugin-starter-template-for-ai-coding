@@ -24,7 +24,8 @@ concurrency:
 jobs:
   analysis:
     name: SonarCloud analysis
-    runs-on: ubuntu-latest
+    # GitHub-hosted unless CI_RUNNER names a self-hosted label (ci.yml).
+    runs-on: ${{ vars.CI_RUNNER || 'ubuntu-latest' }}
     env:
       SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
     steps:
