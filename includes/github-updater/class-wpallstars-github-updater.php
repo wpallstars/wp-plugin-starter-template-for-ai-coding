@@ -616,7 +616,7 @@ final class WPAllStars_GitHub_Updater {
         if ($code < 300 || $code > 399) {
             return self::status_error($code);
         }
-        if (preg_match('#^https://github\.com/([A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+)/#i', $location, $moved) && 0 !== strcasecmp($moved[1], $repo)) {
+        if (preg_match('#^https://github\.com/([a-z0-9_.-]+/[a-z0-9_.-]+)/#i', $location, $moved) && 0 !== strcasecmp($moved[1], $repo)) {
             // A renamed or moved repository: say where, so the plugin's
             // header can be changed (requests never follow redirects).
             /* translators: 1: owner/repo in the plugin's header, 2: owner/repo GitHub points to */
