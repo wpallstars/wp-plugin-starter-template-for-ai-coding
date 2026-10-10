@@ -3,6 +3,10 @@
  * Shared GitHub updater: updates from GitHub releases for every installed
  * plugin that names its GitHub repository.
  *
+ * SPDX-License-Identifier: GPL-3.0-or-later
+ * SPDX-FileCopyrightText: 2026 Marcus Quinn
+ * Additional terms (GPL-3.0 section 7(b)): ATTRIBUTION.txt
+ *
  * Loaded by load.php, which picks the newest copy on the site; see there.
  * Only in builds made from GitHub releases: the WordPress.org build leaves
  * this folder out.
@@ -55,10 +59,6 @@
  *   would: the Description, Installation, FAQ, Screenshots (screenshot-N
  *   files in the same folders, with the readme's captions) and Changelog
  *   tabs, Compatible up to and the donate link.
- *
- * SPDX-License-Identifier: GPL-3.0-or-later
- * SPDX-FileCopyrightText: 2026 Marcus Quinn
- * Additional terms (GPL-3.0 section 7(b)): ATTRIBUTION.txt
  *
  * @package WPStarter
  */
