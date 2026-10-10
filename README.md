@@ -27,7 +27,7 @@ WP Plugin Starter is what wpallstars plugins are made from. It has no features o
 
 If this saves you time, headaches and costs, feel free to [buy me a coffee](https://buymeacoffee.com/marcusquinn), or whatever you like, to invest in making more things open-source.
 
-Version: 1.0.31
+Version: 1.0.32
 
 <!-- github-only:start -->
 ## Screenshots
@@ -132,6 +132,12 @@ Read a setting with `WPStarter_Settings::get( 'key' )`.
 Deleting the plugin removes its settings, its cached data, who hid lines of the Plugins screen notice about replaced plugins, and the cached GitHub releases.
 
 ## Changelog
+
+### 1.0.32
+
+- Fix (GitHub builds): when a check for updates on GitHub fails, the Plugins and Updates screens say a newer release may not be shown until a check succeeds, instead of saying the release found before is offered, which was wrong when there was none (shared updater 1.6.1).
+- Developers: `STANDARDS.md`'s banner and icon picture rules no longer name other plugins, so plugins made from the starter read them correctly after `scripts/sync-core.sh`.
+- Developers: repository metrics refresh again: `repo-metrics.yml` uses aidevops v3.39.1, which reads the metrics' age from their `generated_at` date rather than the file's modified time; a metrics push still rejected after its retries now fails the run (GH#442).
 
 ### 1.0.31
 
