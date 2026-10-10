@@ -133,6 +133,29 @@ How changes are made and checked: `DEVELOPMENT.md`. Releases: `RELEASING.md`.
   line is too long, shorten it rather than move or resize the lines.
   Each group is one `<g id=...>` line, its `<text>` lines and `</g>`,
   which is how `scripts/build-banner.sh` finds them.
+- Every wpallstars plugin's banner and icon show the same picture: the
+  stack of three isometric tiles under the arc of five stars, on the navy
+  background with red and cream stripes. Never replace the stack with
+  another picture.
+  - Vary only two things: the tiles' colours (with the matching stars and
+    glow) and the picture on the top tile. WP Plugin Starter has all red
+    tiles with the WordPress Plugins icon; SEO Pro Stats has rising bars;
+    SEO Pro Stack has red, cream and blue tiles with a gold lightning bolt.
+  - Draw the top tile's picture on the tile's isometric axes, in a 20-unit
+    space (0 to 20 on both axes, centre 10,10) through the starter's face
+    matrix, `matrix(4.95 2.871 -4.95 2.871 1214 -57.42)` in the top tile's
+    `translate(0 238)` group of `.wordpress-org/banner.svg`. Picture x then
+    runs along the tile's top-right edge and y along its top-left edge, so
+    straight edges stay parallel to the tile's. Squashing upright art
+    (`scale(1 0.58)`) is not enough: its edges stay level and look wrong.
+    Strokes scale with the matrix: about 0.35 units draws a 2 px line.
+  - Raised art (optional, as SEO Pro Stats' bars and SEO Pro Stack's bolt):
+    a dark shadow copy offset `translate(5 3)`, then darker side copies
+    stepped up 1 px at a time, then the top copy with a light outline, all
+    in tile coordinates (a `<use>` translate applies outside the matrix).
+  - Keep `banner.svg` and `icon.svg` in step (the icon is the banner's
+    picture with no words), run `scripts/build-banner.sh`, and look at
+    `icon-128x128.png`: the top tile's picture must still read at that size.
 - Settings → {Name} is the settings screen. A plugin with its own top-level
   menu names it in `{Prefix}_Setup::MENU_PARENT`, and the screen is
   **Settings**, last in that menu (not also under Settings). Link to it with

@@ -196,7 +196,7 @@
   <g
      transform="translate(128 128) scale(0.5) translate(-1214 -245.5)"
      id="g40">
-    <!-- The stack: red, cream and blue layers, each with a top face and two sides -->
+    <!-- The stack: three red tiles, as on the banner (keep the two in step). -->
     <g
        stroke-linejoin="round"
        id="g35">
@@ -262,7 +262,7 @@
            fill="url(#top-red)"
            id="polygon32" />
         <!-- The WordPress Plugins icon (Dashicons admin-plugins, GPLv2 or later),
-           laid flat on the top face, as on the banner. -->
+           laid flat on the top face through the banner's face matrix. -->
         <g
            transform="matrix(4.95 2.871 -4.95 2.871 1214 -57.42)"
            id="g33">

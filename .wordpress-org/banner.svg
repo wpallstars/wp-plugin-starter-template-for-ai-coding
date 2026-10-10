@@ -81,7 +81,10 @@
 
   <!-- The picture: scaled down a little so it keeps clear of the stripes -->
   <g transform="translate(1214 248) scale(0.86) translate(-1214 -248)">
-  <!-- The stack: red, cream and blue layers, each with a top face and two sides -->
+  <!-- The stack: three red tiles, each with a top face and two sides. The
+       gradient names (top-blue, top-cream, top-red, bottom to top) are the
+       layers of plugins with red, cream and blue tiles: plugins vary only
+       the tiles' colours and the top tile's picture (STANDARDS.md → Structure). -->
   <g stroke-linejoin="round">
     <g transform="translate(0 350)">
       <polygon points="1064,0 1214,87 1214,117 1064,30" fill="#5c0000"/>
@@ -102,7 +105,11 @@
       <!-- The WordPress Plugins icon (Dashicons admin-plugins, GPLv2 or later),
            laid flat on the top face: icon x runs along the top-right edge and
            icon y along the top-left edge, each 20-unit side 66% of the face.
-           Turned 45 degrees so the plug points along the back-left edge. -->
+           Turned 45 degrees so the plug points along the back-left edge.
+           This face matrix is the one every plugin's top-tile picture uses:
+           draw the picture in a 20-unit space (0 to 20 on both axes, centre
+           10,10) inside it, so its straight edges run parallel to the tile's
+           (STANDARDS.md → Structure). -->
       <g transform="matrix(4.95 2.871 -4.95 2.871 1214 -57.42)">
         <path fill="#5c0000" fill-opacity="0.55" transform="translate(0.3 0.3) rotate(-45 10 10)" d="M13.11 4.36L9.87 7.6 8 5.73l3.24-3.24c.35-.34 1.05-.2 1.56.32.52.51.66 1.21.31 1.55zm-8 1.77l.91-1.12 9.01 9.01-1.19.84c-.71.71-2.63 1.16-3.82 1.16H6.14L4.9 17.26c-.59.59-1.54.59-2.12 0-.59-.58-.59-1.53 0-2.12l1.24-1.24v-3.88c0-1.13.4-3.19 1.09-3.89zm7.26 3.97l3.24-3.24c.34-.35 1.04-.21 1.55.31.52.51.66 1.21.31 1.55l-3.24 3.25z"/>
         <path fill="#ffffea" transform="rotate(-45 10 10)" d="M13.11 4.36L9.87 7.6 8 5.73l3.24-3.24c.35-.34 1.05-.2 1.56.32.52.51.66 1.21.31 1.55zm-8 1.77l.91-1.12 9.01 9.01-1.19.84c-.71.71-2.63 1.16-3.82 1.16H6.14L4.9 17.26c-.59.59-1.54.59-2.12 0-.59-.58-.59-1.53 0-2.12l1.24-1.24v-3.88c0-1.13.4-3.19 1.09-3.89zm7.26 3.97l3.24-3.24c.34-.35 1.04-.21 1.55.31.52.51.66 1.21.31 1.55l-3.24 3.25z"/>
