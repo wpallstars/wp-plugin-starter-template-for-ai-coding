@@ -345,8 +345,9 @@ without its secret, and nothing fails.
    **CI** run's jobs show the self-hosted runner's name.
 
 `gh secret list --repo {owner}/{repo}` shows which secrets are set (names
-only). CodeRabbit, Socket and qlty are GitHub apps installed for the whole
+only). CodeRabbit and Socket are GitHub apps installed for the whole
 organization; they need nothing per repository. CodeFactor needs step 3.
+Qlty is not used (owner's decision): don't add it back.
 
 ## Test site resources
 
@@ -408,7 +409,7 @@ money and most code-review services are paid. Until then, work moves fast:
   the previous one.
 - The build zips and Plugin Check reports are kept for seven days on each
   run (artifact `<repository>-build-…`) for testing a branch on a site.
-- Review apps that are already installed (CodeRabbit, qlty, Socket) give
+- Review apps that are already installed (CodeRabbit, Socket) give
   advice only. A rate-limited or missing review never holds up a merge.
 
 ## At public launch: full sweep
@@ -419,8 +420,8 @@ public repositories. It goes through the whole codebase once, then keeps
 it at that standard:
 
 1. Turn on the free reviewers for the whole codebase, not just new
-   changes: CodeRabbit full review, Codacy, SonarCloud (SonarQube Cloud)
-   and qlty, plus GitHub's CodeQL (JavaScript and GitHub Actions; it has
+   changes: CodeRabbit full review, Codacy and SonarCloud (SonarQube
+   Cloud), plus GitHub's CodeQL (JavaScript and GitHub Actions; it has
    no PHP support, so PHPStan, SonarCloud and Codacy cover the PHP),
    Dependabot security alerts, secret scanning with push protection, and
    OpenSSF Scorecard (Actions → **Scorecard** → **Run workflow** once; it
