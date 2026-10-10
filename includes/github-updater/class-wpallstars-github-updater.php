@@ -27,6 +27,12 @@
  *   hours (an hour after a failure), when WordPress checks for updates, and
  *   again when someone presses "Check again" on the Updates screen or clears
  *   WordPress's update_plugins site transient (at most once a minute).
+ *   "Check again" asks GitHub even when WordPress skips its own plugin
+ *   check, as it does within a minute of the last one (check_again()).
+ * - A check that failed (GitHub did not answer, or another plugin blocked
+ *   the request) keeps offering the release found before, and says so with
+ *   its error under the plugin on the Plugins screen and on the Updates
+ *   screen, until a check succeeds.
  * - Public repositories are read from github.com's own pages (the
  *   releases/latest redirect, the asset's download address and the main
  *   file on raw.githubusercontent.com), not the API: without a token the API
@@ -159,6 +165,13 @@ final class WPAllStars_GitHub_Updater {
     private static $updates_cleared = null;
 
     /**
+     * Whether add_updates() has run this request.
+     *
+     * @var bool
+     */
+    private static $added = false;
+
+    /**
      * Signed download addresses (or errors) found this request, by package.
      *
      * @var array<string,string|WP_Error>
@@ -191,6 +204,9 @@ final class WPAllStars_GitHub_Updater {
         add_filter('upgrader_package_options', array(__CLASS__, 'private_package'));
         add_filter('upgrader_pre_download', array(__CLASS__, 'private_download'), 10, 3);
         add_filter('upgrader_source_selection', array(__CLASS__, 'fix_folder'), 10, 4);
+        // After core's own check on these screens (priority 10).
+        add_action('load-update-core.php', array(__CLASS__, 'updates_screen'), 11);
+        add_action('load-plugins.php', array(__CLASS__, 'plugins_screen'), 11);
 
         /**
          * Whether update checks that fall due run in WP-Cron instead of on
@@ -841,6 +857,7 @@ final class WPAllStars_GitHub_Updater {
         if (!is_object($transient)) {
             return $transient;
         }
+        self::$added = true;
         if (null === self::$updates_cleared) {
             // Core saves twice: first last_checked, then the update answers.
             // Read before that first save, not after it has filled the cache.
@@ -932,6 +949,143 @@ final class WPAllStars_GitHub_Updater {
             // Listed as up to date, so the Plugins screen offers auto-updates.
             $transient->no_update[$file] = $item;
         }
+    }
+
+    /**
+     * Updates screen (load-update-core.php, after core's check): "Check
+     * again" asks GitHub, and failed checks are shown.
+     */
+    public static function updates_screen() {
+        if (!current_user_can('update_plugins')) {
+            return;
+        }
+        self::check_again();
+        add_action(is_network_admin() ? 'network_admin_notices' : 'admin_notices', array(__CLASS__, 'failures_notice'));
+    }
+
+    /**
+     * "Check again" asks GitHub even when core skips its plugin check this
+     * time. Core checks plugins on the Updates screen only when its last
+     * check is over a minute old, and opening the screen runs one, so a
+     * press soon after found no new release. Saving core's stored check
+     * again runs add_updates(), which asks GitHub for answers over a minute
+     * old; WordPress.org is not asked again and nothing else changes.
+     */
+    private static function check_again() {
+        if (self::$added || !self::forced()) {
+            // Core's check ran this request, or this is not "Check again".
+            return;
+        }
+        $current = get_site_transient('update_plugins');
+        if (is_object($current) && self::plugins()) {
+            set_site_transient('update_plugins', $current);
+        }
+    }
+
+    /**
+     * Plugins whose last check on GitHub failed: GitHub did not answer, or
+     * another plugin blocked the request. They keep the release found before.
+     *
+     * @return array<string,array{name:string,failed:string,checked:int}> Plugin file => failure.
+     */
+    private static function failures() {
+        $cache    = self::cache();
+        $failures = array();
+        foreach (self::plugins() as $file => $plugin) {
+            // As release() keys its answers.
+            $key = $plugin['repo'] . '|' . $file;
+            if (isset($cache[$key]) && is_array($cache[$key]) && !empty($cache[$key]['failed'])) {
+                $failures[$file] = array(
+                    'name'    => $plugin['name'],
+                    'failed'  => rtrim(wp_strip_all_tags((string) $cache[$key]['failed']), " \t\n\r\0\x0B."),
+                    'checked' => isset($cache[$key]['checked']) ? (int) $cache[$key]['checked'] : 0,
+                );
+            }
+        }
+        return $failures;
+    }
+
+    /**
+     * When a failed check was, as "5 mins ago".
+     *
+     * @param int $checked Time of the check.
+     * @return string
+     */
+    private static function failed_ago($checked) {
+        /* translators: %s: time since the check, such as "5 mins" */
+        return sprintf(__('%s ago', 'wp-plugin-starter-template'), human_time_diff($checked, time()));
+    }
+
+    /**
+     * Updates screen: a notice listing failed checks, so a newer release
+     * missing from the list is explained.
+     */
+    public static function failures_notice() {
+        $failures = self::failures();
+        if (!$failures) {
+            return;
+        }
+        echo '<div class="notice notice-warning"><p>' . esc_html__('Could not check GitHub for updates to these plugins. Until a check succeeds, the release found before is offered:', 'wp-plugin-starter-template') . '</p><ul class="ul-disc">';
+        foreach ($failures as $failure) {
+            printf(
+                '<li><strong>%1$s</strong> (%2$s): %3$s.</li>',
+                esc_html($failure['name']),
+                esc_html(self::failed_ago($failure['checked'])),
+                esc_html($failure['failed'])
+            );
+        }
+        echo '</ul></div>';
+    }
+
+    /**
+     * Plugins screen (load-plugins.php, after core's check): a note under
+     * each plugin whose last check failed.
+     */
+    public static function plugins_screen() {
+        if (!current_user_can('update_plugins')) {
+            return;
+        }
+        add_action('after_plugin_row', array(__CLASS__, 'failure_row'), 10, 1);
+        add_action('admin_head', array(__CLASS__, 'failure_row_style'));
+    }
+
+    /**
+     * Join a failure note to its plugin's row, as core does for update notes.
+     */
+    public static function failure_row_style() {
+        if (self::failures()) {
+            echo '<style>.plugins tr:has(+ tr.wpallstars-github-failed) th, .plugins tr:has(+ tr.wpallstars-github-failed) td { box-shadow: none; }</style>' . "\n";
+        }
+    }
+
+    /**
+     * A note under a plugin's row when its last check on GitHub failed: when,
+     * the error, and a link to check again now.
+     *
+     * @param string $file Plugin file.
+     */
+    public static function failure_row($file) {
+        global $wp_list_table;
+        $failures = self::failures();
+        if (!isset($failures[(string) $file])) {
+            return;
+        }
+        $failure = $failures[(string) $file];
+        $active  = is_network_admin() ? is_plugin_active_for_network($file) : is_plugin_active($file);
+        $columns = ($wp_list_table instanceof WP_List_Table) ? $wp_list_table->get_column_count() : 4;
+        printf(
+            '<tr class="plugin-update-tr wpallstars-github-failed %1$s"><td colspan="%2$d" class="plugin-update colspanchange"><div class="notice inline notice-warning notice-alt"><p>%3$s <a href="%4$s">%5$s</a></p></div></td></tr>',
+            $active ? 'active' : 'inactive',
+            (int) $columns,
+            esc_html(sprintf(
+                /* translators: 1: time since the check, such as "5 mins ago", 2: error message */
+                __('Could not check GitHub for updates (%1$s): %2$s. Until a check succeeds, the release found before is offered; WordPress tries again within an hour.', 'wp-plugin-starter-template'),
+                self::failed_ago($failure['checked']),
+                $failure['failed']
+            )),
+            esc_url(self_admin_url('update-core.php?force-check=1')),
+            esc_html__('Check again now', 'wp-plugin-starter-template')
+        );
     }
 
     /**

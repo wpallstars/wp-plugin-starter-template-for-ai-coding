@@ -136,6 +136,8 @@ Deleting the plugin removes its settings, its cached data, who hid lines of the 
 ### Unreleased
 
 - Developers: the workflows run on a self-hosted runner when the repository variable `CI_RUNNER` holds its label, and on GitHub-hosted runners otherwise, so private plugins can use the organization's runners while their core files stay the same as the starter's (`DEVELOPMENT.md` → Services setup, step 6). CI's lint job installs a pinned, checksum-verified ShellCheck 0.11.0 when the runner has another version or none. Nothing changes for public repositories.
+- Fix (GitHub builds): **Check again** on the Updates screen offers a release published since the last check. WordPress skips its plugin check for a minute after the last one, which opening the Updates screen runs, so pressing **Check again** straight after found nothing new. The shared updater (version 1.6.0) now asks GitHub on **Check again** even then (at most once a minute), without asking WordPress.org again.
+- New (GitHub builds): a failed check for updates on GitHub is no longer silent. When GitHub does not answer or another plugin blocks the request (such as HTTP Requests Manager), the plugin keeps offering the release found before, and the Plugins screen shows the error under the plugin, with a **Check again now** link, and the Updates screen lists it, until a check succeeds.
 
 ### 1.0.30
 

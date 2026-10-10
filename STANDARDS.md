@@ -400,10 +400,11 @@ which replaces Git Updater.
 - Tokens for private repositories come only from `wp-config.php`
   (`WPALLSTARS_GITHUB_TOKEN`) or the filter, go only to api.github.com and
   are never stored.
-- Release answers are cached for 12 hours (an hour after a failure). "Check
-  again" on the Updates screen, or a core check that starts without the
-  `update_plugins` site transient (cleared, say, with `wp transient delete
-  update_plugins --network`), asks GitHub again, at most once a minute.
+- Release answers are cached for 12 hours (an hour after a failure, which
+  keeps the release found before and shows its error on the Plugins and
+  Updates screens). "Check again" on the Updates screen, even when core
+  skips its own check, or a core check without the `update_plugins` site
+  transient asks GitHub again, at most once a minute.
 
 ## Releases
 
