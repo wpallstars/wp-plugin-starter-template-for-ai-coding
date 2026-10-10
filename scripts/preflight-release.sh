@@ -1032,6 +1032,104 @@ check_recommendation() {
 	return 0
 }
 
+# README.md's badges block is the starter's three rows (STANDARDS.md →
+# Structure; scripts/readme-badges.sh writes it). Warnings: GitHub shows a
+# split row or a tall chart beside badges as misaligned rows, and
+# requirement badges that disagree with readme.txt mislead.
+check_badges() {
+	local sha="$1"
+	local readme="$2"
+	section "README badges"
+	if [[ -z "$PLUGIN_REPO" ]]; then
+		note "no GitHub Plugin URI header: badges not checked"
+		return 0
+	fi
+	local text block expected problems=0 rows
+	text="$(file_at "$sha" README.md)"
+	if ! grep -qxF "$PLUGIN_BADGES_START" <<<"$text"; then
+		warn "README.md has no badges block under its title (scripts/readme-badges.sh writes one between $PLUGIN_BADGES_START and $PLUGIN_BADGES_END)"
+		return 0
+	fi
+	block="$(plugin_badges_current <<<"$text")"
+	expected="$(plugin_badges "$PLUGIN_REPO" "$readme" "$(plugin_badge_services "$block")" "$(plugin_badge_codacy "$block")")"
+	if [[ "$block" = "$expected" ]]; then
+		ok "README.md badges block: status, requirements (as in readme.txt) and size, languages chart"
+		return 0
+	fi
+	if grep -qF '<!--' <<<"$(sed 1d <<<"$block")"; then
+		warn "README.md's badges block has a comment after its first line, which splits a row on GitHub"
+		problems=1
+	fi
+	rows="$(awk '/^[[:space:]]*$/ { gap = 1; next } /<!--/ { next } { if (gap || !n) n++; gap = 0 } END { print n + 0 }' <<<"$block")"
+	if [[ "$rows" -gt 3 ]]; then
+		warn "README.md's badges block has $rows rows (a blank line starts a row); keep three: status, requirements and size, the languages chart"
+		problems=1
+	fi
+	badge_tall_images "$sha" "$block" || problems=1
+	badge_requirements "$block" "$readme" || problems=1
+	if [[ "$problems" -eq 0 ]]; then
+		warn "README.md's badges block differs from the starter's three rows (STANDARDS.md → Structure)"
+	fi
+	note "scripts/readme-badges.sh rewrites the block (--check shows it)"
+	return 0
+}
+
+# Warn for a picture in the badges block that is taller than a badge (from
+# its SVG's height) unless it is alone in the last row. Returns 1 when one is.
+badge_tall_images() {
+	local sha="$1"
+	local block="$2"
+	local last found=0 row path count svg height
+	# Each picture from this plugin's files as "row path", rows counted as
+	# GitHub's paragraphs.
+	local pictures
+	pictures="$(awk '/^[[:space:]]*$/ { gap = 1; next } /<!--/ { next }
+		{ if (gap || !n) n++; gap = 0
+		  if (match($0, /^\[!\[[^]]*\]\([^)]+\)/)) {
+			s = substr($0, RSTART, RLENGTH); sub(/^\[!\[[^]]*\]\(/, "", s); sub(/\)$/, "", s)
+			if (s !~ /^https?:/) print n " " s
+		  } }' <<<"$block")"
+	last="$(awk '/^[[:space:]]*$/ { gap = 1; next } /<!--/ { next } { if (gap || !n) n++; gap = 0 } END { print n + 0 }' <<<"$block")"
+	while read -r row path; do
+		[[ -n "$path" ]] || continue
+		# Here-strings, not a pipe: sed stops at the first <svg (pipefail).
+		svg="$(file_at "$sha" "$path")"
+		height="$(sed -nE '/<svg/{s/.*<svg[^>]* height="([0-9]+).*/\1/p;q;}' <<<"$svg")"
+		[[ -n "$height" ]] && [[ "$height" -gt 30 ]] || continue
+		count="$(grep -c "^$row " <<<"$pictures" || true)"
+		if [[ "$row" != "$last" ]] || [[ "$count" -gt 1 ]]; then
+			warn "$path is $height px high, so the badges beside it misalign: put it alone in the badges block's last row"
+			found=1
+		fi
+	done <<<"$pictures"
+	[[ "$found" -eq 0 ]] || return 1
+	return 0
+}
+
+# Warn when a requirement badge says another version than readme.txt's
+# header. Returns 1 when one does.
+badge_requirements() {
+	local block="$1"
+	local readme="$2"
+	local spec label key pattern shown want found=0
+	for spec in 'Requires WordPress|Requires at least|badge/WordPress-([0-9.]+)%2B' \
+		'Tested up to|Tested up to|badge/tested%20up%20to-([0-9.]+)-' \
+		'Requires PHP|Requires PHP|badge/PHP-([0-9.]+)%2B'; do
+		IFS='|' read -r label key pattern <<<"$spec"
+		shown=""
+		if [[ "$block" =~ $pattern ]]; then
+			shown="${BASH_REMATCH[1]}"
+		fi
+		want="$(field "$readme" "$key")"
+		if [[ "$shown" != "$want" ]] && [[ -n "$shown" ]]; then
+			warn "README.md's $label badge says $shown, readme.txt's $key: says ${want:-nothing}"
+			found=1
+		fi
+	done
+	[[ "$found" -eq 0 ]] || return 1
+	return 0
+}
+
 check_git() {
 	local ref="$1"
 	local sha="$2"
@@ -1120,6 +1218,7 @@ main() {
 	check_credits "$sha"
 	check_licence "$sha"
 	check_recommendation "$sha"
+	check_badges "$sha" "$readme"
 	check_git "$ref" "$sha" "$VERSION"
 
 	printf '\n%s error(s), %s warning(s).\n' "$ERRORS" "$WARNINGS"

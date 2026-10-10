@@ -196,6 +196,105 @@ plugin_env() {
 	return 0
 }
 
+# README.md's badges block (STANDARDS.md → Structure): the lines between
+# these markers, the first of which says who writes them.
+PLUGIN_BADGES_START="<!-- aidevops:badges:start -->"
+PLUGIN_BADGES_END="<!-- aidevops:badges:end -->"
+PLUGIN_BADGES_FIRST_LINE="<!-- On GitHub only: the Read Me tab skips this block. scripts/rename-plugin.sh rewrites it. -->"
+
+# The badges block's lines: the first line, then three rows with one blank
+# line between them, each a paragraph on GitHub:
+#   1. status: CI, the services given, licence and latest release;
+#   2. requirements from readme.txt's header (Requires at least, Tested up
+#      to, Requires PHP), lines of code and dependencies;
+#   3. the languages chart alone: it is 96 px high, so beside 20 px badges
+#      it would misalign a row.
+# Usage: plugin_badges OWNER/REPO README_TXT "SERVICES" CODACY_ID
+#   SERVICES: any of sonarcloud codefactor scorecard; Codacy shows when its
+#   project badge ID is given.
+plugin_badges() {
+	local repo="$1"
+	local readme="$2"
+	local services=" $3 "
+	local codacy="$4"
+	local url="https://github.com/$repo"
+	local key="${repo/\//_}"
+	local shield="https://img.shields.io/badge"
+	local wp tested php
+	wp="$(plugin_header_field "$readme" "Requires at least")"
+	tested="$(plugin_header_field "$readme" "Tested up to")"
+	php="$(plugin_header_field "$readme" "Requires PHP")"
+	printf '%s\n' "$PLUGIN_BADGES_FIRST_LINE"
+	printf '[![CI](%s/actions/workflows/ci.yml/badge.svg?branch=main)](%s/actions/workflows/ci.yml)\n' "$url" "$url"
+	if [[ "$services" = *" sonarcloud "* ]]; then
+		printf '[![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=%s&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=%s)\n' "$key" "$key"
+	fi
+	if [[ -n "$codacy" ]]; then
+		printf '[![Codacy Badge](https://app.codacy.com/project/badge/Grade/%s)](https://app.codacy.com/gh/%s/dashboard)\n' "$codacy" "$repo"
+	fi
+	if [[ "$services" = *" codefactor "* ]]; then
+		printf '[![CodeFactor](https://www.codefactor.io/repository/github/%s/badge)](https://www.codefactor.io/repository/github/%s)\n' "$repo" "$repo"
+	fi
+	if [[ "$services" = *" scorecard "* ]]; then
+		printf '[![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/%s/badge)](https://scorecard.dev/viewer/?uri=github.com/%s)\n' "$repo" "$repo"
+	fi
+	printf '[![License: GPL v3 or later](%s/License-GPL%%20v3%%20or%%20later-blue.svg)](LICENSE)\n' "$shield"
+	printf '[![Latest release](https://img.shields.io/github/v/release/%s)](%s/releases)\n\n' "$repo" "$url"
+	if [[ -n "$wp" ]]; then
+		printf '[![Requires WordPress](%s/WordPress-%s%%2B-21759B.svg?logo=wordpress)](readme.txt)\n' "$shield" "$wp"
+	fi
+	if [[ -n "$tested" ]]; then
+		printf '[![Tested up to](%s/tested%%20up%%20to-%s-21759B.svg?logo=wordpress)](readme.txt)\n' "$shield" "$tested"
+	fi
+	if [[ -n "$php" ]]; then
+		printf '[![Requires PHP](%s/PHP-%s%%2B-777BB4.svg?logo=php)](readme.txt)\n' "$shield" "$php"
+	fi
+	printf '[![Lines of code](docs/metrics/badges/loc.svg)](docs/metrics/repo-metrics.md)\n'
+	printf '[![Dependencies](docs/metrics/badges/dependencies.svg)](docs/metrics/repo-metrics.md)\n\n'
+	printf '[![Languages by lines of code](docs/metrics/badges/languages.svg)](docs/metrics/repo-metrics.md)\n'
+	return 0
+}
+
+# The services a badges block shows, for plugin_badges: sonarcloud,
+# codefactor, scorecard.
+plugin_badge_services() {
+	local block="$1"
+	local found=""
+	if grep -qF 'sonarcloud.io/' <<<"$block"; then found="$found sonarcloud"; fi
+	if grep -qF 'codefactor.io/' <<<"$block"; then found="$found codefactor"; fi
+	if grep -qF 'scorecard.dev/' <<<"$block"; then found="$found scorecard"; fi
+	printf '%s' "${found# }"
+	return 0
+}
+
+# The Codacy project badge ID in a badges block (empty when it has none).
+plugin_badge_codacy() {
+	local block="$1"
+	sed -nE '/app\.codacy\.com\/project\/badge\/Grade\//{s|.*app\.codacy\.com/project/badge/Grade/([0-9A-Za-z]+).*|\1|p;q;}' <<<"$block"
+	return 0
+}
+
+# The badges block's lines in README.md text on standard input.
+plugin_badges_current() {
+	START="$PLUGIN_BADGES_START" END="$PLUGIN_BADGES_END" awk '
+		$0 == ENVIRON["END"] { exit }
+		on { print }
+		$0 == ENVIRON["START"] { on = 1 }'
+	return 0
+}
+
+# README.md text on standard input, with the badges block's lines replaced
+# by BLOCK. Call it only when both markers are there.
+plugin_badges_replace() {
+	local block="$1"
+	START="$PLUGIN_BADGES_START" END="$PLUGIN_BADGES_END" BADGES="$block" awk '
+		$0 == ENVIRON["END"] { skip = 0 }
+		skip { next }
+		{ print }
+		$0 == ENVIRON["START"] { print ENVIRON["BADGES"]; skip = 1 }'
+	return 0
+}
+
 # Paths the WordPress.org build leaves out (.distignore-wporg at the ref),
 # one per line, without the leading slash: the GitHub updater.
 plugin_wporg_only() {

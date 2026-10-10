@@ -338,30 +338,18 @@ EOF
 	return 0
 }
 
-# Rebuild README.md's GitHub badges block for the new repository. The
-# SonarCloud key is owner_repo. The Codacy badge has a per-project ID, and
-# CodeFactor's badge is a broken image until the repository is added on
-# codefactor.io, so both are left out until that service has the new
-# repository (DEVELOPMENT.md → Services setup).
+# Rebuild README.md's GitHub badges block for the new repository, in the
+# starter's three rows (plugin_badges). The SonarCloud key is owner_repo.
+# Codacy's badge has a per-project ID, and CodeFactor's and Scorecard's are
+# broken images until that service has the repository, so they are left
+# out until then (DEVELOPMENT.md → Services setup; scripts/readme-badges.sh
+# adds them).
 set_badges() {
 	local repo="$1"
-	local url="https://github.com/$repo"
-	local key="${repo/\//_}"
+	local readme=""
 	[[ -f README.md ]] || return 0
-	BADGES="<!-- On GitHub only: the Read Me tab skips this block. scripts/rename-plugin.sh rewrites it. -->
-[![CI]($url/actions/workflows/ci.yml/badge.svg?branch=main)]($url/actions/workflows/ci.yml)
-[![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=$key&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=$key)
-[![License: GPL v3 or later](https://img.shields.io/badge/License-GPL%20v3%20or%20later-blue.svg)](LICENSE)
-[![Latest release](https://img.shields.io/github/v/release/$repo)]($url/releases)
-
-[![Lines of code](docs/metrics/badges/loc.svg)](docs/metrics/repo-metrics.md)
-[![Dependencies](docs/metrics/badges/dependencies.svg)](docs/metrics/repo-metrics.md)
-
-[![Languages by lines of code](docs/metrics/badges/languages.svg)](docs/metrics/repo-metrics.md)" awk '
-		$0 == "<!-- aidevops:badges:end -->" { skip = 0 }
-		skip { next }
-		{ print }
-		$0 == "<!-- aidevops:badges:start -->" { print ENVIRON["BADGES"]; skip = 1 }' README.md >"$TMP_FILE"
+	[[ ! -f readme.txt ]] || readme="$(<readme.txt)"
+	plugin_badges_replace "$(plugin_badges "$repo" "$readme" sonarcloud "")" <README.md >"$TMP_FILE"
 	replace_with_tmp README.md || true
 	return 0
 }
