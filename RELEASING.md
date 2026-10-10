@@ -104,6 +104,14 @@ in `WPALLSTARS_GITHUB_TOKEN` (`wp-config.php`; it serves every plugin with
 the shared updater). Making it public needs the owner's say; do the quality
 sweep in `DEVELOPMENT.md` → At public launch in the same step.
 
+## First release
+
+Before a plugin's first release (1.0.0), work through **Before 1.0** in its
+`LAUNCH.md`, which `scripts/rename-plugin.sh` writes. `scripts/preflight-release.sh`
+warns, under Starter leftovers, about what is still the starter's: the
+banner's words, the plug on the banner and icon, the description and the
+screenshots.
+
 ## WordPress.org
 
 Guidelines: [Detailed Plugin Guidelines](https://developer.wordpress.org/plugins/wordpress-org/detailed-plugin-guidelines/),
