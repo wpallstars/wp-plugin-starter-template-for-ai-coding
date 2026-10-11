@@ -33,9 +33,12 @@ class WPStarter_Admin_Page {
                     <span class="wps-header__logo dashicons dashicons-star-filled" aria-hidden="true"></span>
                     <h1 class="wps-header__title"><?php esc_html_e('WP Plugin Starter', 'wp-plugin-starter-template'); ?></h1>
                     <span class="wps-badge"><?php echo esc_html('v' . WPSTARTER_VERSION); ?></span>
+                    <?php if (is_network_admin()) : ?>
+                        <span class="wps-badge wps-badge--network"><?php esc_html_e('Network', 'wp-plugin-starter-template'); ?></span>
+                    <?php endif; ?>
                 </div>
                 <?php
-                if (current_user_can('manage_options')) {
+                if (current_user_can(is_network_admin() ? 'manage_network_options' : 'manage_options')) {
                     self::search_form();
                 }
                 self::header_links(WPStarter_Setup::header_links());
@@ -130,6 +133,15 @@ class WPStarter_Admin_Page {
             }
             return substr_replace($admin_title, self::screen_title($title, $section), $at, strlen($title));
         }, 10, 2);
+    }
+
+    /**
+     * Name the settings screen's tab shown in the browser title
+     * (title_section()). Runs on the screen's load-{hook} action, on each
+     * site and on the network screen (multisite).
+     */
+    public static function title_tab() {
+        self::title_section(self::tab_label(WPStarter_Admin_Manager::get_active_tab(), WPStarter_Admin_Manager::get_tabs()));
     }
 
     /**

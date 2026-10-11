@@ -16,6 +16,7 @@ A clean start for a WordPress plugin: a settings screen, a Read Me tab, updates 
 WP Plugin Starter is what wpallstars plugins are made from. It has no features of its own: it holds the parts every plugin needs, so a new plugin starts with them working.
 
 * **A settings screen** (Settings → WP Plugin Starter) that features fill by declaring their settings, saved instantly, searchable, in tabs. With no features yet it shows one empty tab.
+* **Multisite**: the same screen for the whole network (Network Admin → Settings), whose settings new sites start with. Apply a card to every site, see which sites differ, and make every site the same.
 * **A Read Me tab** that shows the plugin's README.md, banner included.
 * **Features as classes**, off by default, with settings, hooks, one-off imports from the plugins they replace and clean uninstall.
 * **Release and check scripts**: lint, smoke test, release build, preflight and Plugin Check.

@@ -2,10 +2,10 @@
 /**
  * WP Plugin Starter admin loader.
  *
- * Loads the settings screen, the Read Me tab and the Plugins screen notes
- * for replaced plugins, then the plugin's own admin parts
- * (WPStarter_Setup::admin()). Included from the main plugin file for
- * admin requests only.
+ * Loads the settings screen (and on multisite its network screen), the
+ * Read Me tab and the Plugins screen notes for replaced plugins, then the
+ * plugin's own admin parts (WPStarter_Setup::admin()). Included from the
+ * main plugin file for admin requests only.
  *
  * SPDX-License-Identifier: GPL-3.0-or-later
  * SPDX-FileCopyrightText: 2026 Marcus Quinn
@@ -24,6 +24,7 @@ $wpstarter_admin_files = array(
     'admin/includes/class-readme-manager.php',
     'admin/includes/class-admin-page.php',
     'admin/includes/class-admin-manager.php',
+    'admin/includes/class-network-manager.php',
     'admin/includes/class-replaced-plugins.php',
 );
 
@@ -33,5 +34,6 @@ foreach ($wpstarter_admin_files as $wpstarter_file) {
 unset($wpstarter_admin_files, $wpstarter_file);
 
 WPStarter_Admin_Manager::init();
+WPStarter_Network_Manager::init();
 WPStarter_Replaced_Plugins::init();
 WPStarter_Setup::admin();

@@ -24,6 +24,9 @@ function wpstarter_uninstall_site() {
     delete_option('wpstarter_options');
     delete_option('wpstarter_options_lock');
     delete_option('wpstarter_db_version');
+    delete_option('wpstarter_network_seen');
+    // The network option's save lock (main site only), if a save stopped.
+    delete_option('wpstarter_network_lock');
 
     $patterns = array('_transient_wpstarter_', '_transient_timeout_wpstarter_');
     foreach ($patterns as $pattern) {
@@ -38,6 +41,8 @@ if (is_multisite()) {
         wpstarter_uninstall_site();
         restore_current_blog();
     }
+    // The network screen's settings (WPStarter_Network_Settings).
+    delete_site_option('wpstarter_network');
 } else {
     wpstarter_uninstall_site();
 }
