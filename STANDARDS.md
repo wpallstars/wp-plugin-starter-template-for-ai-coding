@@ -169,7 +169,11 @@ How changes are made and checked: `DEVELOPMENT.md`. Releases: `RELEASING.md`.
   sections as the same tabs (`.{css}-nav`, `.{css}-nav__tab`, `is-active`).
   Settings tabs in one group (between dividers) switch without a reload; a
   `{prefix}_admin_tabs` tab joins with `'preload' => true` once it is cheap
-  to draw and its script works with its panel hidden.
+  to draw and its script works with its panel hidden. The browser title
+  names the screen, then the tab or section shown ("{Name}: General ‹
+  Site — WordPress"), also after a switch without a reload; the plugin's
+  own screens with sections call `{Prefix}_Admin_Page::title_section()`
+  on their `load-{hook}` action.
 - Update `README.md` (feature section, hooks, changelog), `changelog.txt`
   (the user-facing changelog entry) and `readme.txt` in the same change.
   `readme.txt` must stay under 10 KB for WordPress.org: one short line per

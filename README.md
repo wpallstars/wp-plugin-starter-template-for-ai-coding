@@ -27,7 +27,7 @@ WP Plugin Starter is what wpallstars plugins are made from. It has no features o
 
 If this saves you time, headaches and costs, feel free to [buy me a coffee](https://buymeacoffee.com/marcusquinn), or whatever you like, to invest in making more things open-source.
 
-Version: 1.0.33
+Version: 1.0.34
 
 <!-- github-only:start -->
 ## Screenshots
@@ -101,14 +101,14 @@ Mark test builds as pre-releases on GitHub (or tag them with letters, such as `v
 
 ## Developers
 
-A feature is a class in `includes/features/class-wpstarter-{name}.php` that extends `WPStarter_Feature`, listed in `WPStarter_Setup::FEATURES`. It declares its settings in `settings()`, adds its hooks in `boot()` (returning early unless `self::enabled()`), and can import another plugin’s settings once in `migrate()` with `self::import_setting()`. Anything only this plugin needs goes in `WPStarter_Setup` (`includes/class-wpstarter-setup.php`): features, settings tabs, header links, settings version, `MENU_PARENT` (its own top-level menu, if any, which then holds the settings screen as **Settings**) and its own helpers. Link to the settings screen with `WPStarter_Admin_Manager::page_url()` or `tab_url()`. A screen of the plugin's own shows the settings screen's header: call `WPStarter_Admin_Manager::enqueue_header()` on `admin_enqueue_scripts`, then print `<div class="wrap wps-wrap">`, `WPStarter_Admin_Manager::render_header()`, `<hr class="wp-header-end">` and the screen's content in `<div class="wps-main">`; sections go between the last two as the settings screen's tabs (`<nav class="wps-nav">` with `<a class="wps-nav__tab">` links, the one shown `is-active`). `admin/css/wpstarter-header.css` styles only those and the header, so the content keeps its styles. The other files in `includes/` and `admin/` are the starter’s core files: `STANDARDS.md` → Structure.
+A feature is a class in `includes/features/class-wpstarter-{name}.php` that extends `WPStarter_Feature`, listed in `WPStarter_Setup::FEATURES`. It declares its settings in `settings()`, adds its hooks in `boot()` (returning early unless `self::enabled()`), and can import another plugin’s settings once in `migrate()` with `self::import_setting()`. Anything only this plugin needs goes in `WPStarter_Setup` (`includes/class-wpstarter-setup.php`): features, settings tabs, header links, settings version, `MENU_PARENT` (its own top-level menu, if any, which then holds the settings screen as **Settings**) and its own helpers. Link to the settings screen with `WPStarter_Admin_Manager::page_url()` or `tab_url()`. A screen of the plugin's own shows the settings screen's header: call `WPStarter_Admin_Manager::enqueue_header()` on `admin_enqueue_scripts`, then print `<div class="wrap wps-wrap">`, `WPStarter_Admin_Manager::render_header()`, `<hr class="wp-header-end">` and the screen's content in `<div class="wps-main">`; sections go between the last two as the settings screen's tabs (`<nav class="wps-nav">` with `<a class="wps-nav__tab">` links, the one shown `is-active`), and `WPStarter_Admin_Page::title_section( 'Section name' )` on the screen's `load-{hook}` action puts the section shown after the screen's name in the browser title, as the settings screen does for its tabs. `admin/css/wpstarter-header.css` styles only those and the header, so the content keeps its styles. The other files in `includes/` and `admin/` are the starter’s core files: `STANDARDS.md` → Structure.
 
 Filters:
 
 - `wpstarter_features`: register a feature class that extends `WPStarter_Feature`.
 - `wpstarter_settings_schema`: add or change settings. Each entry sets `type` (bool, int, text, url, lines, domains, select, multi, times or media, a picture from the Media Library stored as its attachment ID), `default`, `label`, `description` and either `tab` or `parent`; select and multi also take `options` (an array or a callable, which runs on every settings save, so keep it small: `STANDARDS.md` → Performance) and `open` to keep saved values that are not currently registered. A child setting can take `hidden` (true): it is not shown or searched, for wiring that code sets. A child setting with `group` set to `troubleshooting` is shown last, in a closed **Troubleshooting** section of the panel, for bypasses people need only when something is wrong (`STANDARDS.md` → Code rules); the section opens by itself when one of its settings differs from its default or matches a search. `reload` (true) makes the saved message ask to reload the page, for changes that show only after a page load. `replaces` (slug => name) shows which plugin a feature replaces; keep that list in the feature's `REPLACES` class constant and pass `self::REPLACES` (`STANDARDS.md` → Structure). Settings render and save automatically.
 - `wpstarter_admin_tabs`: add or reorder admin tabs. Each tab sets `label`, `group` (settings, discover or about), a `render` callback, an optional `capability` and an optional `preload`; tabs the current user lacks the capability for are hidden. The screen draws the active tab with the other tabs of its group that preload (settings tabs and Read Me do), and switches between them without a reload (`WPStarter_Admin_Manager::page_tabs()`). Set `preload` to true only when the tab is cheap to draw and its script works while its panel is hidden.
-- `wpstarter_admin_script_deps` and `wpstarter_admin_script_data`: the settings screen script’s dependencies (once for each tab drawn on the page) and the data it reads as `wpstarterAdmin` (with the active tab; `wpstarterAdmin.tab` follows the tab shown and `tabs` lists the tabs drawn).
+- `wpstarter_admin_script_deps` and `wpstarter_admin_script_data`: the settings screen script’s dependencies (once for each tab drawn on the page) and the data it reads as `wpstarterAdmin` (with the active tab; `wpstarterAdmin.tab` follows the tab shown, `tabs` lists the tabs drawn and `titles` their browser titles).
 - `wpstarter_troubleshooting_open`: whether a setting's Troubleshooting section starts open (open, setting key), for a feature that fell back after an error.
 - `wpstarter_can_change_settings`: return false to stop the current user changing WP Plugin Starter’s settings (on top of `manage_options`).
 - `wpstarter_replaced_plugin_extras`: what a replaced plugin does on this site that WP Plugin Starter does not (plain names, plugin folder). The Plugins screen names them instead of saying the plugin can go.
@@ -132,6 +132,11 @@ Read a setting with `WPStarter_Settings::get( 'key' )`.
 Deleting the plugin removes its settings, its cached data, who hid lines of the Plugins screen notice about replaced plugins, and the cached GitHub releases.
 
 ## Changelog
+
+### 1.0.34
+
+- New: the browser tab names the settings screen's tab shown after the screen's name, such as "WP Plugin Starter: Read Me ‹ Site — WordPress", so open tabs and history entries can be told apart. It changes with the tab when tabs switch without a reload, and on Back (GH#453).
+- Developers: the plugin's own screens with sections name the section shown in the browser title with `WPStarter_Admin_Page::title_section()` on their `load-{hook}` action; `screen_title()` gives the format.
 
 ### 1.0.33
 
