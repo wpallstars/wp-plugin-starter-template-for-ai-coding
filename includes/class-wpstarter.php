@@ -38,6 +38,7 @@ final class WPStarter {
     public static function load() {
         require_once WPSTARTER_DIR . 'includes/class-wpstarter-settings.php';
         require_once WPSTARTER_DIR . 'includes/class-wpstarter-network-settings.php';
+        require_once WPSTARTER_DIR . 'includes/class-wpstarter-network-sites.php';
         require_once WPSTARTER_DIR . 'includes/class-wpstarter-feature.php';
         require_once WPSTARTER_DIR . 'includes/class-wpstarter-setup.php';
         WPStarter_Setup::load();

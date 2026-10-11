@@ -26,7 +26,8 @@ How changes are made and checked: `DEVELOPMENT.md`. Releases: `RELEASING.md`.
   (`includes/class-{prefix}.php`), the base feature
   (`includes/class-{prefix}-feature.php`), the settings store and its
   network settings (`includes/class-{prefix}-settings.php`,
-  `includes/class-{prefix}-network-settings.php`), the admin screen, its
+  `includes/class-{prefix}-network-settings.php`,
+  `includes/class-{prefix}-network-sites.php`), the admin screen, its
   network screen and Read Me tab (`admin/`), the shared GitHub updater (`includes/github-updater/`), the
   scripts, the CI workflow, tool configuration and the shared docs (this
   file, `STYLING.md`, `DEVELOPMENT.md`, `RELEASING.md`, `CONTRIBUTING.md`,
@@ -319,8 +320,9 @@ On a network, Network Admin → Settings → {Name} saves the network's own
 settings (`{Prefix}_Network_Settings`, the `{prefix}_network` network
 option). New sites start with them; a card applied to every site overrides
 each site's own values, which come back when it stops (`README.md` →
-Multisite). Features work on a network with no code of their own when they
-follow these rules:
+Multisite). How they reach each site is in `{Prefix}_Network_Sites`.
+Features work on a network with no code of their own when they follow
+these rules:
 
 - Read settings with `{Prefix}_Settings::get()` or `all()`, never the
   `{prefix}_options` option: only those include what the network applies.
@@ -330,7 +332,7 @@ follow these rules:
   or `{prefix}_setting_saved`, never `update_option_{prefix}_options`: the
   network's changes reach a site without a save there, and the site runs
   those hooks on its next admin, cron or WP-CLI request, as nobody. Work
-  that depends on who saves checks `{Prefix}_Network_Settings::syncing()`.
+  that depends on who saves checks `{Prefix}_Network_Sites::syncing()`.
 - Mark a setting `'network' => false` when it only makes sense on each site
   (a list of the site's own posts, pages or people). Media fields and
   `hidden` wiring stay with each site already.

@@ -136,6 +136,15 @@ class WPStarter_Admin_Page {
     }
 
     /**
+     * Name the settings screen's tab shown in the browser title
+     * (title_section()). Runs on the screen's load-{hook} action, on each
+     * site and on the network screen (multisite).
+     */
+    public static function title_tab() {
+        self::title_section(self::tab_label(WPStarter_Admin_Manager::get_active_tab(), WPStarter_Admin_Manager::get_tabs()));
+    }
+
+    /**
      * A screen's name followed by a section's, as the browser title shows
      * them: "WP Plugin Starter: General".
      *

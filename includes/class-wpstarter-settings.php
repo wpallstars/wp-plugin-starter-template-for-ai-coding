@@ -104,7 +104,7 @@ class WPStarter_Settings {
         add_action('wp_ajax_wpstarter_save_setting', array(__CLASS__, 'ajax_save'));
         add_action('update_option_' . self::OPTION, array(__CLASS__, 'option_updated'), 10, 2);
         add_filter('option_page_capability_' . self::GROUP, array(__CLASS__, 'capability'));
-        WPStarter_Network_Settings::init();
+        WPStarter_Network_Sites::init();
     }
 
     /**
@@ -397,7 +397,7 @@ class WPStarter_Settings {
 
     /**
      * Store sanitized values as a site's own settings, for the network
-     * (WPStarter_Network_Settings::copy()), under that site's save lock.
+     * (WPStarter_Network_Sites::copy()), under that site's save lock.
      * Read and written straight in its options table: switching to each
      * site would load all of its autoloaded options, and run this
      * request's hooks, which belong to another site; the site runs its own
@@ -426,7 +426,7 @@ class WPStarter_Settings {
             $defaults = self::defaults();
             $previous = array();
             foreach ($values as $key => $value) {
-                $was = array_key_exists($key, $stored) ? $stored[$key] : (isset($defaults[$key]) ? $defaults[$key] : null);
+                $was = array_key_exists($key, $stored) ? $stored[$key] : ($defaults[$key] ?? null);
                 if (!self::same($was, $value)) {
                     $previous[$key] = $was;
                     $stored[$key]   = $value;
@@ -437,7 +437,7 @@ class WPStarter_Settings {
                 if (false === $wpdb->update($table, array('option_value' => maybe_serialize($stored)), array('option_name' => self::OPTION))) {
                     return null;
                 }
-                WPStarter_Network_Settings::flush_site_cache((int) $site_id, array(self::OPTION));
+                WPStarter_Network_Sites::flush_site_cache((int) $site_id, array(self::OPTION));
             }
             return $previous;
         } finally {
@@ -926,7 +926,7 @@ class WPStarter_Settings {
      * network applies to every site are not (own()), and a save cannot
      * change the site's own value of a setting the network applies, as
      * set() cannot. Migrations store them, as a new site starts with the
-     * network's values (WPStarter_Network_Settings::seed()).
+     * network's values (WPStarter_Network_Sites::seed()).
      *
      * @param mixed $input Raw option value.
      * @return array
@@ -1021,7 +1021,7 @@ class WPStarter_Settings {
      *
      * On multisite, a site where the plugin runs for the first time starts
      * with the values saved on the network screen, for anything not
-     * imported (WPStarter_Network_Settings::seed()).
+     * imported (WPStarter_Network_Sites::seed()).
      */
     public static function maybe_migrate() {
         $from = (int) get_option(self::DB_VERSION_OPTION, 0);
@@ -1037,7 +1037,7 @@ class WPStarter_Settings {
             $options = (array) $class::migrate($options, $from);
         }
         if (0 === $from) {
-            $options = WPStarter_Network_Settings::seed($options);
+            $options = WPStarter_Network_Sites::seed($options);
         }
 
         // Keys the migrations removed stay removed (see sanitize_all()),

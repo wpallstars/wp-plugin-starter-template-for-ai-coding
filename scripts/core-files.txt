@@ -5,11 +5,12 @@
 # Change a core file in the starter first, then sync each plugin.
 
 # Bootstrap, feature registry, base feature, settings store and its
-# network settings (multisite).
+# network settings and their sites (multisite).
 includes/class-wpstarter.php
 includes/class-wpstarter-feature.php
 includes/class-wpstarter-settings.php
 includes/class-wpstarter-network-settings.php
+includes/class-wpstarter-network-sites.php
 
 # Shared GitHub updater: only the newest copy on a site runs.
 includes/github-updater/

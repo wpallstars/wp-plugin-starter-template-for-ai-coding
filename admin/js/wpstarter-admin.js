@@ -233,17 +233,45 @@
 			});
 		},
 
-		// By attribute value, so a key is never read as a selector.
-		byAttr: function (attr, key) {
-			return $('[' + attr + ']').filter(function () {
-				return this.getAttribute(attr) === key;
+		// A card's sites part, drawn again from a reply's lines of text and
+		// links and its Make every site the same label
+		// (WPStarter_Network_Manager::sites()): built from text, never from
+		// markup, and found by id, so a key is never read as a selector.
+		sites: function (key, sites) {
+			var box = document.getElementById('wps-' + key + '-network-sites');
+			if (!box || !sites || !Array.isArray(sites.lines)) {
+				return;
+			}
+			box.textContent = '';
+			sites.lines.forEach(function (line) {
+				var p = document.createElement('p');
+				(Array.isArray(line) ? line : []).forEach(function (part) {
+					p.appendChild(Network.part(part));
+				});
+				box.appendChild(p);
 			});
+			if (sites.copy) {
+				var button = document.createElement('button');
+				var row = document.createElement('p');
+				button.type = 'button';
+				button.className = 'button';
+				button.setAttribute('data-wps-network-copy', key);
+				button.textContent = String(sites.copy);
+				row.appendChild(button);
+				box.appendChild(row);
+			}
 		},
 
-		sites: function (key, html) {
-			if (typeof html === 'string') {
-				Network.byAttr('data-wps-network-sites', key).html(html);
+		// One part of a line: text, or a link to a site's settings screen.
+		part: function (part) {
+			var text = document.createTextNode(String(part && part.text !== undefined ? part.text : ''));
+			if (!part || typeof part.url !== 'string' || !/^https?:\/\//i.test(part.url)) {
+				return text;
 			}
+			var link = document.createElement('a');
+			link.href = part.url;
+			link.appendChild(text);
+			return link;
 		},
 
 		run: function (key, action, data, done, failed) {
@@ -277,7 +305,7 @@
 			var key = $input.attr('data-wps-network-apply');
 			var on = $input.is(':checked');
 			Network.run(key, 'wpstarter_network_apply', { apply: on ? '1' : '0' }, function () {
-				Network.byAttr('data-setting-card', key).toggleClass('is-applied', on);
+				$input.closest('[data-setting-card]').toggleClass('is-applied', on);
 			}, function () {
 				$input.prop('checked', !on);
 			});

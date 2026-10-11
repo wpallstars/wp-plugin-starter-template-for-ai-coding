@@ -83,11 +83,12 @@ class WPStarter_Admin_Manager {
     }
 
     /**
-     * Admin file the screen's address uses.
+     * Admin file the screen's address uses, on every site (the network
+     * screen links to it on each site).
      *
      * @return string
      */
-    private static function screen_file() {
+    public static function screen_file() {
         return 'options-general.php' === self::parent() ? 'options-general.php' : 'admin.php';
     }
 
@@ -102,19 +103,6 @@ class WPStarter_Admin_Manager {
             return WPStarter_Network_Manager::page_url($args);
         }
         return add_query_arg(array_merge(array('page' => self::PAGE), $args), admin_url(self::screen_file()));
-    }
-
-    /**
-     * Address of the screen on another site of the network, from its
-     * siteurl option (get_admin_url() would load that site's options).
-     *
-     * @param string $site_url The site's siteurl.
-     * @param array  $args     Extra query args.
-     * @return string
-     */
-    public static function site_page_url($site_url, array $args = array()) {
-        $url = set_url_scheme(trailingslashit((string) $site_url) . 'wp-admin/' . self::screen_file(), 'admin');
-        return add_query_arg(array_merge(array('page' => self::PAGE), $args), $url);
     }
 
     /**
@@ -139,21 +127,11 @@ class WPStarter_Admin_Manager {
     }
 
     /**
-     * Top-level settings of a settings tab on this screen: on the network
-     * screen, those the network can set.
-     *
-     * @param string $tab Tab slug.
-     * @return array
-     */
-    private static function fields_for_tab($tab) {
-        return is_network_admin() ? WPStarter_Network_Settings::fields_for_tab($tab) : WPStarter_Settings::fields_for_tab($tab);
-    }
-
-    /**
      * Registered tabs. Settings tabs and Read Me preload: they are drawn
      * with the other tabs of their group (page_tabs()). The network screen
      * shows only tabs marked 'network' => true: settings tabs with
-     * settings the network can set, and Read Me.
+     * settings the network can set (WPStarter_Settings_Manager::fields_for_tab()),
+     * and Read Me.
      *
      * @return array<string,array{label:string,group:string,render:callable,preload?:bool,capability?:string,network?:bool}>
      */
@@ -166,13 +144,13 @@ class WPStarter_Admin_Manager {
         $settings_tabs = self::settings_tabs();
         $has_settings  = false;
         foreach (array_keys($settings_tabs) as $slug) {
-            if (self::fields_for_tab($slug)) {
+            if (WPStarter_Settings_Manager::fields_for_tab($slug)) {
                 $has_settings = true;
                 break;
             }
         }
         foreach ($settings_tabs as $slug => $tab) {
-            if ($has_settings && !self::fields_for_tab($slug)) {
+            if ($has_settings && !WPStarter_Settings_Manager::fields_for_tab($slug)) {
                 continue;
             }
             if (!$has_settings && $tabs) {
@@ -323,10 +301,8 @@ class WPStarter_Admin_Manager {
         }
         self::$hook = is_string($hook) ? $hook : '';
         if ('' !== self::$hook) {
-            // The browser title names the tab shown (WPStarter_Admin_Page::title_section()).
-            add_action('load-' . self::$hook, function () {
-                WPStarter_Admin_Page::title_section(WPStarter_Admin_Page::tab_label(self::get_active_tab(), self::get_tabs()));
-            });
+            // The browser title names the tab shown.
+            add_action('load-' . self::$hook, array('WPStarter_Admin_Page', 'title_tab'));
         }
     }
 
