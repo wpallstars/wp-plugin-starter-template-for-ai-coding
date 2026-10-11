@@ -27,7 +27,7 @@ WP Plugin Starter is what wpallstars plugins are made from. It has no features o
 
 If this saves you time, headaches and costs, feel free to [buy me a coffee](https://buymeacoffee.com/marcusquinn), or whatever you like, to invest in making more things open-source.
 
-Version: 1.0.32
+Version: 1.0.33
 
 <!-- github-only:start -->
 ## Screenshots
@@ -133,9 +133,10 @@ Deleting the plugin removes its settings, its cached data, who hid lines of the 
 
 ## Changelog
 
-### Unreleased
+### 1.0.33
 
 - Developers: CI selects the checksum-verified ShellCheck archive for X64 or ARM64 runners and rejects other architectures; README badge rewrites reject missing, duplicate or misordered markers instead of dropping content.
+- Developers: qlty stays: `DEVELOPMENT.md` lists it again among the review apps, and a qlty check that fails only because the organization's free monthly minutes ran out does not block a merge (GH#446).
 
 ### 1.0.32
 

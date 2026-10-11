@@ -5,7 +5,7 @@ Tags: starter, boilerplate, settings, developer, template
 Requires at least: 6.2
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 1.0.32
+Stable tag: 1.0.33
 License: GPLv3 or later
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 
@@ -60,9 +60,8 @@ GitHub releases are the stable beta channel: each version comes out there first.
 
 == Changelog ==
 
-= 1.0.32 =
-* Fix (GitHub builds): a failed check for updates on GitHub says a newer release may not be shown until a check succeeds, instead of wrongly saying an earlier one is offered.
-* Developers: STANDARDS.md's banner and icon picture rules no longer name other plugins, and repository metrics refresh again (aidevops v3.39.1).
+= 1.0.33 =
+* Developers: CI picks the right ShellCheck for X64 and ARM64 runners, and README badge rewrites stop on broken markers instead of dropping text.
 
 Every change: changelog.txt.
 
