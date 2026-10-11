@@ -283,15 +283,28 @@ plugin_badges_current() {
 	return 0
 }
 
+# Exactly one start marker followed by exactly one end marker in stdin.
+plugin_badges_valid() {
+	awk -v start="$PLUGIN_BADGES_START" -v end="$PLUGIN_BADGES_END" '
+		$0 == start { starts++; start_line = NR }
+		$0 == end { ends++; end_line = NR }
+		END { exit !(starts == 1 && ends == 1 && start_line < end_line) }' || return 1
+	return 0
+}
+
 # README.md text on standard input, with the badges block's lines replaced
-# by BLOCK. Call it only when both markers are there.
+# by BLOCK. Validate before emitting anything, even for direct callers.
 plugin_badges_replace() {
 	local block="$1"
-	START="$PLUGIN_BADGES_START" END="$PLUGIN_BADGES_END" BADGES="$block" awk '
+	local text
+	# read reaches EOF without trimming trailing blank lines, unlike $(cat).
+	IFS= read -r -d '' text || true
+	printf '%s' "$text" | plugin_badges_valid || return 1
+	printf '%s' "$text" | START="$PLUGIN_BADGES_START" END="$PLUGIN_BADGES_END" BADGES="$block" awk '
 		$0 == ENVIRON["END"] { skip = 0 }
 		skip { next }
 		{ print }
-		$0 == ENVIRON["START"] { print ENVIRON["BADGES"]; skip = 1 }'
+		$0 == ENVIRON["START"] { print ENVIRON["BADGES"]; skip = 1 }' || return 1
 	return 0
 }
 
