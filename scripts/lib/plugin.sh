@@ -297,13 +297,14 @@ plugin_badges_valid() {
 plugin_badges_replace() {
 	local block="$1"
 	local text
-	text="$(cat)"
-	plugin_badges_valid <<<"$text" || return 1
-	START="$PLUGIN_BADGES_START" END="$PLUGIN_BADGES_END" BADGES="$block" awk '
+	# read reaches EOF without trimming trailing blank lines, unlike $(cat).
+	IFS= read -r -d '' text || true
+	printf '%s' "$text" | plugin_badges_valid || return 1
+	printf '%s' "$text" | START="$PLUGIN_BADGES_START" END="$PLUGIN_BADGES_END" BADGES="$block" awk '
 		$0 == ENVIRON["END"] { skip = 0 }
 		skip { next }
 		{ print }
-		$0 == ENVIRON["START"] { print ENVIRON["BADGES"]; skip = 1 }' <<<"$text" || return 1
+		$0 == ENVIRON["START"] { print ENVIRON["BADGES"]; skip = 1 }' || return 1
 	return 0
 }
 

@@ -522,6 +522,11 @@ main() {
 	[[ -z "$(git status --porcelain)" ]] || die "commit or put away your changes first"
 	plugin_identity HEAD || die "cannot tell which plugin this is"
 	plugin_names_as FROM
+	# Refuse malformed markers before any tracked file is rewritten or moved.
+	if [[ -f README.md ]] && ! plugin_badges_valid <README.md; then
+		printf 'rename-plugin: invalid README.md badges markers; leaving README.md unchanged\n' >&2
+		return 1
+	fi
 
 	export TO_SLUG="$slug" TO_NAME="$name" TO_PACKAGE="$prefix" TO_CONST="$const"
 	export TO_PREFIX
