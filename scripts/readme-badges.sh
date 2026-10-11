@@ -81,8 +81,8 @@ main() {
 	[[ -n "$PLUGIN_REPO" ]] || die "$PLUGIN_MAIN_FILE has no GitHub Plugin URI header (owner/repo)"
 	[[ -f README.md ]] || die "no README.md"
 	[[ -f readme.txt ]] || die "no readme.txt (the requirements come from its header)"
-	if ! grep -qxF "$PLUGIN_BADGES_START" README.md || ! grep -qxF "$PLUGIN_BADGES_END" README.md; then
-		die "README.md needs the lines $PLUGIN_BADGES_START and $PLUGIN_BADGES_END under its title"
+	if ! plugin_badges_valid <README.md; then
+		die "README.md needs exactly one $PLUGIN_BADGES_START followed by exactly one $PLUGIN_BADGES_END"
 	fi
 
 	local current block
@@ -99,7 +99,7 @@ main() {
 	fi
 	trap cleanup EXIT
 	TMP_FILE="$(mktemp "${TMPDIR:-/tmp}/readme-badges.XXXXXX")"
-	plugin_badges_replace "$block" <README.md >"$TMP_FILE"
+	plugin_badges_replace "$block" <README.md >"$TMP_FILE" || die "invalid README.md badges markers; leaving it unchanged"
 	# Write in place (cat, not mv), so README.md keeps its mode.
 	cat "$TMP_FILE" >README.md
 	printf 'readme-badges: rewrote README.md badges block\n'

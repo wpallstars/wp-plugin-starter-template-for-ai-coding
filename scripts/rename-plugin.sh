@@ -348,8 +348,12 @@ set_badges() {
 	local repo="$1"
 	local readme=""
 	[[ -f README.md ]] || return 0
+	if ! plugin_badges_valid <README.md; then
+		printf 'rename-plugin: invalid README.md badges markers; leaving badges unchanged\n' >&2
+		return 1
+	fi
 	[[ ! -f readme.txt ]] || readme="$(<readme.txt)"
-	plugin_badges_replace "$(plugin_badges "$repo" "$readme" sonarcloud "")" <README.md >"$TMP_FILE"
+	plugin_badges_replace "$(plugin_badges "$repo" "$readme" sonarcloud "")" <README.md >"$TMP_FILE" || return 1
 	replace_with_tmp README.md || true
 	return 0
 }

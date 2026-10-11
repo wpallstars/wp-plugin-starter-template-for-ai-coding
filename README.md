@@ -133,6 +133,10 @@ Deleting the plugin removes its settings, its cached data, who hid lines of the 
 
 ## Changelog
 
+### Unreleased
+
+- Developers: CI selects the checksum-verified ShellCheck archive for X64 or ARM64 runners and rejects other architectures; README badge rewrites reject missing, duplicate or misordered markers instead of dropping content.
+
 ### 1.0.32
 
 - Fix (GitHub builds): when a check for updates on GitHub fails, the Plugins and Updates screens say a newer release may not be shown until a check succeeds, instead of saying the release found before is offered, which was wrong when there was none (shared updater 1.6.1).
