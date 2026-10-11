@@ -27,7 +27,8 @@ How changes are made and checked: `DEVELOPMENT.md`. Releases: `RELEASING.md`.
   (`includes/class-{prefix}-feature.php`), the settings store and its
   network settings (`includes/class-{prefix}-settings.php`,
   `includes/class-{prefix}-network-settings.php`,
-  `includes/class-{prefix}-network-sites.php`), the admin screen, its
+  `includes/class-{prefix}-network-sites.php`,
+  `includes/class-{prefix}-network-differences.php`), the admin screen, its
   network screen and Read Me tab (`admin/`), the shared GitHub updater (`includes/github-updater/`), the
   scripts, the CI workflow, tool configuration and the shared docs (this
   file, `STYLING.md`, `DEVELOPMENT.md`, `RELEASING.md`, `CONTRIBUTING.md`,
@@ -320,9 +321,10 @@ On a network, Network Admin → Settings → {Name} saves the network's own
 settings (`{Prefix}_Network_Settings`, the `{prefix}_network` network
 option). New sites start with them; a card applied to every site overrides
 each site's own values, which come back when it stops (`README.md` →
-Multisite). How they reach each site is in `{Prefix}_Network_Sites`.
-Features work on a network with no code of their own when they follow
-these rules:
+Multisite). How they reach each site is in `{Prefix}_Network_Sites`; the
+sites that differ, and Make every site the same, are in
+`{Prefix}_Network_Differences`. Features work on a network with no code of
+their own when they follow these rules:
 
 - Read settings with `{Prefix}_Settings::get()` or `all()`, never the
   `{prefix}_options` option: only those include what the network applies.

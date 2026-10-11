@@ -11,6 +11,7 @@ includes/class-wpstarter-feature.php
 includes/class-wpstarter-settings.php
 includes/class-wpstarter-network-settings.php
 includes/class-wpstarter-network-sites.php
+includes/class-wpstarter-network-differences.php
 
 # Shared GitHub updater: only the newest copy on a site runs.
 includes/github-updater/
