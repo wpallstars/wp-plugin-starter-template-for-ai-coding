@@ -23,7 +23,7 @@
  * Additional terms (GPL-3.0 section 7(b)): ATTRIBUTION.txt
  *
  * @package WPStarter
- * @since 1.0.34
+ * @since 1.0.35
  */
 
 if (!defined('ABSPATH')) {

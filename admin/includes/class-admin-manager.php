@@ -322,6 +322,12 @@ class WPStarter_Admin_Manager {
             );
         }
         self::$hook = is_string($hook) ? $hook : '';
+        if ('' !== self::$hook) {
+            // The browser title names the tab shown (WPStarter_Admin_Page::title_section()).
+            add_action('load-' . self::$hook, function () {
+                WPStarter_Admin_Page::title_section(WPStarter_Admin_Page::tab_label(self::get_active_tab(), self::get_tabs()));
+            });
+        }
     }
 
     /**
@@ -407,7 +413,8 @@ class WPStarter_Admin_Manager {
 
         /**
          * Filter the data the admin script reads (wpstarterAdmin). Its tab
-         * follows the tab shown; tabs lists the tabs drawn on the page;
+         * follows the tab shown; tabs lists the tabs drawn on the page, and
+         * titles their browser titles (WPStarter_Admin_Page::page_titles());
          * network is true on the network screen, whose cards save network
          * values.
          *
@@ -419,6 +426,7 @@ class WPStarter_Admin_Manager {
             'nonce'   => wp_create_nonce(WPStarter_Settings::NONCE),
             'tab'     => $tab,
             'tabs'    => $page_tabs,
+            'titles'  => WPStarter_Admin_Page::page_titles($page_tabs, self::get_tabs()),
             'network' => $network,
             'i18n'    => array(
                 'saving'      => __('Saving…', 'wp-plugin-starter-template'),
@@ -522,7 +530,9 @@ class WPStarter_Admin_Manager {
      * content in `<div class="wps-main">`. A screen with sections puts them
      * between the two as the settings screen's tabs: `<nav class="wps-nav">`
      * holding `<a class="wps-nav__tab">` links, the one shown `is-active`
-     * with `aria-current="page"`.
+     * with `aria-current="page"`, and name it in the browser title with
+     * WPStarter_Admin_Page::title_section() on the screen's load-{hook}
+     * action.
      */
     public static function render_header() {
         WPStarter_Admin_Page::header();

@@ -467,9 +467,24 @@
 					this.removeAttribute('aria-current');
 				}
 			});
+			Tabs.title(cfg.tab, slug);
 			cfg.tab = slug;
 			// For the plugin's own scripts: the tab now shown.
 			$(document).trigger('wpstarter:tab-shown', [slug]);
+		},
+
+		// The browser title names the tab shown, as a page load would
+		// ("{Name}: General ‹ Site — WordPress"): swap one tab's name for
+		// the other's and keep the rest.
+		title: function (from, to) {
+			var titles = cfg.titles || {};
+			var current = document.title;
+			if (!titles[from] || !titles[to] || current.indexOf(titles[from]) === -1) {
+				return;
+			}
+			document.title = current.replace(titles[from], function () {
+				return titles[to];
+			});
 		}
 	};
 
