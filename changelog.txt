@@ -4,7 +4,7 @@ Every change to WP Plugin Starter. readme.txt lists the latest version in short.
 
 = 1.0.34 =
 * New: the browser tab names the settings screen's tab shown after the screen's name, such as "WP Plugin Starter: Read Me ‹ Site — WordPress", so open tabs and history entries can be told apart. It changes with the tab when tabs switch without a reload, and on Back (GH#453).
-* Developers: the plugin's own screens with sections name the section shown in the browser title with WPStarter_Admin_Manager::title_section() on their load-{hook} action; screen_title() gives the format.
+* Developers: the plugin's own screens with sections name the section shown in the browser title with WPStarter_Admin_Page::title_section() on their load-{hook} action; screen_title() gives the format.
 
 = 1.0.33 =
 * Developers: CI selects the checksum-verified ShellCheck archive for X64 or ARM64 runners and rejects other architectures; README badge rewrites reject missing, duplicate or misordered markers instead of dropping content.

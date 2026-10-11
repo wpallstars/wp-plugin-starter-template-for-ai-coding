@@ -281,89 +281,11 @@ class WPStarter_Admin_Manager {
         }
         self::$hook = is_string($hook) ? $hook : '';
         if ('' !== self::$hook) {
-            add_action('load-' . self::$hook, array(__CLASS__, 'load_screen'));
+            // The browser title names the tab shown (WPStarter_Admin_Page::title_section()).
+            add_action('load-' . self::$hook, function () {
+                WPStarter_Admin_Page::title_section(WPStarter_Admin_Page::tab_label(self::get_active_tab(), self::get_tabs()));
+            });
         }
-    }
-
-    /**
-     * While the screen loads: its browser title names the tab shown.
-     */
-    public static function load_screen() {
-        self::title_section(self::tab_label(self::get_active_tab()));
-    }
-
-    /**
-     * Put a section's name after the screen's name in the browser's title,
-     * as "WP Plugin Starter: General ‹ Site — WordPress". Call it on the
-     * screen's load-{hook} action: the settings screen does for its tabs,
-     * and the plugin's own screens with sections (render_header()) do for
-     * the section shown. The rest of core's title (the site's name, Network
-     * Admin, Recovery Mode) stays.
-     *
-     * @param string $section The section's name; empty leaves the title as it is.
-     */
-    public static function title_section($section) {
-        $section = (string) $section;
-        if ('' === $section) {
-            return;
-        }
-        add_filter('admin_title', function ($admin_title, $title) use ($section) {
-            $admin_title = (string) $admin_title;
-            $title       = (string) $title;
-            $at          = '' === $title ? false : strpos($admin_title, $title);
-            if (false === $at) {
-                return $admin_title;
-            }
-            return substr_replace($admin_title, self::screen_title($title, $section), $at, strlen($title));
-        }, 10, 2);
-    }
-
-    /**
-     * A screen's name followed by a section's, as the browser title shows
-     * them: "WP Plugin Starter: General".
-     *
-     * @param string $screen  The screen's name.
-     * @param string $section The section's name.
-     * @return string
-     */
-    public static function screen_title($screen, $section) {
-        /* translators: Browser title of a section of an admin screen. 1: the screen's name, 2: the section's name. */
-        return sprintf(__('%1$s: %2$s', 'wp-plugin-starter-template'), $screen, $section);
-    }
-
-    /**
-     * Name of a tab (or of the search results), as plain text.
-     *
-     * @param string     $tab  Tab slug.
-     * @param array|null $tabs Tabs (get_tabs()), when already read.
-     * @return string Empty for an unknown tab.
-     */
-    private static function tab_label($tab, $tabs = null) {
-        if (self::SEARCH === $tab) {
-            return __('Search results', 'wp-plugin-starter-template');
-        }
-        $tabs = is_array($tabs) ? $tabs : self::get_tabs();
-        return isset($tabs[$tab]['label']) ? trim(wp_strip_all_tags((string) $tabs[$tab]['label'])) : '';
-    }
-
-    /**
-     * Browser title of each tab drawn on the page, as the browser shows it,
-     * so the script can name the tab it switches to.
-     *
-     * @param string[] $page_tabs Tabs drawn on the page (page_tabs()).
-     * @return array<string,string>
-     */
-    private static function page_titles(array $page_tabs) {
-        $screen = wp_strip_all_tags((string) get_admin_page_title());
-        $tabs   = self::get_tabs();
-        $titles = array();
-        foreach ($page_tabs as $slug) {
-            $label = self::tab_label($slug, $tabs);
-            if ('' !== $screen && '' !== $label) {
-                $titles[$slug] = html_entity_decode(self::screen_title($screen, $label), ENT_QUOTES, 'UTF-8');
-            }
-        }
-        return $titles;
     }
 
     /**
@@ -448,7 +370,7 @@ class WPStarter_Admin_Manager {
         /**
          * Filter the data the admin script reads (wpstarterAdmin). Its tab
          * follows the tab shown; tabs lists the tabs drawn on the page, and
-         * titles their browser titles (screen_title()).
+         * titles their browser titles (WPStarter_Admin_Page::page_titles()).
          *
          * @param array  $data Script data.
          * @param string $tab  Active tab.
@@ -458,7 +380,7 @@ class WPStarter_Admin_Manager {
             'nonce'   => wp_create_nonce(WPStarter_Settings::NONCE),
             'tab'     => $tab,
             'tabs'    => $page_tabs,
-            'titles'  => self::page_titles($page_tabs),
+            'titles'  => WPStarter_Admin_Page::page_titles($page_tabs, self::get_tabs()),
             'i18n'    => array(
                 'saving'      => __('Saving…', 'wp-plugin-starter-template'),
                 'saved'       => __('Saved', 'wp-plugin-starter-template'),
@@ -560,7 +482,8 @@ class WPStarter_Admin_Manager {
      * between the two as the settings screen's tabs: `<nav class="wps-nav">`
      * holding `<a class="wps-nav__tab">` links, the one shown `is-active`
      * with `aria-current="page"`, and name it in the browser title with
-     * title_section() on the screen's load-{hook} action.
+     * WPStarter_Admin_Page::title_section() on the screen's load-{hook}
+     * action.
      */
     public static function render_header() {
         WPStarter_Admin_Page::header();

@@ -172,7 +172,7 @@ How changes are made and checked: `DEVELOPMENT.md`. Releases: `RELEASING.md`.
   to draw and its script works with its panel hidden. The browser title
   names the screen, then the tab or section shown ("{Name}: General ‹
   Site — WordPress"), also after a switch without a reload; the plugin's
-  own screens with sections call `{Prefix}_Admin_Manager::title_section()`
+  own screens with sections call `{Prefix}_Admin_Page::title_section()`
   on their `load-{hook}` action.
 - Update `README.md` (feature section, hooks, changelog), `changelog.txt`
   (the user-facing changelog entry) and `readme.txt` in the same change.
