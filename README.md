@@ -48,6 +48,7 @@ Version: 1.0.33
 ## What you get
 
 - **A settings screen** (Settings → WP Plugin Starter) that features fill by declaring their settings: switches, numbers, text, lists, choices and Media Library pictures, saved instantly with no Save button, searchable, in tabs. With no features yet it shows one empty tab.
+- **Multisite**: the same screen for the whole network, whose settings new sites start with. Apply a card to every site so sites cannot change it, see which sites have settings of their own, and make every site the same (Multisite below).
 - **A Read Me tab** that shows this file, banner included, so users read the same guide inside WordPress as on GitHub.
 - **Features as classes**: one file per feature, off by default, with settings, hooks, one-off imports from the plugins it replaces and clean uninstall.
 - **Replaced plugins**: a feature that does another plugin's job imports its settings once, waits while that plugin is active, and the Plugins screen suggests deactivating and deleting it.
@@ -73,7 +74,19 @@ Go to **Settings → WP Plugin Starter**. The screen has two groups of tabs:
 - **Settings**: General, empty until features add settings. Changes save instantly; there is no Save button. **Search features** (next to the plugin name) finds settings on every tab.
 - **About**: this Read Me.
 
+On a multisite network, super admins also have **Network Admin → Settings → WP Plugin Starter** (Multisite below).
+
 At the top right of the screen, **Source code** opens the plugin’s [GitHub repository](https://github.com/wpallstars/wp-plugin-starter-template-for-ai-coding) in a new tab, and **Support** opens its [GitHub issues](https://github.com/wpallstars/wp-plugin-starter-template-for-ai-coding/issues) in a new tab. Say what you did, what you expected and what happened, with the versions of WordPress, PHP and WP Plugin Starter. Leave out passwords, licence keys and personal data, since issues are public. For questions, ask [aidevops](https://aidevops.sh) (Built with AI below). **Buy me a coffee**, next to it, opens the maker’s [Buy Me a Coffee](https://buymeacoffee.com/marcusquinn) page in a new tab.
+
+## Multisite
+
+On a multisite network, **Network Admin → Settings → WP Plugin Starter** has the same header, search, tabs and cards as each site's screen, for super admins. Its settings are the network's own, kept apart from each site's:
+
+- **New sites start with them**, and so does a site where WP Plugin Starter runs for the first time.
+- **Apply to every site**, under each card, makes every site use the card's network settings. Each site's screen shows the card locked, saying the network administrator sets it, with a link to the network screen for super admins. Switch it off and each site has its own settings again: they are never overwritten.
+- Under each card, the sites whose own settings differ, up to 10 named with links to their settings, and **Make every site the same**, which copies the card's network settings into every site's own settings once. Sites can change them again afterwards, unless the card is applied to every site. Networks of more than 500 sites are not compared.
+- When the network changes a site's settings, the site does what saving them there would do (schedules, rules, files) on its next admin screen, cron run or WP-CLI command, never on a visitor's page.
+- Settings that only make sense on each site, such as Media Library pictures, are not on the network screen.
 
 ## Requirements
 
@@ -106,9 +119,9 @@ A feature is a class in `includes/features/class-wpstarter-{name}.php` that exte
 Filters:
 
 - `wpstarter_features`: register a feature class that extends `WPStarter_Feature`.
-- `wpstarter_settings_schema`: add or change settings. Each entry sets `type` (bool, int, text, url, lines, domains, select, multi, times or media, a picture from the Media Library stored as its attachment ID), `default`, `label`, `description` and either `tab` or `parent`; select and multi also take `options` (an array or a callable, which runs on every settings save, so keep it small: `STANDARDS.md` → Performance) and `open` to keep saved values that are not currently registered. A child setting can take `hidden` (true): it is not shown or searched, for wiring that code sets. A child setting with `group` set to `troubleshooting` is shown last, in a closed **Troubleshooting** section of the panel, for bypasses people need only when something is wrong (`STANDARDS.md` → Code rules); the section opens by itself when one of its settings differs from its default or matches a search. `reload` (true) makes the saved message ask to reload the page, for changes that show only after a page load. `replaces` (slug => name) shows which plugin a feature replaces; keep that list in the feature's `REPLACES` class constant and pass `self::REPLACES` (`STANDARDS.md` → Structure). Settings render and save automatically.
-- `wpstarter_admin_tabs`: add or reorder admin tabs. Each tab sets `label`, `group` (settings, discover or about), a `render` callback, an optional `capability` and an optional `preload`; tabs the current user lacks the capability for are hidden. The screen draws the active tab with the other tabs of its group that preload (settings tabs and Read Me do), and switches between them without a reload (`WPStarter_Admin_Manager::page_tabs()`). Set `preload` to true only when the tab is cheap to draw and its script works while its panel is hidden.
-- `wpstarter_admin_script_deps` and `wpstarter_admin_script_data`: the settings screen script’s dependencies (once for each tab drawn on the page) and the data it reads as `wpstarterAdmin` (with the active tab; `wpstarterAdmin.tab` follows the tab shown and `tabs` lists the tabs drawn).
+- `wpstarter_settings_schema`: add or change settings. Each entry sets `type` (bool, int, text, url, lines, domains, select, multi, times or media, a picture from the Media Library stored as its attachment ID), `default`, `label`, `description` and either `tab` or `parent`; select and multi also take `options` (an array or a callable, which runs on every settings save, so keep it small: `STANDARDS.md` → Performance) and `open` to keep saved values that are not currently registered. A child setting can take `hidden` (true): it is not shown or searched, for wiring that code sets. A child setting with `group` set to `troubleshooting` is shown last, in a closed **Troubleshooting** section of the panel, for bypasses people need only when something is wrong (`STANDARDS.md` → Code rules); the section opens by itself when one of its settings differs from its default or matches a search. `reload` (true) makes the saved message ask to reload the page, for changes that show only after a page load. `network` (false) leaves a setting off the network screen (multisite), for one that only makes sense on each site, such as a list of the site's own posts or people; media fields and `hidden` wiring are left off already. A multi setting can take `locked` (values, or a callable returning them): choices that are always chosen, shown ticked with a lock, cannot be unticked and are never stored, so the feature itself treats them as chosen. `replaces` (slug => name) shows which plugin a feature replaces; keep that list in the feature's `REPLACES` class constant and pass `self::REPLACES` (`STANDARDS.md` → Structure). Settings render and save automatically.
+- `wpstarter_admin_tabs`: add or reorder admin tabs. Each tab sets `label`, `group` (settings, discover or about), a `render` callback, an optional `capability`, an optional `preload` and an optional `network` (true: also on the network screen, multisite, where its callback runs with `is_network_admin()` true; settings tabs and Read Me have it); tabs the current user lacks the capability for are hidden. The screen draws the active tab with the other tabs of its group that preload (settings tabs and Read Me do), and switches between them without a reload (`WPStarter_Admin_Manager::page_tabs()`). Set `preload` to true only when the tab is cheap to draw and its script works while its panel is hidden.
+- `wpstarter_admin_script_deps` and `wpstarter_admin_script_data`: the settings screen script’s dependencies (once for each tab drawn on the page) and the data it reads as `wpstarterAdmin` (with the active tab; `wpstarterAdmin.tab` follows the tab shown, `tabs` lists the tabs drawn and `network` is true on the network screen).
 - `wpstarter_troubleshooting_open`: whether a setting's Troubleshooting section starts open (open, setting key), for a feature that fell back after an error.
 - `wpstarter_can_change_settings`: return false to stop the current user changing WP Plugin Starter’s settings (on top of `manage_options`).
 - `wpstarter_replaced_plugin_extras`: what a replaced plugin does on this site that WP Plugin Starter does not (plain names, plugin folder). The Plugins screen names them instead of saying the plugin can go.
@@ -121,17 +134,23 @@ Filters:
 Actions:
 
 - `wpstarter_admin_enqueue`: enqueue the plugin’s own admin styles and scripts on its settings screen, depending on `wpstarter-admin`; it fires once for each tab drawn on the page, the active tab first. Its script can use `wpstarterAdmin.api` (`post`, `speak`, `errorMessage`), and the `wpstarter:tab-shown` jQuery event (tab slug) on `document` tells it when another tab is shown.
-- `wpstarter_setting_saved`: a setting was saved from the admin screen.
-- `wpstarter_setting_panel`: print status at the top of a setting’s options panel (setting key, schema entry); wrap it in `<div class="wps-panel-note">`.
-- `wpstarter_settings_tab_after`: print a section after a settings tab’s cards (tab slug).
+- `wpstarter_setting_saved`: a setting was saved from the admin screen (setting key, value), or the network changed it for this site (multisite): then on the site's next admin, cron or WP-CLI request, as nobody, while `WPStarter_Network_Settings::syncing()` is true.
+- `wpstarter_settings_changed`: settings changed, however they were saved (the admin screen, presets, WP-CLI, `update_option()`) or by the network for this site, as above (old and new settings, as features read them). Use it rather than `update_option_wpstarter_options`, which misses the network's changes.
+- `wpstarter_setting_panel`: print status at the top of a setting’s options panel (setting key, schema entry); wrap it in `<div class="wps-panel-note">`. On the network screen, `wpstarter_network_setting_panel` fires instead, for notes about the whole network.
+- `wpstarter_settings_tab_after`: print a section after a settings tab’s cards (tab slug). On the network screen, `wpstarter_network_settings_tab_after` fires instead.
 
-Read a setting with `WPStarter_Settings::get( 'key' )`.
+Read a setting with `WPStarter_Settings::get( 'key' )`, never the option itself: on multisite it includes the settings the network applies to every site. Code that runs before the plugin loads (a must-use file) reads the network option's `enforced` values (`wpstarter_network`: card => setting => value) over the site's own, as `WPStarter_Settings::all()` does.
 
 ## Uninstall
 
-Deleting the plugin removes its settings, its cached data, who hid lines of the Plugins screen notice about replaced plugins, and the cached GitHub releases.
+Deleting the plugin removes its settings (on multisite, every site's and the network's), its cached data, who hid lines of the Plugins screen notice about replaced plugins, and the cached GitHub releases.
 
 ## Changelog
+
+### Unreleased
+
+- New: Multisite. Network Admin → Settings → WP Plugin Starter has the same tabs and cards for the whole network, for super admins. New sites start with its settings. **Apply to every site**, under each card, sets the card for every site, which then show it locked; switched off, each site has its own settings again. Each card names the sites whose own settings differ, with **Make every site the same**. Sites do the saving work for the network's changes on their next admin, cron or WP-CLI request (GH#452).
+- Developers: new core files `includes/class-wpstarter-network-settings.php` (network values, applied cards, differences, seeding new sites and each site's saving work) and `admin/includes/class-network-manager.php` (the network screen); plugins made from the starter get them with `scripts/sync-core.sh`, then add to their own `uninstall.php` the network option and each site's `wpstarter_network_seen`, as the starter's does. Schema keys `network` (false: each site only) and `locked` (multi: always chosen, never stored); tabs take `network`; new actions `wpstarter_settings_changed`, `wpstarter_network_setting_panel` and `wpstarter_network_settings_tab_after` (Developers above). `STANDARDS.md` → Multisite has the rules for features.
 
 ### 1.0.33
 

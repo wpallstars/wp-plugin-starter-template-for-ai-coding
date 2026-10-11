@@ -9,6 +9,10 @@
  * through it. Add settings with the `wpstarter_settings_schema` filter or by
  * registering a feature (see WPStarter_Feature).
  *
+ * On multisite, values the network applies to every site
+ * (WPStarter_Network_Settings) take the place of the site's own when read;
+ * the option keeps only the site's own values.
+ *
  * SPDX-License-Identifier: GPL-3.0-or-later
  * SPDX-FileCopyrightText: 2026 Marcus Quinn
  * Additional terms (GPL-3.0 section 7(b)): ATTRIBUTION.txt
@@ -76,6 +80,13 @@ class WPStarter_Settings {
     private static $lock_value = '';
 
     /**
+     * The options table holding that lock (see lock()).
+     *
+     * @var string
+     */
+    private static $lock_table = '';
+
+    /**
      * Whether maybe_migrate() is storing migrated settings (see sanitize_all()).
      *
      * @var bool
@@ -91,7 +102,9 @@ class WPStarter_Settings {
         add_action('init', array(__CLASS__, 'maybe_migrate'), 0);
         add_action('admin_init', array(__CLASS__, 'register_setting'));
         add_action('wp_ajax_wpstarter_save_setting', array(__CLASS__, 'ajax_save'));
+        add_action('update_option_' . self::OPTION, array(__CLASS__, 'option_updated'), 10, 2);
         add_filter('option_page_capability_' . self::GROUP, array(__CLASS__, 'capability'));
+        WPStarter_Network_Settings::init();
     }
 
     /**
@@ -136,6 +149,13 @@ class WPStarter_Settings {
      *                own controls there (wpstarter_setting_panel)
      * - hidden:      child only; true for wiring set by starter data or code,
      *                which the panel does not show
+     * - locked:      multi only; values (or a callable returning them) that
+     *                are always chosen: shown ticked, cannot be unticked and
+     *                are never stored, so the feature itself must treat
+     *                them as chosen (locked_values())
+     * - network:     false for a setting that only makes sense on each site
+     *                (such as one listing the site's own posts or people):
+     *                the network screen leaves it out (multisite)
      * - reload:      true when the change shows only after a page load; the
      *                saved message then asks to reload the page
      * - label, description, placeholder, min, max, unit, tokens, rows: UI metadata
@@ -197,6 +217,24 @@ class WPStarter_Settings {
     }
 
     /**
+     * A multi field's locked values: always chosen, never stored.
+     *
+     * @param array $field Schema entry.
+     * @return string[]
+     */
+    public static function locked_values(array $field) {
+        if (empty($field['locked'])) {
+            return array();
+        }
+        try {
+            $locked = is_callable($field['locked']) ? call_user_func($field['locked']) : $field['locked'];
+        } catch (\Throwable $e) {
+            return array();
+        }
+        return array_values(array_unique(array_map('strval', array_filter((array) $locked, 'is_scalar'))));
+    }
+
+    /**
      * Default values for every setting.
      *
      * @return array
@@ -212,12 +250,84 @@ class WPStarter_Settings {
     }
 
     /**
-     * All settings merged over defaults.
+     * All settings merged over defaults, with the values the network
+     * applies to every site in place of the site's own (multisite).
      *
      * @return array
      */
     public static function all() {
+        return self::effective(self::stored_all());
+    }
+
+    /**
+     * The site's own settings merged over defaults, without the values the
+     * network applies: what the site gets back when the network stops
+     * applying them.
+     *
+     * @return array
+     */
+    public static function own() {
         return array_merge(self::defaults(), array_intersect_key(self::stored_all(), self::schema()));
+    }
+
+    /**
+     * Stored settings as features read them: over defaults, with the values
+     * the network applies to every site.
+     *
+     * @param array $stored Stored settings.
+     * @return array
+     */
+    private static function effective(array $stored) {
+        $all = array_merge(self::defaults(), array_intersect_key($stored, self::schema()));
+        return is_multisite() ? array_merge($all, array_intersect_key(WPStarter_Network_Settings::enforced(), $all)) : $all;
+    }
+
+    /**
+     * After the option is updated, tell features what changed, as they read
+     * it (with the network's values), so a change only to a value the
+     * network overrides is no change.
+     *
+     * @param mixed $old Old value.
+     * @param mixed $new New value.
+     */
+    public static function option_updated($old, $new) {
+        $old = self::effective(is_array($old) ? $old : array());
+        $new = self::effective(is_array($new) ? $new : array());
+        if ($old != $new) { // phpcs:ignore Universal.Operators.StrictComparisons -- key order may differ.
+            /**
+             * Fires after settings change: saved in any way (the admin
+             * screen, presets, WP-CLI, update_option()), or changed for this
+             * site by the network (multisite, on the site's next admin, cron
+             * or WP-CLI request). Use it instead of update_option_{option},
+             * which misses the network's changes.
+             *
+             * @param array $old Settings before, as features read them.
+             * @param array $new Settings after.
+             */
+            do_action('wpstarter_settings_changed', $old, $new);
+        }
+    }
+
+    /**
+     * Whether two setting values are the same: lists in any order, switches
+     * as true or false, anything else as text.
+     *
+     * @param mixed $a Value.
+     * @param mixed $b Value.
+     * @return bool
+     */
+    public static function same($a, $b) {
+        if (is_array($a) || is_array($b)) {
+            $a = array_map('strval', array_filter((array) $a, 'is_scalar'));
+            $b = array_map('strval', array_filter((array) $b, 'is_scalar'));
+            sort($a);
+            sort($b);
+            return $a === $b;
+        }
+        if (is_bool($a) || is_bool($b)) {
+            return (bool) $a === (bool) $b;
+        }
+        return (is_scalar($a) ? (string) $a : '') === (is_scalar($b) ? (string) $b : '');
     }
 
     /**
@@ -254,6 +364,9 @@ class WPStarter_Settings {
         if (!isset($schema[$key])) {
             return new WP_Error('wpstarter_unknown_setting', __('Unknown setting.', 'wp-plugin-starter-template'));
         }
+        if (WPStarter_Network_Settings::is_enforced($key)) {
+            return new WP_Error('wpstarter_network_setting', __('The network administrator sets this for every site, so it cannot be changed here.', 'wp-plugin-starter-template'));
+        }
 
         $clean = self::sanitize_value($value, $schema[$key]);
 
@@ -283,6 +396,56 @@ class WPStarter_Settings {
     }
 
     /**
+     * Store sanitized values as a site's own settings, for the network
+     * (WPStarter_Network_Settings::copy()), under that site's save lock.
+     * Read and written straight in its options table: switching to each
+     * site would load all of its autoloaded options, and run this
+     * request's hooks, which belong to another site; the site runs its own
+     * saving work on its next request. Sites where the plugin has not run
+     * yet are left alone.
+     *
+     * @param int   $site_id Site ID.
+     * @param array $values  Key => sanitized value.
+     * @return array|null The site's values before, of the keys that
+     *                    changed; null when it has no stored settings or
+     *                    they could not be saved.
+     */
+    public static function replace_site_values($site_id, array $values) {
+        global $wpdb;
+        $table = $wpdb->get_blog_prefix((int) $site_id) . 'options';
+        if (!self::lock($table)) {
+            return null;
+        }
+        try {
+            // phpcs:ignore WordPress.DB.DirectDatabaseQuery -- another site's options, read past this request's caches (see above).
+            $raw    = $wpdb->get_var($wpdb->prepare('SELECT option_value FROM %i WHERE option_name = %s', $table, self::OPTION));
+            $stored = null === $raw ? null : maybe_unserialize($raw);
+            if (!is_array($stored)) {
+                return null;
+            }
+            $defaults = self::defaults();
+            $previous = array();
+            foreach ($values as $key => $value) {
+                $was = array_key_exists($key, $stored) ? $stored[$key] : (isset($defaults[$key]) ? $defaults[$key] : null);
+                if (!self::same($was, $value)) {
+                    $previous[$key] = $was;
+                    $stored[$key]   = $value;
+                }
+            }
+            if ($previous) {
+                // phpcs:ignore WordPress.DB.DirectDatabaseQuery -- as above; the site's caches are cleared next.
+                if (false === $wpdb->update($table, array('option_value' => maybe_serialize($stored)), array('option_name' => self::OPTION))) {
+                    return null;
+                }
+                WPStarter_Network_Settings::flush_site_cache((int) $site_id, array(self::OPTION));
+            }
+            return $previous;
+        } finally {
+            self::unlock();
+        }
+    }
+
+    /**
      * Take the save lock: a row in the options table that only one request
      * can insert (INSERT IGNORE, as WP_Upgrader::create_lock() does;
      * add_option() checks then writes, so two requests can both "add" it).
@@ -294,23 +457,27 @@ class WPStarter_Settings {
      * same stale lock, only one deletes it, and a request whose lock was
      * taken over does not delete the new one.
      *
+     * @param string $table Options table: this site's, or another site's
+     *                      (replace_site_values()).
      * @return bool Whether this request holds the lock.
      */
-    private static function lock() {
+    private static function lock($table = '') {
         global $wpdb;
+        $table = '' === $table ? $wpdb->options : $table;
         $name  = self::OPTION . '_lock';
         $value = time() . ' ' . wp_generate_uuid4();
         for ($try = 0; $try < 50; $try++) {
             // phpcs:ignore WordPress.DB.DirectDatabaseQuery -- an atomic insert is the lock; the options API cannot do it.
-            if ($wpdb->query($wpdb->prepare("INSERT IGNORE INTO {$wpdb->options} (option_name, option_value, autoload) VALUES (%s, %s, 'no')", $name, $value))) {
+            if ($wpdb->query($wpdb->prepare("INSERT IGNORE INTO %i (option_name, option_value, autoload) VALUES (%s, %s, 'no')", $table, $name, $value))) {
                 self::$lock_value = $value;
+                self::$lock_table = $table;
                 return true;
             }
             // phpcs:ignore WordPress.DB.DirectDatabaseQuery -- read past the options cache: the lock changes under it.
-            $held  = (string) $wpdb->get_var($wpdb->prepare("SELECT option_value FROM {$wpdb->options} WHERE option_name = %s", $name));
+            $held  = (string) $wpdb->get_var($wpdb->prepare('SELECT option_value FROM %i WHERE option_name = %s', $table, $name));
             $since = (int) strtok($held, ' ');
             if ($since && $since < time() - self::LOCK_TIMEOUT) {
-                self::delete_lock($held);
+                self::delete_lock($held, $table);
                 continue;
             }
             usleep(100000);
@@ -323,8 +490,9 @@ class WPStarter_Settings {
      */
     private static function unlock() {
         if ('' !== self::$lock_value) {
-            self::delete_lock(self::$lock_value);
+            self::delete_lock(self::$lock_value, self::$lock_table);
             self::$lock_value = '';
+            self::$lock_table = '';
         }
     }
 
@@ -332,11 +500,12 @@ class WPStarter_Settings {
      * Delete the save lock if it still has the given value.
      *
      * @param string $value Lock value.
+     * @param string $table Options table holding it.
      */
-    private static function delete_lock($value) {
+    private static function delete_lock($value, $table) {
         global $wpdb;
         // phpcs:ignore WordPress.DB.DirectDatabaseQuery -- the lock row is never cached (see lock()).
-        $wpdb->query($wpdb->prepare("DELETE FROM {$wpdb->options} WHERE option_name = %s AND option_value = %s", self::OPTION . '_lock', $value));
+        $wpdb->query($wpdb->prepare('DELETE FROM %i WHERE option_name = %s AND option_value = %s', $table, self::OPTION . '_lock', $value));
     }
 
     /**
@@ -565,7 +734,8 @@ class WPStarter_Settings {
 
     /**
      * Sanitize a multi field: its options that are chosen, in the options'
-     * order; open lists also keep other identifiers.
+     * order; open lists also keep other identifiers. Locked values are
+     * always chosen, so they are not stored (locked_values()).
      *
      * @param mixed $value Raw value: an array or a comma separated list.
      * @param array $field Schema entry.
@@ -574,6 +744,9 @@ class WPStarter_Settings {
     private static function sanitize_multi($value, array $field) {
         $values = is_array($value) ? $value : preg_split('/\s*,\s*/', (string) $value, -1, PREG_SPLIT_NO_EMPTY);
         $values = array_map('strval', array_filter((array) $values, 'is_scalar'));
+        if (!empty($field['locked'])) {
+            $values = array_diff($values, self::locked_values($field));
+        }
         // Keep the options' order so stored values are stable.
         $known = array_values(array_intersect(array_map('strval', array_keys(self::options_for($field))), $values));
         if (empty($field['open'])) {
@@ -748,16 +921,22 @@ class WPStarter_Settings {
     }
 
     /**
-     * Sanitize the whole array when saved through options.php or update_option().
+     * Sanitize the whole array when saved through options.php or
+     * update_option(). Only the site's own values are stored: values the
+     * network applies to every site are not (own()), and a save cannot
+     * change the site's own value of a setting the network applies, as
+     * set() cannot. Migrations store them, as a new site starts with the
+     * network's values (WPStarter_Network_Settings::seed()).
      *
      * @param mixed $input Raw option value.
      * @return array
      */
     public static function sanitize_all($input) {
-        $input  = is_array($input) ? $input : array();
-        $schema = self::schema();
-        $stored = self::stored_all();
-        $clean  = self::all();
+        $input    = is_array($input) ? $input : array();
+        $schema   = self::schema();
+        $stored   = self::stored_all();
+        $clean    = self::own();
+        $enforced = self::$migrating ? array() : WPStarter_Network_Settings::enforced();
         if (!self::$migrating) {
             // Settings not registered on this request (their feature is
             // switched off) keep their stored values, even when the input
@@ -767,6 +946,9 @@ class WPStarter_Settings {
         }
 
         foreach ($input as $key => $value) {
+            if (array_key_exists($key, $enforced)) {
+                continue;
+            }
             if (isset($schema[$key])) {
                 $clean[$key] = self::sanitize_value($value, $schema[$key]);
             } elseif (array_key_exists($key, $stored) && $stored[$key] === $value) {
@@ -836,6 +1018,10 @@ class WPStarter_Settings {
      *
      * Old options are left in place so a downgrade keeps working;
      * uninstall.php removes ours. Other plugins' options are never touched.
+     *
+     * On multisite, a site where the plugin runs for the first time starts
+     * with the values saved on the network screen, for anything not
+     * imported (WPStarter_Network_Settings::seed()).
      */
     public static function maybe_migrate() {
         $from = (int) get_option(self::DB_VERSION_OPTION, 0);
@@ -849,6 +1035,9 @@ class WPStarter_Settings {
 
         foreach (WPStarter::features() as $class) {
             $options = (array) $class::migrate($options, $from);
+        }
+        if (0 === $from) {
+            $options = WPStarter_Network_Settings::seed($options);
         }
 
         // Keys the migrations removed stay removed (see sanitize_all()),

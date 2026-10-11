@@ -2,7 +2,10 @@
  * WP Plugin Starter admin screen.
  *
  * One delegated controller per concern:
- * - Settings: instant save for [data-wps-setting] controls.
+ * - Settings: instant save for [data-wps-setting] controls (network values
+ *   on the network screen, multisite).
+ * - Network: Apply to every site and Make every site the same (network
+ *   screen only).
  * - Panels: expandable setting options.
  * - Tokens: insert pattern tokens into text fields.
  * - Media fields: choose a Media Library picture with the media dialog.
@@ -94,7 +97,8 @@
 				if (!group) {
 					return;
 				}
-				$(group).find(':checkbox').prop('checked', all);
+				// Locked choices (disabled) stay as they are.
+				$(group).find(':checkbox').not(':disabled').prop('checked', all);
 				Settings.save($(group));
 			});
 			// Forms that change data elsewhere ask first.
@@ -107,7 +111,8 @@
 
 		valueOf: function ($input) {
 			if ($input.is('[data-wps-multi]')) {
-				return $input.find(':checkbox:checked').map(function () {
+				// Locked choices are always chosen and never stored.
+				return $input.find(':checkbox:checked').not('[data-wps-locked]').map(function () {
 					return this.value;
 				}).get();
 			}
@@ -154,7 +159,7 @@
 				if ($input.is('[data-wps-multi]')) {
 					var chosen = $.map(saved || [], String);
 					$input.find(':checkbox').each(function () {
-						this.checked = $.inArray(this.value, chosen) !== -1;
+						this.checked = this.hasAttribute('data-wps-locked') || $.inArray(this.value, chosen) !== -1;
 					});
 				} else if ($input.is(':checkbox')) {
 					$input.data('wps-saved', saved ? '1' : '0');
@@ -168,6 +173,10 @@
 				var message = reload && response.data.message ? response.data.message : i18n.saved;
 				Settings.status(key, 'saved', message, reload);
 				speak(message);
+				// Network screen: the sites that now differ.
+				if (response.data.card) {
+					Network.sites(response.data.card, response.data.sites);
+				}
 				$(document).trigger('wpstarter:setting-saved', [key, saved]);
 			};
 			var failed = function (xhr) {
@@ -176,7 +185,7 @@
 				}
 			};
 			var run = function () {
-				return post('wpstarter_save_setting', { key: key, value: value })
+				return post(cfg.network ? 'wpstarter_network_save' : 'wpstarter_save_setting', { key: key, value: value })
 					.done(done)
 					.fail(failed);
 			};
@@ -199,6 +208,87 @@
 			}
 			this.status(key, 'error', message);
 			speak(message, 'assertive');
+		}
+	};
+
+	/* ------------------------------------------------------------------ */
+	/* Network screen (multisite)                                          */
+	/* ------------------------------------------------------------------ */
+
+	// Each card's network part (WPStarter_Network_Manager::render_card_network()):
+	// Apply to every site, and the sites that differ with Make every site
+	// the same. Its changes join the saves' queue, so they run one at a time.
+	var Network = {
+		init: function () {
+			if (!cfg.network) {
+				return;
+			}
+			$(document).on('change', '[data-wps-network-apply]', function () {
+				Network.apply($(this));
+			});
+			$(document).on('click', '[data-wps-network-copy]', function () {
+				if (window.confirm(i18n.copyConfirm)) {
+					Network.copy($(this));
+				}
+			});
+		},
+
+		// By attribute value, so a key is never read as a selector.
+		byAttr: function (attr, key) {
+			return $('[' + attr + ']').filter(function () {
+				return this.getAttribute(attr) === key;
+			});
+		},
+
+		sites: function (key, html) {
+			if (typeof html === 'string') {
+				Network.byAttr('data-wps-network-sites', key).html(html);
+			}
+		},
+
+		run: function (key, action, data, done, failed) {
+			var status = key + ':network';
+			var fail = function (message) {
+				failed();
+				Settings.status(status, 'error', message);
+				speak(message, 'assertive');
+			};
+			var send = function () {
+				return post(action, $.extend({ key: key }, data))
+					.done(function (response) {
+						if (!response || !response.success) {
+							fail(i18n.saveFailed);
+							return;
+						}
+						done();
+						Network.sites(key, response.data.sites);
+						Settings.status(status, 'saved', response.data.message);
+						speak(response.data.message);
+					})
+					.fail(function (xhr) {
+						fail(errorMessage(xhr, i18n.saveFailed));
+					});
+			};
+			Settings.status(status, 'saving', i18n.saving);
+			Settings.queue = Settings.queue.then(send, send);
+		},
+
+		apply: function ($input) {
+			var key = $input.attr('data-wps-network-apply');
+			var on = $input.is(':checked');
+			Network.run(key, 'wpstarter_network_apply', { apply: on ? '1' : '0' }, function () {
+				Network.byAttr('data-setting-card', key).toggleClass('is-applied', on);
+			}, function () {
+				$input.prop('checked', !on);
+			});
+		},
+
+		copy: function ($button) {
+			var key = $button.attr('data-wps-network-copy');
+			$button.prop('disabled', true);
+			Network.run(key, 'wpstarter_network_copy', {}, $.noop, function () {
+				$button.prop('disabled', false);
+			});
 		}
 	};
 
@@ -389,6 +479,7 @@
 
 	$(function () {
 		Settings.init();
+		Network.init();
 		Panels.init();
 		MediaField.init();
 		Tabs.init();

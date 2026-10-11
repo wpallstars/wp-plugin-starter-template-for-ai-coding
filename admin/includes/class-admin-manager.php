@@ -17,6 +17,11 @@
  * plugin's own screens show the same header with enqueue_header() and
  * render_header().
  *
+ * On multisite the network admin has the same screen at Network Admin →
+ * Settings → WP Plugin Starter (WPStarter_Network_Manager), drawn by the
+ * same code: its cards save network values. page_url() and tab_url() give
+ * its addresses there.
+ *
  * SPDX-License-Identifier: GPL-3.0-or-later
  * SPDX-FileCopyrightText: 2026 Marcus Quinn
  * Additional terms (GPL-3.0 section 7(b)): ATTRIBUTION.txt
@@ -87,13 +92,29 @@ class WPStarter_Admin_Manager {
     }
 
     /**
-     * Address of the screen.
+     * Address of the screen: the network screen in the network admin.
      *
      * @param array $args Extra query args.
      * @return string
      */
     public static function page_url(array $args = array()) {
+        if (is_network_admin()) {
+            return WPStarter_Network_Manager::page_url($args);
+        }
         return add_query_arg(array_merge(array('page' => self::PAGE), $args), admin_url(self::screen_file()));
+    }
+
+    /**
+     * Address of the screen on another site of the network, from its
+     * siteurl option (get_admin_url() would load that site's options).
+     *
+     * @param string $site_url The site's siteurl.
+     * @param array  $args     Extra query args.
+     * @return string
+     */
+    public static function site_page_url($site_url, array $args = array()) {
+        $url = set_url_scheme(trailingslashit((string) $site_url) . 'wp-admin/' . self::screen_file(), 'admin');
+        return add_query_arg(array_merge(array('page' => self::PAGE), $args), $url);
     }
 
     /**
@@ -118,10 +139,23 @@ class WPStarter_Admin_Manager {
     }
 
     /**
-     * Registered tabs. Settings tabs and Read Me preload: they are drawn
-     * with the other tabs of their group (page_tabs()).
+     * Top-level settings of a settings tab on this screen: on the network
+     * screen, those the network can set.
      *
-     * @return array<string,array{label:string,group:string,render:callable,preload?:bool,capability?:string}>
+     * @param string $tab Tab slug.
+     * @return array
+     */
+    private static function fields_for_tab($tab) {
+        return is_network_admin() ? WPStarter_Network_Settings::fields_for_tab($tab) : WPStarter_Settings::fields_for_tab($tab);
+    }
+
+    /**
+     * Registered tabs. Settings tabs and Read Me preload: they are drawn
+     * with the other tabs of their group (page_tabs()). The network screen
+     * shows only tabs marked 'network' => true: settings tabs with
+     * settings the network can set, and Read Me.
+     *
+     * @return array<string,array{label:string,group:string,render:callable,preload?:bool,capability?:string,network?:bool}>
      */
     public static function get_tabs() {
         $tabs = array();
@@ -132,13 +166,13 @@ class WPStarter_Admin_Manager {
         $settings_tabs = self::settings_tabs();
         $has_settings  = false;
         foreach (array_keys($settings_tabs) as $slug) {
-            if (WPStarter_Settings::fields_for_tab($slug)) {
+            if (self::fields_for_tab($slug)) {
                 $has_settings = true;
                 break;
             }
         }
         foreach ($settings_tabs as $slug => $tab) {
-            if ($has_settings && !WPStarter_Settings::fields_for_tab($slug)) {
+            if ($has_settings && !self::fields_for_tab($slug)) {
                 continue;
             }
             if (!$has_settings && $tabs) {
@@ -148,6 +182,7 @@ class WPStarter_Admin_Manager {
                 'label'   => $tab['label'],
                 'group'   => 'settings',
                 'preload' => true,
+                'network' => true,
                 'render'  => function () use ($slug, $tab) {
                     WPStarter_Settings_Manager::render_tab($slug, $tab['label'], $tab['description']);
                 },
@@ -159,6 +194,7 @@ class WPStarter_Admin_Manager {
                 'label'   => __('Read Me', 'wp-plugin-starter-template'),
                 'group'   => 'about',
                 'preload' => true,
+                'network' => true,
                 'render'  => array('WPStarter_Readme_Manager', 'display_tab_content'),
             ),
         );
@@ -170,13 +206,19 @@ class WPStarter_Admin_Manager {
          *                    render callback, optional capability, optional
          *                    preload (true: drawn with the other tabs of its
          *                    group, so switching to it is instant; its script
-         *                    must then work while its panel is hidden).
+         *                    must then work while its panel is hidden),
+         *                    optional network (true: also on the network
+         *                    screen, multisite; its render callback then runs
+         *                    in the network admin, where is_network_admin()
+         *                    is true).
          */
         $tabs = (array) apply_filters('wpstarter_admin_tabs', $tabs);
 
-        // Hide tabs the current user cannot use.
-        return array_filter($tabs, function ($tab) {
-            return empty($tab['capability']) || current_user_can($tab['capability']);
+        // Hide tabs the current user cannot use, and on the network screen
+        // tabs that are only for sites.
+        $network = is_network_admin();
+        return array_filter($tabs, function ($tab) use ($network) {
+            return (empty($tab['capability']) || current_user_can($tab['capability'])) && (!$network || !empty($tab['network']));
         });
     }
 
@@ -327,7 +369,8 @@ class WPStarter_Admin_Manager {
      * @param string $hook Current admin page hook.
      */
     public static function enqueue_assets($hook) {
-        if (self::hook() !== $hook) {
+        $network = is_network_admin();
+        if ($network ? WPStarter_Network_Manager::hook() !== $hook : self::hook() !== $hook) {
             return;
         }
 
@@ -351,7 +394,8 @@ class WPStarter_Admin_Manager {
         }
         $deps = array_values(array_unique(array_filter(array_map('strval', $deps))));
 
-        foreach ($page_tabs as $page_tab) {
+        // The network screen has no media fields (each site has its own pictures).
+        foreach ($network ? array() : $page_tabs as $page_tab) {
             if (self::shows_media_field($page_tab)) {
                 wp_enqueue_media();
                 break;
@@ -363,7 +407,9 @@ class WPStarter_Admin_Manager {
 
         /**
          * Filter the data the admin script reads (wpstarterAdmin). Its tab
-         * follows the tab shown; tabs lists the tabs drawn on the page.
+         * follows the tab shown; tabs lists the tabs drawn on the page;
+         * network is true on the network screen, whose cards save network
+         * values.
          *
          * @param array  $data Script data.
          * @param string $tab  Active tab.
@@ -373,12 +419,14 @@ class WPStarter_Admin_Manager {
             'nonce'   => wp_create_nonce(WPStarter_Settings::NONCE),
             'tab'     => $tab,
             'tabs'    => $page_tabs,
+            'network' => $network,
             'i18n'    => array(
                 'saving'      => __('Saving…', 'wp-plugin-starter-template'),
                 'saved'       => __('Saved', 'wp-plugin-starter-template'),
                 'saveFailed'  => __('Could not save. Please try again.', 'wp-plugin-starter-template'),
                 'chooseImage' => __('Choose a picture', 'wp-plugin-starter-template'),
                 'useImage'    => __('Use this picture', 'wp-plugin-starter-template'),
+                'copyConfirm' => __('Copy these settings into every site’s own settings? Each site can change them again afterwards, unless they are applied to every site.', 'wp-plugin-starter-template'),
             ),
         ), $tab));
 
@@ -425,10 +473,11 @@ class WPStarter_Admin_Manager {
 
     /**
      * Render the page chrome and the tabs drawn on the page (page_tabs()),
-     * each in its own panel; only the active tab's shows.
+     * each in its own panel; only the active tab's shows. The network
+     * screen is the same page in the network admin.
      */
     public static function render_settings_page() {
-        if (!current_user_can('manage_options')) {
+        if (!current_user_can(is_network_admin() ? 'manage_network_options' : 'manage_options')) {
             return;
         }
 

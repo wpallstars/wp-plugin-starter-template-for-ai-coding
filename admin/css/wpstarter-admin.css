@@ -499,6 +499,83 @@
 	}
 }
 
+/* Network screen and locked settings (multisite) --------------------- */
+
+/* Under a card's description on the network screen: Apply to every site
+   and the sites that differ (WPStarter_Network_Manager). */
+.wps-network {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 8px 12px;
+	padding: 12px 20px;
+	background: var(--wps-subtle);
+	border-block-start: 1px solid var(--wps-border);
+}
+
+.wps-network__apply {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	font-weight: 600;
+}
+
+.wps-wrap .wps-network__apply input {
+	margin: 0;
+}
+
+.wps-network__sites {
+	display: grid;
+	flex: 1 1 100%;
+	gap: 8px;
+	color: var(--wps-muted);
+}
+
+.wps-wrap .wps-network__sites p {
+	margin: 0;
+}
+
+/* A card the network sets for every site, on a site's screen. */
+.wps-locked-note {
+	margin: 6px 0 0;
+	font-size: 12px;
+	color: var(--wps-muted);
+}
+
+.wps-locked-note .dashicons,
+.wps-checkbox.is-locked .dashicons {
+	width: 16px;
+	height: 16px;
+	font-size: 16px;
+	vertical-align: -3px;
+}
+
+/* WordPress shows disabled checkboxes at 0.7 opacity (forms.css), which
+   would draw the switch's native box and tick over its track. */
+.wps-wrap .wps-switch__input:disabled {
+	cursor: not-allowed;
+	opacity: 0;
+}
+
+/* The options of a locked card: a disabled fieldset, drawn as none. */
+.wps-setting__fields {
+	min-width: 0;
+	margin: 0;
+	padding: 0;
+	border: 0;
+}
+
+/* A choice that is always chosen (a multi field's locked values). */
+.wps-checkbox.is-locked {
+	color: var(--wps-muted);
+}
+
+.wps-locked-help {
+	margin: 6px 0 0;
+	font-size: 12px;
+	color: var(--wps-muted);
+}
+
 /* Read Me ------------------------------------------------------------ */
 
 .wps-readme {
@@ -613,8 +690,15 @@
 		justify-self: start;
 	}
 
+	/* minmax(0, 1fr): a 1fr column grows to its widest field instead. */
 	.wps-field {
-		grid-template-columns: 1fr;
+		grid-template-columns: minmax(0, 1fr);
+	}
+
+	/* Core's .regular-text is 25em, with 16px text on small screens: wider
+	   than the card on a phone. */
+	.wps-field__control .regular-text {
+		width: 100%;
 	}
 }
 

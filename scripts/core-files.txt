@@ -4,18 +4,22 @@
 # Paths use the starter's names; a trailing / means every file below.
 # Change a core file in the starter first, then sync each plugin.
 
-# Bootstrap, feature registry, base feature and settings store.
+# Bootstrap, feature registry, base feature, settings store and its
+# network settings (multisite).
 includes/class-wpstarter.php
 includes/class-wpstarter-feature.php
 includes/class-wpstarter-settings.php
+includes/class-wpstarter-network-settings.php
 
 # Shared GitHub updater: only the newest copy on a site runs.
 includes/github-updater/
 
-# Admin screen, Read Me tab and the Plugins screen notes for replaced plugins.
+# Admin screen, its network screen, Read Me tab and the Plugins screen notes
+# for replaced plugins.
 admin/settings.php
 admin/data/readme.php
 admin/includes/class-admin-manager.php
+admin/includes/class-network-manager.php
 admin/includes/class-admin-page.php
 admin/includes/class-settings-manager.php
 admin/includes/class-readme-manager.php

@@ -126,6 +126,13 @@
 	border-color: #b8e6bf;
 }
 
+/* The network screen (multisite), so it is never taken for a site's. */
+.wps-badge--network {
+	color: #fff;
+	background: var(--wps-accent);
+	border-color: var(--wps-accent);
+}
+
 /* Search ------------------------------------------------------------- */
 
 /* Stretch, so the field always matches the button's height, whatever

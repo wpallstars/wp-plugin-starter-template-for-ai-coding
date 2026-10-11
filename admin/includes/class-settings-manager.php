@@ -6,6 +6,11 @@
  * setting is a card with a switch; child settings appear in an expandable
  * panel. Controls save instantly via AJAX (see admin/js/wpstarter-admin.js).
  *
+ * On the network screen (multisite) the same cards show and save network
+ * values, with Apply to every site and the sites that differ
+ * (WPStarter_Network_Manager). On a site, a card the network applies to
+ * every site shows its values locked.
+ *
  * SPDX-License-Identifier: GPL-3.0-or-later
  * SPDX-FileCopyrightText: 2026 Marcus Quinn
  * Additional terms (GPL-3.0 section 7(b)): ATTRIBUTION.txt
@@ -45,6 +50,27 @@ class WPStarter_Settings_Manager {
     private static $query = '';
 
     /**
+     * A setting's value as this screen shows it: the network value on the
+     * network screen, the site's value (with the network's) on a site.
+     *
+     * @param string $key Setting key.
+     * @return mixed
+     */
+    private static function value($key) {
+        return is_network_admin() ? WPStarter_Network_Settings::value($key) : WPStarter_Settings::get($key);
+    }
+
+    /**
+     * Top-level settings of a tab on this screen.
+     *
+     * @param string $tab Tab slug.
+     * @return array
+     */
+    private static function fields_for_tab($tab) {
+        return is_network_admin() ? WPStarter_Network_Settings::fields_for_tab($tab) : WPStarter_Settings::fields_for_tab($tab);
+    }
+
+    /**
      * Render matching settings from every tab, grouped by tab.
      *
      * Cards are the same as on their own tab, so they can be switched on
@@ -54,9 +80,10 @@ class WPStarter_Settings_Manager {
      * @param array  $tabs  Registered tabs (see WPStarter_Admin_Manager::get_tabs()).
      */
     public static function render_search($query, array $tabs) {
-        $groups = array();
+        $groups  = array();
+        $network = is_network_admin();
         foreach (WPStarter_Settings::search($query) as $key => $field) {
-            if (isset($tabs[$field['tab']])) {
+            if (isset($tabs[$field['tab']]) && (!$network || WPStarter_Network_Settings::eligible((string) $key))) {
                 $groups[$field['tab']][$key] = $field;
             }
         }
@@ -109,7 +136,8 @@ class WPStarter_Settings_Manager {
      * @param string $description Section intro.
      */
     public static function render_tab($tab, $title, $description) {
-        $fields = WPStarter_Settings::fields_for_tab($tab);
+        $fields  = self::fields_for_tab($tab);
+        $network = is_network_admin();
         ?>
         <div class="wps-section">
             <div class="wps-section__intro">
@@ -117,7 +145,9 @@ class WPStarter_Settings_Manager {
                 <?php if ($description) : ?>
                     <p class="wps-section__desc"><?php echo esc_html($description); ?></p>
                 <?php endif; ?>
-                <?php if ($fields) : ?>
+                <?php if ($fields && $network) : ?>
+                    <p class="wps-section__hint"><?php esc_html_e('New sites start with these settings. Apply a card to every site to set it for every site, so sites cannot change it. Changes are saved automatically.', 'wp-plugin-starter-template'); ?></p>
+                <?php elseif ($fields) : ?>
                     <p class="wps-section__hint"><?php esc_html_e('Changes are saved automatically.', 'wp-plugin-starter-template'); ?></p>
                 <?php endif; ?>
             </div>
@@ -135,13 +165,24 @@ class WPStarter_Settings_Manager {
                 </div>
             <?php endif; ?>
             <?php
-            /**
-             * Fires after a settings tab's cards, for sections that are not
-             * settings (such as example data).
-             *
-             * @param string $tab Tab slug.
-             */
-            do_action('wpstarter_settings_tab_after', $tab);
+            if ($network) {
+                /**
+                 * Fires after a settings tab's cards on the network screen
+                 * (multisite), for sections that are for the whole network.
+                 *
+                 * @param string $tab Tab slug.
+                 */
+                do_action('wpstarter_network_settings_tab_after', $tab);
+            } else {
+                /**
+                 * Fires after a settings tab's cards, for sections that are not
+                 * settings (such as example data). Not on the network screen
+                 * (wpstarter_network_settings_tab_after).
+                 *
+                 * @param string $tab Tab slug.
+                 */
+                do_action('wpstarter_settings_tab_after', $tab);
+            }
             ?>
         </div>
         <?php
@@ -154,15 +195,23 @@ class WPStarter_Settings_Manager {
      * @param array  $field Schema entry.
      */
     public static function render_card($key, array $field) {
+        $network  = is_network_admin();
         $children = self::visible_children($key);
-        // A feature may render its whole panel itself (wpstarter_setting_panel).
-        $has_panel = $children || !empty($field['panel']);
-        $id        = 'wps-' . $key;
-        $panel_id  = $id . '-panel';
-        $is_bool   = 'bool' === $field['type'];
-        $value     = WPStarter_Settings::get($key);
+        // A feature may render its whole panel itself (wpstarter_setting_panel);
+        // the network screen shows only the child settings the network can set.
+        $has_panel    = $children || (!$network && !empty($field['panel']));
+        $id           = 'wps-' . $key;
+        $panel_id     = $id . '-panel';
+        $is_bool      = 'bool' === $field['type'];
+        $value        = self::value($key);
+        // On a site, a card the network applies to every site: its switch
+        // and enforced settings are disabled (render_field()).
+        $locked       = !$network && WPStarter_Network_Settings::is_enforced($key);
+        $classes      = self::card_classes($is_bool && $value, $has_panel)
+            . ($locked ? ' is-locked' : '')
+            . ($network && WPStarter_Network_Settings::is_applied($key) ? ' is-applied' : '');
         ?>
-        <section class="<?php echo esc_attr(self::card_classes($is_bool && $value, $has_panel)); ?>" data-setting-card="<?php echo esc_attr($key); ?>">
+        <section class="<?php echo esc_attr($classes); ?>" data-setting-card="<?php echo esc_attr($key); ?>">
             <?php // Clicking the header (outside the switch) opens the options; only the switch changes the value. ?>
             <div class="wps-setting__header"<?php echo $has_panel ? ' data-wps-panel-toggle' : ''; ?>>
                 <?php if ($is_bool) : ?>
@@ -173,8 +222,9 @@ class WPStarter_Settings_Manager {
                                id="<?php echo esc_attr($id); ?>"
                                data-wps-setting="<?php echo esc_attr($key); ?>"
                                aria-labelledby="<?php echo esc_attr($id); ?>-title"
-                               aria-describedby="<?php echo esc_attr($id); ?>-desc"
-                               <?php checked((bool) $value); ?> />
+                               aria-describedby="<?php echo esc_attr($id . '-desc' . ($locked ? ' ' . $id . '-locked' : '')); ?>"
+                               <?php checked((bool) $value); ?>
+                               <?php disabled($locked); ?> />
                         <span class="wps-switch__track" aria-hidden="true"></span>
                     </span>
                 <?php endif; ?>
@@ -188,6 +238,11 @@ class WPStarter_Settings_Manager {
                         <p class="wps-setting__desc" id="<?php echo esc_attr($id); ?>-desc"><?php echo esc_html($field['description']); ?></p>
                     <?php endif; ?>
                     <?php self::render_replaces($field); ?>
+                    <?php
+                    if ($locked) {
+                        self::render_locked_note($id, isset($field['tab']) ? (string) $field['tab'] : '');
+                    }
+                    ?>
                 </div>
 
                 <?php if ($has_panel) : ?>
@@ -202,22 +257,60 @@ class WPStarter_Settings_Manager {
                 <?php endif; ?>
             </div>
 
+            <?php
+            if ($network) {
+                WPStarter_Network_Manager::render_card_network($key, $field);
+            }
+            ?>
+
             <?php if ($has_panel) : ?>
                 <div class="wps-setting__panel" id="<?php echo esc_attr($panel_id); ?>" hidden>
                     <?php
-                    /**
-                     * Fires at the top of a setting's options panel, for status
-                     * such as progress (wrap output in .wps-panel-note).
-                     *
-                     * @param string $key   Setting key.
-                     * @param array  $field Schema entry.
-                     */
-                    do_action('wpstarter_setting_panel', $key, $field);
+                    if ($network) {
+                        /**
+                         * Fires at the top of a setting's options panel on the
+                         * network screen (multisite), for notes about the
+                         * whole network (wrap output in .wps-panel-note).
+                         *
+                         * @param string $key   Setting key.
+                         * @param array  $field Schema entry.
+                         */
+                        do_action('wpstarter_network_setting_panel', $key, $field);
+                    } else {
+                        /**
+                         * Fires at the top of a setting's options panel, for status
+                         * such as progress (wrap output in .wps-panel-note). Not on
+                         * the network screen (wpstarter_network_setting_panel).
+                         *
+                         * @param string $key   Setting key.
+                         * @param array  $field Schema entry.
+                         */
+                        do_action('wpstarter_setting_panel', $key, $field);
+                    }
                     self::render_children($key, $children);
                     ?>
                 </div>
             <?php endif; ?>
         </section>
+        <?php
+    }
+
+    /**
+     * Say that the network sets a card for every site, with a link to the
+     * network screen for people who can change it there.
+     *
+     * @param string $id  The card's element ID.
+     * @param string $tab The card's tab.
+     */
+    private static function render_locked_note($id, $tab) {
+        ?>
+        <p class="wps-locked-note" id="<?php echo esc_attr($id); ?>-locked">
+            <span class="dashicons dashicons-lock" aria-hidden="true"></span>
+            <?php esc_html_e('The network administrator sets this for every site.', 'wp-plugin-starter-template'); ?>
+            <?php if (current_user_can('manage_network_options')) : ?>
+                <a href="<?php echo esc_url(WPStarter_Network_Manager::page_url('' !== $tab ? array('tab' => $tab) : array())); ?>"><?php esc_html_e('Change it for the network', 'wp-plugin-starter-template'); ?></a>
+            <?php endif; ?>
+        </p>
         <?php
     }
 
@@ -290,7 +383,7 @@ class WPStarter_Settings_Manager {
      * @return bool
      */
     private static function troubleshooting_shows($key, array $field) {
-        if (!self::is_default(WPStarter_Settings::get($key), isset($field['default']) ? $field['default'] : null)) {
+        if (!self::is_default(self::value($key), isset($field['default']) ? $field['default'] : null)) {
             return true;
         }
         if ('' === self::$query) {
@@ -324,15 +417,17 @@ class WPStarter_Settings_Manager {
 
     /**
      * A setting's child settings that are shown. Hidden options are wiring
-     * set by starter data or code, not choices.
+     * set by starter data or code, not choices; the network screen shows
+     * only those the network can set.
      *
      * @param string $key Setting key.
      * @return array<string,array>
      */
     private static function visible_children($key) {
-        return array_filter(WPStarter_Settings::children_of($key), function ($child) {
-            return empty($child['hidden']);
-        });
+        $network = is_network_admin();
+        return array_filter(WPStarter_Settings::children_of($key), function ($child, $child_key) use ($network) {
+            return empty($child['hidden']) && (!$network || WPStarter_Network_Settings::eligible((string) $child_key));
+        }, ARRAY_FILTER_USE_BOTH);
     }
 
     /**
@@ -349,7 +444,10 @@ class WPStarter_Settings_Manager {
     /**
      * Note which plugins a setting replaces. While one is active the setting
      * waits (WPStarter_Feature::replaced_active()); say so, with a
-     * deactivate link where the user can deactivate it here.
+     * deactivate link where the user can deactivate it here. The network
+     * screen notes only plugins active for the whole network, as each
+     * site's own are for that site (deactivated on the network's Plugins
+     * screen, so no link).
      *
      * @param array $field Schema entry.
      */
@@ -358,8 +456,9 @@ class WPStarter_Settings_Manager {
             return;
         }
 
-        $active = WPStarter_Feature::active_plugins();
-        $site   = self::active_plugins_by_slug();
+        $network = is_network_admin();
+        $active  = $network ? self::network_active_plugins() : WPStarter_Feature::active_plugins();
+        $site    = $network ? array() : self::active_plugins_by_slug();
         $items  = array();
         $links  = array();
         $busy   = array();
@@ -393,6 +492,22 @@ class WPStarter_Settings_Manager {
     }
 
     /**
+     * Plugins active for the whole network, keyed by directory slug.
+     *
+     * @return array<string,string> slug => plugin file
+     */
+    private static function network_active_plugins() {
+        $active = array();
+        foreach (array_keys((array) get_site_option('active_sitewide_plugins', array())) as $file) {
+            $slug = dirname((string) $file);
+            if ('.' !== $slug) {
+                $active[$slug] = (string) $file;
+            }
+        }
+        return $active;
+    }
+
+    /**
      * Plugins active on this site (not network-wide) keyed by directory slug.
      *
      * @return array<string,string> slug => plugin file
@@ -412,17 +527,20 @@ class WPStarter_Settings_Manager {
     }
 
     /**
-     * Render a child field row.
+     * Render a child field row. On a site, a setting the network sets for
+     * every site is disabled (its card says why); the card's other
+     * settings stay the site's own.
      *
      * @param string $key   Setting key.
      * @param array  $field Schema entry.
      */
     public static function render_field($key, array $field) {
-        $value   = WPStarter_Settings::get($key);
+        $value   = self::value($key);
         $id      = 'wps-' . $key;
         $desc_id = $id . '-desc';
         $attrs   = sprintf('id="%1$s" data-wps-setting="%2$s" aria-describedby="%3$s"', esc_attr($id), esc_attr($key), esc_attr($desc_id));
         $is_multi = 'multi' === $field['type'];
+        $locked   = !is_network_admin() && WPStarter_Network_Settings::is_enforced($key);
         ?>
         <div class="wps-field">
             <?php if ($is_multi) : ?>
@@ -432,6 +550,11 @@ class WPStarter_Settings_Manager {
             <?php endif; ?>
             <div class="wps-field__control">
                 <?php
+                // A disabled fieldset disables every control in it, buttons
+                // included (tokens, Select all, pictures).
+                if ($locked) {
+                    echo '<fieldset class="wps-setting__fields" disabled>';
+                }
                 $method = isset(self::CONTROLS[$field['type']]) ? self::CONTROLS[$field['type']] : 'render_text';
                 self::$method($key, $field, $value, $attrs);
                 ?>
@@ -449,6 +572,7 @@ class WPStarter_Settings_Manager {
                         <?php endif; ?>
                     </p>
                 <?php endif; ?>
+                <?php echo $locked ? '</fieldset>' : ''; ?>
             </div>
         </div>
         <?php
@@ -492,7 +616,8 @@ class WPStarter_Settings_Manager {
 
     /**
      * Render a multi control: a group of checkboxes, with quick choices
-     * when the list is long.
+     * when the list is long. Locked choices (the field's `locked` values)
+     * show ticked and cannot be unticked; the script never sends them.
      *
      * @param string $key   Setting key.
      * @param array  $field Schema entry.
@@ -503,6 +628,7 @@ class WPStarter_Settings_Manager {
         $id      = 'wps-' . $key;
         $chosen  = array_map('strval', (array) $value);
         $choices = WPStarter_Settings::options_for($field);
+        $locked  = WPStarter_Settings::locked_values($field);
         // With some plugins skipped on this request, a saved
         // choice may belong to one of them; keep it too.
         if (!empty($field['open']) || WPStarter_Feature::plugins_skipped()) {
@@ -510,6 +636,10 @@ class WPStarter_Settings_Manager {
             foreach (array_diff($chosen, array_map('strval', array_keys($choices))) as $missing) {
                 $choices[$missing] = $missing;
             }
+        }
+        // Locked choices are always chosen, so they show even when not listed.
+        foreach (array_diff($locked, array_map('strval', array_keys($choices))) as $missing) {
+            $choices[$missing] = $missing;
         }
         $long = count($choices) > 12;
         if ($long) {
@@ -529,6 +659,15 @@ class WPStarter_Settings_Manager {
             $long ? ' is-long' : ''
         );
         foreach ($choices as $option_value => $option_label) {
+            if (in_array((string) $option_value, $locked, true)) {
+                printf(
+                    '<label class="wps-checkbox is-locked"><input type="checkbox" value="%1$s" checked disabled data-wps-locked /> %2$s <span class="dashicons dashicons-lock" aria-hidden="true"></span><span class="screen-reader-text">%3$s</span></label>',
+                    esc_attr((string) $option_value),
+                    esc_html($option_label),
+                    esc_html__('(always chosen)', 'wp-plugin-starter-template')
+                );
+                continue;
+            }
             printf(
                 '<label class="wps-checkbox"><input type="checkbox" value="%1$s"%2$s /> %3$s</label>',
                 esc_attr((string) $option_value),
@@ -537,6 +676,9 @@ class WPStarter_Settings_Manager {
             );
         }
         echo '</fieldset>';
+        if ($locked) {
+            printf('<p class="wps-locked-help">%s</p>', esc_html__('Choices with a lock are always chosen.', 'wp-plugin-starter-template'));
+        }
     }
 
     /**

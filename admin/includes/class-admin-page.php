@@ -31,9 +31,12 @@ class WPStarter_Admin_Page {
                     <span class="wps-header__logo dashicons dashicons-star-filled" aria-hidden="true"></span>
                     <h1 class="wps-header__title"><?php esc_html_e('WP Plugin Starter', 'wp-plugin-starter-template'); ?></h1>
                     <span class="wps-badge"><?php echo esc_html('v' . WPSTARTER_VERSION); ?></span>
+                    <?php if (is_network_admin()) : ?>
+                        <span class="wps-badge wps-badge--network"><?php esc_html_e('Network', 'wp-plugin-starter-template'); ?></span>
+                    <?php endif; ?>
                 </div>
                 <?php
-                if (current_user_can('manage_options')) {
+                if (current_user_can(is_network_admin() ? 'manage_network_options' : 'manage_options')) {
                     self::search_form();
                 }
                 self::header_links(WPStarter_Setup::header_links());

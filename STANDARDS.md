@@ -24,9 +24,10 @@ How changes are made and checked: `DEVELOPMENT.md`. Releases: `RELEASING.md`.
 
 - Core files are listed in `scripts/core-files.txt`: the feature registry
   (`includes/class-{prefix}.php`), the base feature
-  (`includes/class-{prefix}-feature.php`), the settings store
-  (`includes/class-{prefix}-settings.php`), the admin screen and Read Me tab
-  (`admin/`), the shared GitHub updater (`includes/github-updater/`), the
+  (`includes/class-{prefix}-feature.php`), the settings store and its
+  network settings (`includes/class-{prefix}-settings.php`,
+  `includes/class-{prefix}-network-settings.php`), the admin screen, its
+  network screen and Read Me tab (`admin/`), the shared GitHub updater (`includes/github-updater/`), the
   scripts, the CI workflow, tool configuration and the shared docs (this
   file, `STYLING.md`, `DEVELOPMENT.md`, `RELEASING.md`, `CONTRIBUTING.md`,
   `CODE_OF_CONDUCT.md`, `SECURITY.md`). They hold no code for one plugin (a
@@ -307,6 +308,40 @@ it reads it. A small plugin has only `AGENTS.md`; a large one adds docs.
   and the reason, and an inline `NOSONAR` (SonarCloud) the reason, on that
   line only, such as `// NOSONAR: a cache key, not security.` for `md5()`
   used as a fingerprint or cache key.
+
+## Multisite
+
+On a network, Network Admin → Settings → {Name} saves the network's own
+settings (`{Prefix}_Network_Settings`, the `{prefix}_network` network
+option). New sites start with them; a card applied to every site overrides
+each site's own values, which come back when it stops (`README.md` →
+Multisite). Features work on a network with no code of their own when they
+follow these rules:
+
+- Read settings with `{Prefix}_Settings::get()` or `all()`, never the
+  `{prefix}_options` option: only those include what the network applies.
+  Code that runs before the plugin loads (a must-use file) reads the
+  network option's `enforced` values over the site's own, as `all()` does.
+- Do saving work (schedules, rules, files) on `{prefix}_settings_changed`
+  or `{prefix}_setting_saved`, never `update_option_{prefix}_options`: the
+  network's changes reach a site without a save there, and the site runs
+  those hooks on its next admin, cron or WP-CLI request, as nobody. Work
+  that depends on who saves checks `{Prefix}_Network_Settings::syncing()`.
+- Mark a setting `'network' => false` when it only makes sense on each site
+  (a list of the site's own posts, pages or people). Media fields and
+  `hidden` wiring stay with each site already.
+- A `{prefix}_admin_tabs` tab shows on the network screen only with
+  `'network' => true`, and must then work with `is_network_admin()` true.
+  The site-only hooks `{prefix}_setting_panel` and
+  `{prefix}_settings_tab_after` have network ones
+  (`{prefix}_network_setting_panel`, `{prefix}_network_settings_tab_after`).
+- Choices that must stay chosen on every site (such as super admins in a
+  list of people) are a multi field's `locked` values, never stored.
+- `uninstall.php` deletes the network option and each site's
+  `{prefix}_network_seen`.
+- Single sites never read the network option, so check both: a change for
+  networks must leave single sites' behaviour, markup and queries as they
+  were.
 
 ## Performance
 
