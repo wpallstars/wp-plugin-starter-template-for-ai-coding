@@ -468,6 +468,21 @@ check_php() {
 	return 0
 }
 
+prepare_checkout() {
+	local root
+	root="$(git rev-parse --show-toplevel)" || die "run this inside a checkout of the plugin"
+	cd "$root" || return 1
+	[[ -z "$(git status --porcelain)" ]] || die "commit or put away your changes first"
+	plugin_identity HEAD || die "cannot tell which plugin this is"
+	plugin_names_as FROM
+	# Refuse malformed markers before any tracked file is rewritten or moved.
+	if [[ -f README.md ]] && ! plugin_badges_valid <README.md; then
+		printf 'rename-plugin: invalid README.md badges markers; leaving README.md unchanged\n' >&2
+		return 1
+	fi
+	return 0
+}
+
 main() {
 	local slug="" name="" prefix="" const="" css="" repo=""
 	while [[ $# -gt 0 ]]; do
@@ -516,17 +531,7 @@ main() {
 	need --repo "$repo" '^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$'
 	check_identity
 
-	local root
-	root="$(git rev-parse --show-toplevel)" || die "run this inside a checkout of the plugin"
-	cd "$root"
-	[[ -z "$(git status --porcelain)" ]] || die "commit or put away your changes first"
-	plugin_identity HEAD || die "cannot tell which plugin this is"
-	plugin_names_as FROM
-	# Refuse malformed markers before any tracked file is rewritten or moved.
-	if [[ -f README.md ]] && ! plugin_badges_valid <README.md; then
-		printf 'rename-plugin: invalid README.md badges markers; leaving README.md unchanged\n' >&2
-		return 1
-	fi
+	prepare_checkout || return 1
 
 	export TO_SLUG="$slug" TO_NAME="$name" TO_PACKAGE="$prefix" TO_CONST="$const"
 	export TO_PREFIX
