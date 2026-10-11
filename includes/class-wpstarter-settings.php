@@ -87,6 +87,13 @@ class WPStarter_Settings {
     private static $lock_table = '';
 
     /**
+     * That lock's name (see lock()).
+     *
+     * @var string
+     */
+    private static $lock_name = '';
+
+    /**
      * Whether maybe_migrate() is storing migrated settings (see sanitize_all()).
      *
      * @var bool
@@ -458,26 +465,29 @@ class WPStarter_Settings {
      * taken over does not delete the new one.
      *
      * @param string $table Options table: this site's, or another site's
-     *                      (replace_site_values()).
+     *                      (replace_site_values(), under_lock()).
+     * @param string $name  Lock name: the settings' own, or another
+     *                      (under_lock()).
      * @return bool Whether this request holds the lock.
      */
-    private static function lock($table = '') {
+    private static function lock($table = '', $name = '') {
         global $wpdb;
         $table = '' === $table ? $wpdb->options : $table;
-        $name  = self::OPTION . '_lock';
+        $name  = '' === $name ? self::OPTION . '_lock' : $name;
         $value = time() . ' ' . wp_generate_uuid4();
         for ($try = 0; $try < 50; $try++) {
             // phpcs:ignore WordPress.DB.DirectDatabaseQuery -- an atomic insert is the lock; the options API cannot do it.
             if ($wpdb->query($wpdb->prepare("INSERT IGNORE INTO %i (option_name, option_value, autoload) VALUES (%s, %s, 'no')", $table, $name, $value))) {
                 self::$lock_value = $value;
                 self::$lock_table = $table;
+                self::$lock_name  = $name;
                 return true;
             }
             // phpcs:ignore WordPress.DB.DirectDatabaseQuery -- read past the options cache: the lock changes under it.
             $held  = (string) $wpdb->get_var($wpdb->prepare('SELECT option_value FROM %i WHERE option_name = %s', $table, $name));
             $since = (int) strtok($held, ' ');
             if ($since && $since < time() - self::LOCK_TIMEOUT) {
-                self::delete_lock($held, $table);
+                self::delete_lock($held, $table, $name);
                 continue;
             }
             usleep(100000);
@@ -490,22 +500,46 @@ class WPStarter_Settings {
      */
     private static function unlock() {
         if ('' !== self::$lock_value) {
-            self::delete_lock(self::$lock_value, self::$lock_table);
+            self::delete_lock(self::$lock_value, self::$lock_table, self::$lock_name);
             self::$lock_value = '';
             self::$lock_table = '';
+            self::$lock_name  = '';
         }
     }
 
     /**
-     * Delete the save lock if it still has the given value.
+     * Delete a save lock if it still has the given value.
      *
      * @param string $value Lock value.
      * @param string $table Options table holding it.
+     * @param string $name  Lock name.
      */
-    private static function delete_lock($value, $table) {
+    private static function delete_lock($value, $table, $name) {
         global $wpdb;
         // phpcs:ignore WordPress.DB.DirectDatabaseQuery -- the lock row is never cached (see lock()).
-        $wpdb->query($wpdb->prepare('DELETE FROM %i WHERE option_name = %s AND option_value = %s', $table, self::OPTION . '_lock', $value));
+        $wpdb->query($wpdb->prepare('DELETE FROM %i WHERE option_name = %s AND option_value = %s', $table, $name, $value));
+    }
+
+    /**
+     * Run a change under a save lock of its own (lock()), released however
+     * the change ends: for an option kept outside this site's settings, such
+     * as the network option (WPStarter_Network_Settings::change()).
+     *
+     * @param callable $change The change; its result is returned.
+     * @param string   $table  Options table to hold the lock in.
+     * @param string   $name   Lock name.
+     * @return mixed|null The change's result, or null when the lock could
+     *                    not be taken.
+     */
+    public static function under_lock(callable $change, $table, $name) {
+        if (!self::lock($table, $name)) {
+            return null;
+        }
+        try {
+            return $change();
+        } finally {
+            self::unlock();
+        }
     }
 
     /**

@@ -344,7 +344,7 @@ these rules:
 - Choices that must stay chosen on every site (such as super admins in a
   list of people) are a multi field's `locked` values, never stored.
 - `uninstall.php` deletes the network option and each site's
-  `{prefix}_network_seen`.
+  `{prefix}_network_seen` and `{prefix}_network_lock` (its save lock).
 - Single sites never read the network option, so check both: a change for
   networks must leave single sites' behaviour, markup and queries as they
   were.

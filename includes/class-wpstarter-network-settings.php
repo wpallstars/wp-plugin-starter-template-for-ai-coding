@@ -42,6 +42,12 @@ class WPStarter_Network_Settings {
     const OPTION = 'wpstarter_network';
 
     /**
+     * The network option's save lock: a row in the main site's options
+     * table (change()).
+     */
+    const LOCK = 'wpstarter_network_lock';
+
+    /**
      * The network option, read once per request (stored()).
      *
      * @var array{values:array,applied:string[],enforced:array<array>,version:int}|null
@@ -215,12 +221,13 @@ class WPStarter_Network_Settings {
         if (!self::eligible($key)) {
             return new WP_Error('wpstarter_unknown_setting', __('This setting is set on each site.', 'wp-plugin-starter-template'));
         }
-        $schema  = WPStarter_Settings::schema();
-        $clean   = WPStarter_Settings::sanitize_value($value, $schema[$key]);
-        $network = self::stored();
-
-        $network['values'][$key] = $clean;
-        return self::save($network) ? $clean : new WP_Error('wpstarter_not_saved', __('The setting could not be saved. Please try again.', 'wp-plugin-starter-template'));
+        $schema = WPStarter_Settings::schema();
+        $clean  = WPStarter_Settings::sanitize_value($value, $schema[$key]);
+        $saved  = self::change(function (array $network) use ($key, $clean) {
+            $network['values'][$key] = $clean;
+            return $network;
+        });
+        return $saved ? $clean : new WP_Error('wpstarter_not_saved', __('The setting could not be saved. Please try again.', 'wp-plugin-starter-template'));
     }
 
     /**
@@ -235,12 +242,38 @@ class WPStarter_Network_Settings {
         if ($apply && !self::card_keys($key)) {
             return new WP_Error('wpstarter_unknown_setting', __('This setting is set on each site.', 'wp-plugin-starter-template'));
         }
-        $network            = self::stored();
-        $network['applied'] = array_values(array_diff($network['applied'], array((string) $key)));
-        if ($apply) {
-            $network['applied'][] = (string) $key;
-        }
-        return self::save($network) ? true : new WP_Error('wpstarter_not_saved', __('The setting could not be saved. Please try again.', 'wp-plugin-starter-template'));
+        $saved = self::change(function (array $network) use ($key, $apply) {
+            $network['applied'] = array_values(array_diff($network['applied'], array((string) $key)));
+            if ($apply) {
+                $network['applied'][] = (string) $key;
+            }
+            return $network;
+        });
+        return $saved ? true : new WP_Error('wpstarter_not_saved', __('The setting could not be saved. Please try again.', 'wp-plugin-starter-template'));
+    }
+
+    /**
+     * Change the network option and store it, under its save lock and from
+     * what is stored now, not the copy this request read when it began: two
+     * saves at once (two tabs, two network administrators) would otherwise
+     * each write back a copy without the other's change. The lock is a row
+     * in the main site's options table (WPStarter_Settings::under_lock()),
+     * as the network option's own table has no unique key to lock with.
+     *
+     * @param callable $change Gets the network option (stored()) and returns
+     *                         it changed.
+     * @return bool Whether it is stored.
+     */
+    private static function change(callable $change) {
+        global $wpdb;
+        $table = $wpdb->get_blog_prefix(get_main_site_id()) . 'options';
+        return true === WPStarter_Settings::under_lock(function () use ($change) {
+            $network_id = get_current_network_id();
+            wp_cache_delete($network_id . ':' . self::OPTION, 'site-options');
+            wp_cache_delete($network_id . ':notoptions', 'site-options');
+            self::forget();
+            return self::save($change(self::stored()));
+        }, $table, self::LOCK);
     }
 
     /**
