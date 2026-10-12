@@ -144,6 +144,10 @@ $_SERVER['PHP_SELF']        = '/index.php';
 $_SERVER['REMOTE_ADDR']     = '127.0.0.1';
 $_SERVER['HTTP_USER_AGENT'] = 'scripts/preview-browser.sh';
 
+// Page caches skip logged-in cookie names. This is not WordPress's hashed
+// LOGGED_IN_COOKIE, so it bypasses the page cache without signing anyone in.
+$_COOKIE['wordpress_logged_in_preview_browser'] = '1';
+
 // Keep this run's own PHP messages out of the site's debug log, so a check
 // finds only what its pages wrote: WordPress leaves error logging and
 // reporting as php was started (fatal errors to stderr), and its fatal
@@ -161,10 +165,22 @@ if ( 'log-path' === $command ) {
 	define( 'SHORTINIT', true );
 }
 // Whatever plugins print while loading is not this script's output.
+$preview_loaded = false;
+// A page cache can exit inside wp-load.php, never reaching the check below.
+register_shutdown_function( function () use ( &$preview_loaded ) {
+	if ( ! $preview_loaded ) {
+		preview_fail( 'WordPress exited before loading; check the page cache' );
+	}
+} );
 ob_start();
 require $site . '/wp-load.php';
+$preview_loaded = true;
 while ( ob_get_level() > 0 ) {
 	ob_end_clean();
+}
+// log-path deliberately uses SHORTINIT and does not load plugins or wp_loaded.
+if ( 'log-path' !== $command && ! did_action( 'wp_loaded' ) ) {
+	preview_fail( 'WordPress did not finish loading (wp_loaded did not run)' );
 }
 
 // The user to sign in: an ID or login, or the first administrator (on a
@@ -225,6 +241,9 @@ switch ( $command ) {
 
 	case 'login':
 		$user       = preview_user( (string) array_shift( $args ) );
+		if ( ! $user ) {
+			preview_fail( 'no user to sign in; pass --user' );
+		}
 		$expiration = time() + HOUR_IN_SECONDS;
 		$admin      = admin_url();
 		// As wp_set_auth_cookie(): the secure auth cookie when the admin is
@@ -347,6 +366,10 @@ cmd_login() {
 	who="$(out_field "$out" user)"
 	admin="$(out_field "$out" admin)"
 	expires="$(out_field "$out" expires)"
+	if [[ -z "$who" || -z "$admin" || -z "$expires" || ! -s "$file" ]]; then
+		rm -f "$file"
+		die "WordPress returned no complete sign-in; check the page cache"
+	fi
 	printf 'Signed in as %s until %s.\n' "$who" "$expires"
 	printf 'State file: %s\n' "$file"
 	printf 'Admin: %s\n' "$admin"
