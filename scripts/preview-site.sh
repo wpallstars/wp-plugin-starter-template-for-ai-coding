@@ -125,24 +125,13 @@ origin_slug() {
 }
 
 # Sets SITE: the argument, then the environment, then the one remembered for
-# this clone. A new argument is remembered unless this is a dry run.
+# this clone (plugin_preview_site in scripts/lib/plugin.sh). A new argument
+# is remembered unless this is a dry run.
 resolve_site() {
 	local site_arg="$1"
-	local saved="$2"
-	local remember="$3"
-	SITE="$(plugin_env PREVIEW_SITE)"
-	[[ -n "$site_arg" ]] && SITE="$site_arg"
-	if [[ -z "$SITE" ]] && [[ -f "$saved" ]]; then
-		SITE="$(cat "$saved")"
-	fi
-	[[ -n "$SITE" ]] || die "which site? Run: scripts/preview-site.sh \"<WordPress folder>\" (remembered after that)"
-	SITE="${SITE%/}"
-	if [[ ! -f "$SITE/wp-load.php" ]] || [[ ! -d "$SITE/wp-content/plugins" ]]; then
-		die "not a WordPress folder: $SITE"
-	fi
-	if [[ -n "$site_arg" ]] && [[ "$remember" -eq 1 ]]; then
-		printf '%s\n' "$SITE" >"$saved"
-	fi
+	local remember="$2"
+	plugin_preview_site "$site_arg" "$remember" || die "$PLUGIN_SITE_ERROR"
+	SITE="$PLUGIN_SITE"
 	return 0
 }
 
@@ -357,7 +346,7 @@ main() {
 	plugin_identity HEAD || die "cannot tell which plugin this is"
 	STAMP_NAME="$PLUGIN_SLUG-synced-from.txt"
 	run_latest "$dry_run" "$site_arg" "$root"
-	resolve_site "$site_arg" "$common/$PLUGIN_SLUG-preview-site" "$((1 - dry_run))"
+	resolve_site "$site_arg" "$((1 - dry_run))"
 
 	trap cleanup EXIT
 	TMP_DIR="$(mktemp -d "${TMPDIR:-/tmp}/$PLUGIN_SLUG-preview.XXXXXX")"

@@ -196,6 +196,46 @@ plugin_env() {
 	return 0
 }
 
+# The shared preview site (DEVELOPMENT.md → Preview site), for the scripts
+# that use it. Sets PLUGIN_SITE to its WordPress folder (the one with
+# wp-load.php): SITE_ARG, then <PREFIX>_PREVIEW_SITE, then the folder
+# remembered for every worktree of this clone, in
+# $(git rev-parse --git-common-dir)/<slug>-preview-site. With REMEMBER 1, a
+# SITE_ARG is remembered there. On failure, returns 1 with the reason in
+# PLUGIN_SITE_ERROR. Call plugin_identity first.
+PLUGIN_SITE=""
+PLUGIN_SITE_ERROR=""
+plugin_preview_site() {
+	local site_arg="$1"
+	local remember="${2:-0}"
+	local common saved site
+	PLUGIN_SITE=""
+	common="$(git rev-parse --path-format=absolute --git-common-dir)" || {
+		PLUGIN_SITE_ERROR="run this inside a checkout of the plugin"
+		return 1
+	}
+	saved="$common/$PLUGIN_SLUG-preview-site"
+	site="$(plugin_env PREVIEW_SITE)"
+	if [[ -n "$site_arg" ]]; then site="$site_arg"; fi
+	if [[ -z "$site" ]] && [[ -f "$saved" ]]; then
+		site="$(cat "$saved")"
+	fi
+	if [[ -z "$site" ]]; then
+		PLUGIN_SITE_ERROR="which site? Run: scripts/preview-site.sh \"<WordPress folder>\" (remembered after that)"
+		return 1
+	fi
+	site="${site%/}"
+	if [[ ! -f "$site/wp-load.php" ]] || [[ ! -d "$site/wp-content/plugins" ]]; then
+		PLUGIN_SITE_ERROR="not a WordPress folder: $site"
+		return 1
+	fi
+	if [[ -n "$site_arg" ]] && [[ "$remember" -eq 1 ]]; then
+		printf '%s\n' "$site" >"$saved"
+	fi
+	PLUGIN_SITE="$site"
+	return 0
+}
+
 # README.md's badges block (STANDARDS.md → Structure): the lines between
 # these markers, the first of which says who writes them.
 PLUGIN_BADGES_START="<!-- aidevops:badges:start -->"
