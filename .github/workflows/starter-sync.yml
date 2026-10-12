@@ -61,6 +61,9 @@ jobs:
         with:
           repository: ${{ steps.starter.outputs.repo }}
           path: starter
+          # Full history: sync-core.sh tells files that are behind from
+          # newer ones and from ones changed here by the starter's history.
+          fetch-depth: 0
           persist-credentials: false
 
       - name: Compare core files and open, update or close the issue
@@ -94,10 +97,17 @@ jobs:
 
           gh label create "$label" --color FBCA04 --description "Core files differ from the starter" --force
           name="${STARTER_REPO#*/}"
+          # Each file line ("  differs  <path>") is followed by its class
+          # ("    behind: what to do"); keep the words before the colon.
           files=""
-          while read -r kind path; do
-            files+="- \`$path\` ($kind)"$'\n'
-          done < <(printf '%s\n' "$report" | sed -nE 's/^  (differs|missing)  (.*)$/\1 \2/p')
+          while IFS=$'\t' read -r kind path class; do
+            files+="- \`$path\` ($kind${class:+, $class})"$'\n'
+          done < <(printf '%s\n' "$report" | awk '
+            function flush() { if (path != "") print kind "\t" path "\t" (class == kind ? "" : class); path = "" }
+            /^  (differs|missing)  / { flush(); kind = $1; path = substr($0, 12); class = ""; next }
+            /^  [a-z]/ { flush(); next }
+            /^    [a-z]/ && path != "" && class == "" { class = substr($0, 5); sub(/:.*/, "", class) }
+            END { flush() }')
           summary="$(printf '%s\n' "$report" | tail -n 1)"
           body="$RUNNER_TEMP/starter-sync.md"
           cat >"$body" <<EOF
@@ -111,7 +121,7 @@ jobs:
 
           1. Next to this repository: \`git clone https://github.com/$STARTER_REPO.git\` (or \`git -C ../$name pull\`).
           2. Here, on a branch: \`scripts/sync-core.sh --from ../$name\`, then review \`git diff\`.
-          3. A change this plugin made to a core file, which the starter lacks, goes into the starter first; sync after it is merged there. Never keep a plugin-only change in a core file: move it to this plugin's own files.
+          3. Each file's class says what a sync does with it (DEVELOPMENT.md → Starter sync): **behind** and **missing** files are updated or added. A file **changed here** holds a change this plugin made that no starter version has: it goes into the starter first (a pull request, or an issue there with this plugin's case); sync after it is merged there, with \`--discard-local\`. Never keep a plugin-only change in a core file: move it to this plugin's own files or its own blocks. A **newer** file has a starter version the starter's default branch does not contain: sync from a starter ref that does. While a file is changed here or newer, a sync writes nothing.
           4. Read the starter's \`changelog.txt\` since this plugin last synced, for changes that need work in this plugin's own files (its Setup class, \`phpstan-plugin.neon\`, \`.distignore\` entries, README or readme.txt sections).
           5. \`scripts/lint.sh\` and \`scripts/smoke-test.sh\` pass; add a changelog line; open a pull request.
 
