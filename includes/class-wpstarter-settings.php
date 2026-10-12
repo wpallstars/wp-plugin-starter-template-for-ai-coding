@@ -404,7 +404,7 @@ class WPStarter_Settings {
 
     /**
      * Store sanitized values as a site's own settings, for the network
-     * (WPStarter_Network_Sites::copy()), under that site's save lock.
+     * (WPStarter_Network_Differences::copy()), under that site's save lock.
      * Read and written straight in its options table: switching to each
      * site would load all of its autoloaded options, and run this
      * request's hooks, which belong to another site; the site runs its own
@@ -657,6 +657,17 @@ class WPStarter_Settings {
         return array_filter(self::schema(), function ($field) use ($parent) {
             return isset($field['parent']) && $field['parent'] === $parent;
         });
+    }
+
+    /**
+     * The card a setting is on: its own key, or its parent's.
+     *
+     * @param string $key Setting key.
+     * @return string
+     */
+    public static function card_of($key) {
+        $schema = self::schema();
+        return !empty($schema[$key]['parent']) ? (string) $schema[$key]['parent'] : (string) $key;
     }
 
     /**

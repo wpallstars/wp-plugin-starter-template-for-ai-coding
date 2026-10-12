@@ -7,9 +7,10 @@
  * site overrides each site's own values with the network's, and sites
  * cannot change them; when it stops applying, each site has its own values
  * again, as they were never overwritten. How the network values reach
- * each site (new sites start with them, Make every site the same copies
- * them once, and each site runs its saving work for the network's
- * changes) is in WPStarter_Network_Sites.
+ * each site (new sites start with them, and each site runs its saving
+ * work for the network's changes) is in WPStarter_Network_Sites; the
+ * sites whose own values differ, and Make every site the same, which
+ * copies them once, are in WPStarter_Network_Differences.
  *
  * Settings that only make sense on each site are never set for the
  * network: Media Library pictures, hidden wiring, and fields with
@@ -86,7 +87,7 @@ class WPStarter_Network_Settings {
     private static function forget() {
         self::$stored   = null;
         self::$enforced = null;
-        WPStarter_Network_Sites::forget();
+        WPStarter_Network_Differences::forget();
     }
 
     /**
@@ -152,7 +153,7 @@ class WPStarter_Network_Settings {
             return false;
         }
         $field = $schema[$key];
-        if ((isset($field['network']) && false === $field['network']) || !empty($field['hidden']) || (isset($field['type']) && 'media' === $field['type'])) {
+        if (false === ($field['network'] ?? true) || !empty($field['hidden']) || 'media' === ($field['type'] ?? '')) {
             return false;
         }
         if (!empty($field['parent'])) {
@@ -205,8 +206,7 @@ class WPStarter_Network_Settings {
         if (array_key_exists($key, $values)) {
             return $values[$key];
         }
-        $defaults = WPStarter_Settings::defaults();
-        return array_key_exists($key, $defaults) ? $defaults[$key] : null;
+        return WPStarter_Settings::defaults()[$key] ?? null;
     }
 
     /**
