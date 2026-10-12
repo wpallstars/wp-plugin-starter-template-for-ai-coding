@@ -148,6 +148,10 @@ Deleting the plugin removes its settings (on multisite, every site's and the net
 
 ## Changelog
 
+### Unreleased
+
+- Developers: CI's ShellCheck step checks the runner's architecture only when it has to install ShellCheck, so a self-hosted runner that already has the pinned version passes on any architecture.
+
 ### 1.0.36
 
 - Fix: on multisite, **Make every site the same** no longer loses a site's settings from before when that site applies the network's changes at the same moment, so the site still does the saving work for the copied settings on its next admin, cron or WP-CLI request (GH#469).
