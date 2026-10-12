@@ -1225,27 +1225,7 @@ final class WPAllStars_GitHub_Updater {
      * @return array<string,string> Tab => HTML.
      */
     private static function sections($file, $installed, array $data, array $readme, $release) {
-        $sections = array();
-        $other    = '';
-        foreach ($readme['sections'] as $name => $section) {
-            $tab = array_key_exists($name, self::SECTIONS) ? self::SECTIONS[$name] : 'other_notes';
-            if ('changelog' === $tab) {
-                // Filled in below; this keeps the readme's order.
-                $sections['changelog'] = '';
-            }
-            if ('' === $tab || 'changelog' === $tab) {
-                continue;
-            }
-            $html = 'screenshots' === $tab ? self::screenshots_html($file, $section['text']) : self::text_html($section['text']);
-            if ('' === $html) {
-                continue;
-            }
-            if ('other_notes' === $tab) {
-                $other .= '<h3>' . esc_html($section['title']) . '</h3>' . $html;
-            } else {
-                $sections[$tab] = (isset($sections[$tab]) ? $sections[$tab] : '') . $html;
-            }
-        }
+        $sections = self::readme_tabs($file, $readme);
         if (!isset($sections['description'])) {
             $description = isset($data['Description']) ? wp_strip_all_tags($data['Description']) : '';
             $sections    = array('description' => wpautop(esc_html($description))) + $sections;
@@ -1257,14 +1237,66 @@ final class WPAllStars_GitHub_Updater {
         } else {
             unset($sections['changelog']);
         }
-        if ('' !== $other) {
-            $sections['other_notes'] = $other;
-        }
 
         // Links leave the View details window instead of loading inside it.
         return array_map(function ($html) {
             return links_add_target($html, '_blank');
         }, $sections);
+    }
+
+    /**
+     * The readme's sections as View details tabs, in the readme's order,
+     * then Other Notes: the sections with no tab of their own, each under
+     * its title. A section with nothing to show gets no tab. Changelog is
+     * left empty for sections() to fill in or drop: in the readme's place,
+     * or before Other Notes when the readme has none.
+     *
+     * @param string $file   Plugin file.
+     * @param array  $readme readme().
+     * @return array<string,string> Tab => HTML.
+     */
+    private static function readme_tabs($file, array $readme) {
+        $tabs  = array();
+        $other = '';
+        foreach ($readme['sections'] as $name => $section) {
+            $tab = array_key_exists($name, self::SECTIONS) ? self::SECTIONS[$name] : 'other_notes';
+            if ('changelog' === $tab) {
+                $tabs['changelog'] = '';
+                continue;
+            }
+            $html = self::section_html($file, $tab, $section);
+            if ('other_notes' === $tab) {
+                $other .= $html;
+            } elseif ('' !== $html) {
+                $tabs[$tab] = (isset($tabs[$tab]) ? $tabs[$tab] : '') . $html;
+            }
+        }
+        $tabs += array('changelog' => '');
+        if ('' !== $other) {
+            $tabs['other_notes'] = $other;
+        }
+        return $tabs;
+    }
+
+    /**
+     * One readme section's HTML for its tab: the Screenshots tab's
+     * pictures, or the section's text, under its title in Other Notes.
+     * '' for a section with no tab (Upgrade Notice) or nothing to show.
+     *
+     * @param string                          $file    Plugin file.
+     * @param string                          $tab     Its tab (a SECTIONS value, or other_notes).
+     * @param array{title:string,text:string} $section A readme() section.
+     * @return string HTML.
+     */
+    private static function section_html($file, $tab, array $section) {
+        if ('' === $tab) {
+            return '';
+        }
+        $html = 'screenshots' === $tab ? self::screenshots_html($file, $section['text']) : self::text_html($section['text']);
+        if ('other_notes' !== $tab || '' === $html) {
+            return $html;
+        }
+        return '<h3>' . esc_html($section['title']) . '</h3>' . $html;
     }
 
     /**
@@ -1364,22 +1396,9 @@ final class WPAllStars_GitHub_Updater {
         $list = '';
         $para = array();
         foreach (explode("\n", str_replace(array("\r\n", "\r"), "\n", (string) $text)) as $line) {
-            $trim = trim($line);
-            $kind = 'p';
-            $body = $trim;
-            if ('' === $trim) {
-                $kind = '';
-            } elseif (preg_match('/^(?:=+[ \t]*(.+?)[ \t]*=+|#{1,6}[ \t]+(.+))$/', $trim, $match)) {
-                $kind = 'h';
-                // A "# Heading" fills group 2; "= Heading =" only group 1.
-                $body = isset($match[2]) ? $match[2] : $match[1];
-            } elseif (preg_match('/^(?:([-*+])|\d+\.)[ \t]+(.+)$/', $trim, $match)) {
-                $kind = '' === $match[1] ? 'ol' : 'ul';
-                $body = $match[2];
-            }
-
-            if ('p' !== $kind && $para) {
-                $html .= '<p>' . self::inline_html(implode(' ', $para)) . '</p>';
+            list($kind, $body) = self::text_line(trim($line));
+            if ('p' !== $kind) {
+                $html .= self::paragraph_html($para);
                 $para  = array();
             }
             if ('' !== $list && $kind !== $list) {
@@ -1398,10 +1417,40 @@ final class WPAllStars_GitHub_Updater {
                 $html .= '<li>' . self::inline_html($body) . '</li>';
             }
         }
-        if ($para) {
-            $html .= '<p>' . self::inline_html(implode(' ', $para)) . '</p>';
-        }
+        $html .= self::paragraph_html($para);
         return $html . ('' !== $list ? '</' . $list . '>' : '');
+    }
+
+    /**
+     * One line of readme text or release notes: its kind ('' blank, 'p'
+     * paragraph text, 'h' heading, 'ul' or 'ol' list item) and its text
+     * without the line's markup.
+     *
+     * @param string $trim Line, trimmed.
+     * @return array{0:string,1:string} Kind, text.
+     */
+    private static function text_line($trim) {
+        if ('' === $trim) {
+            return array('', '');
+        }
+        if (preg_match('/^(?:=+[ \t]*(.+?)[ \t]*=+|#{1,6}[ \t]+(.+))$/', $trim, $match)) {
+            // A "# Heading" fills group 2; "= Heading =" only group 1.
+            return array('h', isset($match[2]) ? $match[2] : $match[1]);
+        }
+        if (preg_match('/^(?:([-*+])|\d+\.)[ \t]+(.+)$/', $trim, $match)) {
+            return array('' === $match[1] ? 'ol' : 'ul', $match[2]);
+        }
+        return array('p', $trim);
+    }
+
+    /**
+     * A paragraph's lines as one HTML paragraph; '' for none.
+     *
+     * @param string[] $lines The paragraph's lines, trimmed.
+     * @return string HTML.
+     */
+    private static function paragraph_html(array $lines) {
+        return $lines ? '<p>' . self::inline_html(implode(' ', $lines)) . '</p>' : '';
     }
 
     /**
