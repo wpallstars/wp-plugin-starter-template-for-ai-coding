@@ -19,17 +19,23 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 # SPDX-FileCopyrightText: 2026 Marcus Quinn
 # Additional terms (GPL-3.0 section 7(b)): ATTRIBUTION.txt
+# Provenance: wpas-e4502af0f07e8a92. Copies, even of part, keep these lines.
 
 set -euo pipefail
 
 readonly UPDATER_HEADERS='GitHub Plugin URI|Primary Branch|Release Asset|Update URI'
 # Development files that must never be in a release zip (paths inside the slug folder).
-readonly DEV_FILES='^[^/]+/(\.git|\.agents|\.wordpress-org|\.distignore|\.distignore-wporg|\.wporg-links|\.gitattributes|\.gitignore|\.woodpecker\.yml|\.github|\.editorconfig|\.gitleaks\.toml|\.codacy\.yml|\.eslintrc\.json|phpmd\.xml(\.dist)?|sonar-project\.properties|\.aidevops\.json|\.task-counter|composer\.(json|lock)|phpcs\.xml(\.dist)?|phpstan(-baseline|-plugin)?\.neon(\.dist)?|vendor|AGENTS\.md|CODE_OF_CONDUCT\.md|CONTRIBUTING\.md|DEVELOPMENT\.md|LAUNCH\.md|SECURITY\.md|STANDARDS\.md|STYLING\.md|RELEASING\.md|ROADMAP\.md|STABILITY\.md|TESTING\.md|docs|scripts|dist|node_modules|reference-plugins|project-documents|packages|package(-lock)?\.json|pnpm-(lock|workspace)\.yaml|tsconfig(\.[A-Za-z0-9_-]+)?\.json|webpack\.config\.js|eslint\.config\.m?js|\.npmrc|\.nvmrc|\.browserslistrc)(/|$)|(^|/)(\.DS_Store|__MACOSX|Thumbs\.db)(/|$)|\.(bak|log|orig|swp)$'
+readonly DEV_FILES='^[^/]+/(\.git|\.agents|\.wordpress-org|\.distignore|\.distignore-wporg|\.wporg-links|\.gitattributes|\.gitignore|\.woodpecker\.yml|\.github|\.editorconfig|\.gitleaks\.toml|\.codacy\.yml|\.eslintrc\.json|phpmd\.xml(\.dist)?|sonar-project\.properties|\.aidevops\.json|\.task-counter|composer\.(json|lock)|phpcs\.xml(\.dist)?|phpstan(-baseline|-plugin)?\.neon(\.dist)?|vendor|AGENTS\.md|CLAUDE\.md|CODE_OF_CONDUCT\.md|CONTRIBUTING\.md|DEVELOPMENT\.md|LAUNCH\.md|SECURITY\.md|STANDARDS\.md|STYLING\.md|RELEASING\.md|ROADMAP\.md|STABILITY\.md|TESTING\.md|docs|scripts|dist|node_modules|reference-plugins|project-documents|packages|package(-lock)?\.json|pnpm-(lock|workspace)\.yaml|tsconfig(\.[A-Za-z0-9_-]+)?\.json|webpack\.config\.js|eslint\.config\.m?js|\.npmrc|\.nvmrc|\.browserslistrc)(/|$)|(^|/)(\.DS_Store|__MACOSX|Thumbs\.db)(/|$)|\.(bak|log|orig|swp)$'
 readonly README_MAX_BYTES=10240
 readonly SHORT_DESC_MAX=150
 readonly MAX_TAGS=5
 # AGENTS.md is read in every agent session; longer guidance goes in docs/.
 readonly AGENTS_MD_MAX_LINES=150
+# The guidance files AGENTS.md makes compulsory reading before any change.
+readonly AGENTS_MD_READS="STANDARDS.md STYLING.md DEVELOPMENT.md RELEASING.md LAUNCH.md ATTRIBUTION.txt"
+# The starter's Provenance ID (ATTRIBUTION.txt → Provenance); each plugin
+# made from it has its own in its main file (scripts/provenance.sh).
+readonly STARTER_PROVENANCE="wpas-e4502af0f07e8a92"
 # The starter's repository, split so plugin_map leaves it unchanged, and the
 # line only the starter's AGENTS.md has (scripts/rename-plugin.sh writes a
 # plugin its own).
@@ -795,11 +801,11 @@ check_core_files() {
 }
 
 # AGENTS.md stays a short map (STANDARDS.md → Agent docs): under
-# AGENTS_MD_MAX_LINES lines, it sends agents to STANDARDS.md, a plugin's is
-# its own (not the starter's), and it names every docs/*.md (top level) and
-# only ones that exist, so agents find each task doc. Warnings: only a person
-# can judge
-# what moves.
+# AGENTS_MD_MAX_LINES lines, it names each shared guidance file agents must
+# read (AGENTS_MD_READS), CLAUDE.md points to it, a plugin's is its own (not
+# the starter's), and it names every docs/*.md (top level) and only ones
+# that exist, so agents find each task doc. Warnings: only a person can
+# judge what moves.
 check_agent_docs() {
 	local sha="$1"
 	section "Agent docs"
@@ -814,15 +820,29 @@ check_agent_docs() {
 		warn "AGENTS.md is $lines lines (most $AGENTS_MD_MAX_LINES): move sections only one kind of task needs to docs/, with one line saying when to read each"
 		problems=1
 	fi
-	if ! grep -qF 'STANDARDS.md' <<<"$agents"; then
-		warn "AGENTS.md does not send agents to STANDARDS.md, so they miss the rules every plugin shares"
+	# The files AGENTS.md makes compulsory reading (STANDARDS.md → Agent
+	# docs), each one the plugin has.
+	local doc claude missing=()
+	for doc in $AGENTS_MD_READS; do
+		git cat-file -e "$sha:$doc" 2>/dev/null || continue
+		grep -qF "$doc" <<<"$agents" || missing+=("$doc")
+	done
+	if [[ "${#missing[@]}" -gt 0 ]]; then
+		warn "AGENTS.md does not tell agents to read ${missing[*]} before any change (STANDARDS.md → Agent docs)"
+		problems=1
+	fi
+	claude=""
+	if git cat-file -e "$sha:CLAUDE.md" 2>/dev/null; then
+		claude="$(git show "$sha:CLAUDE.md")"
+	fi
+	if ! grep -qF 'AGENTS.md' <<<"$claude"; then
+		warn "no CLAUDE.md pointing to AGENTS.md: Claude Code reads CLAUDE.md, not AGENTS.md (scripts/sync-core.sh copies the starter's)"
 		problems=1
 	fi
 	if [[ "$PLUGIN_REPO" != "$STARTER_REPO" ]] && grep -qF "$STARTER_AGENTS_LINE" <<<"$agents"; then
 		warn "AGENTS.md still describes the starter, not this plugin: write the plugin's own (scripts/rename-plugin.sh → set_agents shows the shape)"
 		problems=1
 	fi
-	local doc
 	while IFS= read -r doc; do
 		[[ -n "$doc" ]] || continue
 		if ! grep -qF "$doc" <<<"$agents"; then
@@ -958,13 +978,29 @@ check_licence() {
 	# (SPDX-License-Identifier), the copyright (SPDX-FileCopyrightText; the
 	# main file's is in its "Copyright (C)" lines) and the pointer to
 	# ATTRIBUTION.txt. Each is checked on its own.
-	local head no_licence=() no_copyright=() no_pointer=()
+	local head no_licence=() no_copyright=() no_pointer=() no_provenance=()
 	while IFS= read -r file; do
 		head="$(git show "$sha:$file" | sed -n 1,60p)"
 		grep -qF 'SPDX-License-Identifier:' <<<"$head" || no_licence+=("$file")
 		grep -Eq 'SPDX-FileCopyrightText:|Copyright \(C\) ' <<<"$head" || no_copyright+=("$file")
 		grep -qF 'ATTRIBUTION.txt' <<<"$head" || no_pointer+=("$file")
+		grep -Eq 'Provenance:[[:space:]]*wpas-[0-9a-f]{16}' <<<"$head" || no_provenance+=("$file")
 	done < <(git ls-tree -r --name-only "$sha" | grep -E '\.(php|js|css|sh)$' | grep -Ev '^(vendor|node_modules|dist)/|\.min\.(js|css)$')
+	if [[ "${#no_provenance[@]}" -gt 0 ]]; then
+		warn "${#no_provenance[@]} source file(s) without a Provenance line at the top (scripts/provenance.sh stamp adds it): ${no_provenance[*]}"
+		problems=1
+	fi
+	# A plugin's own ID is in its main file; a plugin made from the starter
+	# has one of its own, not the starter's.
+	local main_id
+	main_id="$(git show "$sha:$MAIN_FILE" | sed -n 1,60p | sed -nE 's/.*Provenance:[[:space:]]*(wpas-[0-9a-f]{16}).*/\1/p')"
+	if [[ -z "$main_id" ]]; then
+		warn "$MAIN_FILE has no Provenance ID (scripts/provenance.sh stamp gives the plugin its own)"
+		problems=1
+	elif [[ "$PLUGIN_REPO" != "$STARTER_REPO" ]] && [[ "$main_id" = "$STARTER_PROVENANCE" ]]; then
+		warn "$MAIN_FILE has the starter's Provenance ID, not this plugin's own (scripts/provenance.sh stamp)"
+		problems=1
+	fi
 	if [[ "${#no_licence[@]}" -gt 0 ]]; then
 		warn "${#no_licence[@]} source file(s) without SPDX-License-Identifier at the top: ${no_licence[*]}"
 		problems=1
@@ -995,7 +1031,7 @@ check_licence() {
 			problems=1
 		fi
 	done
-	[[ "$problems" -eq 1 ]] || ok "LICENSE, ATTRIBUTION.txt, SPDX lines, the GPL notice, and both copyright lines (the plugin's and the starter's) are present"
+	[[ "$problems" -eq 1 ]] || ok "LICENSE, ATTRIBUTION.txt, SPDX and Provenance lines, the GPL notice, and both copyright lines (the plugin's and the starter's) are present"
 	return 0
 }
 
