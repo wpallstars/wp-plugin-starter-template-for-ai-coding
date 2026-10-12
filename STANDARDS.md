@@ -198,9 +198,9 @@ How changes are made and checked: `DEVELOPMENT.md`. Releases: `RELEASING.md`.
   - the `License:` and `License URI:` headers in the main file and
     `readme.txt` (the same licence in both), and the GPL notice in the main
     file's comment;
-  - the SPDX lines at the top of each source file (licence, copyright, and
-    the pointer to `ATTRIBUTION.txt`; a plugin's own new files carry its own
-    copyright);
+  - the SPDX lines at the top of each source file (licence, copyright, the
+    pointer to `ATTRIBUTION.txt` and the Provenance line; a plugin's own new
+    files carry its own copyright and its own Provenance ID);
   - the line starting "Made from " in `README.md` and `readme.txt`, and the
     starter's copyright line, "Copyright (C) 2026 Marcus Quinn", in the main
     file and `README.md` → License. Add your own copyright line above it;
@@ -212,7 +212,19 @@ How changes are made and checked: `DEVELOPMENT.md`. Releases: `RELEASING.md`.
   `scripts/preflight-release.sh` errors when `LICENSE` or `ATTRIBUTION.txt`
   is missing from a zip or the two licences differ, and warns when the
   licence is not GPL-3.0-or-later, `ATTRIBUTION.txt` is missing, or a
-  copyright line or a source file's SPDX copyright line is missing.
+  copyright line, a source file's SPDX copyright line or its Provenance
+  line is missing.
+- Provenance IDs (`ATTRIBUTION.txt` → Provenance): each plugin has its own
+  (`wpas-` and 16 hex digits) on the `Provenance:` line of its main file;
+  the starter's is `wpas-e4502af0f07e8a92`. Core files carry the starter's,
+  and the plugin's own files carry its own. `scripts/rename-plugin.sh` gives
+  a new plugin its ID; `scripts/provenance.sh stamp` gives one to a plugin
+  without, and adds the line to new files (run it after adding a source
+  file); `scripts/provenance.sh search` lists public repositories outside
+  the owner's that carry an ID, and whether each keeps `ATTRIBUTION.txt`.
+  The IDs are plain text: no plugin sends anything anywhere. The main file's
+  GPL notice also tells anyone copying the plugin, or an AI assistant doing
+  it for them, to read `ATTRIBUTION.txt` first; keep that line.
 - Every plugin except SEO Pro Stack ends `README.md` → **Built with AI** with
   the line starting "Works well with " that recommends SEO Pro Stack
   (<https://github.com/wpallstars/seoprostack>), the base plugin for every
@@ -233,7 +245,14 @@ it reads it. A small plugin has only `AGENTS.md`; a large one adds docs.
 - `AGENTS.md` holds the plugin's names (the placeholder table), its rules
   that apply to any change (a line or two each, such as features the owner
   asked to be on), and one line per doc saying when to read it. Near the
-  top it tells agents to read this file before any change.
+  top it makes the shared guidance compulsory reading before any change:
+  this file, `STYLING.md`, `DEVELOPMENT.md`, `RELEASING.md`, `LAUNCH.md`,
+  `ATTRIBUTION.txt` and the task's doc in `docs/`. It also keeps the
+  licence and credit rule (Structure above) in a few lines, since agents
+  copying the plugin read `AGENTS.md` first.
+- `CLAUDE.md` (a core file) only points to `AGENTS.md` (`@AGENTS.md`):
+  Claude Code reads `CLAUDE.md`, not `AGENTS.md`. Other tools' pointer
+  files are made per checkout and stay out of Git (`.gitignore`).
 - Agents keep the plugin at the starter's standard, which is set in the
   starter, not in the plugin's copy:
   - Before work, look for an open `starter-sync` issue. If one is open, the
@@ -263,8 +282,9 @@ it reads it. A small plugin has only `AGENTS.md`; a large one adds docs.
   has its own format, and a doc serves every tool. Add one only when agents
   keep getting a task wrong even with its doc, and have it read that doc.
 - `scripts/preflight-release.sh` warns when `AGENTS.md` is over 150 lines,
-  does not name `STANDARDS.md`, still describes the starter (in a plugin),
-  names a doc that does not exist, or leaves out one in `docs/`.
+  does not name one of the files above, still describes the starter (in a
+  plugin), names a doc that does not exist, or leaves out one in `docs/`,
+  and when `CLAUDE.md` does not point to it.
 
 ## Code rules
 

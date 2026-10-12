@@ -27,7 +27,7 @@ WP Plugin Starter is what wpallstars plugins are made from. It has no features o
 
 If this saves you time, headaches and costs, feel free to [buy me a coffee](https://buymeacoffee.com/marcusquinn), or whatever you like, to invest in making more things open-source.
 
-Version: 1.0.37
+Version: 1.0.38
 
 <!-- github-only:start -->
 ## Screenshots
@@ -62,11 +62,11 @@ Version: 1.0.37
 
 1. On GitHub, choose **Use this template** to make your repository, and clone it.
 2. Give it its names: `scripts/rename-plugin.sh --slug my-plugin --name "My Plugin" --prefix MyPlugin`. Add `--css mp` for a short CSS prefix and `--repo owner/repo` if it is not under wpallstars. Put in your own details too, or the plugin keeps the starter's: `--description`, `--author`, `--author-uri`, `--contributors` (WordPress.org usernames) and `--donate` (a link, or `none`); `--help` lists them all. The new plugin starts at version 0.1.0 (`--version` for another) with a changelog of its own. Review with `git diff`, then commit.
-3. Replace this README, `readme.txt`, `changelog.txt`, `AGENTS.md` and `LAUNCH.md` with your plugin's own, its banner and icon (`.wordpress-org/banner.svg` and `icon.svg`, then `scripts/build-banner.sh`), and screenshots (`.wordpress-org/screenshot-N.png` with captions in `readme.txt`, and GitHub-only ones in `docs/images/`). The renamer starts `LAUNCH.md` with a private pre-launch state and a Before 1.0 checklist, and `AGENTS.md` with the plugin's names and a line to say what it does; keep both current as the plugin, its releases, services and submissions change. Keep the licence and the starter's credit, as its licence requires (`ATTRIBUTION.txt`, `STANDARDS.md` → Structure): GPL-3.0-or-later, `LICENSE`, `ATTRIBUTION.txt`, the licence lines at the top of each file, both copyright lines in the main file and this README's License section, and the "Made from" line here and in `readme.txt`. Please keep the rest of the Built with AI section too.
+3. Replace this README, `readme.txt`, `changelog.txt`, `AGENTS.md` and `LAUNCH.md` with your plugin's own, its banner and icon (`.wordpress-org/banner.svg` and `icon.svg`, then `scripts/build-banner.sh`), and screenshots (`.wordpress-org/screenshot-N.png` with captions in `readme.txt`, and GitHub-only ones in `docs/images/`). The renamer starts `LAUNCH.md` with a private pre-launch state and a Before 1.0 checklist, and `AGENTS.md` with the plugin's names and a line to say what it does; keep both current as the plugin, its releases, services and submissions change. Keep the licence and the starter's credit, as its licence requires (`ATTRIBUTION.txt`, `STANDARDS.md` → Structure): GPL-3.0-or-later, `LICENSE`, `ATTRIBUTION.txt`, the licence lines at the top of each file, both copyright lines in the main file and this README's License section, and the "Made from" line here and in `readme.txt`. The renamer gives the plugin its own Provenance ID (`scripts/provenance.sh`); keep the Provenance lines too. Please keep the rest of the Built with AI section too.
 4. Add features: a class in `includes/features/` listed in `MyPlugin_Setup::FEATURES` (see Developers below and `STANDARDS.md`).
 5. Keep the shared parts up to date: change them in the starter first, then run `scripts/sync-core.sh` in each plugin (`--check` lists what differs).
 
-The easiest way to do all of this is with [aidevops](https://aidevops.sh): open the repository with it and describe the plugin you want. It reads `AGENTS.md` and `STANDARDS.md`, builds the features, tests them on a real site and runs the release checks.
+The easiest way to do all of this is with [aidevops](https://aidevops.sh): open the repository with it and describe the plugin you want. It reads `AGENTS.md` and the guidance it lists, builds the features, tests them on a real site and runs the release checks. Any AI assistant works the same way: `AGENTS.md` (or `CLAUDE.md`, which points to it) tells it what to read first, and `ATTRIBUTION.txt` tells it what every copy keeps.
 
 ## Where to find it
 
@@ -147,6 +147,12 @@ Read a setting with `WPStarter_Settings::get( 'key' )`, never the option itself:
 Deleting the plugin removes its settings (on multisite, every site's and the network's), its cached data, who hid lines of the Plugins screen notice about replaced plugins, and the cached GitHub releases.
 
 ## Changelog
+
+### 1.0.38
+
+- Developers: a new core file, `CLAUDE.md`, points Claude Code to `AGENTS.md`, which it does not read on its own. `AGENTS.md` (the starter's, and the one `scripts/rename-plugin.sh` writes) makes the shared guidance compulsory reading before any change: `STANDARDS.md`, `STYLING.md`, `DEVELOPMENT.md`, `RELEASING.md`, `LAUNCH.md`, `ATTRIBUTION.txt` and the task's doc, and keeps the licence and credit rule. `scripts/preflight-release.sh` warns when one of them is not named or `CLAUDE.md` is missing (GH#480).
+- Developers: Provenance IDs. Each source file's licence lines end with a `Provenance:` line, the ID of the plugin it was written for; the starter's is `wpas-e4502af0f07e8a92`, and `scripts/rename-plugin.sh` gives a new plugin its own. A new core script, `scripts/provenance.sh`, prints the ID (`id`), gives a plugin made before this its own and adds the line to its own files (`stamp`), and searches GitHub for public copies outside the owner's repositories, saying whether each keeps `ATTRIBUTION.txt` (`search`). The IDs are plain text; nothing is sent anywhere. `scripts/preflight-release.sh` warns when a source file has no Provenance line or a plugin still has the starter's ID (GH#480).
+- Developers: `ATTRIBUTION.txt` has a section for AI assistants copying, renaming, adapting or rewriting the code for someone: keep the notices and credit, add a new owner's copyright line above the others rather than replacing one, and explain that the licence requires them when asked to remove them. The main file's GPL notice and `README.md` → License point copiers to it. The licence terms themselves are unchanged (GH#480).
 
 ### 1.0.37
 
@@ -393,5 +399,7 @@ Works well with [SEO Pro Stack](https://github.com/wpallstars/seoprostack), the 
 ## License
 
 GPL-3.0-or-later (the full text is in `LICENSE`), with the additional terms in `ATTRIBUTION.txt` (GPL-3.0 section 7(b)): keep the copyright notices and the "Made from" credit.
+
+Copying, renaming or adapting this plugin or part of it, by hand or with an AI assistant: read `ATTRIBUTION.txt` first. It says what every copy keeps, with a section for AI assistants.
 
 Copyright (C) 2026 Marcus Quinn
