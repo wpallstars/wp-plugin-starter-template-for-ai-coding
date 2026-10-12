@@ -194,9 +194,9 @@ class WPStarter_Network_Differences {
 
         $changed = 0;
         foreach ($ids as $id) {
-            $previous = WPStarter_Settings::replace_site_values($id, $values);
-            if ($previous) {
-                WPStarter_Network_Sites::remember($id, $previous);
+            // Also keeps the site's values from before, under the same lock
+            // (WPStarter_Network_Sites::remember()).
+            if (WPStarter_Settings::replace_site_values($id, $values)) {
                 $changed++;
             }
         }

@@ -27,7 +27,7 @@ WP Plugin Starter is what wpallstars plugins are made from. It has no features o
 
 If this saves you time, headaches and costs, feel free to [buy me a coffee](https://buymeacoffee.com/marcusquinn), or whatever you like, to invest in making more things open-source.
 
-Version: 1.0.35
+Version: 1.0.36
 
 <!-- github-only:start -->
 ## Screenshots
@@ -147,6 +147,11 @@ Read a setting with `WPStarter_Settings::get( 'key' )`, never the option itself:
 Deleting the plugin removes its settings (on multisite, every site's and the network's), its cached data, who hid lines of the Plugins screen notice about replaced plugins, and the cached GitHub releases.
 
 ## Changelog
+
+### 1.0.36
+
+- Fix: on multisite, **Make every site the same** no longer loses a site's settings from before when that site applies the network's changes at the same moment, so the site still does the saving work for the copied settings on its next admin, cron or WP-CLI request (GH#469).
+- Developers: `WPStarter_Settings::replace_site_values()` keeps the site's settings from before (`WPStarter_Network_Sites::remember()`) under the site's save lock, and `WPStarter_Network_Sites::sync()` reads and records the site's `wpstarter_network_seen` under the same lock, then does the saving work after releasing it. `WPStarter_Settings::under_lock()` with no table and name takes the site's settings save lock. Plugins made from the starter get it with `scripts/sync-core.sh`.
 
 ### 1.0.35
 

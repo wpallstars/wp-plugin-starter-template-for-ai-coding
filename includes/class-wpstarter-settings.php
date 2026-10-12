@@ -408,8 +408,10 @@ class WPStarter_Settings {
      * Read and written straight in its options table: switching to each
      * site would load all of its autoloaded options, and run this
      * request's hooks, which belong to another site; the site runs its own
-     * saving work on its next request. Sites where the plugin has not run
-     * yet are left alone.
+     * saving work on its next request, for the values from before that are
+     * kept under the same lock (WPStarter_Network_Sites::remember()), so
+     * that work never misses them (WPStarter_Network_Sites::sync()). Sites
+     * where the plugin has not run yet are left alone.
      *
      * @param int   $site_id Site ID.
      * @param array $values  Key => sanitized value.
@@ -445,6 +447,7 @@ class WPStarter_Settings {
                     return null;
                 }
                 WPStarter_Network_Sites::flush_site_cache((int) $site_id, array(self::OPTION));
+                WPStarter_Network_Sites::remember((int) $site_id, $previous);
             }
             return $previous;
         } finally {
@@ -521,17 +524,21 @@ class WPStarter_Settings {
     }
 
     /**
-     * Run a change under a save lock of its own (lock()), released however
-     * the change ends: for an option kept outside this site's settings, such
-     * as the network option (WPStarter_Network_Settings::change()).
+     * Run a change under a save lock (lock()), released however the change
+     * ends: one of its own, for an option kept outside this site's
+     * settings, such as the network option
+     * (WPStarter_Network_Settings::change()); or, with no table and name,
+     * this site's save lock, for an option the network also writes under it
+     * (WPStarter_Network_Sites::sync()). The change must not save settings
+     * itself (set()): it would wait on the lock it is under.
      *
      * @param callable $change The change; its result is returned.
-     * @param string   $table  Options table to hold the lock in.
-     * @param string   $name   Lock name.
+     * @param string   $table  Options table to hold the lock in; '' for this site's.
+     * @param string   $name   Lock name; '' for the settings' save lock.
      * @return mixed|null The change's result, or null when the lock could
      *                    not be taken.
      */
-    public static function under_lock(callable $change, $table, $name) {
+    public static function under_lock(callable $change, $table = '', $name = '') {
         if (!self::lock($table, $name)) {
             return null;
         }
