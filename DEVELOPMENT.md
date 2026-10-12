@@ -81,6 +81,10 @@ finds a LocalWP site's database socket itself (other hosts:
 `{PREFIX}_PREVIEW_PHP_ARGS`), and keeps its own PHP messages out of the
 debug log, so `log-since` shows only what the pages wrote. Other requests
 to the site in the meantime (other sessions, cron) also write to the log.
+Its WordPress load bypasses page caches with a dummy logged-in cookie name,
+not a real sign-in cookie; cached home pages cannot end the load early.
+An incomplete load or sign-in fails with `preview-browser:` and removes
+the unfinished state file instead of reporting an empty sign-in.
 
 ## Set up
 
