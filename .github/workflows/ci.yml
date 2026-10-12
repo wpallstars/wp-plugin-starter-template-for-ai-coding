@@ -70,21 +70,23 @@ jobs:
         env:
           SC_VERSION: "0.11.0"
         run: |
-          case "$RUNNER_ARCH" in
-            X64)
-              sc_platform=linux.x86_64
-              sc_sha256=b7af85e41cc99489dcc21d66c6d5f3685138f06d34651e6d34b42ec6d54fe6f6
-              ;;
-            ARM64)
-              sc_platform=linux.aarch64
-              sc_sha256=68a8133197a50beb8803f8d42f9908d1af1c5540d4bb05fdfca8c1fa47decefc
-              ;;
-            *)
-              printf 'Unsupported ShellCheck runner architecture: %s\n' "$RUNNER_ARCH" >&2
-              exit 1
-              ;;
-          esac
+          # Only an install needs the runner's architecture: a runner that
+          # already has this version keeps it, whatever it runs on.
           if [[ "$(shellcheck --version 2>/dev/null | sed -n 's/^version: //p')" != "$SC_VERSION" ]]; then
+            case "$RUNNER_ARCH" in
+              X64)
+                sc_platform=linux.x86_64
+                sc_sha256=b7af85e41cc99489dcc21d66c6d5f3685138f06d34651e6d34b42ec6d54fe6f6
+                ;;
+              ARM64)
+                sc_platform=linux.aarch64
+                sc_sha256=68a8133197a50beb8803f8d42f9908d1af1c5540d4bb05fdfca8c1fa47decefc
+                ;;
+              *)
+                printf 'Unsupported ShellCheck runner architecture: %s\n' "$RUNNER_ARCH" >&2
+                exit 1
+                ;;
+            esac
             archive="$RUNNER_TEMP/shellcheck.tar.gz"
             curl -fsSL --proto '=https' --tlsv1.2 -o "$archive" "https://github.com/koalaman/shellcheck/releases/download/v$SC_VERSION/shellcheck-v$SC_VERSION.$sc_platform.tar.gz"
             printf '%s  %s\n' "$sc_sha256" "$archive" | sha256sum -c -

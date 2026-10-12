@@ -4,6 +4,7 @@ Every change to WP Plugin Starter. readme.txt lists the latest version in short.
 
 = Unreleased =
 * New: a second row of tabs. Tabs added with wpstarter_admin_tabs that set the same 'menu' name show in the tab bar as one tab with that name, opening the first of them; while one of them is shown, a row under the bar (.wps-subnav) lists them all. Instant switching keeps both rows current. Plugins made from the starter get it with scripts/sync-core.sh.
+* Developers: CI's ShellCheck step checks the runner's architecture only when it has to install ShellCheck, so a self-hosted runner that already has the pinned version passes on any architecture (wpallstars/seoprostack#723).
 
 = 1.0.36 =
 * Fix: on multisite, Make every site the same no longer loses a site's settings from before when that site applies the network's changes at the same moment (an admin, cron or WP-CLI request on it between WPStarter_Network_Sites::sync() reading and recording its wpstarter_network_seen). The site then saw no change and skipped its saving work (schedules, rules, files) for the copied settings until they next changed. Now it does that work on its next admin, cron or WP-CLI request (GH#469).
