@@ -174,13 +174,49 @@ final class WPStarter_Admin_Theme {
         if (!in_array($mode, self::MODES, true)) {
             wp_send_json_error(array('message' => __('Unknown colour mode.', 'wp-plugin-starter-template')), 400);
         }
-        $user_id = get_current_user_id();
-        update_user_meta($user_id, self::SHARED_META, $mode);
-        update_user_meta($user_id, self::META, $mode);
-        if (get_user_meta($user_id, self::SHARED_META, true) !== $mode || get_user_meta($user_id, self::META, true) !== $mode) {
+        if (!self::store($mode)) {
             wp_send_json_error(array('message' => __('The colour mode could not be saved.', 'wp-plugin-starter-template')), 500);
         }
         wp_send_json_success(array('mode' => $mode));
+    }
+
+    /**
+     * Save both copies, restoring a partial write before reporting failure.
+     *
+     * @param string $mode Allow-listed mode.
+     * @return bool
+     */
+    private static function store($mode) {
+        $user_id  = get_current_user_id();
+        $previous = array();
+        foreach (array(self::SHARED_META, self::META) as $key) {
+            $previous[$key] = get_user_meta($user_id, $key, false);
+        }
+        foreach (array_keys($previous) as $key) {
+            update_user_meta($user_id, $key, $mode);
+            if (get_user_meta($user_id, $key, true) !== $mode) {
+                self::restore($user_id, $previous, $mode);
+                return false;
+            }
+        }
+        return true;
+    }
+
+    /**
+     * Undo only this mode's writes, not a newer choice in another tab.
+     *
+     * @param int $user_id Current user.
+     * @param array<string,array> $previous Previous rows, empty for absent keys.
+     * @param string $mode Mode this save attempted.
+     */
+    private static function restore($user_id, array $previous, $mode) {
+        foreach ($previous as $key => $values) {
+            if (!$values) {
+                delete_user_meta($user_id, $key, $mode);
+            } else {
+                update_user_meta($user_id, $key, $values[0], $mode);
+            }
+        }
     }
 
     /**
