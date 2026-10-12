@@ -27,7 +27,7 @@ WP Plugin Starter is what wpallstars plugins are made from. It has no features o
 
 If this saves you time, headaches and costs, feel free to [buy me a coffee](https://buymeacoffee.com/marcusquinn), or whatever you like, to invest in making more things open-source.
 
-Version: 1.0.36
+Version: 1.0.37
 
 <!-- github-only:start -->
 ## Screenshots
@@ -148,10 +148,12 @@ Deleting the plugin removes its settings (on multisite, every site's and the net
 
 ## Changelog
 
-### Unreleased
+### 1.0.37
 
+- New: a second row of tabs. Tabs added with `wpstarter_admin_tabs` that set the same `'menu'` name show in the tab bar as one tab with that name, opening the first of them; while one of them is shown, a row under the bar (`.wps-subnav`) lists them all. Instant switching keeps both rows current. Plugins made from the starter get it with `scripts/sync-core.sh` (GH#472).
+- Developers: a new core script, `scripts/deploy-sites.sh` (`RELEASING.md` step 5), rolls a published release out to every install on one SSH host that already has the plugin. It checks the zip against the asset's SHA-256 on GitHub and its provenance bundle; without `--apply` it only lists the installs. With `--apply` it backs up each plugin folder, runs `wp plugin install --force` (activation and network activation kept), loads WordPress once for the settings upgrade and prints one line per install, failing with the restore command when an install did not reach the version, logged new lines or its home page failed. The remote part is `scripts/lib/deploy-remote.sh`, also a core file (GH#473).
 - Developers: CI's ShellCheck step checks the runner's architecture only when it has to install ShellCheck, so a self-hosted runner that already has the pinned version passes on any architecture.
-- Developers: `scripts/smoke-test.sh --multisite` tests the plugin network-activated on a network with a second site: both sites' pages, the network screens, a setting applied to every site from the network (site two must do its saving work on its next admin request and read the network's value), and an uninstall that leaves nothing on any site or the network. CI runs it on the latest WordPress with PHP 8.3.
+- Developers: `scripts/smoke-test.sh --multisite` tests the plugin network-activated on a network with a second site: both sites' pages, the network screens, a setting applied to every site from the network (site two must do its saving work on its next admin request and read the network's value), and an uninstall that leaves nothing on any site or the network. CI runs it on the latest WordPress with PHP 8.3 (GH#471).
 
 ### 1.0.36
 
