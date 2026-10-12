@@ -155,7 +155,7 @@ jobs:
           if-no-files-found: ignore
 
   smoke:
-    name: Smoke test (WordPress ${{ matrix.wp }}, PHP ${{ matrix.php }})
+    name: Smoke test (WordPress ${{ matrix.wp }}, PHP ${{ matrix.php }}${{ matrix.multisite && ', multisite' || '' }})
     needs: lint
     if: github.event_name != 'pull_request' || !github.event.pull_request.draft
     runs-on: ${{ vars.CI_RUNNER || 'ubuntu-latest' }}
@@ -169,19 +169,28 @@ jobs:
             php: "7.4"
           - wp: latest
             php: "8.3"
+          # A network with the plugin network-activated (scripts/smoke-test.sh --multisite).
+          - wp: latest
+            php: "8.3"
+            multisite: true
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
 
       - name: Smoke test
-        run: scripts/smoke-test.sh --wp "${{ matrix.wp }}" --php "${{ matrix.php }}" --keep-log debug.log
+        env:
+          SMOKE_WP: ${{ matrix.wp }}
+          SMOKE_PHP: ${{ matrix.php }}
+          SMOKE_MULTISITE: ${{ matrix.multisite && '--multisite' || '' }}
+        # SMOKE_MULTISITE is unquoted on purpose: empty, it must add no argument.
+        run: scripts/smoke-test.sh --wp "$SMOKE_WP" --php "$SMOKE_PHP" --keep-log debug.log $SMOKE_MULTISITE
 
       - name: Keep debug.log
         if: failure()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
-          name: debug-log-wp${{ matrix.wp }}-php${{ matrix.php }}
+          name: debug-log-wp${{ matrix.wp }}-php${{ matrix.php }}${{ matrix.multisite && '-multisite' || '' }}
           path: debug.log
           retention-days: 7
           if-no-files-found: ignore

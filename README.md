@@ -151,6 +151,7 @@ Deleting the plugin removes its settings (on multisite, every site's and the net
 ### Unreleased
 
 - Developers: CI's ShellCheck step checks the runner's architecture only when it has to install ShellCheck, so a self-hosted runner that already has the pinned version passes on any architecture.
+- Developers: `scripts/smoke-test.sh --multisite` tests the plugin network-activated on a network with a second site: both sites' pages, the network screens, a setting applied to every site from the network (site two must do its saving work on its next admin request and read the network's value), and an uninstall that leaves nothing on any site or the network. CI runs it on the latest WordPress with PHP 8.3.
 
 ### 1.0.36
 
