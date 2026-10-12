@@ -182,9 +182,13 @@ jobs:
         env:
           SMOKE_WP: ${{ matrix.wp }}
           SMOKE_PHP: ${{ matrix.php }}
-          SMOKE_MULTISITE: ${{ matrix.multisite && '--multisite' || '' }}
-        # SMOKE_MULTISITE is unquoted on purpose: empty, it must add no argument.
-        run: scripts/smoke-test.sh --wp "$SMOKE_WP" --php "$SMOKE_PHP" --keep-log debug.log $SMOKE_MULTISITE
+          SMOKE_MULTISITE: ${{ matrix.multisite && 'true' || 'false' }}
+        run: |
+          args=(--wp "$SMOKE_WP" --php "$SMOKE_PHP" --keep-log debug.log)
+          if [[ "$SMOKE_MULTISITE" == "true" ]]; then
+            args+=(--multisite)
+          fi
+          scripts/smoke-test.sh "${args[@]}"
 
       - name: Keep debug.log
         if: failure()
