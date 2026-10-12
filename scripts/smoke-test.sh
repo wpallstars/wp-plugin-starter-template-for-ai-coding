@@ -7,7 +7,7 @@
 #
 # Usage: scripts/smoke-test.sh [--wp VERSION] [--php VERSION] [--ref REF]
 #                              [--zip FILE] [--wporg] [--keep-log FILE]
-#                              [--posts N]
+#                              [--posts N] [--multisite]
 #   --wp VERSION     WordPress version (default: latest). The minimum is 6.2.
 #   --php VERSION    PHP version of the Docker images (default: 8.3). The
 #                    minimum is 7.4.
@@ -16,6 +16,12 @@
 #   --wporg          Test the WordPress.org build instead of the GitHub one.
 #   --keep-log FILE  Save the site's debug.log to FILE.
 #   --posts N        Seed N posts, with 3 meta rows each (default: 10000).
+#   --multisite      A network (subdirectories) with a second site, /two/,
+#                    and the plugin network-activated: also loads the network
+#                    screens and site two's, applies a setting to every site
+#                    from the network, checks site two does its saving work
+#                    on its next admin request, and checks uninstall cleans
+#                    every site and the network.
 #
 # Fails on any PHP error, warning, notice or deprecation in debug.log (from
 # the pages loaded, WP-CLI and cron), a page that fails to load (HTTP 500 or
@@ -58,6 +64,17 @@ REF="HEAD"
 ZIP=""
 WPORG=0
 KEEP_LOG=""
+MULTISITE=0
+# Multisite: WordPress does not run a network on a port other than 80, so
+# the network's address is http://localhost and curl reaches the published
+# port with these arguments (start_site).
+CURL_ARGS=()
+# Multisite: site two's path and every site's address, for WP-CLI's --url.
+readonly SITE_TWO="/two"
+SITE_URLS=()
+# Where the main site's posts and archives start: /blog on a network with
+# subdirectories, where WordPress keeps them apart from the sites' paths.
+POST_BASE=""
 # A scan or sort over this many rows or more in the plugin's own queries fails.
 readonly SCAN_ROWS=1000
 
@@ -68,7 +85,7 @@ die() {
 }
 
 usage() {
-	sed -n '2,26p' "$0" | sed 's/^# \{0,1\}//'
+	sed -n '2,33p' "$0" | sed 's/^# \{0,1\}//'
 	return 0
 }
 
@@ -139,30 +156,82 @@ start_site() {
 	docker run -d --name "$NAME-web" --network "$NAME" -v "$NAME-wp:/var/www/html" \
 		-p 127.0.0.1::80 "wordpress:php$PHP_VERSION-apache" >/dev/null
 	# Plain HTTP on purpose: a throwaway site that only listens on 127.0.0.1.
-	BASE_URL="http://$(docker port "$NAME-web" 80 | head -n 1)"
+	local published
+	published="$(docker port "$NAME-web" 80 | head -n 1)"
+	BASE_URL="http://$published"
+	if [[ "$MULTISITE" -eq 1 ]]; then
+		BASE_URL="http://localhost"
+		CURL_ARGS=(--connect-to "localhost:80:$published")
+	fi
 
 	wp_cli config create --dbname=wordpress --dbuser=root --dbpass="$DB_PASSWORD" --dbhost="$NAME-db" --skip-check --quiet
 	wp_cli config set WP_DEBUG true --raw --quiet
 	wp_cli config set WP_DEBUG_LOG true --raw --quiet
 	wp_cli config set WP_DEBUG_DISPLAY false --raw --quiet
 	wp_cli config set DISABLE_WP_CRON true --raw --quiet
-	wp_cli core install --title=SmokeTest --admin_user=admin --admin_password="$ADMIN_PASSWORD" --admin_email=admin@example.com --skip-email --quiet --url="$BASE_URL" # NOSONAR: local-only HTTP, see BASE_URL
-	# WP-CLI cannot see Apache's mod_rewrite, so write core's rules itself.
-	wp_cli rewrite structure '/%postname%/' --quiet
-	docker exec -u www-data "$NAME-web" sh -c 'printf "%s\n" "# BEGIN WordPress" "RewriteEngine On" "RewriteBase /" \
-		"RewriteRule ^index\.php$ - [L]" "RewriteCond %{REQUEST_FILENAME} !-f" "RewriteCond %{REQUEST_FILENAME} !-d" \
-		"RewriteRule . /index.php [L]" "# END WordPress" >/var/www/html/.htaccess'
+	if [[ "$MULTISITE" -eq 1 ]]; then
+		start_network
+	else
+		wp_cli core install --title=SmokeTest --admin_user=admin --admin_password="$ADMIN_PASSWORD" --admin_email=admin@example.com --skip-email --quiet --url="$BASE_URL" # NOSONAR: local-only HTTP, see BASE_URL
+		# WP-CLI cannot see Apache's mod_rewrite, so write core's rules itself.
+		wp_cli rewrite structure '/%postname%/' --quiet
+		write_htaccess "# BEGIN WordPress" "RewriteEngine On" "RewriteBase /" \
+			"RewriteRule ^index\.php$ - [L]" "RewriteCond %{REQUEST_FILENAME} !-f" "RewriteCond %{REQUEST_FILENAME} !-d" \
+			"RewriteRule . /index.php [L]" "# END WordPress"
+	fi
 	printf 'WordPress %s at %s\n' "$(wp_cli core version)" "$BASE_URL" # NOSONAR: local-only HTTP, see BASE_URL
 	return 0
 }
 
+# A network with subdirectories, its main site and site two, with core's
+# rewrite rules for it, and a setting the network check can always use
+# (add_network_setting).
+start_network() {
+	local url
+	wp_cli core multisite-install --title=SmokeTest --admin_user=admin --admin_password="$ADMIN_PASSWORD" --admin_email=admin@example.com --skip-email --quiet --url="$BASE_URL" # NOSONAR: local-only HTTP, see BASE_URL
+	wp_cli site create --slug="${SITE_TWO#/}" --title="SmokeTest Two" --email=admin@example.com --quiet
+	SITE_URLS=("$BASE_URL/" "$BASE_URL$SITE_TWO/")
+	for url in "${SITE_URLS[@]}"; do
+		wp_cli rewrite structure '/%postname%/' --url="$url" --quiet
+	done
+	# The main site's structure, as WordPress saved it: /blog/%postname%/.
+	POST_BASE="$(wp_cli option get permalink_structure --url="$BASE_URL/")" || die "could not read the main site's permalinks"
+	POST_BASE="${POST_BASE%/%postname%/}"
+	# Apache's backreferences ($1, $2), kept out of the shell's sight.
+	local ref='$'
+	write_htaccess "# BEGIN WordPress Multisite" "RewriteEngine On" "RewriteBase /" \
+		"RewriteRule ^index\.php$ - [L]" "RewriteRule ^([_0-9a-zA-Z-]+/)?wp-admin$ ${ref}1wp-admin/ [R=301,L]" \
+		"RewriteCond %{REQUEST_FILENAME} -f [OR]" "RewriteCond %{REQUEST_FILENAME} -d" "RewriteRule ^ - [L]" \
+		"RewriteRule ^([_0-9a-zA-Z-]+/)?(wp-(content|admin|includes).*) ${ref}2 [L]" \
+		"RewriteRule ^([_0-9a-zA-Z-]+/)?(.*\.php)$ ${ref}2 [L]" "RewriteRule . index.php [L]" \
+		"# END WordPress Multisite"
+	add_network_setting || die "could not add the network check's setting"
+	return 0
+}
+
+# Core's rewrite rules, one argument per line: WP-CLI cannot see Apache's
+# mod_rewrite, so it does not write them.
+write_htaccess() {
+	printf '%s\n' "$@" | docker exec -i -u www-data "$NAME-web" sh -c 'cat >/var/www/html/.htaccess'
+	return $?
+}
+
+# A must-use plugin adding a bool setting, smoke_network, so the network
+# check has one to apply even in a plugin without settings (the starter).
+# Its tab does not exist, so no screen shows it.
+add_network_setting() {
+	local php="<?php add_filter('${PLUGIN_PREFIX}_settings_schema', function (\$schema) { \$schema['smoke_network'] = array('type' => 'bool', 'default' => false, 'label' => 'Smoke test network setting', 'description' => '', 'tab' => 'smoke-test'); return \$schema; });"
+	printf '%s\n' "$php" | docker exec -i -u www-data "$NAME-web" sh -c 'mkdir -p /var/www/html/wp-content/mu-plugins && cat >/var/www/html/wp-content/mu-plugins/smoke-network.php'
+	return $?
+}
+
 log_in() {
-	curl -sS -o /dev/null -c "$TMP_DIR/cookies" -b 'wordpress_test_cookie=WP%20Cookie%20check' \
+	curl -sS -o /dev/null ${CURL_ARGS[@]+"${CURL_ARGS[@]}"} -c "$TMP_DIR/cookies" -b 'wordpress_test_cookie=WP%20Cookie%20check' \
 		--data-urlencode 'log=admin' --data-urlencode "pwd=$ADMIN_PASSWORD" \
 		--data-urlencode 'testcookie=1' --data-urlencode "redirect_to=$BASE_URL/wp-admin/" \
 		"$BASE_URL/wp-login.php"
 	local status
-	status="$(curl -sS -o /dev/null -w '%{http_code}' -b "$TMP_DIR/cookies" "$BASE_URL/wp-admin/")"
+	status="$(curl -sS -o /dev/null ${CURL_ARGS[@]+"${CURL_ARGS[@]}"} -w '%{http_code}' -b "$TMP_DIR/cookies" "$BASE_URL/wp-admin/")"
 	[[ "$status" = "200" ]] || die "could not log in (wp-admin answered $status)"
 	return 0
 }
@@ -174,7 +243,7 @@ fetch() {
 	local path="$1"
 	local who="$2"
 	local status code=0
-	local args=(-sS -o "$TMP_DIR/page" -w '%{http_code}' --max-time 60)
+	local args=(-sS -o "$TMP_DIR/page" -w '%{http_code}' --max-time 60 ${CURL_ARGS[@]+"${CURL_ARGS[@]}"})
 	[[ "$who" = "admin" ]] && args+=(-b "$TMP_DIR/cookies")
 	rm -f "$TMP_DIR/page"
 	status="$(curl "${args[@]}" "$BASE_URL$path")" || code=$?
@@ -211,23 +280,105 @@ find_plugin_pages() {
 load_pages() {
 	local path
 	local visitor_pages=(
-		'/' '/hello-world/' '/sample-page/' '/?s=hello' '/category/uncategorized/' '/feed/'
+		'/' "$POST_BASE/hello-world/" '/sample-page/' '/?s=hello' "$POST_BASE/category/uncategorized/" '/feed/'
 		'/wp-json/' '/wp-json/wp/v2/posts' '/wp-sitemap.xml' '/no-such-page/' '/wp-login.php'
 	)
 	local admin_pages=(
-		'/' '/hello-world/' '/wp-admin/' '/wp-admin/plugins.php' "${PLUGIN_PAGES[@]}"
+		'/' "$POST_BASE/hello-world/" '/wp-admin/' '/wp-admin/plugins.php' "${PLUGIN_PAGES[@]}"
 		'/wp-admin/edit.php' '/wp-admin/edit.php?post_type=page' '/wp-admin/post-new.php'
 		'/wp-admin/post.php?post=1&action=edit' '/wp-admin/upload.php' '/wp-admin/edit-comments.php'
 		'/wp-admin/themes.php' '/wp-admin/users.php' '/wp-admin/profile.php' '/wp-admin/tools.php'
 		'/wp-admin/site-health.php' '/wp-admin/options-general.php' '/wp-admin/options-permalink.php'
 	)
+	if [[ "$MULTISITE" -eq 1 ]]; then
+		# Site two's pages, and the network screens with the plugin's own.
+		visitor_pages+=("$SITE_TWO/" "$SITE_TWO/hello-world/" "$SITE_TWO/?s=hello" "$SITE_TWO/wp-json/wp/v2/posts")
+		admin_pages+=("$SITE_TWO/" "$SITE_TWO/wp-admin/" "$SITE_TWO/wp-admin/plugins.php")
+		for path in "${PLUGIN_PAGES[@]}"; do
+			admin_pages+=("$SITE_TWO$path")
+		done
+		admin_pages+=('/wp-admin/network/' '/wp-admin/network/sites.php' '/wp-admin/network/plugins.php'
+			'/wp-admin/network/settings.php' "/wp-admin/network/settings.php?page=$SLUG")
+	fi
 	for path in "${visitor_pages[@]}"; do
 		fetch "$path" visitor
 	done
 	for path in "${admin_pages[@]}"; do
 		fetch "$path" admin
 	done
-	wp_cli cron event run --due-now --quiet || fail "wp cron event run"
+	if [[ "$MULTISITE" -eq 1 ]]; then
+		for path in "${SITE_URLS[@]}"; do
+			wp_cli cron event run --due-now --url="$path" --quiet || fail "wp cron event run --url=$path"
+		done
+	else
+		wp_cli cron event run --due-now --quiet || fail "wp cron event run"
+	fi
+	return 0
+}
+
+# Multisite: the network screen's path through its classes, once. Applies
+# one bool setting to every site from the network with the plugin's
+# {Package}_Network_Settings::set_value() and apply(): the plugin's first
+# eligible one other than maintenance mode, else smoke_network
+# (add_network_setting). Then an admin request on site two must run its
+# saving work ({Package}_Network_Sites::sync(): the site records the
+# network's version in {prefix}_network_seen) and site two must read the
+# network's value. The card stays applied, so uninstall must clean it.
+check_network() {
+	local result key want version seen got two="$BASE_URL$SITE_TWO/"
+	printf '\nNetwork settings:\n'
+	# shellcheck disable=SC2016 # PHP code: its $variables are PHP's, not the shell's.
+	result="$(wp_cli eval '
+		$plugin   = "'"$PLUGIN_PACKAGE"'";
+		$settings = $plugin . "_Settings";
+		$network  = $plugin . "_Network_Settings";
+		$key      = "";
+		$defaults = $settings::defaults();
+		foreach ($settings::schema() as $k => $field) {
+			$on_off = isset($defaults[$k]) && is_bool($defaults[$k]);
+			if ("maintenance" !== $k && empty($field["parent"]) && $on_off && $network::eligible((string) $k)) {
+				$key = (string) $k;
+				break;
+			}
+		}
+		if ("" === $key) {
+			echo "none";
+			exit(1);
+		}
+		$want = !$network::value($key);
+		foreach (array($network::set_value($key, $want), $network::apply($key, true)) as $r) {
+			if (is_wp_error($r)) {
+				echo $r->get_error_message();
+				exit(1);
+			}
+		}
+		$stored = $network::stored();
+		echo $key, " ", $want ? 1 : 0, " ", (int) $stored["version"];')" || {
+		fail "applying a setting to every site from the network: $result"
+		return 0
+	}
+	read -r key want version <<<"$result"
+	printf '  applied %s = %s to every site (network version %s)\n' "$key" "$want" "$version"
+
+	fetch "$SITE_TWO/wp-admin/" admin
+	# Without the plugin loaded, so this WP-CLI request does not sync itself.
+	# shellcheck disable=SC2016 # PHP code: its $variables are PHP's, not the shell's.
+	seen="$(wp_cli eval --url="$two" --skip-plugins '$s = get_option("'"$PLUGIN_PREFIX"'_network_seen"); echo is_array($s) && isset($s["version"]) ? (int) $s["version"] : -1;')" || seen="error"
+	if [[ "$seen" == "$version" ]]; then
+		printf '  ok   site two did its saving work on its next admin request (seen version %s)\n' "$seen"
+	else
+		fail "site two did not run its saving work: ${PLUGIN_PREFIX}_network_seen version $seen, network version $version"
+	fi
+	got="$(wp_cli eval --url="$two" 'echo '"$PLUGIN_PACKAGE"'_Settings::get("'"$key"'") ? 1 : 0;')" || got="error"
+	if [[ "$got" == "$want" ]]; then
+		printf '  ok   site two reads the network value of %s (%s)\n' "$key" "$got"
+	else
+		fail "site two reads $key = $got, not the network's $want"
+	fi
+	for path in "${PLUGIN_PAGES[@]}"; do
+		fetch "$SITE_TWO$path" admin
+	done
+	fetch "/wp-admin/network/settings.php?page=$SLUG" admin
 	return 0
 }
 
@@ -255,15 +406,52 @@ switch_all_on() {
 # The plugin's own database tables ({$wpdb->prefix}{prefix}_*), one per line.
 # PLUGIN_PREFIX is lower-case letters, digits and underscores (plugin.sh).
 plugin_tables() {
+	local url_args=("$@")
 	local php
 	# shellcheck disable=SC2016 # PHP variables, expanded by PHP.
 	php='global $wpdb; foreach ($wpdb->get_col($wpdb->prepare("SHOW TABLES LIKE %s", $wpdb->esc_like($wpdb->prefix . "'"$PLUGIN_PREFIX"'_") . "%")) as $t) { echo $t, "\n"; }'
+	wp_cli eval "$php" ${url_args[@]+"${url_args[@]}"}
+	return $?
+}
+
+# Multisite: the network's own options ({prefix} in the meta key), one per line.
+network_options() {
+	local php
+	# shellcheck disable=SC2016 # PHP variables, expanded by PHP.
+	php='global $wpdb; foreach ($wpdb->get_col($wpdb->prepare("SELECT meta_key FROM {$wpdb->sitemeta} WHERE meta_key LIKE %s", "%" . $wpdb->esc_like("'"$PLUGIN_PREFIX"'") . "%")) as $k) { echo $k, "\n"; }'
 	wp_cli eval "$php"
 	return $?
 }
 
+# One site's options, cron events and tables left after uninstalling. URL
+# (multisite) names the site, WHERE how failures name it.
+check_site_clean() {
+	local where="$1"
+	shift
+	local url_args=("$@")
+	local left hooks
+	if left="$(plugin_tables ${url_args[@]+"${url_args[@]}"})"; then
+		[[ -z "$left" ]] || fail "tables left after uninstalling$where: $(printf '%s' "$left" | tr '\n' ' ')"
+	else
+		fail "could not list the plugin's tables after uninstalling$where"
+	fi
+	# A failed listing must fail the check, not read as "nothing left".
+	if left="$(wp_cli option list --search="*$PLUGIN_PREFIX*" --field=option_name ${url_args[@]+"${url_args[@]}"} 2>/dev/null)"; then
+		[[ -z "$left" ]] || fail "options left after uninstalling$where: $(printf '%s' "$left" | tr '\n' ' ')"
+	else
+		fail "could not list the options after uninstalling$where"
+	fi
+	if hooks="$(wp_cli cron event list --field=hook ${url_args[@]+"${url_args[@]}"} 2>/dev/null)"; then
+		left="$(grep -i "$PLUGIN_PREFIX" <<<"$hooks" || true)"
+		[[ -z "$left" ]] || fail "cron events left after uninstalling$where: $(printf '%s' "$left" | tr '\n' ' ')"
+	else
+		fail "could not list the cron events after uninstalling$where"
+	fi
+	return 0
+}
+
 check_uninstall() {
-	local left hooks tables
+	local left tables url
 	if tables="$(plugin_tables)"; then
 		if [[ -n "$tables" ]]; then
 			printf '  tables before uninstalling: %s\n' "$(printf '%s' "$tables" | tr '\n' ' ')"
@@ -271,24 +459,26 @@ check_uninstall() {
 	else
 		fail "could not list the plugin's tables"
 	fi
-	wp_cli plugin deactivate "$SLUG" --quiet || fail "deactivate"
+	if [[ "$MULTISITE" -eq 1 ]]; then
+		if left="$(network_options)"; then
+			printf '  network options before uninstalling: %s\n' "$(printf '%s' "${left:-none}" | tr '\n' ' ')"
+		fi
+		wp_cli plugin deactivate "$SLUG" --network --quiet || fail "deactivate --network"
+	else
+		wp_cli plugin deactivate "$SLUG" --quiet || fail "deactivate"
+	fi
 	wp_cli plugin uninstall "$SLUG" --quiet || fail "uninstall"
-	if left="$(plugin_tables)"; then
-		[[ -z "$left" ]] || fail "tables left after uninstalling: $(printf '%s' "$left" | tr '\n' ' ')"
+	if [[ "$MULTISITE" -eq 1 ]]; then
+		for url in "${SITE_URLS[@]}"; do
+			check_site_clean " on $url" --url="$url"
+		done
+		if left="$(network_options)"; then
+			[[ -z "$left" ]] || fail "network options left after uninstalling: $(printf '%s' "$left" | tr '\n' ' ')"
+		else
+			fail "could not list the network options after uninstalling"
+		fi
 	else
-		fail "could not list the plugin's tables after uninstalling"
-	fi
-	# A failed listing must fail the check, not read as "nothing left".
-	if left="$(wp_cli option list --search="*$PLUGIN_PREFIX*" --field=option_name 2>/dev/null)"; then
-		[[ -z "$left" ]] || fail "options left after uninstalling: $(printf '%s' "$left" | tr '\n' ' ')"
-	else
-		fail "could not list the options after uninstalling"
-	fi
-	if hooks="$(wp_cli cron event list --field=hook 2>/dev/null)"; then
-		left="$(grep -i "$PLUGIN_PREFIX" <<<"$hooks" || true)"
-		[[ -z "$left" ]] || fail "cron events left after uninstalling: $(printf '%s' "$left" | tr '\n' ' ')"
-	else
-		fail "could not list the cron events after uninstalling"
+		check_site_clean ""
 	fi
 	return 0
 }
@@ -324,6 +514,12 @@ check_queries() {
 	elif ! grep -q '^queries: ok$' <<<"$report"; then
 		fail "the plugin's own queries (see above)"
 	fi
+	reset_queries
+	return 0
+}
+
+# Forget the requests recorded so far (scripts/smoke-queries.php).
+reset_queries() {
 	wp_cli eval 'wpallstars_smoke_reset();' || fail "resetting the query log"
 	return 0
 }
@@ -350,7 +546,8 @@ check_debug_log() {
 	return 0
 }
 
-# Read the options into REF, ZIP, WPORG, KEEP_LOG and the settings above.
+# Read the options into REF, ZIP, WPORG, KEEP_LOG, MULTISITE and the
+# settings above.
 parse_args() {
 	local arg value
 	while [[ $# -gt 0 ]]; do
@@ -382,6 +579,7 @@ parse_args() {
 			shift
 			;;
 		--wporg) WPORG=1 ;;
+		--multisite) MULTISITE=1 ;;
 		-h | --help)
 			usage
 			exit 0
@@ -434,7 +632,11 @@ main() {
 	add_canary || die "could not add the debug.log canary"
 	add_query_checks || die "could not add the query checks and seed the posts"
 	printf '\nInstalling %s\n' "$(basename "$zip")"
-	wp_cli plugin install "/zips/$SLUG.zip" --activate --quiet || die "could not install and activate the plugin"
+	if [[ "$MULTISITE" -eq 1 ]]; then
+		wp_cli plugin install "/zips/$SLUG.zip" --activate-network --quiet || die "could not install and network-activate the plugin"
+	else
+		wp_cli plugin install "/zips/$SLUG.zip" --activate --quiet || die "could not install and activate the plugin"
+	fi
 	log_in
 	find_plugin_pages || die "could not tell where the plugin's admin screens are"
 	wp_cli eval 'wpallstars_smoke_reset();' || die "could not reset the query log"
@@ -445,20 +647,28 @@ main() {
 
 	printf '\nEvery feature on:\n'
 	switch_all_on || fail "switching features on"
-	wp_cli eval 'wpallstars_smoke_reset();' || fail "resetting the query log"
+	reset_queries
 	load_pages
 	check_queries
+
+	# check_queries has reset the query log.
+	if [[ "$MULTISITE" -eq 1 ]]; then
+		check_network
+		check_queries
+	fi
 
 	printf '\nUninstall:\n'
 	check_uninstall
 	check_debug_log "$keep"
 
 	printf '\n'
+	local kind=""
+	[[ "$MULTISITE" -eq 1 ]] && kind=", multisite"
 	if [[ "$FAILED" -eq 1 ]]; then
-		printf 'Smoke test failed (WordPress %s, PHP %s).\n' "$WP_VERSION" "$PHP_VERSION"
+		printf 'Smoke test failed (WordPress %s, PHP %s%s).\n' "$WP_VERSION" "$PHP_VERSION" "$kind"
 		return 1
 	fi
-	printf 'Smoke test passed (WordPress %s, PHP %s).\n' "$WP_VERSION" "$PHP_VERSION"
+	printf 'Smoke test passed (WordPress %s, PHP %s%s).\n' "$WP_VERSION" "$PHP_VERSION" "$kind"
 	return 0
 }
 

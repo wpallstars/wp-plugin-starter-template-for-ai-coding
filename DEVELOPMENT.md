@@ -121,7 +121,7 @@ Every pull request and every push to `main` runs these in GitHub Actions
 | JavaScript build | `scripts/lint.sh build` | Plugins with a build only: the `check` script's findings (types, lint), and built files in `assets/build/` that differ from a fresh build. |
 | Release build | `scripts/preflight-release.sh --offline` | Versions, headers, `readme.txt`, presets (where the plugin has them) and the contents of both zips. |
 | Plugin Check | `scripts/plugin-check.sh` | The WordPress.org review tool, on both zips. |
-| Smoke test | `scripts/smoke-test.sh --wp 6.2 --php 7.4` and `scripts/smoke-test.sh` | Installs the GitHub zip on a site with 10,000 posts, loads the site and admin screens with default settings and with every feature on, runs cron, uninstalls. Lists each page's queries. Fails on any PHP message, a failed page, a full table scan or large sort in the plugin's own queries, or leftover options, cron events or tables (`{prefix}_*`). |
+| Smoke test | `scripts/smoke-test.sh --wp 6.2 --php 7.4`, `scripts/smoke-test.sh` and `scripts/smoke-test.sh --multisite` | Installs the GitHub zip on a site with 10,000 posts, loads the site and admin screens with default settings and with every feature on, runs cron, uninstalls. Lists each page's queries. Fails on any PHP message, a failed page, a full table scan or large sort in the plugin's own queries, or leftover options, cron events or tables (`{prefix}_*`). On a network, also applies a setting to every site and checks the other site picks it up. |
 
 `scripts/lint.sh` with no arguments runs the first seven.
 
@@ -222,10 +222,25 @@ real secret is rotated first, then removed from history.
 `scripts/smoke-test.sh` starts a throwaway WordPress in Docker (MariaDB,
 Apache and WP-CLI images for the chosen PHP version), so nothing touches
 the shared preview site. CI runs it on WordPress 6.2 with PHP 7.4 and on
-the latest WordPress with PHP 8.3. Every feature with an on/off setting is
+the latest WordPress with PHP 8.3, and on a network (below). Every feature with an on/off setting is
 switched on at once, except one with the key `maintenance` (a maintenance
 mode would answer every visitor page with its notice). `--keep-log FILE` saves `debug.log`; CI keeps it as an artifact
 when the test fails.
+
+`--multisite` (CI runs it too, on the latest WordPress with PHP 8.3)
+installs a network with subdirectories and a second site, `/two/`, and
+network-activates the plugin. Besides the main site's pages, it loads site
+two's, the network screens and the plugin's network settings screen, and
+runs cron on every site. It then applies one on/off setting to every site
+from the network, through `{Package}_Network_Settings::set_value()` and
+`apply()` (the plugin's first eligible one other than `maintenance`, else
+`smoke_network`, which a must-use plugin adds so a plugin without settings
+has one), and fails unless site two does its saving work on its next admin
+request (its `{prefix}_network_seen` records the network's version) and
+reads the network's value. Uninstall must leave no options, cron events or
+tables on any site, and no network option (`{prefix}` in the meta key).
+WordPress runs a network only on port 80, so the network's address has no
+port and curl reaches the published port with `--connect-to`.
 
 Queries are checked on large data (`STANDARDS.md` → Performance). Before
 installing the plugin, the test seeds 10,000 posts (`--posts N`) with three
