@@ -147,6 +147,8 @@ stamp_file() {
 }
 
 stamp() {
+	# stamp_file runs in a condition, where a missing perl would go unnoticed.
+	command -v perl >/dev/null 2>&1 || die "stamp needs perl"
 	find_main
 	local id replace=1 file changed=0
 	[[ "$REPO" != "$STARTER_REPO" ]] || replace=0

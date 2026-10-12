@@ -993,7 +993,7 @@ check_licence() {
 	# A plugin's own ID is in its main file; a plugin made from the starter
 	# has one of its own, not the starter's.
 	local main_id
-	main_id="$(git show "$sha:$MAIN_FILE" | sed -n 1,60p | sed -nE 's/.*Provenance:[[:space:]]*(wpas-[0-9a-f]{16}).*/\1/p')"
+	main_id="$(git show "$sha:$MAIN_FILE" 2>/dev/null | sed -n 1,60p | sed -nE 's/.*Provenance:[[:space:]]*(wpas-[0-9a-f]{16}).*/\1/p' || true)"
 	if [[ -z "$main_id" ]]; then
 		warn "$MAIN_FILE has no Provenance ID (scripts/provenance.sh stamp gives the plugin its own)"
 		problems=1
