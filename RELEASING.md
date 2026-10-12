@@ -6,7 +6,8 @@ lists them, and the plugin's `AGENTS.md` gives its values). The plugin's own
 submission state and guideline review: `LAUNCH.md`.
 
 Releases on GitHub and the WordPress.org submission need the owner's say.
-None of the scripts below tags, publishes, uploads or commits anything. The
+None of the scripts below tags, publishes or commits anything, and only
+`scripts/deploy-sites.sh --apply` changes a site outside Docker. The
 Release workflow (`.github/workflows/release.yml`) publishes a GitHub release
 only when someone pushes a version tag.
 
@@ -18,6 +19,7 @@ only when someone pushes a version tag.
 | `scripts/preflight-release.sh [--ref REF] [--strict] [--offline] [--no-docker]` | Checks versions, headers, readme, both zips (layout, development files, PHP 7.4 and JS syntax, updater code), remote assets, presets and starter data where the plugin has them, and the Git tag. Errors stop a release; `--strict` also fails on warnings, for a WordPress.org submission. `--no-docker` lints PHP with the local `php` instead of PHP 7.4 in Docker. |
 | `scripts/plugin-check.sh [--ref REF] [--zip FILE]` | Runs Plugin Check on both zips in a disposable WordPress in Docker, then removes it. |
 | `scripts/update-test.sh [--from X.Y.Z] [--to X.Y.Z] [--wp VERSION] [--php VERSION] [--keep-log FILE]` | After a release: installs the previous GitHub release (default: the one before the newest) on a disposable WordPress in Docker and checks that it is offered the new one from its asset (WP-CLI, **Check again** on the Updates screen, the Plugins screen), that the update installs and the plugin stays active, and that `debug.log` stays empty. Then removes the site. Reads releases with `gh`. |
+| `scripts/deploy-sites.sh --host SSH_HOST --tag vX.Y.Z [--parent PATTERN] [--skip NAME]... [--apply]` | After the update test: installs the release's zip, checked against GitHub's SHA-256 and its provenance bundle, on every install on one SSH host that already has the plugin (default `'~/domains/*/public_html'`). Without `--apply` it only lists them, with their version and whether each is a multisite network. With `--apply`: a backup of each plugin folder, `wp plugin install --force` (activation kept), one full load for the settings upgrade, and one line per install; fails on a version not reached, new `error_log` or `debug.log` lines or a failed home page, with the restore command. The remote part is `scripts/lib/deploy-remote.sh`. |
 
 The two builds of each version:
 
@@ -97,6 +99,24 @@ expected in the GitHub zip too.
    it. For a private repository, export a read-only token as
    `WPALLSTARS_GITHUB_TOKEN` first (below); the test site reads it from the
    environment. Without Docker, check the same by hand on a test site.
+5. Roll the release out to the owner's own sites, one SSH host at a time:
+
+   ```bash
+   scripts/deploy-sites.sh --host <ssh-host> --tag vX.Y.Z            # lists the installs; changes nothing
+   scripts/deploy-sites.sh --host <ssh-host> --tag vX.Y.Z --apply    # installs, then one line per install
+   ```
+
+   Only installs that already have the plugin are touched. Each line gives
+   the old and new version, the status (`active-network` on a network
+   activation), the home page's HTTP code and the log lines gained; a
+   failed install prints its restore command and the backup folder
+   (`~/.{slug}-deploy/` on the host). `--parent` names the WordPress
+   folders on hosts with another layout, and `--skip` leaves an install
+   out. It never uses `wp plugin update`: behind an HTTP request limiter,
+   WP-CLI's update check can report the plugin already up to date. Host
+   names, folders and backups stay out of the repository and its issues.
+   With aidevops, `wp-fleet-helper.sh` (plan, backup, deploy, verify and
+   report across hosts, with a reviewed plan) is the alternative.
 
 Sites read the repository without signing in, so it must be public for sites
 to get updates. While it is private, a test site can use a read-only token

@@ -37,6 +37,8 @@ admin/js/wpstarter-theme.js
 scripts/build-banner.sh
 scripts/build-release.sh
 scripts/core-files.txt
+scripts/deploy-sites.sh
+scripts/lib/deploy-remote.sh
 scripts/lib/plugin.sh
 scripts/lint.sh
 scripts/phpstan-bootstrap.php
