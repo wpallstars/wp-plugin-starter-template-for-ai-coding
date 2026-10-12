@@ -135,7 +135,7 @@ class WPStarter_Admin_Manager {
      * settings the network can set (WPStarter_Settings_Manager::fields_for_tab()),
      * and Read Me.
      *
-     * @return array<string,array{label:string,group:string,render:callable,preload?:bool,capability?:string,network?:bool}>
+     * @return array<string,array{label:string,group:string,render:callable,preload?:bool,capability?:string,network?:bool,menu?:string}>
      */
     public static function get_tabs() {
         $tabs = array();
@@ -190,7 +190,10 @@ class WPStarter_Admin_Manager {
          *                    optional network (true: also on the network
          *                    screen, multisite; its render callback then runs
          *                    in the network admin, where is_network_admin()
-         *                    is true).
+         *                    is true), optional menu (a name: tabs of a group
+         *                    with the same menu show as one tab with that
+         *                    name and, while one of them is shown, as a
+         *                    second row of tabs; WPStarter_Admin_Page::nav()).
          */
         $tabs = (array) apply_filters('wpstarter_admin_tabs', $tabs);
 

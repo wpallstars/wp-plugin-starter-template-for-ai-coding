@@ -476,6 +476,10 @@
 			});
 		},
 
+		inMenu: function (el, slug) {
+			return (el.getAttribute('data-wps-tabs') || '').split(' ').indexOf(slug) !== -1;
+		},
+
 		panel: function (slug) {
 			return $('[data-wps-panel]').filter(function () {
 				return this.getAttribute('data-wps-panel') === slug;
@@ -486,14 +490,23 @@
 			$('[data-wps-panel]').each(function () {
 				this.hidden = this.getAttribute('data-wps-panel') !== slug;
 			});
-			$('.wps-nav__tab').each(function () {
+			$('.wps-nav__tab, .wps-subnav__tab').each(function () {
 				var current = this.getAttribute('data-wps-tab') === slug;
+				// A menu's tab (data-wps-tabs) is current with any of its tabs.
+				var menu = this.hasAttribute('data-wps-tabs');
+				if (menu) {
+					current = Tabs.inMenu(this, slug);
+				}
 				$(this).toggleClass('is-active', current);
 				if (current) {
-					this.setAttribute('aria-current', 'page');
+					this.setAttribute('aria-current', menu ? 'true' : 'page');
 				} else {
 					this.removeAttribute('aria-current');
 				}
+			});
+			// The second row of tabs shows with its menu's tabs only.
+			$('.wps-subnav').each(function () {
+				this.hidden = !Tabs.inMenu(this, slug);
 			});
 			Tabs.title(cfg.tab, slug);
 			cfg.tab = slug;
