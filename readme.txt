@@ -5,7 +5,7 @@ Tags: starter, boilerplate, settings, developer, template
 Requires at least: 6.2
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 1.0.34
+Stable tag: 1.0.35
 License: GPLv3 or later
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 
@@ -62,8 +62,11 @@ GitHub releases are the stable beta channel: each version comes out there first.
 
 == Changelog ==
 
-= 1.0.34 =
-* New: the browser tab names the settings tab shown, such as "WP Plugin Starter: Read Me".
+= 1.0.35 =
+* New: Multisite. Network Admin → Settings → WP Plugin Starter holds the network's settings, which new sites start with; apply a card to every site, see which sites differ and make every site the same.
+* New: Light, Dark or System colour mode in the screen header, saved per person and shared with other wpallstars plugins.
+* Fix: on phones, text fields fit their card.
+* Developers: sync-core.sh never undoes a newer starter change or a plugin's own change, and preview-browser.sh checks the preview site's admin screens signed in.
 
 Every change: changelog.txt.
 

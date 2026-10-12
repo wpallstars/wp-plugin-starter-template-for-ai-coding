@@ -27,7 +27,7 @@ WP Plugin Starter is what wpallstars plugins are made from. It has no features o
 
 If this saves you time, headaches and costs, feel free to [buy me a coffee](https://buymeacoffee.com/marcusquinn), or whatever you like, to invest in making more things open-source.
 
-Version: 1.0.34
+Version: 1.0.35
 
 <!-- github-only:start -->
 ## Screenshots
@@ -148,7 +148,7 @@ Deleting the plugin removes its settings (on multisite, every site's and the net
 
 ## Changelog
 
-### Unreleased
+### 1.0.35
 
 - New: the header's colour-mode button chooses **Light**, **Dark** or **System**, saved per person and shared with the other wpallstars plugins. System follows the computer live. Only the plugin's own screens change; SEO Pro Stack's admin bar control follows the header and vice versa (GH#456).
 - Developers: `WPStarter_Admin_Theme` and its CSS and JS are core files. Own screens calling `enqueue_header()` before priority 20 and `render_header()` get the same mode; `wpstarter_admin_theme_screens` also accepts screen hooks before the head. Call `WPStarter_Admin_Theme::uninstall()` from the plugin's own uninstall file after syncing; remove private theme copies in the same change. The shared preference is kept while another wpallstars plugin is installed.
