@@ -50,6 +50,9 @@ if (is_multisite()) {
 // Hidden "WP Plugin Starter can do the job of these plugins" lines.
 delete_metadata('user', 0, 'wpstarter_replaced_plugins_hidden', '', true);
 
+require_once __DIR__ . '/admin/includes/class-admin-theme.php';
+WPStarter_Admin_Theme::uninstall();
+
 // Latest GitHub releases (the shared GitHub updater). Only a cache: another
 // plugin's copy asks again.
 delete_site_transient('wpallstars_github_releases');

@@ -39,6 +39,22 @@ plugin's form classes (`.{css}-form`, `.{css}-fieldset`, `.{css}-form__row`,
   small breakpoint (600px) and above, a full-width sheet below. End with
   right-aligned **Cancel** (tertiary) and the primary action.
 
+## Admin colour mode
+
+Own screens use the header's Light / Dark / System menu (keyboard arrows,
+Home, End and Escape, radio menu items, visible focus and screen-reader
+announcements). Light keeps WordPress's colours. Dark styles load only on
+own screens, and every override sits behind `html.{css}-dark`.
+
+The shared admin palette uses canvas `#101517`, surface `#1d2327`, raised
+surface `#2c3338`, borders `#3c434a`, text `#f0f0f1`, muted `#c3c4c7` and
+field borders `#8c8f94`. Define these as `--{css}-ui-*` tokens; derive the
+header, tabs, cards and classic WordPress elements from them. Read the admin
+colour scheme's accent on body, keep it for fills, and lighten accent text
+for dark surfaces. Keep the existing wrapping header layout and logical
+menu alignment; do not add mode transitions that change Light's behaviour.
+The admin choice is independent of the front-end theme's switcher.
+
 ## Front-end styling and dark mode
 
 Block, shortcode and other front-end styles must work with the Kadence Pro

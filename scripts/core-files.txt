@@ -23,12 +23,15 @@ admin/data/readme.php
 admin/includes/class-admin-manager.php
 admin/includes/class-network-manager.php
 admin/includes/class-admin-page.php
+admin/includes/class-admin-theme.php
 admin/includes/class-settings-manager.php
 admin/includes/class-readme-manager.php
 admin/includes/class-replaced-plugins.php
 admin/css/wpstarter-header.css
 admin/css/wpstarter-admin.css
+admin/css/wpstarter-theme.css
 admin/js/wpstarter-admin.js
+admin/js/wpstarter-theme.js
 
 # Build, check, release and preview scripts.
 scripts/build-banner.sh
