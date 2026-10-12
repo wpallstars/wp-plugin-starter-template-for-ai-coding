@@ -211,7 +211,9 @@ class WPStarter_Admin_Page {
     /**
      * Render the tab navigation: one labelled group of links per section
      * that has tabs. Links to tabs drawn on the page carry their slug, for
-     * the script.
+     * the script. Tabs with the same 'menu' name show as one tab with that
+     * name, opening the first of them, and, while one of them is shown, as a
+     * second row of tabs under the bar (menu_row()).
      *
      * @param array    $tabs      Tabs (WPStarter_Admin_Manager::get_tabs()).
      * @param string   $active    Active tab slug.
@@ -237,11 +239,30 @@ class WPStarter_Admin_Page {
             ?>
         </nav>
         <?php
+        $menu = isset($tabs[$active]['menu']) ? (string) $tabs[$active]['menu'] : '';
+        if ('' !== $menu) {
+            self::menu_row($menu, self::menu_tabs($tabs, $menu), $active, $page_tabs);
+        }
+    }
+
+    /**
+     * Tabs with the given 'menu' name, in navigation order.
+     *
+     * @param array  $tabs Tabs.
+     * @param string $menu Menu name.
+     * @return array
+     */
+    private static function menu_tabs(array $tabs, $menu) {
+        return array_filter($tabs, function ($tab) use ($menu) {
+            return isset($tab['menu']) && (string) $tab['menu'] === $menu;
+        });
     }
 
     /**
      * Render one navigation group. A group of links, not form controls, so
-     * role="group" with a label rather than <fieldset>.
+     * role="group" with a label rather than <fieldset>. A menu's tabs show
+     * as one link, where the first of them is; data-wps-tabs lists them, so
+     * the script marks it current with any of them.
      *
      * @param string   $label     Group label.
      * @param array    $tabs      The group's tabs.
@@ -249,18 +270,56 @@ class WPStarter_Admin_Page {
      * @param string[] $page_tabs Tabs drawn on the page.
      */
     private static function nav_group($label, array $tabs, $active, array $page_tabs) {
+        $menus = array();
         ?>
         <div class="wps-nav__group" role="group" aria-label="<?php echo esc_attr($label); ?>">
             <?php foreach ($tabs as $slug => $tab) : ?>
+                <?php
+                $slug    = (string) $slug;
+                $menu    = isset($tab['menu']) ? (string) $tab['menu'] : '';
+                $members = array($slug);
+                if ('' !== $menu) {
+                    if (isset($menus[$menu])) {
+                        continue;
+                    }
+                    $menus[$menu] = true;
+                    $members      = array_map('strval', array_keys(self::menu_tabs($tabs, $menu)));
+                }
+                $current = in_array($active, $members, true);
+                ?>
+                <a href="<?php echo esc_url(WPStarter_Admin_Manager::tab_url($slug)); ?>"
+                   class="wps-nav__tab<?php echo $current ? ' is-active' : ''; ?>"
+                   <?php echo '' === $menu && in_array($slug, $page_tabs, true) ? 'data-wps-tab="' . esc_attr($slug) . '"' : ''; ?>
+                   <?php echo '' !== $menu ? 'data-wps-tabs="' . esc_attr(implode(' ', $members)) . '"' : ''; ?>
+                   <?php echo $current ? 'aria-current="' . ('' === $menu ? 'page' : 'true') . '"' : ''; ?>>
+                    <?php echo esc_html('' === $menu ? $tab['label'] : $menu); ?>
+                </a>
+            <?php endforeach; ?>
+        </div>
+        <?php
+    }
+
+    /**
+     * Render the second row of tabs: the tabs of the menu shown.
+     *
+     * @param string   $menu      Menu name.
+     * @param array    $tabs      The menu's tabs.
+     * @param string   $active    Active tab slug.
+     * @param string[] $page_tabs Tabs drawn on the page.
+     */
+    private static function menu_row($menu, array $tabs, $active, array $page_tabs) {
+        ?>
+        <nav class="wps-subnav" aria-label="<?php echo esc_attr($menu); ?>" data-wps-tabs="<?php echo esc_attr(implode(' ', array_map('strval', array_keys($tabs)))); ?>">
+            <?php foreach ($tabs as $slug => $tab) : ?>
                 <?php $slug = (string) $slug; ?>
                 <a href="<?php echo esc_url(WPStarter_Admin_Manager::tab_url($slug)); ?>"
-                   class="wps-nav__tab<?php echo $slug === $active ? ' is-active' : ''; ?>"
+                   class="wps-subnav__tab<?php echo $slug === $active ? ' is-active' : ''; ?>"
                    <?php echo in_array($slug, $page_tabs, true) ? 'data-wps-tab="' . esc_attr($slug) . '"' : ''; ?>
                    <?php echo $slug === $active ? 'aria-current="page"' : ''; ?>>
                     <?php echo esc_html($tab['label']); ?>
                 </a>
             <?php endforeach; ?>
-        </div>
+        </nav>
         <?php
     }
 }
