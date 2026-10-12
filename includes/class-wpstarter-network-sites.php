@@ -134,24 +134,54 @@ class WPStarter_Network_Sites {
         if (0 === $network['version'] && !array_key_exists(self::SEEN, wp_load_alloptions())) {
             return;
         }
-        $seen = self::seen();
-        if ($seen['version'] === $network['version'] && !$seen['before']) {
+        if (!self::pending(self::seen(), $network)) {
             return;
         }
 
-        // Recorded first, so a request that starts meanwhile does not run
-        // the same work again.
-        update_option(self::SEEN, array('version' => $network['version'], 'enforced' => $network['enforced']), true);
+        // Read and recorded under the site's save lock, which Make every
+        // site the same holds while it changes the site's values and keeps
+        // those from before (WPStarter_Settings::replace_site_values()): so
+        // values it keeps are never written over here, and the settings read
+        // here already hold the values they were kept for. Read past this
+        // request's caches, which may predate that. Recorded first, so a
+        // request that starts meanwhile does not run the same work again.
+        // The saving work runs after the lock is released: it may save.
+        $work = WPStarter_Settings::under_lock(function () use ($network) {
+            self::flush_site_cache(get_current_blog_id(), array(self::SEEN, WPStarter_Settings::OPTION));
+            $seen = self::seen();
+            if (!self::pending($seen, $network)) {
+                return null;
+            }
+            update_option(self::SEEN, array('version' => $network['version'], 'enforced' => $network['enforced']), true);
 
-        // What the site's features last ran their saving work for: its own
-        // values, as they were before the network changed them, under the
-        // values the network applied then.
-        $schema = WPStarter_Settings::schema();
-        self::run_saving_work(array_merge(
-            WPStarter_Settings::own(),
-            array_intersect_key($seen['before'], $schema),
-            array_intersect_key(WPStarter_Network_Settings::flatten($seen['enforced']), $schema)
-        ), WPStarter_Settings::all());
+            // What the site's features last ran their saving work for: its
+            // own values, as they were before the network changed them,
+            // under the values the network applied then.
+            $schema = WPStarter_Settings::schema();
+            return array(
+                array_merge(
+                    WPStarter_Settings::own(),
+                    array_intersect_key($seen['before'], $schema),
+                    array_intersect_key(WPStarter_Network_Settings::flatten($seen['enforced']), $schema)
+                ),
+                WPStarter_Settings::all(),
+            );
+        });
+        // Nothing to do, or the lock was busy: the next request tries again.
+        if (is_array($work)) {
+            self::run_saving_work($work[0], $work[1]);
+        }
+    }
+
+    /**
+     * Whether the site has saving work to run for the network's changes.
+     *
+     * @param array $seen    This site's SEEN option (seen()).
+     * @param array $network The network option (WPStarter_Network_Settings::stored()).
+     * @return bool
+     */
+    private static function pending(array $seen, array $network) {
+        return $seen['version'] !== $network['version'] || (bool) $seen['before'];
     }
 
     /**
@@ -210,8 +240,10 @@ class WPStarter_Network_Sites {
     /**
      * Keep a site's own values from before Make every site the same
      * (WPStarter_Network_Differences::copy()), for its saving work (sync()).
-     * The earliest value of a key is kept. Written straight to its options
-     * table, as WPStarter_Settings::replace_site_values() does.
+     * The earliest value of a key is kept. Read and written straight in its
+     * options table by WPStarter_Settings::replace_site_values(), under the
+     * site's save lock, which sync() also holds while it reads and records
+     * this option: call it only there.
      *
      * @param int   $site_id  Site ID.
      * @param array $previous Key => own value before the change.
