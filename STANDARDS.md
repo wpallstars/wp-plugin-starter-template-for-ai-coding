@@ -351,6 +351,29 @@ their own when they follow these rules:
   networks must leave single sites' behaviour, markup and queries as they
   were.
 
+## Admin colour mode
+
+- Every own admin screen has the header's Light / Dark / System button.
+  Settings and network settings are recognised automatically. Other screens
+  call `{Prefix}_Admin_Manager::enqueue_header()` on `admin_enqueue_scripts`
+  before priority 20, then `render_header()` in the page. For later enqueues,
+  add their screen hooks to `{prefix}_admin_theme_screens` before the head.
+  A flag set while rendering is too late to prevent a first-paint flash.
+- Read `wpallstars_admin_theme` user meta first, then `{prefix}_admin_theme`,
+  then Light. Save both with a nonce and the screen's capability (network:
+  `manage_network_options`; site: `manage_options`). After a successful save,
+  send the `wpallstars-admin-theme` document event with `mode` and `source`;
+  listen without saving again. Join `wpallstars_admin_theme_participants`
+  and return false from `seoprostack_admin_dark_screen` on own screens.
+- Only own screens load the theme assets. The head script sets
+  `{css}-theme-{mode}` and `{css}-dark` before paint; System follows the
+  computer live. Every dark override is scoped to `html.{css}-dark`.
+- Every plugin's `uninstall.php` requires `admin/includes/class-admin-theme.php`
+  and calls `{Prefix}_Admin_Theme::uninstall()`: remove its own user meta,
+  keeping the shared choice while another wpallstars plugin is installed,
+  including inactive plugins. When syncing, remove any private theme copy
+  and its init call in the same change, so only one button is printed.
+
 ## Performance
 
 Every plugin runs on every request of every site it is on, next to many
