@@ -42,6 +42,7 @@ scripts/lint.sh
 scripts/phpstan-bootstrap.php
 scripts/plugin-check.sh
 scripts/preflight-release.sh
+scripts/preview-browser.sh
 scripts/preview-site.sh
 scripts/readme-badges.sh
 scripts/rename-plugin.sh

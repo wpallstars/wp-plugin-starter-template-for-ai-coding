@@ -51,6 +51,37 @@ the branch you run it from is missing or has commits that are not pushed.
   Testing, step 4, on a free port), which no one else overwrites:
   `rsync -a --delete --delete-excluded --exclude-from=.distignore ./ "<site>/wp-content/plugins/{slug}/"`.
 
+### Checking screens in a browser
+
+`scripts/preview-browser.sh` signs a browser in to the preview site's admin
+and reads the debug log lines a check added. It needs no WP-CLI and no file
+reads outside the repository, so headless workers can use it too
+(`--help` for the options, such as `--site` and `--user`):
+
+```bash
+mark="$(scripts/preview-browser.sh log-mark)"  # the debug log's length now
+scripts/preview-browser.sh login               # one-hour session; prints the state file and admin URL
+# … check the screens with that state file (below) …
+scripts/preview-browser.sh logout "<state file>"
+scripts/preview-browser.sh log-since "$mark"   # entries added since, naming {slug} (--all: every entry)
+```
+
+The state file (mode 600, in `$TMPDIR`) is a Playwright `storageState`; the
+script never prints cookie values. Always log out when done: that ends the
+session and deletes the file.
+
+```js
+const context = await browser.newContext( { storageState: stateFile, ignoreHTTPSErrors: true } );
+const page = await context.newPage();
+await page.goto( adminUrl + 'options-general.php?page={slug}' );
+```
+
+It runs the site's WordPress with the local `php` and `memory_limit` 1024M,
+finds a LocalWP site's database socket itself (other hosts:
+`{PREFIX}_PREVIEW_PHP_ARGS`), and keeps its own PHP messages out of the
+debug log, so `log-since` shows only what the pages wrote. Other requests
+to the site in the meantime (other sessions, cron) also write to the log.
+
 ## Set up
 
 Needs PHP 7.4 or later, Composer 2, Node.js (syntax checks, and the build
