@@ -579,6 +579,7 @@ Styling rules are in `STYLING.md`; read it before changing styles:
 
 - Admin screens: spacing and forms (React forms and modals in wp-admin).
 - Front-end styling and dark mode (the Kadence Pro dark mode switcher).
+- Plugin-own code must not reuse core header class names (`{css}-wrap`, `-header`, `-nav`, `-subnav`, `-main`): use screen-specific names; release preflight warns on reuse.
 
 ## Testing
 
