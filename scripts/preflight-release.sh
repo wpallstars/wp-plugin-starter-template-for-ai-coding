@@ -835,7 +835,8 @@ check_core_class_names() {
 		return 0
 	fi
 	# Git finds candidate lines; Perl checks whole class tokens in literal
-	# class/className attributes (including JSX braces) or CSS selectors.
+	# class/className attributes, className expressions, classList.add calls
+	# or CSS selectors.
 	# This is advisory, not a parser for dynamically assembled class names.
 	matches="$(git grep -n -I -F -f <(printf '%s\n' "$classes") "$sha" -- '*.php' '*.js' '*.jsx' '*.ts' '*.tsx' '*.css' "${exclusions[@]}" | CORE_CLASSES="$classes" perl -ne '
 		BEGIN { @classes = split /\n/, $ENV{CORE_CLASSES}; }
@@ -843,6 +844,13 @@ check_core_class_names() {
 		my $location = qq{$+{file}:$+{number}};
 		my $line = $_;
 		my @attributes = $line =~ /\bclass(?:Name)?\s*=\s*\{?\s*[\x22\x27`]([^\x22\x27`]*?)[\x22\x27`]/g;
+		my @contexts = $line =~ /\bclassName\s*=\s*\{([^}]*)\}/g;
+		push @contexts, $line =~ /\bclassList\s*\.\s*add\s*\(([^)]*)\)/g;
+		for my $context (@contexts) {
+			while ($context =~ /([\x22\x27`])(?<literal>(?:\\.|(?!\1)[^\\])*)\1/g) {
+				push @attributes, $+{literal};
+			}
+		}
 		for my $class (@classes) {
 			my $selector = $line =~ /\.\Q$class\E(?![a-zA-Z0-9_-])/;
 			my $attribute = grep { /(?<!\S)\Q$class\E(?!\S)/ } @attributes;
