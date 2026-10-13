@@ -800,6 +800,64 @@ check_core_files() {
 	return 0
 }
 
+# Plugin-own markup and selectors must not borrow core blocks: a starter
+# sync can change their styles. Read both the manifest and sources at the
+# release ref, not from the checkout running this check.
+check_core_class_names() {
+	local sha="$1"
+	section "Core class names"
+	local manifest path stylesheet classes="" matches location class problems=0
+	local exclusions=(':(exclude)assets/build/**' ':(exclude)**/vendor/**' ':(exclude)**/node_modules/**')
+	if ! manifest="$(git show "$sha:scripts/core-files.txt")" 2>/dev/null; then
+		warn "scripts/core-files.txt missing: core class names were not checked"
+		return 0
+	fi
+	while IFS= read -r path; do
+		path="${path%"${path##*[![:space:]]}"}"
+		# Older manifests retain the starter's prefix; newer syncs rename it.
+		path="${path//wpstart""er/$PLUGIN_PREFIX}"
+		case "$path" in
+		"" | \#*) continue ;;
+		*/) exclusions+=(":(exclude)$path**") ;;
+		*) exclusions+=(":(exclude,literal)$path") ;;
+		esac
+		case "$path" in
+		*.css | */)
+			while IFS= read -r stylesheet; do
+				classes+="$(git grep -h -o -E "\\.${PLUGIN_CSS}-[a-z0-9_-]+" "$sha" -- ":(literal)$stylesheet" | grep -v '__' || true)"$'\n'
+			done < <(git ls-tree -r --name-only "$sha" -- "$path" | grep '\.css$' || true)
+			;;
+		esac
+	done <<<"$manifest"
+	classes="$(printf '%s\n' "$classes" | sed -e '/^$/d' -e 's/^\.//' | sort -u)"
+	if [[ -z "$classes" ]]; then
+		warn "no core block classes found: core class names were not checked"
+		return 0
+	fi
+	# Git finds candidate lines; Perl checks whole class tokens in literal
+	# class/className attributes (including JSX braces) or CSS selectors.
+	# This is advisory, not a parser for dynamically assembled class names.
+	matches="$(git grep -n -I -F -f <(printf '%s\n' "$classes") "$sha" -- '*.php' '*.js' '*.jsx' '*.ts' '*.tsx' '*.css' "${exclusions[@]}" | CORE_CLASSES="$classes" perl -ne '
+		BEGIN { @classes = split /\n/, $ENV{CORE_CLASSES}; }
+		next unless s/^[^:]+:(?<file>.*?):(?<number>[0-9]+)://;
+		my $location = qq{$+{file}:$+{number}};
+		my $line = $_;
+		my @attributes = $line =~ /\bclass(?:Name)?\s*=\s*\{?\s*[\x22\x27`]([^\x22\x27`]*?)[\x22\x27`]/g;
+		for my $class (@classes) {
+			my $selector = $line =~ /\.\Q$class\E(?![a-zA-Z0-9_-])/;
+			my $attribute = grep { /(?<!\S)\Q$class\E(?!\S)/ } @attributes;
+			print qq{$location $class\n} if $selector || $attribute;
+		}
+	' || true)"
+	while read -r location class; do
+		[[ -n "$location" ]] || continue
+		warn "$location reuses core class .$class: use a screen-specific name such as .${PLUGIN_CSS}-<screen>-nav"
+		problems=1
+	done <<<"$matches"
+	[[ "$problems" -eq 1 ]] || ok "plugin-own source does not reuse core block class names"
+	return 0
+}
+
 # AGENTS.md stays a short map (STANDARDS.md → Agent docs): under
 # AGENTS_MD_MAX_LINES lines, it names each shared guidance file agents must
 # read (AGENTS_MD_READS), CLAUDE.md points to it, a plugin's is its own (not
@@ -1254,6 +1312,7 @@ main() {
 	if [[ -f "$SCRIPT_DIR/sync-core.sh" ]]; then
 		check_core_files
 	fi
+	check_core_class_names "$sha"
 	check_agent_docs "$sha"
 	check_starter_leftovers "$sha" "$plugin_header" "$readme"
 	check_credits "$sha"

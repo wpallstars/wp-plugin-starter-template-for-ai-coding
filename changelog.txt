@@ -2,6 +2,9 @@
 
 Every change to WP Plugin Starter. readme.txt lists the latest version in short.
 
+= Unreleased =
+* Developers: release preflight warns with file, line and class when plugin-own markup or CSS reuses a block class styled by a core stylesheet. Names come from the core stylesheets at the release ref; core files, generated builds and dependencies are skipped. Use screen-specific names so a starter sync cannot accidentally restyle a plugin screen. Plugins made from the starter get the check and styling rule with scripts/sync-core.sh (GH#487).
+
 = 1.0.39 =
 * Developers: scripts/preview-browser.sh bypasses page caches while loading WordPress with a dummy logged-in cookie name, not a real sign-in cookie. It fails clearly when WordPress exits before loading, wp_loaded does not run, or sign-in returns incomplete data, removing any unfinished state file instead of reporting an empty sign-in. Nothing changes on sites (GH#483).
 
