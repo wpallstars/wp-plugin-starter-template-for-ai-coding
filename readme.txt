@@ -5,7 +5,7 @@ Tags: starter, boilerplate, settings, developer, template
 Requires at least: 6.2
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 1.0.38
+Stable tag: 1.0.39
 License: GPLv3 or later
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 
@@ -62,8 +62,8 @@ GitHub releases are the stable beta channel: each version comes out there first.
 
 == Changelog ==
 
-= 1.0.38 =
-* Developers: CLAUDE.md points AI tools to AGENTS.md, which lists the guidance to read before any change; each plugin has a Provenance ID, and ATTRIBUTION.txt tells AI assistants what every copy keeps. Nothing changes on sites.
+= 1.0.39 =
+* Developers: preview-browser.sh bypasses page caches and fails clearly on an incomplete WordPress load or sign-in, removing unfinished state files. Nothing changes on sites.
 
 Every change: changelog.txt.
 

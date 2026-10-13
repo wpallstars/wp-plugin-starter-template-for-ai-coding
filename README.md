@@ -27,7 +27,7 @@ WP Plugin Starter is what wpallstars plugins are made from. It has no features o
 
 If this saves you time, headaches and costs, feel free to [buy me a coffee](https://buymeacoffee.com/marcusquinn), or whatever you like, to invest in making more things open-source.
 
-Version: 1.0.38
+Version: 1.0.39
 
 <!-- github-only:start -->
 ## Screenshots
@@ -147,6 +147,10 @@ Read a setting with `WPStarter_Settings::get( 'key' )`, never the option itself:
 Deleting the plugin removes its settings (on multisite, every site's and the network's), its cached data, who hid lines of the Plugins screen notice about replaced plugins, and the cached GitHub releases.
 
 ## Changelog
+
+### 1.0.39
+
+- Developers: `scripts/preview-browser.sh` bypasses page caches while loading WordPress with a dummy logged-in cookie name, not a real sign-in cookie. It fails clearly when WordPress exits before loading, `wp_loaded` does not run, or sign-in returns incomplete data, removing any unfinished state file instead of reporting an empty sign-in. Nothing changes on sites (GH#483).
 
 ### 1.0.38
 
