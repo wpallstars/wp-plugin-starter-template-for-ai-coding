@@ -176,7 +176,11 @@ How changes are made and checked: `DEVELOPMENT.md`. Releases: `RELEASING.md`.
   names the screen, then the tab or section shown ("{Name}: General ‹
   Site — WordPress"), also after a switch without a reload; the plugin's
   own screens with sections call `{Prefix}_Admin_Page::title_section()`
-  on their `load-{hook}` action.
+  on their `load-{hook}` action. The screen's name is its page title
+  (`get_admin_page_title()`), so it reads as the menu does: in the
+  plugin's own menu, the first item (the one with the menu's slug) keeps
+  `{Name}` as its page title and takes the first section's name only as
+  its menu title, giving "{Name}: Overview", never "Overview: Overview".
 - Update `README.md` (feature section, hooks, changelog), `changelog.txt`
   (the user-facing changelog entry) and `readme.txt` in the same change.
   `readme.txt` must stay under 10 KB for WordPress.org: one short line per

@@ -514,7 +514,10 @@ class WPStarter_Admin_Manager {
      * holding `<a class="wps-nav__tab">` links, the one shown `is-active`
      * with `aria-current="page"`, and name it in the browser title with
      * WPStarter_Admin_Page::title_section() on the screen's load-{hook}
-     * action.
+     * action. The title puts the section after the screen's page title, so
+     * the first item of the plugin's own menu (the one with the menu's
+     * slug) keeps the plugin's name as its page title, with the first
+     * section's name only as its menu title.
      */
     public static function render_header() {
         WPStarter_Admin_Page::header();
