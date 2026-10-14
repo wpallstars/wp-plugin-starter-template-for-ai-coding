@@ -24,9 +24,12 @@
 set -uo pipefail
 
 WP_CLI="${DEPLOY_WP_CLI:-wp}"
+WEB_ERROR_LOG="${DEPLOY_WEB_ERROR_LOG:-}"
 SLUG=""
 FAILED=0
 SKIPS=()
+LOG_FILES=()
+LOG_BEFORE=()
 
 say() {
 	local message="$1"
@@ -86,18 +89,70 @@ wp_bare() {
 	return 0
 }
 
-# The first lines the docroot's error_log and wp-content/debug.log gained
-# since they had BEFORE_ERROR and BEFORE_DEBUG lines.
-new_log_text() {
+# Discover log files before installation, then print the lines each one gained.
+log_files() {
 	local root="$1"
-	local before_error="$2"
-	local before_debug="$3"
-	if [[ -f "$root/error_log" ]]; then
-		tail -n +"$((before_error + 1))" "$root/error_log" | head -n 10
+	local wp_debug php_error path candidate existing duplicate
+	local candidates=()
+	local unique=()
+	wp_debug="$(wp_bare "$root" eval 'echo defined("WP_DEBUG_LOG") && is_string(WP_DEBUG_LOG) && !in_array(strtolower(WP_DEBUG_LOG), array("1", "true"), true) ? WP_DEBUG_LOG : (defined("WP_DEBUG_LOG") && WP_DEBUG_LOG ? WP_CONTENT_DIR . "/debug.log" : "");')"
+	# CLI ini settings do not describe PHP-FPM pools or .user.ini. The
+	# caller supplies the verified web destination separately for apply.
+	php_error="$(wp_bare "$root" eval 'echo ini_get("error_log");')"
+	candidates+=("$root/error_log" "$root/wp-content/debug.log")
+	if [[ -n "$WEB_ERROR_LOG" ]]; then
+		if [[ "$WEB_ERROR_LOG" == /* ]]; then
+			path="$WEB_ERROR_LOG"
+		else
+			path="$root/$WEB_ERROR_LOG"
+		fi
+		if [[ -e "$path" && ( ! -f "$path" || ! -r "$path" ) ]]; then
+			say "deploy-remote: web PHP log is not a readable regular file: $path"
+			return 1
+		fi
+		candidates+=("$path")
 	fi
-	if [[ -f "$root/wp-content/debug.log" ]]; then
-		tail -n +"$((before_debug + 1))" "$root/wp-content/debug.log" | head -n 10
+	if [[ -n "$wp_debug" ]]; then
+		if [[ "$wp_debug" == /* ]]; then
+			candidates+=("$wp_debug")
+		else
+			candidates+=("$root/$wp_debug")
+		fi
 	fi
+	if [[ -n "$php_error" && "$php_error" != "syslog" ]]; then
+		if [[ "$php_error" == /* ]]; then
+			candidates+=("$php_error")
+		else
+			candidates+=("$root/$php_error")
+		fi
+	fi
+	for candidate in "${candidates[@]}"; do
+		duplicate=0
+		for existing in ${unique[@]+"${unique[@]}"}; do
+			if [[ "$candidate" == "$existing" || "$candidate" -ef "$existing" ]]; then
+				duplicate=1
+				break
+			fi
+		done
+		[[ "$duplicate" -eq 1 ]] || unique+=("$candidate")
+	done
+	LOG_FILES=(${unique[@]+"${unique[@]}"})
+	LOG_BEFORE=()
+	for path in ${LOG_FILES[@]+"${LOG_FILES[@]}"}; do
+		LOG_BEFORE+=("$(file_lines "$path")")
+	done
+	return 0
+}
+
+new_log_text() {
+	local index=0
+	local file
+	for file in ${LOG_FILES[@]+"${LOG_FILES[@]}"}; do
+		if [[ -f "$file" ]]; then
+			tail -n +"$((LOG_BEFORE[index] + 1))" "$file" | head -n 10
+		fi
+		index=$((index + 1))
+	done
 	return 0
 }
 
@@ -147,7 +202,7 @@ apply_one() {
 	local backups="$5"
 	local plugins="$root/wp-content/plugins"
 	local main="$plugins/$SLUG/$SLUG.php"
-	local before after status home code backup err_before debug_before new_lines result="ok"
+	local before after status home code backup new_lines result="ok" index file
 
 	before="$(plugin_version "$main")"
 	backup="$backups/$SLUG-$name-${before:-unknown}.tar.gz"
@@ -157,8 +212,11 @@ apply_one() {
 		return 0
 	fi
 	chmod 600 "$backup"
-	err_before="$(file_lines "$root/error_log")"
-	debug_before="$(file_lines "$root/wp-content/debug.log")"
+	if ! log_files "$root"; then
+		printf '%s\tFAIL: cannot check the web PHP log; not installed\n' "$name"
+		FAILED=1
+		return 0
+	fi
 
 	# Activation (and network activation) is kept by install --force.
 	"$WP_CLI" --path="$root" --skip-plugins --skip-themes plugin install "$zip" --force >/dev/null 2>&1
@@ -172,7 +230,12 @@ apply_one() {
 	if [[ -n "$home" ]]; then
 		code="$(curl -s -o /dev/null -L -w '%{http_code}' --max-time 30 "$home/" || true)"
 	fi
-	new_lines=$(($(file_lines "$root/error_log") - err_before + $(file_lines "$root/wp-content/debug.log") - debug_before))
+	new_lines=0
+	index=0
+	for file in ${LOG_FILES[@]+"${LOG_FILES[@]}"}; do
+		new_lines=$((new_lines + $(file_lines "$file") - LOG_BEFORE[index]))
+		index=$((index + 1))
+	done
 
 	# A home page that fails (5xx, such as WordPress's critical error page)
 	# or does not answer fails the install; 4xx can be a firewall's answer
@@ -184,7 +247,7 @@ apply_one() {
 	printf '%s\t%s -> %s\tstatus=%s\thome=%s\tnew_log_lines=%s\t%s\n' \
 		"$name" "${before:-?}" "${after:-?}" "${status:-?}" "${code:-000}" "$new_lines" "$result"
 	if [[ "$new_lines" -gt 0 ]]; then
-		new_log_text "$root" "$err_before" "$debug_before" | sed 's/^/    /'
+		new_log_text | sed 's/^/    /'
 	fi
 	if [[ "$result" == "FAIL" ]]; then
 		printf '    restore: rm -rf %q && tar -xzf %q -C %q\n' "$plugins/$SLUG" "$backup" "$plugins"
@@ -243,6 +306,10 @@ main() {
 	fi
 
 	if [[ "$apply" -eq 1 ]]; then
+		if [[ -z "$WEB_ERROR_LOG" || "$WEB_ERROR_LOG" == "syslog" ]]; then
+			say "deploy-remote: apply requires DEPLOY_WEB_ERROR_LOG, the verified web PHP log file; nothing installed"
+			return 2
+		fi
 		if [[ "$(sha256_of "$zip" || true)" != "$sha" ]]; then
 			say "deploy-remote: the zip's SHA-256 on this host is not $sha; nothing installed"
 			return 2

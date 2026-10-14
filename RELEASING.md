@@ -19,7 +19,7 @@ only when someone pushes a version tag.
 | `scripts/preflight-release.sh [--ref REF] [--strict] [--offline] [--no-docker]` | Checks versions, headers, readme, both zips (layout, development files, PHP 7.4 and JS syntax, updater code), remote assets, presets and starter data where the plugin has them, and the Git tag. Errors stop a release; `--strict` also fails on warnings, for a WordPress.org submission. `--no-docker` lints PHP with the local `php` instead of PHP 7.4 in Docker. |
 | `scripts/plugin-check.sh [--ref REF] [--zip FILE]` | Runs Plugin Check on both zips in a disposable WordPress in Docker, then removes it. |
 | `scripts/update-test.sh [--from X.Y.Z] [--to X.Y.Z] [--wp VERSION] [--php VERSION] [--keep-log FILE]` | After a release: installs the previous GitHub release (default: the one before the newest) on a disposable WordPress in Docker and checks that it is offered the new one from its asset (WP-CLI, **Check again** on the Updates screen, the Plugins screen), that the update installs and the plugin stays active, and that `debug.log` stays empty. Then removes the site. Reads releases with `gh`. |
-| `scripts/deploy-sites.sh --host SSH_HOST --tag vX.Y.Z [--parent PATTERN] [--skip NAME]... [--apply]` | After the update test: installs the release's zip, checked against GitHub's SHA-256 and its provenance bundle, on every install on one SSH host that already has the plugin (default `'~/domains/*/public_html'`). Without `--apply` it only lists them, with their version and whether each is a multisite network. With `--apply`: a backup of each plugin folder, `wp plugin install --force` (activation kept), one full load for the settings upgrade, and one line per install; fails on a version not reached, new `error_log` or `debug.log` lines or a failed home page, with the restore command. The remote part is `scripts/lib/deploy-remote.sh`. |
+| `scripts/deploy-sites.sh --host SSH_HOST --tag vX.Y.Z [--parent PATTERN] [--skip NAME]... [--apply]` | After the update test: installs the release's zip, checked against GitHub's SHA-256 and its provenance bundle, on every install on one SSH host that already has the plugin (default `'~/domains/*/public_html'`). Without `--apply` it only lists them, with their version and whether each is a multisite network. With `--apply`: a backup of each plugin folder, `wp plugin install --force` (activation kept), one full load for the settings upgrade, and one line per install; fails on a version not reached, new lines in the site's PHP logs (`WP_DEBUG_LOG`, including a custom path, and PHP's `error_log`) or a failed home page, with the restore command. The remote part is `scripts/lib/deploy-remote.sh`. |
 
 The two builds of each version:
 
@@ -103,7 +103,7 @@ expected in the GitHub zip too.
 
    ```bash
    scripts/deploy-sites.sh --host <ssh-host> --tag vX.Y.Z            # lists the installs; changes nothing
-   scripts/deploy-sites.sh --host <ssh-host> --tag vX.Y.Z --apply    # installs, then one line per install
+   scripts/deploy-sites.sh --host <ssh-host> --tag vX.Y.Z --web-error-log <path> --apply    # installs, then one line per install
    ```
 
    Only installs that already have the plugin are touched. Each line gives
@@ -115,6 +115,14 @@ expected in the GitHub zip too.
    out. It never uses `wp plugin update`: behind an HTTP request limiter,
    WP-CLI's update check can report the plugin already up to date. Host
    names, folders and backups stay out of the repository and its issues.
+   `--apply` requires `--web-error-log PATH`: verify the active web PHP
+   `error_log` destination in the host's PHP-FPM/CGI or Apache configuration
+   (including `.user.ini` overrides), not WP-CLI's CLI configuration. The
+   path is absolute on the host, or relative to each WordPress folder;
+   deploy separately with `--parent`/`--skip` when sites use different paths.
+   Only file destinations are supported, not syslog or stderr. This path,
+   the CLI PHP destination, `WP_DEBUG_LOG` and the two default paths are
+   checked, including files first created during installation.
    With aidevops, `wp-fleet-helper.sh` (plan, backup, deploy, verify and
    report across hosts, with a reviewed plan) is the alternative.
 
