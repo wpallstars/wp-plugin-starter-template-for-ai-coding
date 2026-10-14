@@ -103,7 +103,7 @@ expected in the GitHub zip too.
 
    ```bash
    scripts/deploy-sites.sh --host <ssh-host> --tag vX.Y.Z            # lists the installs; changes nothing
-   scripts/deploy-sites.sh --host <ssh-host> --tag vX.Y.Z --apply    # installs, then one line per install
+   scripts/deploy-sites.sh --host <ssh-host> --tag vX.Y.Z --web-error-log <path> --apply    # installs, then one line per install
    ```
 
    Only installs that already have the plugin are touched. Each line gives
@@ -115,6 +115,14 @@ expected in the GitHub zip too.
    out. It never uses `wp plugin update`: behind an HTTP request limiter,
    WP-CLI's update check can report the plugin already up to date. Host
    names, folders and backups stay out of the repository and its issues.
+   `--apply` requires `--web-error-log PATH`: verify the active web PHP
+   `error_log` destination in the host's PHP-FPM/CGI or Apache configuration
+   (including `.user.ini` overrides), not WP-CLI's CLI configuration. The
+   path is absolute on the host, or relative to each WordPress folder;
+   deploy separately with `--parent`/`--skip` when sites use different paths.
+   Only file destinations are supported, not syslog or stderr. This path,
+   the CLI PHP destination, `WP_DEBUG_LOG` and the two default paths are
+   checked, including files first created during installation.
    With aidevops, `wp-fleet-helper.sh` (plan, backup, deploy, verify and
    report across hosts, with a reviewed plan) is the alternative.
 

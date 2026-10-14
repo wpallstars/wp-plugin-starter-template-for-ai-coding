@@ -13,6 +13,8 @@
 #                      public_html, htdocs, html, public, www or web folder,
 #                      else the folder's own name) or its full path. Repeatable.
 #   --wp-cli COMMAND   WP-CLI on the host (default: wp).
+#   --web-error-log PATH  Verified web PHP log file, required for --apply;
+#                      absolute, or relative to each WordPress folder.
 #   --dry-run          List the installs found, with their version and whether
 #                      each is a multisite network, and change nothing (the
 #                      default).
@@ -58,6 +60,7 @@ VERSION=""
 # shellcheck disable=SC2088 # The host expands the ~, not this shell.
 PARENT='~/domains/*/public_html'
 WP_CLI="wp"
+WEB_ERROR_LOG=""
 APPLY=0
 SKIPS=()
 TMP_DIR=""
@@ -71,7 +74,7 @@ die() {
 }
 
 usage() {
-	sed -n '2,37p' "$0" | sed 's/^# \{0,1\}//'
+	sed -n '2,39p' "$0" | sed 's/^# \{0,1\}//'
 	return 0
 }
 
@@ -114,7 +117,7 @@ parse_args() {
 		local arg="$1"
 		local value="${2:-}"
 		case "$arg" in
-		--host | --tag | --parent | --skip | --wp-cli)
+		--host | --tag | --parent | --skip | --wp-cli | --web-error-log)
 			[[ $# -ge 2 ]] || die "$arg needs a value"
 			case "$arg" in
 			--host) HOST="$value" ;;
@@ -122,6 +125,7 @@ parse_args() {
 			--parent) PARENT="$value" ;;
 			--skip) SKIPS+=("$value") ;;
 			--wp-cli) WP_CLI="$value" ;;
+			--web-error-log) WEB_ERROR_LOG="$value" ;;
 			*) ;; # The outer pattern lists every option that takes a value.
 			esac
 			shift
@@ -141,6 +145,10 @@ parse_args() {
 	[[ "$TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]] || die "--tag must be vX.Y.Z, not '$TAG'"
 	VERSION="${TAG#v}"
 	[[ -n "$PARENT" ]] || die "--parent cannot be empty"
+	if [[ "$APPLY" -eq 1 ]]; then
+		[[ -n "$WEB_ERROR_LOG" && "$WEB_ERROR_LOG" != "syslog" ]] ||
+			die "--apply requires --web-error-log PATH (the verified web PHP log file, not syslog)"
+	fi
 	return 0
 }
 
@@ -200,7 +208,7 @@ apply() {
 	remote "umask 077; cat >$(remote_words "$dir/deploy-remote.sh")" <"$REMOTE_PART" || die "cannot copy the remote part to $HOST"
 	remote "chmod 600 $(remote_words "$dir/$SLUG-$VERSION.zip" "$dir/deploy-remote.sh")" || die "cannot set the files' mode on $HOST"
 	printf '\nInstalling %s on %s (folder %s):\n' "$TAG" "$HOST" "$dir"
-	command="$(remote_words env "DEPLOY_WP_CLI=$WP_CLI" bash "$dir/deploy-remote.sh" apply "$SLUG" "$PARENT" \
+	command="$(remote_words env "DEPLOY_WP_CLI=$WP_CLI" "DEPLOY_WEB_ERROR_LOG=$WEB_ERROR_LOG" bash "$dir/deploy-remote.sh" apply "$SLUG" "$PARENT" \
 		"$VERSION" "$dir/$SLUG-$VERSION.zip" "$SHA" "$dir/backups" ${SKIPS[@]+"${SKIPS[@]}"})"
 	remote "$command" || status=$?
 	if [[ "$status" -ne 0 ]]; then

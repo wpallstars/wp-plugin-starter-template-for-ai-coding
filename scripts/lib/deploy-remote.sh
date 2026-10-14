@@ -24,6 +24,7 @@
 set -uo pipefail
 
 WP_CLI="${DEPLOY_WP_CLI:-wp}"
+WEB_ERROR_LOG="${DEPLOY_WEB_ERROR_LOG:-}"
 SLUG=""
 FAILED=0
 SKIPS=()
@@ -95,8 +96,22 @@ log_files() {
 	local candidates=()
 	local unique=()
 	wp_debug="$(wp_bare "$root" eval 'echo defined("WP_DEBUG_LOG") && is_string(WP_DEBUG_LOG) && !in_array(strtolower(WP_DEBUG_LOG), array("1", "true"), true) ? WP_DEBUG_LOG : (defined("WP_DEBUG_LOG") && WP_DEBUG_LOG ? WP_CONTENT_DIR . "/debug.log" : "");')"
+	# CLI ini settings do not describe PHP-FPM pools or .user.ini. The
+	# caller supplies the verified web destination separately for apply.
 	php_error="$(wp_bare "$root" eval 'echo ini_get("error_log");')"
 	candidates+=("$root/error_log" "$root/wp-content/debug.log")
+	if [[ -n "$WEB_ERROR_LOG" ]]; then
+		if [[ "$WEB_ERROR_LOG" == /* ]]; then
+			path="$WEB_ERROR_LOG"
+		else
+			path="$root/$WEB_ERROR_LOG"
+		fi
+		if [[ -e "$path" && ( ! -f "$path" || ! -r "$path" ) ]]; then
+			say "deploy-remote: web PHP log is not a readable regular file: $path"
+			return 1
+		fi
+		candidates+=("$path")
+	fi
 	if [[ -n "$wp_debug" ]]; then
 		if [[ "$wp_debug" == /* ]]; then
 			candidates+=("$wp_debug")
@@ -112,19 +127,18 @@ log_files() {
 		fi
 	fi
 	for candidate in "${candidates[@]}"; do
-		[[ -f "$candidate" ]] || continue
 		duplicate=0
-		for existing in "${unique[@]}"; do
-			if [[ "$candidate" -ef "$existing" ]]; then
+		for existing in ${unique[@]+"${unique[@]}"}; do
+			if [[ "$candidate" == "$existing" || "$candidate" -ef "$existing" ]]; then
 				duplicate=1
 				break
 			fi
 		done
 		[[ "$duplicate" -eq 1 ]] || unique+=("$candidate")
 	done
-	LOG_FILES=("${unique[@]}")
+	LOG_FILES=(${unique[@]+"${unique[@]}"})
 	LOG_BEFORE=()
-	for path in "${LOG_FILES[@]}"; do
+	for path in ${LOG_FILES[@]+"${LOG_FILES[@]}"}; do
 		LOG_BEFORE+=("$(file_lines "$path")")
 	done
 	return 0
@@ -133,7 +147,7 @@ log_files() {
 new_log_text() {
 	local index=0
 	local file
-	for file in "${LOG_FILES[@]}"; do
+	for file in ${LOG_FILES[@]+"${LOG_FILES[@]}"}; do
 		if [[ -f "$file" ]]; then
 			tail -n +"$((LOG_BEFORE[index] + 1))" "$file" | head -n 10
 		fi
@@ -198,7 +212,11 @@ apply_one() {
 		return 0
 	fi
 	chmod 600 "$backup"
-	log_files "$root"
+	if ! log_files "$root"; then
+		printf '%s\tFAIL: cannot check the web PHP log; not installed\n' "$name"
+		FAILED=1
+		return 0
+	fi
 
 	# Activation (and network activation) is kept by install --force.
 	"$WP_CLI" --path="$root" --skip-plugins --skip-themes plugin install "$zip" --force >/dev/null 2>&1
@@ -214,7 +232,7 @@ apply_one() {
 	fi
 	new_lines=0
 	index=0
-	for file in "${LOG_FILES[@]}"; do
+	for file in ${LOG_FILES[@]+"${LOG_FILES[@]}"}; do
 		new_lines=$((new_lines + $(file_lines "$file") - LOG_BEFORE[index]))
 		index=$((index + 1))
 	done
@@ -288,6 +306,10 @@ main() {
 	fi
 
 	if [[ "$apply" -eq 1 ]]; then
+		if [[ -z "$WEB_ERROR_LOG" || "$WEB_ERROR_LOG" == "syslog" ]]; then
+			say "deploy-remote: apply requires DEPLOY_WEB_ERROR_LOG, the verified web PHP log file; nothing installed"
+			return 2
+		fi
 		if [[ "$(sha256_of "$zip" || true)" != "$sha" ]]; then
 			say "deploy-remote: the zip's SHA-256 on this host is not $sha; nothing installed"
 			return 2
