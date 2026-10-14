@@ -63,7 +63,7 @@ GitHub releases are the stable beta channel: each version comes out there first.
 == Changelog ==
 
 = 1.0.39 =
-* Developers: preview-browser.sh bypasses page caches and fails clearly on an incomplete WordPress load or sign-in, removing unfinished state files. Nothing changes on sites.
+* Developers: preview-browser.sh bypasses page caches and fails clearly on an incomplete WordPress load or sign-in, removing unfinished state files. No persistent plugin, content or configuration changes occur on sites; login creates temporary WordPress session state, which logout destroys.
 
 Every change: changelog.txt.
 

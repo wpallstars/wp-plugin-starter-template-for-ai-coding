@@ -150,7 +150,7 @@ Deleting the plugin removes its settings (on multisite, every site's and the net
 
 ### 1.0.39
 
-- Developers: `scripts/preview-browser.sh` bypasses page caches while loading WordPress with a dummy logged-in cookie name, not a real sign-in cookie. It fails clearly when WordPress exits before loading, `wp_loaded` does not run, or sign-in returns incomplete data, removing any unfinished state file instead of reporting an empty sign-in. Nothing changes on sites (GH#483).
+- Developers: `scripts/preview-browser.sh` bypasses page caches while loading WordPress with a dummy logged-in cookie name, not a real sign-in cookie. It fails clearly when WordPress exits before loading, `wp_loaded` does not run, or sign-in returns incomplete data, removing any unfinished state file instead of reporting an empty sign-in. No persistent plugin, content or configuration changes occur on sites; login creates temporary WordPress session state, which logout destroys (GH#483).
 
 ### 1.0.38
 
