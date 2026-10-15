@@ -39,6 +39,7 @@ scripts/build-release.sh
 scripts/core-files.txt
 scripts/deploy-sites.sh
 scripts/lib/deploy-remote.sh
+scripts/lib/docker-wordpress.sh
 scripts/lib/plugin.sh
 scripts/lint.sh
 scripts/phpstan-bootstrap.php
@@ -53,6 +54,7 @@ scripts/replaced-plugins.php
 scripts/smoke-queries.php
 scripts/smoke-test.sh
 scripts/sync-core.sh
+scripts/test-site.sh
 scripts/update-test.sh
 
 # CI and tool configuration.
