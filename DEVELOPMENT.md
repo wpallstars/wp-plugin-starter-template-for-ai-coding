@@ -46,10 +46,50 @@ the branch you run it from is missing or has commits that are not pushed.
 - If your branch is left out because it conflicts in other files, merge
   `origin/main` into it (or wait for the other PR), push and run the script
   again.
-- To check your branch on its own, or for checks the user will not look at,
-  use a throwaway site of your own (the Docker image in `STANDARDS.md` →
-  Testing, step 4, on a free port), which no one else overwrites:
-  `rsync -a --delete --delete-excluded --exclude-from=.distignore ./ "<site>/wp-content/plugins/{slug}/"`.
+- To check your branch on its own, use `scripts/test-site.sh` below. Never
+  replace the combined preview with one branch's files.
+
+### One branch's Docker test site
+
+`scripts/test-site.sh` keeps a disposable WordPress running until `down`,
+for manual or agent checks through WP-CLI, REST and wp-admin. It builds the
+GitHub zip from one Git ref (default `HEAD`), not uncommitted files, and
+installs and activates it. It needs Docker and internet access:
+
+```bash
+scripts/test-site.sh up                         # latest WordPress, PHP 8.3
+scripts/test-site.sh wp plugin list
+scripts/test-site.sh url
+scripts/test-site.sh wp --files "<import folder>" eval 'var_dump(is_readable("/files/example.csv"));'
+scripts/test-site.sh reinstall --ref HEAD        # commit fixes first
+scripts/test-site.sh log                        # wp-content/debug.log
+scripts/test-site.sh down                       # delete this site's data
+scripts/test-site.sh up --wp 6.2 --php 7.4       # minimum versions
+scripts/test-site.sh down
+scripts/test-site.sh up --multisite              # network activation; /two/ too
+scripts/test-site.sh down
+```
+
+`up --ref REF` tests another commit without changing the checkout. `up`
+prints the address and random local admin and database passwords; keep its
+output private. Credentials (mode 600) and site metadata live outside Git,
+under `${XDG_STATE_HOME:-$HOME/.local/state}/wpallstars-test-sites/`.
+`wp --files DIR` mounts only that folder, read-only at `/files`; other
+arguments pass unchanged to WP-CLI, as uid 33. Debug logging and
+`SAVEQUERIES` are enabled; PHP errors are not displayed in pages. The HTTP
+port listens only on `127.0.0.1`. Multisite URLs include the published port
+and work directly in a browser, without changing hosts or the shared site.
+
+The plugin slug, branch and checkout path determine the name and exact
+Docker label (`wpallstars.test-site`), so worktrees have independent sites.
+Run commands from the same checkout and branch; `up` twice reports that
+the site exists. Commands are locked against concurrent changes. After a
+forced termination, remove the stale `lock` directory in that site's state
+folder only after checking no command is running, then run `down`.
+`down` deletes only containers, volumes and networks with that exact label,
+including interrupted WP-CLI containers. It never touches the preview site
+or other Docker resources. A failed `up` attempts the same scoped cleanup;
+run `down` again if Docker interrupted it.
 
 ### Checking screens in a browser
 
