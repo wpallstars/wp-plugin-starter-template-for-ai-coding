@@ -178,7 +178,12 @@ main() {
 	case "$command" in
 	up)
 		[[ ! -f "$TMP_DIR/site" && ! -f "$TMP_DIR/credentials" ]] || die 'site already exists; use url, reinstall or down'
-		[[ -z "$(resources network)$(resources volume)$(resources container)" ]] || die 'site resources already exist; use down first'
+		local existing="" kind listed
+		for kind in network volume container; do
+			listed="$(resources "$kind")" || die "could not list Docker $kind resources"
+			existing+="$listed"
+		done
+		[[ -z "$existing" ]] || die 'site resources already exist; use down first'
 		# Used by docker_start_site in the sourced helper.
 		# shellcheck disable=SC2034
 		DB_IMAGE="$(plugin_env DB_IMAGE mariadb:10.6)"
