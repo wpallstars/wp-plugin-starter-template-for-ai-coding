@@ -78,6 +78,7 @@ down() {
 			container) docker rm -f "$id" >/dev/null || return 1 ;;
 			volume) docker volume rm "$id" >/dev/null || return 1 ;;
 			network) docker network rm "$id" >/dev/null || return 1 ;;
+			*) return 1 ;;
 			esac
 		done <<<"$ids"
 	done
@@ -126,13 +127,14 @@ reinstall() {
 main() {
 	local command="${1:---help}"
 	[[ $# -eq 0 ]] || shift
-	case "$command" in -h | --help | help) usage; return 0 ;; esac
+	case "$command" in -h | --help | help) usage; return 0 ;; *) ;; esac
 	case "$command" in up | reinstall | wp | url | log | down) ;; *) die "unknown command: $command" ;; esac
 	local arg value
 	if [[ "$command" = wp ]]; then
 		if [[ "${1:-}" = --files ]]; then
-			[[ -n "${2:-}" && -d "$2" ]] || die '--files needs an existing directory'
-			FILES="$(cd "$2" && pwd)"
+			value="${2:-}"
+			[[ -n "$value" && -d "$value" ]] || die '--files needs an existing directory'
+			FILES="$(cd "$value" && pwd)"
 			shift 2
 		fi
 		[[ $# -gt 0 ]] || die 'wp needs WP-CLI arguments'
@@ -188,21 +190,22 @@ main() {
 			published="$(docker port "$NAME-web" 80)"
 			wp_cli search-replace '127.0.0.1' "$published" --all-tables --quiet
 			wp_cli config set DOMAIN_CURRENT_SITE "$published" --quiet
-			BASE_URL="http://$published"
+			BASE_URL="http://$published" # NOSONAR: disposable HTTP bound only to 127.0.0.1.
 		fi
 		wp_cli config set SAVEQUERIES true --raw --quiet
 		wp_cli config set DISABLE_WP_CRON false --raw --quiet
 		reinstall
 		printf 'admin_user=admin\nadmin_password=%s\ndatabase_user=root\ndatabase_password=%s\n' "$ADMIN_PASSWORD" "$DB_PASSWORD" >"$TMP_DIR/credentials"
-		printf '%s\n' "$PHP_VERSION" "$MULTISITE" "$BASE_URL" >"$TMP_DIR/site"
+		printf '%s\n' "$PHP_VERSION" "$MULTISITE" "$BASE_URL" >"$TMP_DIR/site" # NOSONAR: disposable HTTP bound only to 127.0.0.1.
 		STARTED=0
-		printf 'Site: %s\nAdmin: %s/wp-admin/\nLogin: admin / %s\nDatabase password: %s\nCredentials: %s/credentials\n' "$BASE_URL" "$BASE_URL" "$ADMIN_PASSWORD" "$DB_PASSWORD" "$TMP_DIR"
+		printf 'Site: %s\nAdmin: %s/wp-admin/\nLogin: admin / %s\nDatabase password: %s\nCredentials: %s/credentials\n' "$BASE_URL" "$BASE_URL" "$ADMIN_PASSWORD" "$DB_PASSWORD" "$TMP_DIR" # NOSONAR: disposable HTTP bound only to 127.0.0.1.
 		;;
 	reinstall) load_site; reinstall ;;
 	wp) load_site; wp_cli "$@" ;;
-	url) load_site; printf '%s\n' "$BASE_URL" ;;
+	url) load_site; printf '%s\n' "$BASE_URL" ;; # NOSONAR: disposable HTTP bound only to 127.0.0.1.
 	log) load_site; docker exec "$NAME-web" sh -c 'if [ -f wp-content/debug.log ]; then cat wp-content/debug.log; fi' ;;
 	down) down ;;
+	*) die "unknown command: $command" ;;
 	esac
 	return 0
 }
