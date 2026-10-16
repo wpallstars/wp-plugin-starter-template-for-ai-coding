@@ -162,10 +162,11 @@ jobs:
       # https://cloud.google.com/container-registry/docs/pulling-cached-images
       - name: Docker Hub mirror
         if: runner.environment == 'github-hosted'
+        shell: bash
         run: |
           config="$RUNNER_TEMP/docker-daemon.json"
           if sudo test -f /etc/docker/daemon.json; then
-            sudo jq '."registry-mirrors" = (["https://mirror.gcr.io"] + (."registry-mirrors" // []) | unique)' /etc/docker/daemon.json > "$config"
+            sudo cat /etc/docker/daemon.json | jq '."registry-mirrors" = (["https://mirror.gcr.io"] + (."registry-mirrors" // []) | unique)' > "$config"
           else
             printf '%s\n' '{"registry-mirrors":["https://mirror.gcr.io"]}' > "$config"
           fi
@@ -216,10 +217,11 @@ jobs:
 
       - name: Docker Hub mirror
         if: runner.environment == 'github-hosted'
+        shell: bash
         run: |
           config="$RUNNER_TEMP/docker-daemon.json"
           if sudo test -f /etc/docker/daemon.json; then
-            sudo jq '."registry-mirrors" = (["https://mirror.gcr.io"] + (."registry-mirrors" // []) | unique)' /etc/docker/daemon.json > "$config"
+            sudo cat /etc/docker/daemon.json | jq '."registry-mirrors" = (["https://mirror.gcr.io"] + (."registry-mirrors" // []) | unique)' > "$config"
           else
             printf '%s\n' '{"registry-mirrors":["https://mirror.gcr.io"]}' > "$config"
           fi
