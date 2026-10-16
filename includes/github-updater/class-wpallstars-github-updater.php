@@ -370,6 +370,10 @@ final class WPAllStars_GitHub_Updater {
         if ('.' === dirname($file)) {
             return null;
         }
+        // A plugin deleted earlier in this request can remain in get_plugins()' cache.
+        if (!is_file(WP_PLUGIN_DIR . '/' . $file)) {
+            return null;
+        }
         $headers = get_file_data(WP_PLUGIN_DIR . '/' . $file, array(
             'repo'  => 'GitHub Plugin URI',
             'asset' => 'Release Asset',
