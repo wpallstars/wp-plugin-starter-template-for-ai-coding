@@ -36,6 +36,7 @@ admin/js/wpstarter-theme.js
 # Build, check, release and preview scripts.
 scripts/build-banner.sh
 scripts/build-release.sh
+scripts/ci-docker-mirror.sh
 scripts/core-files.txt
 scripts/deploy-sites.sh
 scripts/lib/deploy-remote.sh
