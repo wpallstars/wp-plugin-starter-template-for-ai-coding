@@ -169,6 +169,23 @@ Every pull request and every push to `main` runs these in GitHub Actions
 
 `scripts/lint.sh` with no arguments runs the first seven.
 
+CI downloads actionlint 1.7.12 as a release binary and verifies its published
+SHA-256 checksum; it needs no Docker Hub pull. Before Plugin Check and the
+smoke tests, GitHub-hosted runners configure Docker to use Google's public
+[Docker Hub cache](https://cloud.google.com/container-registry/docs/pulling-cached-images)
+at `https://mirror.gcr.io`, preserving other daemon settings. No secrets are
+needed, including on forks. Cache misses still fall back to Docker Hub, so
+this reduces rate-limit failures rather than guaranteeing every pull.
+Self-hosted runners keep their existing daemon configuration (a restart
+could interrupt other jobs); configure a mirror there administratively.
+
+Both scripts keep locally cached images, as before, and pull missing images
+up to three times, waiting 20 seconds between failures, before creating any
+containers. Local runs do not change Docker's daemon configuration.
+`{PREFIX}_DB_IMAGE` overrides MariaDB in both scripts; `{PREFIX}_CLI_IMAGE`
+overrides WP-CLI in Plugin Check. Smoke-test WordPress images follow `--php`.
+Overrides may name another registry or a locally cached image.
+
 <!-- wps-own:start -->
 <!-- wps-own:end -->
 

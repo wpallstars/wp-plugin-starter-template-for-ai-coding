@@ -82,8 +82,29 @@ wp_cli() {
 	return $?
 }
 
+# Match docker run's default: keep cached images, retry only missing pulls.
+pull_image() {
+	local image="$1"
+	local attempt
+	if docker image inspect "$image" >/dev/null 2>&1; then
+		return 0
+	fi
+	for attempt in 1 2 3; do
+		if docker pull "$image"; then
+			return 0
+		fi
+		if [[ "$attempt" -lt 3 ]]; then
+			printf 'Pull failed for %s (attempt %s/3); retrying in 20 seconds.\n' "$image" "$attempt" >&2
+			sleep 20
+		fi
+	done
+	return 1
+}
+
 start_site() {
 	printf 'Starting a disposable WordPress (%s)...\n' "$NAME"
+	pull_image "$DB_IMAGE" || die "could not pull $DB_IMAGE after 3 attempts"
+	pull_image "$CLI_IMAGE" || die "could not pull $CLI_IMAGE after 3 attempts"
 	STARTED=1
 	docker network create "$NAME" >/dev/null
 	docker volume create "$NAME-wp" >/dev/null

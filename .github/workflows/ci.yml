@@ -111,7 +111,28 @@ jobs:
         run: scripts/lint.sh build
 
       - name: actionlint
-        run: docker run --rm -v "$PWD:/repo" --workdir /repo rhysd/actionlint:1.7.12 -color
+        env:
+          ACTIONLINT_VERSION: "1.7.12"
+        run: |
+          # SHA-256 values from this release's actionlint_1.7.12_checksums.txt.
+          case "$RUNNER_ARCH" in
+            X64)
+              arch=amd64
+              sha256=8aca8db96f1b94770f1b0d72b6dddcb1ebb8123cb3712530b08cc387b349a3d8
+              ;;
+            ARM64)
+              arch=arm64
+              sha256=325e971b6ba9bfa504672e29be93c24981eeb1c07576d730e9f7c8805afff0c6
+              ;;
+            *) printf 'Unsupported actionlint runner architecture: %s\n' "$RUNNER_ARCH" >&2; exit 1 ;;
+          esac
+          tool_dir="$(mktemp -d "$RUNNER_TEMP/actionlint.XXXXXX")"
+          trap 'rm -rf "$tool_dir"' EXIT
+          archive="$tool_dir/actionlint.tar.gz"
+          curl -fsSL --retry 2 --proto '=https' --tlsv1.2 -o "$archive" "https://github.com/rhysd/actionlint/releases/download/v$ACTIONLINT_VERSION/actionlint_${ACTIONLINT_VERSION}_linux_${arch}.tar.gz"
+          printf '%s  %s\n' "$sha256" "$archive" | sha256sum -c -
+          tar -xzf "$archive" -C "$tool_dir" actionlint
+          "$tool_dir/actionlint" -color
 
   release:
     name: Release build, preflight and Plugin Check
@@ -136,6 +157,21 @@ jobs:
 
       - name: Build both zips
         run: scripts/build-release.sh --out dist
+
+      # Only restart disposable hosted daemons, never a shared self-hosted one.
+      # https://cloud.google.com/container-registry/docs/pulling-cached-images
+      - name: Docker Hub mirror
+        if: runner.environment == 'github-hosted'
+        run: |
+          config="$RUNNER_TEMP/docker-daemon.json"
+          if sudo test -f /etc/docker/daemon.json; then
+            sudo jq '."registry-mirrors" = (["https://mirror.gcr.io"] + (."registry-mirrors" // []) | unique)' /etc/docker/daemon.json > "$config"
+          else
+            printf '%s\n' '{"registry-mirrors":["https://mirror.gcr.io"]}' > "$config"
+          fi
+          sudo install -m 644 "$config" /etc/docker/daemon.json
+          sudo systemctl restart docker
+          docker info
 
       - name: Plugin Check
         run: |
@@ -177,6 +213,19 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
+
+      - name: Docker Hub mirror
+        if: runner.environment == 'github-hosted'
+        run: |
+          config="$RUNNER_TEMP/docker-daemon.json"
+          if sudo test -f /etc/docker/daemon.json; then
+            sudo jq '."registry-mirrors" = (["https://mirror.gcr.io"] + (."registry-mirrors" // []) | unique)' /etc/docker/daemon.json > "$config"
+          else
+            printf '%s\n' '{"registry-mirrors":["https://mirror.gcr.io"]}' > "$config"
+          fi
+          sudo install -m 644 "$config" /etc/docker/daemon.json
+          sudo systemctl restart docker
+          docker info
 
       - name: Smoke test
         env:
