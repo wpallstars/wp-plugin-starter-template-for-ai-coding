@@ -807,6 +807,8 @@ check_core_class_names() {
 	local sha="$1"
 	section "Core class names"
 	local manifest path stylesheet classes="" matches location class problems=0
+	# These core classes are the documented output API for feature panels.
+	local feature_api_classes=("${PLUGIN_CSS}-panel-note" "${PLUGIN_CSS}-panel-note--warning")
 	local exclusions=(':(exclude,glob)assets/build/**' ':(exclude,glob)**/vendor/**' ':(exclude,glob)**/node_modules/**')
 	if ! manifest="$(git show "$sha:scripts/core-files.txt")" 2>/dev/null; then
 		warn "scripts/core-files.txt missing: core class names were not checked"
@@ -830,6 +832,9 @@ check_core_class_names() {
 		esac
 	done <<<"$manifest"
 	classes="$(printf '%s\n' "$classes" | sed -e '/^$/d' -e 's/^\.//' | sort -u)"
+	for class in "${feature_api_classes[@]}"; do
+		classes="$(printf '%s\n' "$classes" | grep -Fvx "$class" || true)"
+	done
 	if [[ -z "$classes" ]]; then
 		warn "no core block classes found: core class names were not checked"
 		return 0
