@@ -29,7 +29,7 @@
 // Replaced plugins that are not on WordPress.org but have GitHub releases.
 const GITHUB_SOURCES = array('git-updater' => 'afragen/git-updater');
 // The name is quoted for the pattern: a renamed plugin's may hold ( . + etc.
-define('README_LINE', '/^' . preg_quote('WP Plugin Starter', '/') . ' replaces \*\*(\d+) plugins\*\*.*$/m');
+define('README_LINE', '/^' . preg_quote('WP Plugin Starter', '/') . ' replaces \*\*(\d+) plugins?\*\*.*$/m');
 
 /**
  * Stop with a message.
@@ -431,12 +431,20 @@ array_map('unlink', glob($out . '/*.zip'));
 @rmdir($out);
 
 $line = sprintf(
-    'WP Plugin Starter replaces **%d plugins**, some of them in part, with free and Pro editions counted separately. The %d that can be downloaded come to %s zipped; WP Plugin Starter is %s.',
+    'WP Plugin Starter replaces **%d %s**%s.',
     $count,
-    $sized,
-    size_label($total),
-    size_label($ours)
+    1 === $count ? 'plugin' : 'plugins',
+    1 === $count ? '' : ', some of them in part, with free and Pro editions counted separately'
 );
+if ($sized > 0) {
+    $line .= sprintf(
+        ' The %s that can be downloaded %s %s zipped; WP Plugin Starter is %s.',
+        1 === $sized ? 'one' : $sized,
+        1 === $sized ? 'is' : 'come to',
+        size_label($total),
+        size_label($ours)
+    );
+}
 printf("%d plugins; %d downloadable, %s; WP Plugin Starter %s\n", $count, $sized, size_label($total), size_label($ours));
 if ($no_size) {
     echo 'Not downloadable (Pro or closed): ' . implode(', ', $no_size) . "\n";
