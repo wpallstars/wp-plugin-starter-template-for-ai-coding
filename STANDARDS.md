@@ -57,6 +57,9 @@ How changes are made and checked: `DEVELOPMENT.md`. Releases: `RELEASING.md`.
 - `boot()` returns early unless `self::enabled()`. Features are **off by
   default**; the plugin's `AGENTS.md` lists any the owner asked to be on.
   Turning another feature on by default needs the owner's say.
+- Feature output at the top of a setting's options panel (site or network)
+  may use `{css}-panel-note` and its `{css}-panel-note--warning` modifier;
+  these are documented feature API classes, not borrowed core blocks.
 - A changed default is only sure to reach new installs: each migration and
   any save on the settings screen store every setting, defaults included
   (`set()` writes them all back), and a stored setting keeps its value. A
