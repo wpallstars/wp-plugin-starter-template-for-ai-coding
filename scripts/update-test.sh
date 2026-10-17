@@ -377,7 +377,8 @@ check_debug_log() {
 		fail "debug.log does not work: the canary notice is missing"
 		return 0
 	fi
-	log="$(printf '%s\n' "$log" | grep -v 'update-test canary' || true)"
+	# WP-CLI's bundled dependencies can log their own PHP deprecations.
+	log="$(printf '%s\n' "$log" | grep -v 'update-test canary' | grep -v -F 'phar:///usr/local/bin/wp/' || true)"
 	if [[ -n "$log" ]]; then
 		printf '%s\n' "$log"
 		fail "PHP messages in debug.log"
