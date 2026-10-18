@@ -21,7 +21,10 @@
 # Additional terms (GPL-3.0 section 7(b)): ATTRIBUTION.txt
 # Provenance: wpas-e4502af0f07e8a92. Copies, even of part, keep these lines.
 
-set -uo pipefail
+# Sourced as a library (DEPLOY_LIBRARY_ONLY=1), the caller's options stand.
+if [[ "${DEPLOY_LIBRARY_ONLY:-0}" != 1 ]]; then
+	set -uo pipefail
+fi
 
 WP_CLI="${DEPLOY_WP_CLI:-wp}"
 WEB_ERROR_LOG="${DEPLOY_WEB_ERROR_LOG:-}"
@@ -91,14 +94,21 @@ wp_bare() {
 	return 0
 }
 
-# Preserve exit status AND stderr: database errors can accompany exit zero.
+# Preserve exit status and check stderr too: database errors can accompany
+# exit zero. Stdout stays clean (snapshots and JSON reports are parsed from
+# it); stderr goes to a private temporary file, as process substitution is
+# not available everywhere, and is shown only on failure.
 wp_checked() {
 	local root="$1"
 	shift
-	local output status=0
-	output="$("$WP_CLI" --path="$root" "$@" 2>&1)" || status=$?
-	if [[ "$status" -ne 0 || "$output" == *"Error establishing a database connection"* || "$output" == *"WordPress database error"* ]]; then
-		printf '%s\n' "$output" >&2
+	local output errors err_file status=0
+	err_file="$(mktemp)" || return 1
+	output="$("$WP_CLI" --path="$root" "$@" 2>"$err_file")" || status=$?
+	errors="$(cat "$err_file")"
+	rm -f "$err_file"
+	if [[ "$status" -ne 0 || "$output$errors" == *"Error establishing a database connection"* || "$output$errors" == *"WordPress database error"* ]]; then
+		[[ -z "$output" ]] || printf '%s\n' "$output" >&2
+		[[ -z "$errors" ]] || printf '%s\n' "$errors" >&2
 		return 1
 	fi
 	printf '%s\n' "$output"
@@ -221,7 +231,8 @@ active_check() {
 		code="$(active_restore_code)"
 		printf '    restore: env FLEET_BEFORE=%q FLEET_OBSERVED=%q %q --path=%q --skip-plugins --skip-themes eval %q\n' \
 			"$before" "$after" "$WP_CLI" "$root" "$code" >&2
-		FLEET_BEFORE="$before" FLEET_OBSERVED="$after" wp_checked "$root" --skip-plugins --skip-themes eval "$code" || true
+		# On stderr: callers discard stdout, and the operator needs the result.
+		FLEET_BEFORE="$before" FLEET_OBSERVED="$after" wp_checked "$root" --skip-plugins --skip-themes eval "$code" >&2 || true
 		return 1
 	fi
 	return 0
