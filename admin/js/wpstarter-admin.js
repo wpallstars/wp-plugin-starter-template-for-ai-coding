@@ -124,7 +124,10 @@
 		},
 
 		status: function (key, state, text, keep) {
-			var $status = $('[data-wps-status="' + key + '"]');
+			// Compare attribute values, never interpret a setting key as a selector.
+			var $status = $('[data-wps-status]').filter(function () {
+				return this.getAttribute('data-wps-status') === String(key);
+			});
 			$status.removeClass('is-saving is-saved is-error').addClass(state ? 'is-' + state : '').text(text || '');
 			clearTimeout($status.data('timer'));
 			// "Reload the page" stays until the next change.
@@ -349,6 +352,7 @@
 			// options. The switch (and any other control) keeps its own behaviour;
 			// keyboard users use the Options button.
 			$(document).on('click', '[data-wps-panel-toggle]', function (event) {
+				// event.target is a DOM node, not HTML or a user-provided selector.
 				if ($(event.target).closest('input, button, a, label, select, textarea, .wps-switch').length) {
 					return;
 				}
@@ -369,6 +373,7 @@
 				input.value = input.value.slice(0, start) + token + input.value.slice(end);
 				input.focus();
 				input.setSelectionRange(start + token.length, start + token.length);
+				// getElementById returned a DOM element; jQuery does not parse a string here.
 				$(input).trigger('change');
 			});
 		}
@@ -389,7 +394,9 @@
 			});
 			// A saved 0 means the choice was not a picture.
 			$(document).on('wpstarter:setting-saved', function (event, key, value) {
-				var $field = $('[data-wps-media]').has('[data-wps-setting="' + key + '"]');
+				var $field = $('[data-wps-media]').has($('[data-wps-setting]').filter(function () {
+					return this.getAttribute('data-wps-setting') === String(key);
+				}));
 				if ($field.length && !parseInt(value, 10)) {
 					MediaField.preview($field, '');
 				}

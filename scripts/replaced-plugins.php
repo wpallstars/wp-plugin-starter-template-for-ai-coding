@@ -281,7 +281,9 @@ function fetch($url, $head = false) {
     if ($head) {
         $args = array_merge($args, array('-o', '/dev/null', '-w', '%{http_code} %{size_download}'));
     }
-    $cmd = 'curl ' . implode(' ', array_map('escapeshellarg', $args)) . ' ' . escapeshellarg($url);
+    // Development CLI only (.distignore excludes scripts/). Every argument is
+    // shell-quoted; -- also prevents a URL from being read as a curl option.
+    $cmd = 'curl ' . implode(' ', array_map('escapeshellarg', $args)) . ' -- ' . escapeshellarg($url);
     exec($cmd, $lines, $status);
     if (0 !== $status) {
         return null;
@@ -422,6 +424,8 @@ foreach ($reader->plugins as $slug => $name) {
 }
 
 $out = sys_get_temp_dir() . '/wpstarter-replaced-' . getmypid();
+// Development CLI: the caller selects a trusted checkout to build, not web input.
+// The executable and flags are fixed; both variable paths are shell-quoted.
 exec('cd ' . escapeshellarg($dir) . ' && scripts/build-release.sh --ref HEAD --out ' . escapeshellarg($out) . ' --quiet', $zips, $status);
 if (0 !== $status || empty($zips[0]) || !is_file($zips[0])) {
     fail('scripts/build-release.sh failed');

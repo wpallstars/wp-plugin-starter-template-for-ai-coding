@@ -24,7 +24,9 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
-class WPStarter_Settings_Manager {
+// One schema-driven view: field renderers share card, accessibility and network
+// context. The method count includes small private renderers, not separate services.
+class WPStarter_Settings_Manager { // NOSONAR: keep the cohesive settings view and its private control renderers together (S1448).
 
     /** Control renderer for each child field type (render_field()); any other type is text. */
     private const CONTROLS = array(

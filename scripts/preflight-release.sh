@@ -827,9 +827,10 @@ check_core_class_names() {
 		*.css | */)
 			while IFS= read -r stylesheet; do
 				classes+="$(git grep -h -o -E "\\.${PLUGIN_CSS}-[a-z0-9_-]+" "$sha" -- ":(literal)$stylesheet" | grep -v '__' || true)"$'\n'
-			done < <(git ls-tree -r --name-only "$sha" -- "$path" | grep '\.css$' || true)
-			;;
-		esac
+				done < <(git ls-tree -r --name-only "$sha" -- "$path" | grep '\.css$' || true)
+				;;
+			*) : ;; # Other core files have no stylesheet classes to collect.
+			esac
 	done <<<"$manifest"
 	classes="$(printf '%s\n' "$classes" | sed -e '/^$/d' -e 's/^\.//' | sort -u)"
 	for class in "${feature_api_classes[@]}"; do
