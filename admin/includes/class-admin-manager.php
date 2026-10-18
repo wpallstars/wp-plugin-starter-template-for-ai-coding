@@ -510,14 +510,16 @@ class WPStarter_Admin_Manager {
      * it first in `<div class="wrap wps-wrap">`, followed by
      * `<hr class="wp-header-end">` so admin notices go below it, and their
      * content in `<div class="wps-main">`. A screen with sections puts them
-     * between the two as the settings screen's tabs: `<nav class="wps-nav">`
-     * holding `<a class="wps-nav__tab">` links, the one shown `is-active`
-     * with `aria-current="page"`, and name it in the browser title with
-     * WPStarter_Admin_Page::title_section() on the screen's load-{hook}
-     * action. The title puts the section after the screen's page title, so
-     * the first item of the plugin's own menu (the one with the menu's
-     * slug) keeps the plugin's name as its page title, with the first
-     * section's name only as its menu title.
+     * between the two as the settings screen's tabs with
+     * WPStarter_Admin_Page::sections_nav(), and names the one shown in the
+     * browser title with WPStarter_Admin_Page::title_section() on the
+     * screen's load-{hook} action. The title puts the section after the
+     * screen's page title, so the first item of the plugin's own menu (the
+     * one with the menu's slug) keeps the plugin's name as its page title,
+     * with the first section's name only as its menu title. These classes,
+     * and the others a plugin may use, are in
+     * scripts/core-public-classes.txt (STYLING.md → Classes a plugin may
+     * use).
      */
     public static function render_header() {
         WPStarter_Admin_Page::header();
