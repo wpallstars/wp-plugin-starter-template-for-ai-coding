@@ -378,6 +378,7 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
+	/* Accessibility override: stop motion even in more specific core or feature rules. */
 	.wps-header *,
 	.wps-header *::before,
 	.wps-header *::after,

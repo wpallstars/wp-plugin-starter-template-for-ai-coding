@@ -273,7 +273,7 @@ class WPStarter_Admin_Page {
     private static function nav_group($label, array $tabs, $active, array $page_tabs) {
         $menus = array();
         ?>
-        <div class="wps-nav__group" role="group" aria-label="<?php echo esc_attr($label); ?>">
+        <div class="wps-nav__group" role="group" aria-label="<?php echo esc_attr($label); ?>"> <?php // NOSONAR: a labelled group of navigation links, not a fieldset of form controls (S6819). ?>
             <?php foreach ($tabs as $slug => $tab) : ?>
                 <?php
                 $slug    = (string) $slug;
@@ -286,17 +286,34 @@ class WPStarter_Admin_Page {
                     $menus[$menu] = true;
                     $members      = array_map('strval', array_keys(self::menu_tabs($tabs, $menu)));
                 }
-                $current = in_array($active, $members, true);
+                self::nav_link($slug, $tab, $menu, $members, $active, $page_tabs);
                 ?>
-                <a href="<?php echo esc_url(WPStarter_Admin_Manager::tab_url($slug)); ?>"
-                   class="wps-nav__tab<?php echo $current ? ' is-active' : ''; ?>"
-                   <?php echo '' === $menu && in_array($slug, $page_tabs, true) ? 'data-wps-tab="' . esc_attr($slug) . '"' : ''; ?>
-                   <?php echo '' !== $menu ? 'data-wps-tabs="' . esc_attr(implode(' ', $members)) . '"' : ''; ?>
-                   <?php echo $current ? 'aria-current="' . ('' === $menu ? 'page' : 'true') . '"' : ''; ?>>
-                    <?php echo esc_html('' === $menu ? $tab['label'] : $menu); ?>
-                </a>
             <?php endforeach; ?>
         </div>
+        <?php
+    }
+
+    /**
+     * Render a navigation link after the group's menu deduplication.
+     *
+     * @param string   $slug      First tab slug.
+     * @param array    $tab       First tab.
+     * @param string   $menu      Menu label, or empty for a single tab.
+     * @param string[] $members   Tabs represented by this link.
+     * @param string   $active    Active tab slug.
+     * @param string[] $page_tabs Tabs drawn on the page.
+     */
+    private static function nav_link($slug, array $tab, $menu, array $members, $active, array $page_tabs) {
+        $current      = in_array($active, $members, true);
+        $aria_current = '' === $menu ? 'page' : 'true';
+        ?>
+        <a href="<?php echo esc_url(WPStarter_Admin_Manager::tab_url($slug)); ?>"
+           class="wps-nav__tab<?php echo $current ? ' is-active' : ''; ?>"
+           <?php echo '' === $menu && in_array($slug, $page_tabs, true) ? 'data-wps-tab="' . esc_attr($slug) . '"' : ''; ?>
+           <?php echo '' !== $menu ? 'data-wps-tabs="' . esc_attr(implode(' ', $members)) . '"' : ''; ?>
+           <?php echo $current ? 'aria-current="' . esc_attr($aria_current) . '"' : ''; ?>>
+            <?php echo esc_html('' === $menu ? $tab['label'] : $menu); ?>
+        </a>
         <?php
     }
 

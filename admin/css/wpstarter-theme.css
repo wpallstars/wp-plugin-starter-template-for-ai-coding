@@ -145,6 +145,7 @@ html.wps-dark .wp-core-ui .button-secondary:hover {
 	border-color: var(--wps-ui-text);
 }
 
+/* Core's disabled buttons use !important; match it to keep dark-mode contrast. */
 html.wps-dark .wp-core-ui .button:disabled,
 html.wps-dark .wp-core-ui .button.disabled,
 html.wps-dark .wp-core-ui .button-secondary:disabled {

@@ -829,6 +829,7 @@ check_core_class_names() {
 				classes+="$(git grep -h -o -E "\\.${PLUGIN_CSS}-[a-z0-9_-]+" "$sha" -- ":(literal)$stylesheet" | grep -v '__' || true)"$'\n'
 			done < <(git ls-tree -r --name-only "$sha" -- "$path" | grep '\.css$' || true)
 			;;
+		*) : ;; # Other core files have no stylesheet classes to collect.
 		esac
 	done <<<"$manifest"
 	classes="$(printf '%s\n' "$classes" | sed -e '/^$/d' -e 's/^\.//' | sort -u)"
