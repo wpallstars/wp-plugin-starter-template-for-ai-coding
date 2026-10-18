@@ -144,7 +144,9 @@ expected in the GitHub zip too.
    string unique to that fetch. The purge matters: WordPress versions the
    plugin's CSS and JS by `?ver=`, and a cached page keeps pointing at the old
    version, so without it visitors get the old files until the page cache
-   expires. It runs `wp --url=<site> litespeed-purge all` when
+   expires. It runs `wp litespeed-purge all` on a single site and
+   `wp --url=<site> litespeed-purge blog <id>` on each network site (`all`
+   would empty every site's cache each time) when
    `wp cli has-command litespeed-purge` finds LiteSpeed Cache (also when it is
    network-activated); other page caches are not purged, so purge them by
    hand. `wp cache flush` is not enough: it empties the object cache, not the

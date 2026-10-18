@@ -388,17 +388,20 @@ site_urls() {
 # pointing at the old ?ver= of the plugin's CSS and JS. Only page caches
 # with a WP-CLI purge command are known: LiteSpeed Cache. wp cache flush
 # empties the object cache, never the pages. cli has-command, not a per-site
-# plugin is-active check, which misses a network-activated plugin. Prints
-# purged=yes, no (no known page cache) or failed. A failed purge does not
-# stop the load: the install worked, but visitors may see the old assets.
+# plugin is-active check, which misses a network-activated plugin. On a
+# network, litespeed-purge all empties every site's cache, so each site
+# purges only its own (litespeed-purge blog <id>). Prints purged=yes, no (no
+# known page cache) or failed. A failed purge does not stop the load: the
+# install worked, but visitors may see the old assets.
 load_code() {
 	cat <<'PHP'
 echo "loaded\n";
 $purged = "no";
 $run = array("launch" => false, "exit_error" => false, "return" => "all");
-foreach (array("litespeed-purge" => "litespeed-purge all") as $command => $purge) {
+$purges = array("litespeed-purge" => is_multisite() ? "blog " . get_current_blog_id() : "all");
+foreach ($purges as $command => $args) {
     if (0 === WP_CLI::runcommand("cli has-command " . $command, $run)->return_code) {
-        $purged = 0 === WP_CLI::runcommand($purge, $run)->return_code ? "yes" : "failed";
+        $purged = 0 === WP_CLI::runcommand($command . " " . $args, $run)->return_code ? "yes" : "failed";
         break;
     }
 }
