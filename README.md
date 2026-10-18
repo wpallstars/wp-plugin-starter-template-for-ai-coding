@@ -10,7 +10,7 @@
 [![CodeFactor](https://www.codefactor.io/repository/github/wpallstars/wp-plugin-starter-template-for-ai-coding/badge)](https://www.codefactor.io/repository/github/wpallstars/wp-plugin-starter-template-for-ai-coding)
 [![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/wpallstars/wp-plugin-starter-template-for-ai-coding/badge)](https://scorecard.dev/viewer/?uri=github.com/wpallstars/wp-plugin-starter-template-for-ai-coding)
 [![License: GPL v3 or later](https://img.shields.io/badge/License-GPL%20v3%20or%20later-blue.svg)](LICENSE)
-[![Latest release](https://img.shields.io/badge/release-v1.0.39-blue.svg)](https://github.com/wpallstars/wp-plugin-starter-template-for-ai-coding/releases)
+[![Latest release](https://img.shields.io/badge/release-v1.0.40-blue.svg)](https://github.com/wpallstars/wp-plugin-starter-template-for-ai-coding/releases)
 
 [![Requires WordPress](https://img.shields.io/badge/WordPress-6.2%2B-21759B.svg?logo=wordpress)](readme.txt)
 [![Tested up to](https://img.shields.io/badge/tested%20up%20to-7.1-21759B.svg?logo=wordpress)](readme.txt)
@@ -27,7 +27,7 @@ WP Plugin Starter is what wpallstars plugins are made from. It has no features o
 
 If this saves you time, headaches and costs, feel free to [buy me a coffee](https://buymeacoffee.com/marcusquinn), or whatever you like, to invest in making more things open-source.
 
-Version: 1.0.39
+Version: 1.0.40
 
 <!-- github-only:start -->
 ## Screenshots
@@ -149,12 +149,15 @@ Deleting the plugin removes its settings (on multisite, every site's and the net
 
 ## Changelog
 
-### Unreleased
+### 1.0.40
 
 - Developers: the core stylesheets have a public list of classes a plugin may use, `scripts/core-public-classes.txt` (page shell, settings components, panel notes, `wps-dark`). Release preflight warns only on internal core classes in plugin markup and on plugin CSS that restyles a core class, with a hint naming the class. New `WPStarter_Admin_Page::sections_nav()` prints a plugin screen's sections as the settings screen's tabs. See `STYLING.md` → Classes a plugin may use. Plugins get it with `scripts/sync-core.sh`.
 - Developers: `scripts/deploy-sites.sh --apply` purges each site's page cache after its settings upgrade load, so cached pages stop pointing at the old `?ver=` of the plugin's CSS and JS and visitors get the new files at once. It runs `litespeed-purge all` on a single site and `litespeed-purge blog <id>` on each network site, where `wp cli has-command litespeed-purge` finds LiteSpeed Cache (also network-activated); other page caches are not purged. The install line adds `purged=N/SITES`, network site lines `purged=yes`, `no` or `failed`, and a failed purge warns (`WARN purge failed`). Plugins made from the starter get it with `scripts/sync-core.sh` (GH#515).
 - Developers: `scripts/deploy-sites.sh --apply` loads and checks every serving site of a multisite network (not archived, deleted or spam), with one indented line per site and `sites=PASSED/TOTAL`. Every home fetch uses a unique query string; `cache=` reports the final response's cache headers, and `WARN cached` means a cache ignored query strings, so PHP did not run for that fetch. A failed site fails its install and prints the restore command. Single sites still print one install line. Plugins made from the starter get it with scripts/sync-core.sh.
 - Developers: the README release badge shows `readme.txt`'s `Stable tag:` instead of asking shields.io for the latest GitHub release, which a private repository showed as "no releases or repo not found". `scripts/readme-badges.sh` writes it; `RELEASING.md` step 1 runs it with the version change. Plugins get it with `scripts/sync-core.sh`, then `scripts/readme-badges.sh`.
+- Developers: release preflight warns with file, line and class when plugin-own code uses core stylesheet classes it should not (Core class names; the public list above refines it). Plugins get it with `scripts/sync-core.sh` (GH#487).
+- Developers: new filter `wpstarter_replaces_link` (link with `url` and `label`, plugin folder, plugin file, name) changes or drops the Deactivate link a setting's card shows while a plugin it replaces is active. Core still escapes the link. Nothing changes until a plugin uses it.
+- Developers: core Codacy and SonarCloud findings triaged: setting keys compared as attribute values rather than selectors, simpler navigation rendering, non-stylesheet core paths handled explicitly, and safe development commands documented. Plugins get it with `scripts/sync-core.sh` (GH#522).
 
 ### 1.0.39
 
