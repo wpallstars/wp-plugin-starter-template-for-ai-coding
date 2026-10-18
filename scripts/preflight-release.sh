@@ -1255,8 +1255,9 @@ check_git() {
 	fi
 	local message
 	message="$(git log -1 --format=%B "$sha")"
-	if printf '%s\n' "$message" | grep -Ei '\[(skip ci|ci skip|no ci|skip actions|actions skip)\]' >/dev/null; then
-		message="$ref is a [skip ci] commit: a tag on it does not start the Release workflow; tag the release PR's merge commit instead"
+	if printf '%s\n' "$message" | grep -Ei '\[(skip ci|ci skip|no ci|skip actions|actions skip)\]' >/dev/null ||
+		git log -1 --format='%(trailers:only,unfold)' "$sha" | grep -Ei '^skip-checks:[[:space:]]*true[[:space:]]*$' >/dev/null; then
+		message="$ref is a CI-skipping commit: a tag on it does not start the Release workflow; tag the release PR's merge commit instead"
 		if [[ "$tag_sha" = "$sha" ]]; then
 			err "$message"
 		else
