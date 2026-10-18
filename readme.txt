@@ -5,7 +5,7 @@ Tags: starter, boilerplate, settings, developer, template
 Requires at least: 6.2
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 1.0.39
+Stable tag: 1.0.40
 License: GPLv3 or later
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 
@@ -62,8 +62,8 @@ GitHub releases are the stable beta channel: each version comes out there first.
 
 == Changelog ==
 
-= 1.0.39 =
-* Developers: preview-browser.sh bypasses page caches and fails clearly on an incomplete WordPress load or sign-in, removing unfinished state files. No persistent plugin, content or configuration changes occur on sites; login creates temporary WordPress session state, which logout destroys.
+= 1.0.40 =
+* Developers: a public list of core CSS classes plugins may use, a sections nav helper for plugin screens and a release check on core class use; deploy-sites.sh checks every network site and purges LiteSpeed page caches; new filter wpstarter_replaces_link. The settings screen looks and works the same.
 
 Every change: changelog.txt.
 
