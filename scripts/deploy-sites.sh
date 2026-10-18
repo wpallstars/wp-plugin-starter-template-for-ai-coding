@@ -27,11 +27,14 @@
 # and checked again there. Then, for each install that already has
 # wp-content/plugins/{slug}/{slug}.php (the plugin is never added anywhere):
 # a tar backup of the plugin folder, wp plugin install --force (activation
-# and network activation are kept), one full WordPress load so the plugin's
-# settings upgrade runs, and one line: old -> new version, status, the home
-# page's HTTP code and the lines error_log and wp-content/debug.log gained.
-# Exits 1 when any install did not reach the version, logged new lines or its
-# home page failed, and prints each restore command. Host names, folders and
+# and network activation are kept), then a full load and home fetch per site
+# for its settings upgrade. Networks skip archived, deleted and spam sites
+# and print one indented line per site. Each fetch uses a unique query string;
+# cache= lists the response's cache headers. WARN cached means a cache ignored
+# query strings, so PHP did not run for that fetch. Each install line gives
+# old -> new version, status, home HTTP code, cache headers and new log lines;
+# networks add sites=PASSED/TOTAL. Exits 1 on a failed site, a version not
+# reached or new log lines, with the restore command. Host names, folders and
 # backups stay out of the repository: they are only arguments.
 #
 # Needs gh (signed in to read a private repository), ssh, and bash, WP-CLI,
@@ -74,7 +77,7 @@ die() {
 }
 
 usage() {
-	sed -n '2,39p' "$0" | sed 's/^# \{0,1\}//'
+	sed -n '2,42p' "$0" | sed 's/^# \{0,1\}//'
 	return 0
 }
 
