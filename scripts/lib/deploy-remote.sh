@@ -503,6 +503,9 @@ apply_one() {
 	if [[ "$after" != "$want" || "$new_lines" -gt 0 || "$SITES_FAILED" -gt 0 ]]; then
 		result="FAIL"
 		FAILED=1
+	elif [[ "$MAIN_CACHE" == *hit* ]]; then
+		# Single sites have no site row on which to show this warning.
+		result="WARN cached"
 	fi
 	printf '%s\t%s -> %s\tstatus=%s\thome=%s\tcache=%s\tnew_log_lines=%s' \
 		"$name" "${before:-?}" "${after:-?}" "$MAIN_STATUS" "$MAIN_CODE" "$MAIN_CACHE" "$new_lines"
