@@ -10,10 +10,13 @@
 # plugin's main file inside); a leading ~/ is the home folder. Only installs
 # that already have wp-content/plugins/SLUG/SLUG.php are touched. Each install
 # gets one line; networks also get one indented line per site, excluding
-# archived, deleted and spam sites. Each site is loaded and fetched with a
-# unique query string. cache= lists the response's cache headers; WARN cached
-# means a cache ignored the query string, so PHP did not run for that fetch.
-# apply exits 1 on a failed site, a version not reached or new log lines.
+# archived, deleted and spam sites. Each site is loaded, its page cache purged
+# (LiteSpeed Cache, when its WP-CLI command is there; purged=N/SITES) and
+# fetched with a unique query string. cache= lists the response's cache
+# headers; WARN cached means a cache ignored the query string, so PHP did not
+# run for that fetch, and WARN purge failed that visitors may still get pages
+# pointing at the old CSS and JS. apply exits 1 on a failed site, a version
+# not reached or new log lines.
 #
 # Bash only, and no process substitution: /dev/fd is missing in some SSH
 # sessions. Never wp plugin update: on hosts with HTTP request limiters
@@ -380,6 +383,30 @@ site_urls() {
 	return 0
 }
 
+# The guarded full load of one site: WordPress runs the site's settings
+# upgrade, then the site's page cache is purged, so cached pages stop
+# pointing at the old ?ver= of the plugin's CSS and JS. Only page caches
+# with a WP-CLI purge command are known: LiteSpeed Cache. wp cache flush
+# empties the object cache, never the pages. cli has-command, not a per-site
+# plugin is-active check, which misses a network-activated plugin. Prints
+# purged=yes, no (no known page cache) or failed. A failed purge does not
+# stop the load: the install worked, but visitors may see the old assets.
+load_code() {
+	cat <<'PHP'
+echo "loaded\n";
+$purged = "no";
+$run = array("launch" => false, "exit_error" => false, "return" => "all");
+foreach (array("litespeed-purge" => "litespeed-purge all") as $command => $purge) {
+    if (0 === WP_CLI::runcommand("cli has-command " . $command, $run)->return_code) {
+        $purged = 0 === WP_CLI::runcommand($purge, $run)->return_code ? "yes" : "failed";
+        break;
+    }
+}
+echo "purged=" . $purged . "\n";
+PHP
+	return 0
+}
+
 # Sets HOME_CODE/HOME_CACHE and advances FETCHES in the caller's shell.
 home_check() {
 	local url="$1"
@@ -410,9 +437,9 @@ home_check() {
 # Called directly: counters, the main row and network lines are results.
 check_sites() {
 	local root="$1"
-	local kind urls url status result reason line network=0
+	local kind urls url status result reason warn load purged line network=0
 	local url_args=()
-	SITES_TOTAL=0 SITES_FAILED=0 SITE_LINES=""
+	SITES_TOTAL=0 SITES_FAILED=0 SITES_PURGED=0 PURGE_FAILED=0 SITE_LINES=""
 	MAIN_STATUS="?" MAIN_CODE="000" MAIN_CACHE="none"
 	kind="$(wp_bare "$root" eval 'echo is_multisite() ? "multisite" : "single";')" || return 1
 	case "$kind" in
@@ -425,8 +452,17 @@ check_sites() {
 		[[ -n "$url" ]] || continue
 		SITES_TOTAL=$((SITES_TOTAL + 1))
 		[[ "$network" -eq 0 ]] || url_args=(--url="$url")
-		reason="" result="ok"
-		if ! active_guard "$root" "" "" ${url_args[@]+"${url_args[@]}"} eval 'echo "loaded";' >/dev/null; then
+		reason="" warn="" result="ok" purged="no"
+		if load="$(active_guard "$root" "" "" ${url_args[@]+"${url_args[@]}"} eval "$(load_code)")"; then
+			case "$load" in
+			*purged=yes*) purged="yes" SITES_PURGED=$((SITES_PURGED + 1)) ;;
+			*purged=failed*)
+				purged="failed" warn="purge failed, "
+				PURGE_FAILED=$((PURGE_FAILED + 1))
+				;;
+			*) ;;
+			esac
+		else
 			reason="WordPress load failed; "
 		fi
 		if ! status="$(wp_bare "$root" ${url_args[@]+"${url_args[@]}"} plugin list --name="$SLUG" --field=status)" || [[ -z "$status" ]]; then
@@ -437,17 +473,18 @@ check_sites() {
 		if [[ "$HOME_CODE" == 5* || "$HOME_CODE" == "000" ]]; then
 			reason+="home failed; "
 		fi
+		[[ "$HOME_CACHE" != *hit* ]] || warn+="cached, "
 		if [[ -n "$reason" ]]; then
 			result="FAIL: ${reason%; }"
 			SITES_FAILED=$((SITES_FAILED + 1))
-		elif [[ "$HOME_CACHE" == *hit* ]]; then
-			result="WARN cached"
+		elif [[ -n "$warn" ]]; then
+			result="WARN ${warn%, }"
 		fi
 		if [[ "$SITES_TOTAL" -eq 1 ]]; then
 			MAIN_STATUS="$status" MAIN_CODE="$HOME_CODE" MAIN_CACHE="$HOME_CACHE"
 		fi
 		if [[ "$network" -eq 1 ]]; then
-			printf -v line '    site %s\tstatus=%s\thome=%s\tcache=%s\t%s\n' "$url" "${status:-?}" "$HOME_CODE" "$HOME_CACHE" "$result"
+			printf -v line '    site %s\tstatus=%s\tpurged=%s\thome=%s\tcache=%s\t%s\n' "$url" "${status:-?}" "$purged" "$HOME_CODE" "$HOME_CACHE" "$result"
 			SITE_LINES+="$line"
 		fi
 	done <<<"$urls"
@@ -463,7 +500,7 @@ apply_one() {
 	local backups="$5"
 	local plugins="$root/wp-content/plugins"
 	local main="$plugins/$SLUG/$SLUG.php"
-	local before after backup new_lines result="ok" index file
+	local before after backup new_lines result="ok" warn="" index file
 
 	before="$(plugin_version "$main")"
 	backup="$backups/$SLUG-$name-${before:-unknown}.tar.gz"
@@ -500,15 +537,17 @@ apply_one() {
 		index=$((index + 1))
 	done
 
+	# Single sites have no site row on which to show these warnings.
+	[[ "$PURGE_FAILED" -eq 0 ]] || warn+="purge failed, "
+	[[ "$MAIN_CACHE" != *hit* ]] || warn+="cached, "
 	if [[ "$after" != "$want" || "$new_lines" -gt 0 || "$SITES_FAILED" -gt 0 ]]; then
 		result="FAIL"
 		FAILED=1
-	elif [[ "$MAIN_CACHE" == *hit* ]]; then
-		# Single sites have no site row on which to show this warning.
-		result="WARN cached"
+	elif [[ -n "$warn" ]]; then
+		result="WARN ${warn%, }"
 	fi
-	printf '%s\t%s -> %s\tstatus=%s\thome=%s\tcache=%s\tnew_log_lines=%s' \
-		"$name" "${before:-?}" "${after:-?}" "$MAIN_STATUS" "$MAIN_CODE" "$MAIN_CACHE" "$new_lines"
+	printf '%s\t%s -> %s\tstatus=%s\tpurged=%s/%s\thome=%s\tcache=%s\tnew_log_lines=%s' \
+		"$name" "${before:-?}" "${after:-?}" "$MAIN_STATUS" "$SITES_PURGED" "$SITES_TOTAL" "$MAIN_CODE" "$MAIN_CACHE" "$new_lines"
 	if [[ -n "$SITE_LINES" ]]; then
 		printf '\tsites=%s/%s' "$((SITES_TOTAL - SITES_FAILED))" "$SITES_TOTAL"
 	fi

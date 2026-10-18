@@ -19,7 +19,7 @@ only when someone pushes a version tag or manually runs it for an existing tag.
 | `scripts/preflight-release.sh [--ref REF] [--strict] [--offline] [--no-docker]` | Checks versions, headers, readme, both zips (layout, development files, PHP 7.4 and JS syntax, updater code), remote assets, presets and starter data where the plugin has them, and the Git tag. Errors stop a release; `--strict` also fails on warnings, for a WordPress.org submission. `--no-docker` lints PHP with the local `php` instead of PHP 7.4 in Docker. |
 | `scripts/plugin-check.sh [--ref REF] [--zip FILE]` | Runs Plugin Check on both zips in a disposable WordPress in Docker, then removes it. |
 | `scripts/update-test.sh [--from X.Y.Z] [--to X.Y.Z] [--wp VERSION] [--php VERSION] [--keep-log FILE]` | After a release: installs the previous GitHub release (default: the one before the newest) on a disposable WordPress in Docker and checks that it is offered the new one from its asset (WP-CLI, **Check again** on the Updates screen, the Plugins screen), that the update installs and the plugin stays active, and that `debug.log` stays empty. Then removes the site. Reads releases with `gh`. |
-| `scripts/deploy-sites.sh --host SSH_HOST --tag vX.Y.Z [--parent PATTERN] [--skip NAME]... [--apply]` | After the update test: installs the release's zip, checked against GitHub's SHA-256 and its provenance bundle, on every install on one SSH host that already has the plugin (default `'~/domains/*/public_html'`). Without `--apply` it only lists them, with their version and whether each is a multisite network. With `--apply`: a backup of each plugin folder, `wp plugin install --force` (activation kept), a full load for each site's settings upgrade and a home fetch with a unique query string. Networks skip archived, deleted and spam sites and print one indented line per site, after the install line. `cache=` lists the response's cache headers; `WARN cached` means a cache ignored query strings, so PHP did not run for that fetch. Fails on a version not reached, new lines in the site's PHP logs (`WP_DEBUG_LOG`, including a custom path, and PHP's `error_log`) or any failed site, with the restore command. The remote part is `scripts/lib/deploy-remote.sh`. |
+| `scripts/deploy-sites.sh --host SSH_HOST --tag vX.Y.Z [--parent PATTERN] [--skip NAME]... [--apply]` | After the update test: installs the release's zip, checked against GitHub's SHA-256 and its provenance bundle, on every install on one SSH host that already has the plugin (default `'~/domains/*/public_html'`). Without `--apply` it only lists them, with their version and whether each is a multisite network. With `--apply`: a backup of each plugin folder, `wp plugin install --force` (activation kept), a full load for each site's settings upgrade, a purge of each site's page cache (LiteSpeed Cache, when its WP-CLI command is there) and a home fetch with a unique query string. Networks skip archived, deleted and spam sites and print one indented line per site, after the install line. `cache=` lists the response's cache headers; `WARN cached` means a cache ignored query strings, so PHP did not run for that fetch. Fails on a version not reached, new lines in the site's PHP logs (`WP_DEBUG_LOG`, including a custom path, and PHP's `error_log`) or any failed site, with the restore command. The remote part is `scripts/lib/deploy-remote.sh`. |
 
 The deploy runner snapshots the **stored**, unfiltered activation lists and
 their counts before the install and the settings-upgrade load, then requires
@@ -133,14 +133,25 @@ expected in the GitHub zip too.
 
    Only installs that already have the plugin are touched. Each install line gives
    the old and new version, the status (`active-network` on a network
-   activation), the main home page's HTTP code, `cache=` (the final response's
+   activation), `purged=N/SITES` (the sites whose page cache was purged), the
+   main home page's HTTP code, `cache=` (the final response's
    `x-litespeed-cache`, `x-cache` and `cf-cache-status` headers, or `none`) and
    the log lines gained. Networks add `sites=PASSED/TOTAL` and one indented
-   `site` line per site, with its status, home code, cache headers and result.
+   `site` line per site, with its status, `purged=yes`, `no` or `failed`, home
+   code, cache headers and result.
    Every site that is not archived, deleted or spam gets a guarded full load
-   for its settings upgrade and a home fetch with a query string unique to
-   that fetch. `WARN cached` means a cache answered anyway (it ignores query
-   strings), so PHP did not run for that fetch; it warns rather than fails.
+   for its settings upgrade, a page cache purge and a home fetch with a query
+   string unique to that fetch. The purge matters: WordPress versions the
+   plugin's CSS and JS by `?ver=`, and a cached page keeps pointing at the old
+   version, so without it visitors get the old files until the page cache
+   expires. It runs `wp --url=<site> litespeed-purge all` when
+   `wp cli has-command litespeed-purge` finds LiteSpeed Cache (also when it is
+   network-activated); other page caches are not purged, so purge them by
+   hand. `wp cache flush` is not enough: it empties the object cache, not the
+   pages. `WARN purge failed` means the purge command failed, so visitors may
+   still get the old files. `WARN cached` means a cache answered anyway (it
+   ignores query strings), so PHP did not run for that fetch. Both warn
+   rather than fail.
    A failed load, status read or home (5xx or no answer) fails the install;
    4xx is reported only. All sites are checked even after one fails. A
    failed install prints its restore command and the backup folder
