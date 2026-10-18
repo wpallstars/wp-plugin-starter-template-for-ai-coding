@@ -74,6 +74,12 @@ dark mode switcher (and themes that switch palettes the same way).
   `:root` from palette variables: they resolve above `<body>` and keep the
   light values. Read palette variables where they are used, or define
   derived ones on the block.
+- Palette pairs are not guaranteed to contrast in both modes: Kadence dark
+  mode sets button text to palette 9 (dark) on palette 1. Front-end buttons
+  that take the theme's colours check the text against the background
+  (normal and hover) and, below 4.5:1, use the theme's background or
+  strongest text colour instead, rechecking when the `<body>` or `<html>`
+  classes change.
 - Preset references (`var:preset|color|theme-palette3`) become CSS variables
   with kebab-cased slugs, as core does: `--wp--preset--color--theme-palette-3`.
   Use `_wp_to_kebab_case()` in PHP and the same rule in editor JS (a hyphen
@@ -91,3 +97,6 @@ dark mode switcher (and themes that switch palettes the same way).
   lines), then swap the body class between `color-switch-light` and
   `color-switch-dark`. Check text, backgrounds, borders and palette colours
   chosen in block settings in both.
+
+<!-- wps-own:start -->
+<!-- wps-own:end -->

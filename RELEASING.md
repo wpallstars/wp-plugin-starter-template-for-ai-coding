@@ -21,6 +21,24 @@ only when someone pushes a version tag.
 | `scripts/update-test.sh [--from X.Y.Z] [--to X.Y.Z] [--wp VERSION] [--php VERSION] [--keep-log FILE]` | After a release: installs the previous GitHub release (default: the one before the newest) on a disposable WordPress in Docker and checks that it is offered the new one from its asset (WP-CLI, **Check again** on the Updates screen, the Plugins screen), that the update installs and the plugin stays active, and that `debug.log` stays empty. Then removes the site. Reads releases with `gh`. |
 | `scripts/deploy-sites.sh --host SSH_HOST --tag vX.Y.Z [--parent PATTERN] [--skip NAME]... [--apply]` | After the update test: installs the release's zip, checked against GitHub's SHA-256 and its provenance bundle, on every install on one SSH host that already has the plugin (default `'~/domains/*/public_html'`). Without `--apply` it only lists them, with their version and whether each is a multisite network. With `--apply`: a backup of each plugin folder, `wp plugin install --force` (activation kept), one full load for the settings upgrade, and one line per install; fails on a version not reached, new lines in the site's PHP logs (`WP_DEBUG_LOG`, including a custom path, and PHP's `error_log`) or a failed home page, with the restore command. The remote part is `scripts/lib/deploy-remote.sh`. |
 
+The deploy runner snapshots the **stored**, unfiltered activation lists and
+their counts before the install and the settings-upgrade load, then requires
+exactly the intended difference (none: `install --force` keeps activation).
+On multisite it checks every blog and the network activation list too. A
+WP-CLI error (including `Error establishing a database connection` even with
+exit zero), an invalid snapshot or an unexpected difference prints FAIL and
+stops that install; the host run continues with the others. On a healthy
+readable single site, a strict-subset wipe is restored with an atomic
+compare-and-swap and rechecked, but the install still fails. Extra entries,
+concurrent changes and network state are **never** overwritten
+automatically: review the diff and restore command instead. A plugin's own
+fleet script can source `scripts/lib/deploy-remote.sh` with
+`DEPLOY_LIBRARY_ONLY=1` and wrap each change in `active_guard` for the same
+checks.
+
+<!-- wps-own:start -->
+<!-- wps-own:end -->
+
 The two builds of each version:
 
 | Zip | Contents | Goes to |

@@ -85,7 +85,160 @@ plugin_version() {
 wp_bare() {
 	local root="$1"
 	shift
-	"$WP_CLI" --path="$root" --skip-plugins --skip-themes "$@" 2>/dev/null | tail -n 1
+	local output
+	output="$(wp_checked "$root" --skip-plugins --skip-themes "$@")" || return 1
+	printf '%s\n' "$output" | tail -n 1
+	return 0
+}
+
+# Preserve exit status AND stderr: database errors can accompany exit zero.
+wp_checked() {
+	local root="$1"
+	shift
+	local output status=0
+	output="$("$WP_CLI" --path="$root" "$@" 2>&1)" || status=$?
+	if [[ "$status" -ne 0 || "$output" == *"Error establishing a database connection"* || "$output" == *"WordPress database error"* ]]; then
+		printf '%s\n' "$output" >&2
+		return 1
+	fi
+	printf '%s\n' "$output"
+	return 0
+}
+
+# Raw stored lists, never option filters or an object-cache read. JSON carries
+# sorted plugin files and explicit counts, including a genuinely empty array.
+# Networks: inspect every blog in this network plus active_sitewide_plugins;
+# NEVER auto-restore a network. Report it for operator recovery instead.
+active_reader() {
+	cat <<'PHP'
+function fleet_active_read() {
+    global $wpdb;
+    $decode = function ($raw) use ($wpdb) {
+        if ($wpdb->last_error || !is_string($raw)) { WP_CLI::error("Cannot read stored activation list"); }
+        $value = @unserialize($raw, array("allowed_classes" => false));
+        if (!is_array($value)) { WP_CLI::error("Stored activation list is not an array"); }
+        return $value;
+    };
+    $network = array();
+    $blogs = array(get_current_blog_id());
+    if (is_multisite()) {
+        $blogs = $wpdb->get_col($wpdb->prepare("SELECT blog_id FROM {$wpdb->blogs} WHERE site_id = %d ORDER BY blog_id", get_current_network_id()));
+        if ($wpdb->last_error || !$blogs) { WP_CLI::error("Cannot read network blogs"); }
+        $network = $decode($wpdb->get_var($wpdb->prepare("SELECT meta_value FROM {$wpdb->sitemeta} WHERE site_id = %d AND meta_key = %s", get_current_network_id(), "active_sitewide_plugins")));
+        foreach ($network as $file => $time) {
+            if (!is_string($file) || !is_numeric($time)) { WP_CLI::error("Invalid network activation entry"); }
+        }
+        ksort($network, SORT_STRING);
+    }
+    $sites = array();
+    foreach ($blogs as $id) {
+        $table = $wpdb->get_blog_prefix($id) . 'options';
+        $raw = $wpdb->get_var($wpdb->prepare("SELECT option_value FROM `{$table}` WHERE option_name = %s", 'active_plugins'));
+        $files = $decode($raw);
+        foreach ($files as $file) {
+            if (!is_string($file) || !preg_match("~^[a-zA-Z0-9_./-]+\\.php$~D", $file)) { WP_CLI::error("Invalid activation entry"); }
+        }
+        sort($files, SORT_STRING);
+        $sites[(string) $id] = array('count' => count($files), 'files' => $files, 'stored' => base64_encode($raw));
+    }
+    return array('multisite' => is_multisite(), 'blog' => get_current_blog_id(), 'sites' => $sites, 'network_count' => count($network), 'network' => $network);
+}
+PHP
+	return 0
+}
+
+active_snapshot() {
+	local root="$1"
+	wp_checked "$root" --skip-plugins --skip-themes eval "$(active_reader) echo json_encode(fleet_active_read(), JSON_UNESCAPED_SLASHES);" || return 1
+	return 0
+}
+
+# The ONLY explicit active_plugins writer. Restore only a strict subset of
+# BEFORE, on a single site, after re-reading and matching OBSERVED. Extra
+# entries (including a new intended activation) may be concurrent work: stop,
+# do not overwrite them. The sole restore write uses an atomic binary SQL
+# compare-and-swap, not update_option(): option filters cannot interfere and
+# a concurrent activation between the read and write cannot be overwritten.
+active_restore_code() {
+	active_reader
+	cat <<'PHP'
+$before = json_decode(getenv('FLEET_BEFORE'), true);
+$observed = json_decode(getenv('FLEET_OBSERVED'), true);
+if (getenv('FLEET_OBSERVED') === '') { $observed = fleet_active_read(); }
+if (!is_array($before) || !is_array($observed) || $before['multisite'] || $observed !== fleet_active_read()) { WP_CLI::error("Restore refused: network, invalid snapshot or concurrent change; use the database backup after review"); }
+$id = $before['blog'];
+$old = $before['sites'][$id]['files'];
+$now = $observed['sites'][$id]['files'];
+if (count($now) >= count($old) || array_diff($now, $old)) { WP_CLI::error("Restore refused: not a strict subset; review the diff and database backup"); }
+global $wpdb;
+$changed = $wpdb->query($wpdb->prepare("UPDATE {$wpdb->options} SET option_value = %s WHERE option_name = %s AND BINARY option_value = BINARY %s", base64_decode($before['sites'][$id]['stored']), 'active_plugins', base64_decode($observed['sites'][$id]['stored'])));
+if ($changed !== 1 || $wpdb->last_error) { WP_CLI::error("Restore refused: concurrent write or database error"); }
+wp_cache_delete('active_plugins', 'options');
+wp_cache_delete('alloptions', 'options');
+wp_cache_delete('notoptions', 'options');
+if (fleet_active_read() !== $before) { WP_CLI::error("Activation restore failed verification"); }
+WP_CLI::line("Activation list restored; this install remains FAIL");
+PHP
+	return 0
+}
+
+# Compare the AFTER snapshot (FLEET_OBSERVED) with BEFORE plus the intended
+# additions and removals (FLEET_ADD, FLEET_REMOVE: one plugin file per line).
+active_check_code() {
+	cat <<'PHP'
+$before = json_decode(getenv('FLEET_BEFORE'), true); $after = json_decode(getenv('FLEET_OBSERVED'), true);
+if (!is_array($before) || !is_array($after)) { WP_CLI::error("Invalid activation snapshot output"); }
+$expected = $before; $id = $before['blog']; $files = $before['sites'][$id]['files'];
+$remove = array_filter(explode("\n", getenv('FLEET_REMOVE'))); $add = array_filter(explode("\n", getenv('FLEET_ADD')));
+$files = array_values(array_unique(array_merge(array_diff($files, $remove), $add))); sort($files, SORT_STRING);
+$expected['sites'][$id]['count'] = count($files); $expected['sites'][$id]['files'] = $files;
+// Stored order is recovery evidence, not activation semantics.
+foreach ($expected['sites'] as $blog => $list) { if (isset($after['sites'][$blog])) { $expected['sites'][$blog]['stored'] = $after['sites'][$blog]['stored']; } }
+if ($expected !== $after) {
+    foreach ($expected['sites'] as $blog => $list) {
+        $now = $after['sites'][$blog]['files'] ?? array();
+        WP_CLI::line("FAIL blog=" . $blog . " missing=" . json_encode(array_values(array_diff($list['files'], $now))) . " extra=" . json_encode(array_values(array_diff($now, $list['files']))));
+    }
+    if ($expected['network'] !== $after['network']) { WP_CLI::line("FAIL network missing=" . json_encode(array_diff_key($expected['network'], $after['network'])) . " extra/changed=" . json_encode(array_diff_assoc($after['network'], $expected['network']))); }
+    WP_CLI::error("Stored activation lists changed unexpectedly");
+}
+PHP
+	return 0
+}
+
+active_check() {
+	local root="$1" before="$2" add="$3" remove="$4"
+	local after code
+	after="$(active_snapshot "$root")" || {
+		printf 'FAIL: cannot read activation lists after change; restore from the database backup after database recovery\n' >&2
+		printf '    restore: env FLEET_BEFORE=%q FLEET_OBSERVED= %q --path=%q --skip-plugins --skip-themes eval %q\n' \
+			"$before" "$WP_CLI" "$root" "$(active_restore_code)" >&2
+		return 1
+	}
+	code="$(active_check_code)"
+	if ! FLEET_BEFORE="$before" FLEET_OBSERVED="$after" FLEET_ADD="$add" FLEET_REMOVE="$remove" \
+		wp_checked "$root" --skip-plugins --skip-themes eval "$code"; then
+		code="$(active_restore_code)"
+		printf '    restore: env FLEET_BEFORE=%q FLEET_OBSERVED=%q %q --path=%q --skip-plugins --skip-themes eval %q\n' \
+			"$before" "$after" "$WP_CLI" "$root" "$code" >&2
+		FLEET_BEFORE="$before" FLEET_OBSERVED="$after" wp_checked "$root" --skip-plugins --skip-themes eval "$code" || true
+		return 1
+	fi
+	return 0
+}
+
+# Even when the command fails, check for damage before stopping the install.
+active_guard() {
+	local root="$1" add="$2" remove="$3"
+	shift 3
+	local before status=0
+	before="$(active_snapshot "$root")" || return 1
+	# Validate the machine-readable snapshot before ANY mutation.
+	FLEET_BEFORE="$before" wp_checked "$root" --skip-plugins --skip-themes eval \
+		'if (!is_array(json_decode(getenv("FLEET_BEFORE"), true))) { WP_CLI::error("Invalid activation snapshot output"); }' >/dev/null || return 1
+	wp_checked "$root" "$@" || status=1
+	active_check "$root" "$before" "$add" "$remove" || status=1
+	[[ "$status" -eq 0 ]] || return 1
 	return 0
 }
 
@@ -95,10 +248,10 @@ log_files() {
 	local wp_debug php_error path candidate existing duplicate
 	local candidates=()
 	local unique=()
-	wp_debug="$(wp_bare "$root" eval 'echo defined("WP_DEBUG_LOG") && is_string(WP_DEBUG_LOG) && !in_array(strtolower(WP_DEBUG_LOG), array("1", "true"), true) ? WP_DEBUG_LOG : (defined("WP_DEBUG_LOG") && WP_DEBUG_LOG ? WP_CONTENT_DIR . "/debug.log" : "");')"
+	wp_debug="$(wp_bare "$root" eval 'echo defined("WP_DEBUG_LOG") && is_string(WP_DEBUG_LOG) && !in_array(strtolower(WP_DEBUG_LOG), array("1", "true"), true) ? WP_DEBUG_LOG : (defined("WP_DEBUG_LOG") && WP_DEBUG_LOG ? WP_CONTENT_DIR . "/debug.log" : "");')" || return 1
 	# CLI ini settings do not describe PHP-FPM pools or .user.ini. The
 	# caller supplies the verified web destination separately for apply.
-	php_error="$(wp_bare "$root" eval 'echo ini_get("error_log");')"
+	php_error="$(wp_bare "$root" eval 'echo ini_get("error_log");')" || return 1
 	candidates+=("$root/error_log" "$root/wp-content/debug.log")
 	if [[ -n "$WEB_ERROR_LOG" ]]; then
 		if [[ "$WEB_ERROR_LOG" == /* ]]; then
@@ -189,7 +342,7 @@ list_one() {
 	local name="$2"
 	local version kind
 	version="$(plugin_version "$root/wp-content/plugins/$SLUG/$SLUG.php")"
-	kind="$(wp_bare "$root" eval 'echo is_multisite() ? "multisite" : "single";')"
+	kind="$(wp_bare "$root" eval 'echo is_multisite() ? "multisite" : "single";')" || return 1
 	printf '%s\t%s\t%s\t%s\n' "$name" "${version:-?}" "${kind:-unknown}" "$root"
 	return 0
 }
@@ -219,13 +372,25 @@ apply_one() {
 	fi
 
 	# Activation (and network activation) is kept by install --force.
-	"$WP_CLI" --path="$root" --skip-plugins --skip-themes plugin install "$zip" --force >/dev/null 2>&1
+	if ! active_guard "$root" "" "" --skip-plugins --skip-themes plugin install "$zip" --force >/dev/null; then
+		printf '%s\tFAIL: guarded install stopped; restore: tar -xzf %q -C %q\n' "$name" "$backup" "$plugins"
+		FAILED=1
+		return 0
+	fi
 	# One full load, so the plugin's settings upgrade runs (main site).
-	"$WP_CLI" --path="$root" eval 'echo "loaded";' >/dev/null 2>&1
+	if ! active_guard "$root" "" "" eval 'echo "loaded";' >/dev/null; then
+		printf '%s\tFAIL: WordPress load failed; restore: tar -xzf %q -C %q\n' "$name" "$backup" "$plugins"
+		FAILED=1
+		return 0
+	fi
 
 	after="$(plugin_version "$main")"
-	status="$(wp_bare "$root" plugin list --name="$SLUG" --field=status)"
-	home="$(wp_bare "$root" option get home)"
+	if ! status="$(wp_bare "$root" plugin list --name="$SLUG" --field=status)" ||
+		! home="$(wp_bare "$root" option get home)"; then
+		printf '%s\tFAIL: verification WP-CLI failed; restore: tar -xzf %q -C %q\n' "$name" "$backup" "$plugins"
+		FAILED=1
+		return 0
+	fi
 	code="000"
 	if [[ -n "$home" ]]; then
 		code="$(curl -s -o /dev/null -L -w '%{http_code}' --max-time 30 "$home/" || true)"
@@ -333,7 +498,10 @@ main() {
 		if [[ "$apply" -eq 1 ]]; then
 			apply_one "$root" "$name" "$want" "$zip" "$backups"
 		else
-			list_one "$root" "$name"
+			if ! list_one "$root" "$name"; then
+				printf '%s\tFAIL: cannot read WordPress; no change made, no restore needed\n' "$name"
+				FAILED=1
+			fi
 		fi
 	done <<<"$found"
 
@@ -343,9 +511,11 @@ main() {
 	fi
 	if [[ "$apply" -eq 1 ]]; then
 		say "Backups: $backups"
-		[[ "$FAILED" -eq 0 ]] || return 1
 	fi
+	[[ "$FAILED" -eq 0 ]] || return 1
 	return 0
 }
 
-main "$@"
+if [[ "${DEPLOY_LIBRARY_ONLY:-0}" != 1 ]]; then
+	main "$@"
+fi
