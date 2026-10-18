@@ -5,8 +5,9 @@
  * The header, the tab navigation, the tab panels and the browser title of
  * the settings screen (WPStarter_Admin_Manager::render_settings_page()). The
  * plugin's own screens show the header through
- * WPStarter_Admin_Manager::render_header(), and name their section in the
- * browser title with title_section().
+ * WPStarter_Admin_Manager::render_header(), their sections as tabs with
+ * sections_nav(), and name their section in the browser title with
+ * title_section().
  *
  * SPDX-License-Identifier: GPL-3.0-or-later
  * SPDX-FileCopyrightText: 2026 Marcus Quinn
@@ -244,6 +245,40 @@ class WPStarter_Admin_Page {
         if ('' !== $menu) {
             self::menu_row($menu, self::menu_tabs($tabs, $menu), $active, $page_tabs);
         }
+    }
+
+    /**
+     * Render the sections of one of the plugin's own screens as the settings
+     * screen's tabs (WPStarter_Admin_Manager::render_header()): a
+     * `wps-nav` of `wps-nav__tab` links, the one shown `is-active` with
+     * aria-current="page". Each link loads its section's page; name the
+     * section shown in the browser title with title_section().
+     *
+     * @param array<string,array{label:string,url:string}> $sections Sections in order, by slug: each its label (plain text) and URL.
+     * @param string                                       $current  Slug of the section shown.
+     * @param string                                       $label    The navigation's accessible name; empty for "WP Plugin Starter sections".
+     */
+    public static function sections_nav(array $sections, $current, $label = '') {
+        $label = '' === (string) $label ? __('WP Plugin Starter sections', 'wp-plugin-starter-template') : (string) $label;
+        ?>
+        <nav class="wps-nav" aria-label="<?php echo esc_attr($label); ?>">
+            <?php foreach ($sections as $slug => $section) : ?>
+                <?php
+                $shown = (string) $slug === (string) $current;
+                $text  = isset($section['label']) ? (string) $section['label'] : '';
+                $url   = isset($section['url']) ? (string) $section['url'] : '';
+                if ('' === $text || '' === $url) {
+                    continue;
+                }
+                ?>
+                <a href="<?php echo esc_url($url); ?>"
+                   class="wps-nav__tab<?php echo $shown ? ' is-active' : ''; ?>"
+                   <?php echo $shown ? 'aria-current="page"' : ''; ?>>
+                    <?php echo esc_html($text); ?>
+                </a>
+            <?php endforeach; ?>
+        </nav>
+        <?php
     }
 
     /**
