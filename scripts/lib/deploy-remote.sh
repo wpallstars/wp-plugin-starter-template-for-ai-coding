@@ -8,9 +8,12 @@
 #
 # PARENT is a pattern for the WordPress folders (wp-config.php and the
 # plugin's main file inside); a leading ~/ is the home folder. Only installs
-# that already have wp-content/plugins/SLUG/SLUG.php are touched. Each line
-# printed is one install; apply exits 1 when any install did not reach
-# VERSION or logged new lines.
+# that already have wp-content/plugins/SLUG/SLUG.php are touched. Each install
+# gets one line; networks also get one indented line per site, excluding
+# archived, deleted and spam sites. Each site is loaded and fetched with a
+# unique query string. cache= lists the response's cache headers; WARN cached
+# means a cache ignored the query string, so PHP did not run for that fetch.
+# apply exits 1 on a failed site, a version not reached or new log lines.
 #
 # Bash only, and no process substitution: /dev/fd is missing in some SSH
 # sessions. Never wp plugin update: on hosts with HTTP request limiters
@@ -30,6 +33,8 @@ WP_CLI="${DEPLOY_WP_CLI:-wp}"
 WEB_ERROR_LOG="${DEPLOY_WEB_ERROR_LOG:-}"
 SLUG=""
 FAILED=0
+RUN_STAMP=""
+FETCHES=0
 SKIPS=()
 LOG_FILES=()
 LOG_BEFORE=()
@@ -358,6 +363,98 @@ list_one() {
 	return 0
 }
 
+# Main site first, then every other serving site. Preserve all WP-CLI rows.
+site_urls() {
+	local root="$1"
+	local kind="$2"
+	local main urls url
+	main="$(wp_bare "$root" option get home)" || return 1
+	[[ -n "$main" ]] || return 1
+	printf '%s\n' "$main"
+	[[ "$kind" == "multisite" ]] || return 0
+	urls="$(wp_checked "$root" --skip-plugins --skip-themes site list --field=url --archived=0 --deleted=0 --spam=0)" || return 1
+	while IFS= read -r url; do
+		[[ -n "$url" && "${url%/}" != "${main%/}" ]] || continue
+		printf '%s\n' "$url"
+	done <<<"$urls"
+	return 0
+}
+
+# Sets HOME_CODE/HOME_CACHE and advances FETCHES in the caller's shell.
+home_check() {
+	local url="$1"
+	local headers
+	FETCHES=$((FETCHES + 1))
+	HOME_CODE="000"
+	HOME_CACHE="none"
+	headers="$(mktemp)" || return 1
+	HOME_CODE="$(curl -s -o /dev/null -L -D "$headers" -w '%{http_code}' --max-time 30 \
+		"${url%/}/?deploy-check=${RUN_STAMP}-${FETCHES}" || true)"
+	HOME_CACHE="$(awk '
+		/^HTTP\// { cache = "" }
+		{
+			line = tolower($0)
+			sub(/\r$/, "", line)
+			if (line ~ /^(x-litespeed-cache|x-cache|cf-cache-status):/) {
+				sub(/:[ \t]*/, ":", line)
+				sub(/[ \t]+$/, "", line)
+				cache = cache (cache == "" ? "" : ",") line
+			}
+		}
+		END { print cache == "" ? "none" : cache }
+	' "$headers")"
+	rm -f "$headers"
+	return 0
+}
+
+# Called directly: counters, the main row and network lines are results.
+check_sites() {
+	local root="$1"
+	local kind urls url status result reason line network=0
+	local url_args=()
+	SITES_TOTAL=0 SITES_FAILED=0 SITE_LINES=""
+	MAIN_STATUS="?" MAIN_CODE="000" MAIN_CACHE="none"
+	kind="$(wp_bare "$root" eval 'echo is_multisite() ? "multisite" : "single";')" || return 1
+	case "$kind" in
+	multisite) network=1 ;;
+	single) ;;
+	*) return 1 ;;
+	esac
+	urls="$(site_urls "$root" "$kind")" || return 1
+	while IFS= read -r url; do
+		[[ -n "$url" ]] || continue
+		SITES_TOTAL=$((SITES_TOTAL + 1))
+		[[ "$network" -eq 0 ]] || url_args=(--url="$url")
+		reason="" result="ok"
+		if ! active_guard "$root" "" "" ${url_args[@]+"${url_args[@]}"} eval 'echo "loaded";' >/dev/null; then
+			reason="WordPress load failed; "
+		fi
+		if ! status="$(wp_bare "$root" ${url_args[@]+"${url_args[@]}"} plugin list --name="$SLUG" --field=status)" || [[ -z "$status" ]]; then
+			reason+="status read failed; "
+		fi
+		home_check "$url" || reason+="home check failed; "
+		# 4xx may be the host's firewall: report, but do not fail it.
+		if [[ "$HOME_CODE" == 5* || "$HOME_CODE" == "000" ]]; then
+			reason+="home failed; "
+		fi
+		if [[ -n "$reason" ]]; then
+			result="FAIL: ${reason%; }"
+			SITES_FAILED=$((SITES_FAILED + 1))
+		elif [[ "$HOME_CACHE" == *hit* ]]; then
+			result="WARN cached"
+		fi
+		if [[ "$SITES_TOTAL" -eq 1 ]]; then
+			MAIN_STATUS="$status" MAIN_CODE="$HOME_CODE" MAIN_CACHE="$HOME_CACHE"
+		fi
+		if [[ "$network" -eq 1 ]]; then
+			printf -v line '    site %s\tstatus=%s\thome=%s\tcache=%s\t%s\n' "$url" "${status:-?}" "$HOME_CODE" "$HOME_CACHE" "$result"
+			SITE_LINES+="$line"
+		fi
+	done <<<"$urls"
+	[[ "$SITES_TOTAL" -gt 0 ]] || return 1
+	return 0
+}
+
 apply_one() {
 	local root="$1"
 	local name="$2"
@@ -366,7 +463,7 @@ apply_one() {
 	local backups="$5"
 	local plugins="$root/wp-content/plugins"
 	local main="$plugins/$SLUG/$SLUG.php"
-	local before after status home code backup new_lines result="ok" index file
+	local before after backup new_lines result="ok" index file
 
 	before="$(plugin_version "$main")"
 	backup="$backups/$SLUG-$name-${before:-unknown}.tar.gz"
@@ -388,24 +485,14 @@ apply_one() {
 		FAILED=1
 		return 0
 	fi
-	# One full load, so the plugin's settings upgrade runs (main site).
-	if ! active_guard "$root" "" "" eval 'echo "loaded";' >/dev/null; then
-		printf '%s\tFAIL: WordPress load failed; restore: tar -xzf %q -C %q\n' "$name" "$backup" "$plugins"
+	# Each site's guarded full load runs its own settings upgrade.
+	if ! check_sites "$root"; then
+		printf '%s\tFAIL: cannot list the sites; restore: tar -xzf %q -C %q\n' "$name" "$backup" "$plugins"
 		FAILED=1
 		return 0
 	fi
 
 	after="$(plugin_version "$main")"
-	if ! status="$(wp_bare "$root" plugin list --name="$SLUG" --field=status)" ||
-		! home="$(wp_bare "$root" option get home)"; then
-		printf '%s\tFAIL: verification WP-CLI failed; restore: tar -xzf %q -C %q\n' "$name" "$backup" "$plugins"
-		FAILED=1
-		return 0
-	fi
-	code="000"
-	if [[ -n "$home" ]]; then
-		code="$(curl -s -o /dev/null -L -w '%{http_code}' --max-time 30 "$home/" || true)"
-	fi
 	new_lines=0
 	index=0
 	for file in ${LOG_FILES[@]+"${LOG_FILES[@]}"}; do
@@ -413,15 +500,20 @@ apply_one() {
 		index=$((index + 1))
 	done
 
-	# A home page that fails (5xx, such as WordPress's critical error page)
-	# or does not answer fails the install; 4xx can be a firewall's answer
-	# to the host itself, so it is only reported.
-	if [[ "$after" != "$want" || "$new_lines" -gt 0 || "$code" == 5* || "$code" == "000" ]]; then
+	if [[ "$after" != "$want" || "$new_lines" -gt 0 || "$SITES_FAILED" -gt 0 ]]; then
 		result="FAIL"
 		FAILED=1
+	elif [[ "$MAIN_CACHE" == *hit* ]]; then
+		# Single sites have no site row on which to show this warning.
+		result="WARN cached"
 	fi
-	printf '%s\t%s -> %s\tstatus=%s\thome=%s\tnew_log_lines=%s\t%s\n' \
-		"$name" "${before:-?}" "${after:-?}" "${status:-?}" "${code:-000}" "$new_lines" "$result"
+	printf '%s\t%s -> %s\tstatus=%s\thome=%s\tcache=%s\tnew_log_lines=%s' \
+		"$name" "${before:-?}" "${after:-?}" "$MAIN_STATUS" "$MAIN_CODE" "$MAIN_CACHE" "$new_lines"
+	if [[ -n "$SITE_LINES" ]]; then
+		printf '\tsites=%s/%s' "$((SITES_TOTAL - SITES_FAILED))" "$SITES_TOTAL"
+	fi
+	printf '\t%s\n' "$result"
+	printf '%s' "$SITE_LINES"
 	if [[ "$new_lines" -gt 0 ]]; then
 		new_log_text | sed 's/^/    /'
 	fi
@@ -497,6 +589,7 @@ main() {
 		fi
 	fi
 
+	RUN_STAMP="$(date -u +%Y%m%d%H%M%S)-$$"
 	found="$(installs "$parent")"
 	while IFS= read -r root; do
 		[[ -n "$root" ]] || continue

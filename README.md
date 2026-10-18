@@ -151,6 +151,7 @@ Deleting the plugin removes its settings (on multisite, every site's and the net
 
 ### Unreleased
 
+- Developers: `scripts/deploy-sites.sh --apply` loads and checks every serving site of a multisite network (not archived, deleted or spam), with one indented line per site and `sites=PASSED/TOTAL`. Every home fetch uses a unique query string; `cache=` reports the final response's cache headers, and `WARN cached` means a cache ignored query strings, so PHP did not run for that fetch. A failed site fails its install and prints the restore command. Single sites still print one install line. Plugins made from the starter get it with scripts/sync-core.sh.
 - Developers: the README release badge shows `readme.txt`'s `Stable tag:` instead of asking shields.io for the latest GitHub release, which a private repository showed as "no releases or repo not found". `scripts/readme-badges.sh` writes it; `RELEASING.md` step 1 runs it with the version change. Plugins get it with `scripts/sync-core.sh`, then `scripts/readme-badges.sh`.
 
 ### 1.0.39
