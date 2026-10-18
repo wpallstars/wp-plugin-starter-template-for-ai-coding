@@ -1,0 +1,49 @@
+# Public core classes: the classes from the core stylesheets (admin/css/)
+# that a plugin's own screens, tabs and feature output may use, so they look
+# like the settings screen. One class per line; # starts a comment.
+# STYLING.md → Classes a plugin may use explains them.
+#
+# Use them in markup freely; never restyle them (no plugin CSS rule whose
+# selector ends on one). A plugin's own components take their own names:
+# wps-<screen>-* or wps-app-*. Every other class in the core stylesheets is
+# internal: a starter sync may change or remove it without notice.
+# Changing or removing a class here is a changelog item that plugins must act
+# on. scripts/preflight-release.sh (Core class names) reads this file.
+#
+# SPDX-License-Identifier: GPL-3.0-or-later
+# SPDX-FileCopyrightText: 2026 Marcus Quinn
+# Additional terms (GPL-3.0 section 7(b)): ATTRIBUTION.txt
+# Provenance: wpas-e4502af0f07e8a92. Copies, even of part, keep these lines.
+
+# Page shell of the plugin's own screens (render_header(), sections_nav()).
+wps-wrap
+wps-main
+wps-nav
+wps-nav__group
+wps-nav__tab
+
+# Settings components, for tabs that look like the settings screen's.
+wps-cards
+wps-card
+wps-section
+wps-section__intro
+wps-section__title
+wps-section__desc
+wps-badge
+wps-badge--success
+wps-field
+wps-field__label
+wps-field__control
+wps-setting
+wps-setting__header
+wps-setting__text
+wps-setting__title
+wps-setting__desc
+
+# Feature output at the top of a setting's options panel.
+wps-panel-note
+wps-panel-note--warning
+
+# Colour mode: set on <html> by the header's Light / Dark / System button.
+# Use it only as an ancestor: html.wps-dark .wps-<screen>-card.
+wps-dark

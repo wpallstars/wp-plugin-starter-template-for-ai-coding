@@ -55,6 +55,42 @@ for dark surfaces. Keep the existing wrapping header layout and logical
 menu alignment; do not add mode transitions that change Light's behaviour.
 The admin choice is independent of the front-end theme's switcher.
 
+## Classes a plugin may use
+
+The core stylesheets (`admin/css/`) are a library with a public list of
+classes: `scripts/core-public-classes.txt`. A plugin's own screens, tabs and
+feature output use them in markup so they look like the settings screen:
+
+- Page shell: `{css}-wrap`, `{css}-main`, `{css}-nav`, `{css}-nav__group`
+  and `{css}-nav__tab`. Print them with
+  `{Prefix}_Admin_Manager::render_header()` and
+  `{Prefix}_Admin_Page::sections_nav()` rather than copying the markup.
+- Settings components: `{css}-cards`, `{css}-card`, `{css}-section` (with
+  `__intro`, `__title`, `__desc`), `{css}-badge` (with `--success`),
+  `{css}-field` (with `__label`, `__control`) and `{css}-setting` (with
+  `__header`, `__text`, `__title`, `__desc`).
+- Feature output at the top of a setting's options panel:
+  `{css}-panel-note` and `{css}-panel-note--warning`.
+- Colour mode: `{css}-dark`, set on `<html>`. Use it only as an ancestor:
+  `html.{css}-dark .{css}-app-card { … }`.
+
+Rules:
+
+- Never restyle a core class, public or not: no plugin CSS rule whose
+  selector ends on one (`.{css}-badge { … }`, `.{css}-card:hover`). A starter
+  sync can change core's rules under it.
+- The plugin's own components take their own names, under a sub-prefix:
+  `{css}-<screen>-*` (`{css}-stats-badge`) or `{css}-app-*` for a React app.
+- Every other class in the core stylesheets is internal (the header, search,
+  sub-navigation, switches and so on): leave it alone; a sync may change or
+  remove it without notice.
+- Changing or removing a public class is a changelog item that plugins must
+  act on: say which class, and what to use instead.
+
+Release preflight (Core class names) reads the list: it warns on internal
+classes in plugin markup and on plugin CSS that restyles any core class, and
+its hint names the class.
+
 ## Front-end styling and dark mode
 
 Block, shortcode and other front-end styles must work with the Kadence Pro
