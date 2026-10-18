@@ -245,7 +245,9 @@ PLUGIN_BADGES_FIRST_LINE="<!-- On GitHub only: the Read Me tab skips this block.
 
 # The badges block's lines: the first line, then three rows with one blank
 # line between them, each a paragraph on GitHub:
-#   1. status: CI, the services given, licence and latest release;
+#   1. status: CI, the services given, licence and release (readme.txt's
+#      Stable tag: shields.io cannot read a private repository's releases,
+#      and the tag is the latest release once it is published);
 #   2. requirements from readme.txt's header (Requires at least, Tested up
 #      to, Requires PHP), lines of code and dependencies;
 #   3. the languages chart alone: it is 96 px high, so beside 20 px badges
@@ -261,10 +263,14 @@ plugin_badges() {
 	local url="https://github.com/$repo"
 	local key="${repo/\//_}"
 	local shield="https://img.shields.io/badge"
-	local wp tested php
+	local wp tested php stable
 	wp="$(plugin_header_field "$readme" "Requires at least")"
 	tested="$(plugin_header_field "$readme" "Tested up to")"
 	php="$(plugin_header_field "$readme" "Requires PHP")"
+	stable="$(plugin_header_field "$readme" "Stable tag")"
+	# Shields reads "-" and "_" in a static badge as separators.
+	stable="${stable//-/--}"
+	stable="${stable//_/__}"
 	printf '%s\n' "$PLUGIN_BADGES_FIRST_LINE"
 	printf '[![CI](%s/actions/workflows/ci.yml/badge.svg?branch=main)](%s/actions/workflows/ci.yml)\n' "$url" "$url"
 	if [[ "$services" = *" sonarcloud "* ]]; then
@@ -280,7 +286,10 @@ plugin_badges() {
 		printf '[![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/%s/badge)](https://scorecard.dev/viewer/?uri=github.com/%s)\n' "$repo" "$repo"
 	fi
 	printf '[![License: GPL v3 or later](%s/License-GPL%%20v3%%20or%%20later-blue.svg)](LICENSE)\n' "$shield"
-	printf '[![Latest release](https://img.shields.io/github/v/release/%s)](%s/releases)\n\n' "$repo" "$url"
+	if [[ -n "$stable" ]]; then
+		printf '[![Latest release](%s/release-v%s-blue.svg)](%s/releases)\n' "$shield" "$stable" "$url"
+	fi
+	printf '\n'
 	if [[ -n "$wp" ]]; then
 		printf '[![Requires WordPress](%s/WordPress-%s%%2B-21759B.svg?logo=wordpress)](readme.txt)\n' "$shield" "$wp"
 	fi

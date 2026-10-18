@@ -96,7 +96,8 @@ How changes are made and checked: `DEVELOPMENT.md`. Releases: `RELEASING.md`.
   tools leave it alone: `scripts/readme-badges.sh` writes it
   (`scripts/rename-plugin.sh` for a new repository). Three rows, one blank
   line between them: status (CI, SonarCloud, Codacy, CodeFactor, OpenSSF
-  Scorecard, licence, latest release); requirements from `readme.txt`
+  Scorecard, licence, release from `readme.txt`'s `Stable tag:`, which
+  also shows for a private repository); requirements from `readme.txt`
   (Requires WordPress, Tested up to, Requires PHP) and size (the facts in
   `docs/metrics/` that `.github/workflows/repo-metrics.yml` keeps up to
   date); then the languages chart alone. Add a service's badge

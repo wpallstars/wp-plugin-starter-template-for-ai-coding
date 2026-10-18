@@ -3,6 +3,7 @@
 Every change to WP Plugin Starter. readme.txt lists the latest version in short.
 
 = Unreleased =
+* Developers: README's release badge shows readme.txt's Stable tag (a static shields.io badge) instead of asking shields.io for the GitHub repository's latest release, which a private repository's README showed as "no releases or repo not found". scripts/readme-badges.sh writes it; RELEASING.md step 1 runs it with the version change, and scripts/preflight-release.sh already warns when the block differs. Plugins made from the starter get it with scripts/sync-core.sh, then scripts/readme-badges.sh.
 * Developers: release preflight warns with file, line and class when plugin-own markup or CSS reuses a block class styled by a core stylesheet. Names come from the core stylesheets at the release ref; core files, generated builds and dependencies are skipped. Use screen-specific names so a starter sync cannot accidentally restyle a plugin screen. Plugins made from the starter get the check and styling rule with scripts/sync-core.sh (GH#487).
 * Developers: new filter wpstarter_replaces_link (link with url and label, plugin folder, plugin file, name) changes or drops the Deactivate link a setting's card shows while a plugin it replaces is active, so a plugin that should import from it first can link there instead. Core still escapes the link. Nothing changes until a plugin uses it; plugins made from the starter get it with scripts/sync-core.sh.
 
