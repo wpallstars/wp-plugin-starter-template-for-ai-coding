@@ -149,6 +149,10 @@ Deleting the plugin removes its settings (on multisite, every site's and the net
 
 ## Changelog
 
+### Unreleased
+
+- Developers: the README release badge shows `readme.txt`'s `Stable tag:` instead of asking shields.io for the latest GitHub release, which a private repository showed as "no releases or repo not found". `scripts/readme-badges.sh` writes it; `RELEASING.md` step 1 runs it with the version change. Plugins get it with `scripts/sync-core.sh`, then `scripts/readme-badges.sh`.
+
 ### 1.0.39
 
 - Developers: `scripts/preview-browser.sh` bypasses page caches while loading WordPress with a dummy logged-in cookie name, not a real sign-in cookie. It fails clearly when WordPress exits before loading, `wp_loaded` does not run, or sign-in returns incomplete data, removing any unfinished state file instead of reporting an empty sign-in. No persistent plugin, content or configuration changes occur on sites; login creates temporary WordPress session state, which logout destroys (GH#483).
