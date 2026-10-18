@@ -9,7 +9,7 @@ Releases on GitHub and the WordPress.org submission need the owner's say.
 None of the scripts below tags, publishes or commits anything, and only
 `scripts/deploy-sites.sh --apply` changes a site outside Docker. The
 Release workflow (`.github/workflows/release.yml`) publishes a GitHub release
-only when someone pushes a version tag.
+only when someone pushes a version tag or manually runs it for an existing tag.
 
 ## Scripts
 
@@ -82,11 +82,16 @@ expected in the GitHub zip too.
 
    ```bash
    git fetch origin
-   scripts/preflight-release.sh --ref origin/main   # no errors before tagging
-   git tag -a vX.Y.Z origin/main -m "{Name} X.Y.Z"
+   release_commit="$(gh pr view N --json mergeCommit --jq .mergeCommit.oid)"   # N is the release PR
+   scripts/preflight-release.sh --ref "$release_commit"   # no errors before tagging
+   git tag -a vX.Y.Z "$release_commit" -m "{Name} X.Y.Z"
    git push origin vX.Y.Z
    gh run watch   # choose the Release run for vX.Y.Z
    ```
+
+   Tag the release PR's merge commit, not the latest `origin/main`: metrics
+   commits use `[skip ci]`, which stops tag-triggered workflows, and touch only
+   `docs/metrics/`, which is not in the zips.
 
    The tag starts the Release workflow (`.github/workflows/release.yml`).
    It checks the tag is on `main`, runs the preflight on it, builds the zips
@@ -105,7 +110,8 @@ expected in the GitHub zip too.
    `scripts/build-release.sh --ref vX.Y.Z`, then
    `gh release create vX.Y.Z dist/{slug}-X.Y.Z.zip --verify-tag --title "{Name} X.Y.Z" --notes-file <notes>`.
    Running the workflow again later (Actions → the failed run → **Re-run
-   jobs**) replaces that zip with its signed build.
+   jobs**, or Actions → **Release** → **Run workflow**, with `tag` set to
+   `vX.Y.Z` if no run started) replaces that zip with its signed build.
 
    Sites with the shared updater see the release when they next check.
    Sites still on Git Updater are offered the `Version:` on `main` before the

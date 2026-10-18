@@ -1253,6 +1253,16 @@ check_git() {
 	else
 		note "no tag v$version yet"
 	fi
+	local message
+	message="$(git log -1 --format=%B "$sha")"
+	if printf '%s\n' "$message" | grep -Ei '\[(skip ci|ci skip|no ci|skip actions|actions skip)\]' >/dev/null; then
+		message="$ref is a [skip ci] commit: a tag on it does not start the Release workflow; tag the release PR's merge commit instead"
+		if [[ "$tag_sha" = "$sha" ]]; then
+			err "$message"
+		else
+			warn "$message"
+		fi
+	fi
 	local main_sha
 	if main_sha="$(git rev-parse --verify --quiet "refs/remotes/origin/main^{commit}")"; then
 		if git merge-base --is-ancestor "$sha" "$main_sha"; then ok "$ref is on origin/main"; else note "$ref is not on origin/main yet; release only from main"; fi
