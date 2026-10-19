@@ -832,7 +832,7 @@ check_core_class_names() {
 	section "Core class names"
 	local manifest path stylesheet classes="" public matches location class kind name problems=0
 	local exclusions=(':(exclude,glob)assets/build/**' ':(exclude,glob)**/vendor/**' ':(exclude,glob)**/node_modules/**')
-	if ! manifest="$(git show "$sha:scripts/core-files.txt")" 2>/dev/null; then
+	if ! manifest="$(git show 2>/dev/null "$sha:scripts/core-files.txt")"; then
 		warn "scripts/core-files.txt missing: core class names were not checked"
 		return 0
 	fi

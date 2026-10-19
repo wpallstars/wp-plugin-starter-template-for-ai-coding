@@ -318,10 +318,14 @@ log_files() {
 
 new_log_text() {
 	local index=0
-	local file
+	local file start
 	for file in ${LOG_FILES[@]+"${LOG_FILES[@]}"}; do
 		if [[ -f "$file" ]]; then
-			tail -n +"$((LOG_BEFORE[index] + 1))" "$file" | head -n 10
+			start=$((LOG_BEFORE[index] + 1))
+			if [[ "$(file_lines "$file")" -lt "${LOG_BEFORE[index]}" ]]; then
+				start=1
+			fi
+			tail -n +"$start" "$file" | head -n 10
 		fi
 		index=$((index + 1))
 	done
@@ -503,7 +507,7 @@ apply_one() {
 	local backups="$5"
 	local plugins="$root/wp-content/plugins"
 	local main="$plugins/$SLUG/$SLUG.php"
-	local before after backup new_lines result="ok" warn="" index file
+	local before after backup new_lines result="ok" warn="" index file current added
 
 	before="$(plugin_version "$main")"
 	backup="$backups/$SLUG-$name-${before:-unknown}.tar.gz"
@@ -536,7 +540,14 @@ apply_one() {
 	new_lines=0
 	index=0
 	for file in ${LOG_FILES[@]+"${LOG_FILES[@]}"}; do
-		new_lines=$((new_lines + $(file_lines "$file") - LOG_BEFORE[index]))
+		current="$(file_lines "$file")"
+		if [[ "$current" -lt "${LOG_BEFORE[index]}" ]]; then
+			# A truncated or rotated log contributes all of its current lines.
+			added="$current"
+		else
+			added=$((current - LOG_BEFORE[index]))
+		fi
+		new_lines=$((new_lines + added))
 		index=$((index + 1))
 	done
 
