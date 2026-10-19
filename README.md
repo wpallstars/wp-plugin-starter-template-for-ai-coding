@@ -149,6 +149,10 @@ Deleting the plugin removes its settings (on multisite, every site's and the net
 
 ## Changelog
 
+### Unreleased
+
+- Developers: `scripts/deploy-sites.sh --apply` no longer misses new PHP log lines when another log got shorter during the install (rotated or cleared): each log is counted on its own, and a shorter log counts, and shows, all its current lines. Release preflight no longer prints Git's fatal message when `scripts/core-files.txt` is missing. `RELEASING.md`'s `deploy-sites.sh` synopsis adds `--wp-cli` and pairs `--web-error-log` with `--apply`. Plugins get it with `scripts/sync-core.sh`.
+
 ### 1.0.40
 
 - Developers: the core stylesheets have a public list of classes a plugin may use, `scripts/core-public-classes.txt` (page shell, settings components, panel notes, `wps-dark`). Release preflight warns only on internal core classes in plugin markup and on plugin CSS that restyles a core class, with a hint naming the class. New `WPStarter_Admin_Page::sections_nav()` prints a plugin screen's sections as the settings screen's tabs. See `STYLING.md` → Classes a plugin may use. Plugins get it with `scripts/sync-core.sh`.
