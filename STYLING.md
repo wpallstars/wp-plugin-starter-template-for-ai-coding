@@ -65,14 +65,21 @@ feature output use them in markup so they look like the settings screen:
   and `{css}-nav__tab`. Print them with
   `{Prefix}_Admin_Manager::render_header()` and
   `{Prefix}_Admin_Page::sections_nav()` rather than copying the markup.
+  `{css}-main--wide` drops the main area's 1200px limit, for a grid of
+  cards: a tab gets it with `'wide' => true` (`{prefix}_admin_tabs`), and
+  an own screen prints `<div class="{css}-main {css}-main--wide">`.
 - Settings components: `{css}-cards`, `{css}-card`, `{css}-section` (with
   `__intro`, `__title`, `__desc`), `{css}-badge` (with `--success`),
   `{css}-field` (with `__label`, `__control`) and `{css}-setting` (with
   `__header`, `__text`, `__title`, `__desc`).
 - Feature output at the top of a setting's options panel:
-  `{css}-panel-note` and `{css}-panel-note--warning`.
-- Colour mode: `{css}-dark`, set on `<html>`. Use it only as an ancestor:
-  `html.{css}-dark .{css}-app-card { … }`.
+  `{css}-panel-note` and `{css}-panel-note--warning`; a block of code to
+  copy, such as server rules: `<pre class="{css}-code">`.
+- Colour mode: `{css}-dark`, set on `<html>`. Use it as an ancestor:
+  `html.{css}-dark .{css}-app-card { … }`. On `html` alone it takes only a
+  dark palette, for screens the core theme does not style (a plugin's
+  whole-admin dark mode): custom properties, `color-scheme` and
+  `background`.
 
 Rules:
 
@@ -89,7 +96,8 @@ Rules:
 
 Release preflight (Core class names) reads the list: it warns on internal
 classes in plugin markup and on plugin CSS that restyles any core class, and
-its hint names the class.
+its hint names the class. It skips CSS comments, and a dark palette on
+`html.{css}-dark` alone.
 
 ## Front-end styling and dark mode
 

@@ -325,6 +325,11 @@
 	padding: 24px;
 }
 
+/* A tab ('wide' => true) or screen that uses the whole width, such as a grid of cards. */
+.wps-main--wide {
+	max-width: none;
+}
+
 /* Tabs drawn on the page but not shown. */
 .wps-main[hidden] {
 	display: none;

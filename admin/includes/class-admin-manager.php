@@ -136,7 +136,7 @@ class WPStarter_Admin_Manager {
      * settings the network can set (WPStarter_Settings_Manager::fields_for_tab()),
      * and Read Me.
      *
-     * @return array<string,array{label:string,group:string,render:callable,preload?:bool,capability?:string,network?:bool,menu?:string}>
+     * @return array<string,array{label:string,group:string,render:callable,preload?:bool,capability?:string,network?:bool,menu?:string,wide?:bool}>
      */
     public static function get_tabs() {
         $tabs = array();
@@ -194,7 +194,9 @@ class WPStarter_Admin_Manager {
          *                    is true), optional menu (a name: tabs of a group
          *                    with the same menu show as one tab with that
          *                    name and, while one of them is shown, as a
-         *                    second row of tabs; WPStarter_Admin_Page::nav()).
+         *                    second row of tabs; WPStarter_Admin_Page::nav()),
+         *                    optional wide (true: the tab uses the whole
+         *                    width of the screen, wps-main--wide).
          */
         $tabs = (array) apply_filters('wpstarter_admin_tabs', $tabs);
 
@@ -493,7 +495,7 @@ class WPStarter_Admin_Manager {
             } else {
                 foreach ($page_tabs as $slug) {
                     if (isset($tabs[$slug]['render']) && is_callable($tabs[$slug]['render'])) {
-                        WPStarter_Admin_Page::panel($slug, $tabs[$slug]['render'], $slug === $active);
+                        WPStarter_Admin_Page::panel($slug, $tabs[$slug]['render'], $slug === $active, !empty($tabs[$slug]['wide']));
                     }
                 }
             }
@@ -509,7 +511,8 @@ class WPStarter_Admin_Manager {
      * it too: enqueue_header() on their admin_enqueue_scripts, then print
      * it first in `<div class="wrap wps-wrap">`, followed by
      * `<hr class="wp-header-end">` so admin notices go below it, and their
-     * content in `<div class="wps-main">`. A screen with sections puts them
+     * content in `<div class="wps-main">` (`wps-main wps-main--wide` for the
+     * whole width). A screen with sections puts them
      * between the two as the settings screen's tabs with
      * WPStarter_Admin_Page::sections_nav(), and names the one shown in the
      * browser title with WPStarter_Admin_Page::title_section() on the

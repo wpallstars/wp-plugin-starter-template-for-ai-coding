@@ -864,22 +864,51 @@ check_core_class_names() {
 	# Git finds candidate lines; Perl checks whole class tokens. In CSS, a
 	# selector restyles a core class (public or not, elements included)
 	# when its last compound selector has it, and reuses an internal block
-	# when any part has it: .{css}-dark .{css}-app-card is fine. Elsewhere,
-	# literal class/className attributes, className expressions,
-	# classList.add calls and selector strings reuse an internal block.
-	# This is advisory, not a parser for dynamically assembled class names.
-	matches="$(git grep -n -I -F -f <(printf '%s\n' "$classes") "$sha" -- '*.php' '*.js' '*.jsx' '*.ts' '*.tsx' '*.css' "${exclusions[@]}" | CORE_CLASSES="$classes" PUBLIC_CLASSES="$public" perl -ne '
+	# when any part has it: .{css}-dark .{css}-app-card is fine. So is a
+	# dark palette on html.{css}-dark alone: a rule that sets only custom
+	# properties, color-scheme and the background. Comments, also over
+	# several lines, are left out. Elsewhere, literal class/className
+	# attributes, className expressions, classList.add calls and selector
+	# strings reuse an internal block. This is advisory, not a parser for
+	# dynamically assembled class names.
+	matches="$(git grep -n -I -F -f <(printf '%s\n' "$classes") "$sha" -- '*.php' '*.js' '*.jsx' '*.ts' '*.tsx' '*.css' "${exclusions[@]}" | CORE_CLASSES="$classes" PUBLIC_CLASSES="$public" CORE_REF="$sha" DARK_CLASS="${PLUGIN_CSS}-dark" perl -ne '
 		BEGIN {
 			@classes = split /\n/, $ENV{CORE_CLASSES};
 			%public = map { $_ => 1 } split /\n/, $ENV{PUBLIC_CLASSES};
+			($ref, $dark) = ($ENV{CORE_REF}, $ENV{DARK_CLASS});
+		}
+		# A stylesheet at the release ref, its comments blanked and its
+		# line breaks kept, so a line number still finds its line.
+		sub uncommented {
+			my ($path) = @_;
+			my $source = q{};
+			if (open my $fh, q{-|}, q{git}, q{show}, qq{$ref:$path}) {
+				local $/;
+				$source = <$fh> // q{};
+				close $fh;
+			}
+			$source =~ s{(?<comment>/\*.*?\*/)}{ (my $c = $+{comment}) =~ s/[^\n]/ /g; $c }gse;
+			return [split /\n/, $source, -1];
+		}
+		# Whether the rule starting on this line sets only a dark palette.
+		sub palette {
+			my ($lines, $index) = @_;
+			my $last = $index + 200 < $#$lines ? $index + 200 : $#$lines;
+			my $rest = join qq{\n}, @$lines[$index .. $last];
+			return 0 unless $rest =~ /\{(?<body>[^{}]*)\}/;
+			my @declarations = grep { /\S/ } split /;/, $+{body};
+			return @declarations && !grep { !/\A\s*(?:--[\w-]+|color-scheme|background(?:-color)?)\s*:/i } @declarations;
 		}
 		next unless s/^[^:]+:(?<file>.*?):(?<number>[0-9]+)://;
-		my ($file, $location, $line, %seen) = ($+{file}, qq{$+{file}:$+{number}}, $_);
+		my ($file, $number, $line, %seen) = ($+{file}, $+{number}, $_);
+		my $location = qq{$file:$number};
 		my $report = sub { print qq{$location $_[0] $_[1]\n} unless $seen{$_[0]}++; };
 		my $internal = sub { !$public{$_[0]} && $_[0] !~ /__/ };
 		if ($file =~ /\.css\z/) {
+			my $lines = $css{$file} //= uncommented($file);
 			# Only selectors: the part before {, or a line of a selector list.
-			(my $text = $line) =~ s{/\*.*?\*/}{}g;
+			my $text = $lines->[$number - 1] // q{};
+			next unless $text =~ /\S/;
 			if ($text !~ s/\{.*//s) {
 				next if $text =~ /[;}]\s*\z/;
 			}
@@ -890,7 +919,11 @@ check_core_class_names() {
 			my @subjects = map { (my $s = $_) =~ s/\s+\z//; $s =~ s/^.*[\s>+~]//s; $s } split /,/, $flat;
 			for my $class (@classes) {
 				my $match = qr/\.\Q$class\E(?![a-zA-Z0-9_-])/;
-				if (grep { $_ =~ $match } @subjects) {
+				my @hits = grep { $_ =~ $match } @subjects;
+				if ($class eq $dark && @hits && !grep { !/\A(?:html|:root)?\.\Q$dark\E\z/ } @hits) {
+					@hits = () if palette($lines, $number - 1);
+				}
+				if (@hits) {
 					$report->($class, q{restyles});
 				} elsif ($internal->($class) && $text =~ $match) {
 					$report->($class, q{reuses});
