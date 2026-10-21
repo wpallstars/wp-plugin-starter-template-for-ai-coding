@@ -861,6 +861,30 @@ check_core_class_names() {
 		warn "no core block classes found: core class names were not checked"
 		return 0
 	fi
+	matches="$(core_class_matches "$sha" "$classes" "$public" "${exclusions[@]}")"
+	while read -r location class kind; do
+		[[ -n "$location" ]] || continue
+		name="${class#"$PLUGIN_CSS"-}"
+		if [[ "$kind" == "restyles" ]]; then
+			warn "$location restyles core class .$class: give the plugin's own component a plugin-own name such as .${PLUGIN_CSS}-<screen>-$name, and leave .$class as core styles it"
+		else
+			warn "$location reuses internal core class .$class (not in scripts/core-public-classes.txt): use a plugin-own name such as .${PLUGIN_CSS}-<screen>-$name"
+		fi
+		problems=1
+	done <<<"$matches"
+	[[ "$problems" -eq 1 ]] || ok "plugin-own source uses only public core classes and restyles none"
+	return 0
+}
+
+# Lines of plugin-own source at the release ref that use core classes, for
+# check_core_class_names(): "file:line class restyles|reuses" each. Takes
+# the ref, the core classes, the public ones (one per line) and the
+# git pathspecs that leave out core files and build output.
+core_class_matches() {
+	local sha="$1"
+	local classes="$2"
+	local public="$3"
+	shift 3
 	# Git finds candidate lines; Perl checks whole class tokens. In CSS, a
 	# selector restyles a core class (public or not, elements included)
 	# when its last compound selector has it, and reuses an internal block
@@ -871,7 +895,7 @@ check_core_class_names() {
 	# attributes, className expressions, classList.add calls and selector
 	# strings reuse an internal block. This is advisory, not a parser for
 	# dynamically assembled class names.
-	matches="$(git grep -n -I -F -f <(printf '%s\n' "$classes") "$sha" -- '*.php' '*.js' '*.jsx' '*.ts' '*.tsx' '*.css' "${exclusions[@]}" | CORE_CLASSES="$classes" PUBLIC_CLASSES="$public" CORE_REF="$sha" DARK_CLASS="${PLUGIN_CSS}-dark" perl -ne '
+	git grep -n -I -F -f <(printf '%s\n' "$classes") "$sha" -- '*.php' '*.js' '*.jsx' '*.ts' '*.tsx' '*.css' "$@" | CORE_CLASSES="$classes" PUBLIC_CLASSES="$public" CORE_REF="$sha" DARK_CLASS="${PLUGIN_CSS}-dark" perl -ne '
 		BEGIN {
 			@classes = split /\n/, $ENV{CORE_CLASSES};
 			%public = map { $_ => 1 } split /\n/, $ENV{PUBLIC_CLASSES};
@@ -944,18 +968,7 @@ check_core_class_names() {
 			my $attribute = grep { /(?<!\S)\Q$class\E(?!\S)/ } @attributes;
 			$report->($class, q{reuses}) if $selector || $attribute;
 		}
-	' || true)"
-	while read -r location class kind; do
-		[[ -n "$location" ]] || continue
-		name="${class#"$PLUGIN_CSS"-}"
-		if [[ "$kind" == "restyles" ]]; then
-			warn "$location restyles core class .$class: give the plugin's own component a plugin-own name such as .${PLUGIN_CSS}-<screen>-$name, and leave .$class as core styles it"
-		else
-			warn "$location reuses internal core class .$class (not in scripts/core-public-classes.txt): use a plugin-own name such as .${PLUGIN_CSS}-<screen>-$name"
-		fi
-		problems=1
-	done <<<"$matches"
-	[[ "$problems" -eq 1 ]] || ok "plugin-own source uses only public core classes and restyles none"
+	' || true
 	return 0
 }
 
