@@ -18,6 +18,8 @@
 # Page shell of the plugin's own screens (render_header(), sections_nav()).
 wps-wrap
 wps-main
+# A tab or screen that needs the whole width (a tab: 'wide' => true).
+wps-main--wide
 wps-nav
 wps-nav__group
 wps-nav__tab
@@ -43,7 +45,10 @@ wps-setting__desc
 # Feature output at the top of a setting's options panel.
 wps-panel-note
 wps-panel-note--warning
+# A block of code to copy, such as server rules: <pre class="wps-code">.
+wps-code
 
 # Colour mode: set on <html> by the header's Light / Dark / System button.
-# Use it only as an ancestor: html.wps-dark .wps-<screen>-card.
+# Use it as an ancestor: html.wps-dark .wps-<screen>-card. On <html> alone
+# it takes only a dark palette: custom properties, color-scheme, background.
 wps-dark

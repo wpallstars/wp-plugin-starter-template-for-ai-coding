@@ -200,11 +200,12 @@ class WPStarter_Admin_Page {
      * @param string   $slug   Tab slug.
      * @param callable $render The tab's render callback.
      * @param bool     $shown  Whether it is the active tab.
+     * @param bool     $wide   Whether the tab uses the whole width (its 'wide' key).
      */
-    public static function panel($slug, $render, $shown) {
+    public static function panel($slug, $render, $shown, $wide = false) {
         // Not <main>: core's #wpbody already carries role="main".
         ?>
-        <div class="wps-main wps-tab-<?php echo esc_attr($slug); ?>" id="wps-tab-<?php echo esc_attr($slug); ?>" data-wps-panel="<?php echo esc_attr($slug); ?>"<?php echo $shown ? '' : ' hidden'; ?>>
+        <div class="wps-main<?php echo $wide ? ' wps-main--wide' : ''; ?> wps-tab-<?php echo esc_attr($slug); ?>" id="wps-tab-<?php echo esc_attr($slug); ?>" data-wps-panel="<?php echo esc_attr($slug); ?>"<?php echo $shown ? '' : ' hidden'; ?>>
             <?php call_user_func($render); ?>
         </div>
         <?php
