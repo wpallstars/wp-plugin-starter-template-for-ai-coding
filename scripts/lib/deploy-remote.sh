@@ -396,11 +396,22 @@ site_urls() {
 # network, litespeed-purge all empties every site's cache, so each site
 # purges only its own (litespeed-purge blog <id>). Prints purged=yes, no (no
 # known page cache) or failed. A failed purge does not stop the load: the
-# install worked, but visitors may see the old assets.
+# install worked, but visitors may see the old assets. LiteSpeed Cache's
+# command delivers the purge with a request to the site's admin-ajax.php,
+# with WordPress's 5 second timeout; just after an update the site's first
+# requests compile the new code and can take longer (4.6-7 s seen on shared
+# hosting), so that request gets 30 seconds. The commands run in this
+# process (launch false), so the filter applies to them.
 load_code() {
 	cat <<'PHP'
 echo "loaded\n";
 $purged = "no";
+add_filter("http_request_args", function ($args, $url) {
+    if (false !== strpos((string) $url, "/wp-admin/admin-ajax.php")) {
+        $args["timeout"] = max((float) $args["timeout"], 30);
+    }
+    return $args;
+}, 10, 2);
 $run = array("launch" => false, "exit_error" => false, "return" => "all");
 $purges = array("litespeed-purge" => is_multisite() ? "blog " . get_current_blog_id() : "all");
 foreach ($purges as $command => $args) {
