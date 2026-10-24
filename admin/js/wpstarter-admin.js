@@ -102,11 +102,50 @@
 				$(group).find(':checkbox').not(':disabled').prop('checked', all);
 				Settings.save($(group));
 			});
+			this.ordered();
 			// Forms that change data elsewhere ask first.
 			$(document).on('submit', 'form[data-wps-confirm]', function (event) {
 				if (!window.confirm($(this).attr('data-wps-confirm'))) {
 					event.preventDefault();
 				}
+			});
+		},
+
+		// Ordered checkbox lists (the `ordered` setting key): drag a row by
+		// its handle, or focus the handle and press the up or down arrow
+		// key. The checked boxes, top to bottom, are saved as the order.
+		ordered: function () {
+			if ($.fn.sortable) {
+				$('[data-wps-ordered]').sortable({
+					items: '> .wps-checkbox-row',
+					handle: '.wps-checkbox__handle',
+					// The handle is a button (for the keyboard); jQuery UI skips buttons by default.
+					cancel: 'input, textarea, select, option, a',
+					axis: 'y',
+					cursor: 'grabbing',
+					update: function () {
+						Settings.save($(this));
+					}
+				});
+			}
+			$(document).on('keydown', '[data-wps-ordered] .wps-checkbox__handle', function (event) {
+				var up = event.key === 'ArrowUp';
+				if (!up && event.key !== 'ArrowDown') {
+					return;
+				}
+				event.preventDefault();
+				var $row = $(this).closest('.wps-checkbox-row');
+				var $to = up ? $row.prev('.wps-checkbox-row') : $row.next('.wps-checkbox-row');
+				if (!$to.length) {
+					return;
+				}
+				if (up) {
+					$row.insertBefore($to);
+				} else {
+					$row.insertAfter($to);
+				}
+				$(this).trigger('focus');
+				Settings.save($row.closest('[data-wps-ordered]'));
 			});
 		},
 

@@ -577,6 +577,56 @@
 	color: var(--wps-muted);
 }
 
+/* An ordered list (a multi field's `ordered` key): one row each, with a
+   handle to drag or move with the arrow keys. */
+.wps-checkboxes[data-wps-ordered] {
+	flex-direction: column;
+	align-items: flex-start;
+	gap: 2px;
+}
+
+.wps-checkbox-row {
+	display: flex;
+	align-items: center;
+	gap: 2px;
+}
+
+.wps-wrap .wps-checkbox__handle {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: 28px;
+	height: 28px;
+	padding: 0;
+	color: var(--wps-muted);
+	background: transparent;
+	border: 0;
+	border-radius: 4px;
+	cursor: grab;
+}
+
+.wps-wrap .wps-checkbox__handle:hover {
+	color: var(--wps-accent);
+	background: var(--wps-subtle);
+}
+
+.wps-wrap .wps-checkbox__handle:focus-visible {
+	outline: none;
+	box-shadow: var(--wps-focus);
+}
+
+.wps-checkbox-row.ui-sortable-helper {
+	background: var(--wps-subtle);
+	border-radius: 4px;
+	cursor: grabbing;
+}
+
+.wps-ordered-help {
+	margin: 6px 0 0;
+	font-size: 12px;
+	color: var(--wps-muted);
+}
+
 /* Read Me ------------------------------------------------------------ */
 
 .wps-readme {
