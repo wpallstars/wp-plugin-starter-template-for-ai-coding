@@ -149,6 +149,10 @@ Deleting the plugin removes its settings (on multisite, every site's and the net
 
 ## Changelog
 
+### Unreleased
+
+- Developers: `scripts/deploy-sites.sh --apply` no longer reports a LiteSpeed Cache purge as failed just after an update: the purge request LiteSpeed Cache sends to the site's `admin-ajax.php` gets 30 seconds instead of WordPress's 5, as a site's first requests after an update can be slower. Plugins get it with `scripts/sync-core.sh` (GH#536).
+
 ### 1.0.41
 
 - Developers: two more public core classes (`scripts/core-public-classes.txt`): `wps-code`, a block of code to copy in feature output (`<pre class="wps-code">`), and `wps-main--wide`, which drops the main area's 1200px limit. A tab gets it with `'wide' => true` in `wpstarter_admin_tabs`. Release preflight (Core class names) skips CSS comments, also over several lines, and no longer warns on a dark palette on `html.wps-dark` alone (custom properties, `color-scheme`, `background`). See `STYLING.md` → Classes a plugin may use. Plugins get it with `scripts/sync-core.sh`, then use `'wide' => true` instead of restyling `.wps-main` (GH#532).
