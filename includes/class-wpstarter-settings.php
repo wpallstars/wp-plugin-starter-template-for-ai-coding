@@ -151,6 +151,8 @@ class WPStarter_Settings {
      * - options:     value => label array, or a callable returning one (select, multi)
      * - open:        multi only; also keep key-like values that are not (yet)
      *                in options, e.g. post types or widgets registered later
+     * - ordered:     multi only; true to keep the chosen values in the order
+     *                given, which the panel lets people drag to change
      * - replaces:    top-level only; plugin slug => name this setting replaces
      * - panel:       top-level only; true to show the Options panel even with
      *                no visible child settings, for a feature that renders its
@@ -787,8 +789,9 @@ class WPStarter_Settings {
 
     /**
      * Sanitize a multi field: its options that are chosen, in the options'
-     * order; open lists also keep other identifiers. Locked values are
-     * always chosen, so they are not stored (locked_values()).
+     * order (ordered fields: in the order given); open lists also keep
+     * other identifiers. Locked values are always chosen, so they are not
+     * stored (locked_values()).
      *
      * @param mixed $value Raw value: an array or a comma separated list.
      * @param array $field Schema entry.
@@ -800,16 +803,25 @@ class WPStarter_Settings {
         if (!empty($field['locked'])) {
             $values = array_diff($values, self::locked_values($field));
         }
-        // Keep the options' order so stored values are stable.
-        $known = array_values(array_intersect(array_map('strval', array_keys(self::options_for($field))), $values));
-        if (empty($field['open'])) {
-            return $known;
-        }
+        $keys = array_map('strval', array_keys(self::options_for($field)));
         // Open lists also keep identifiers that are not registered right now
         // (class names may contain namespace separators).
-        $extra = array_filter(array_diff($values, $known), function ($item) {
+        $open = empty($field['open']) ? null : static function ($item) {
             return strlen($item) <= 200 && (bool) preg_match('/^[A-Za-z0-9_\\\\-]+$/', $item);
-        });
+        };
+        if (!empty($field['ordered'])) {
+            // The chosen order, open identifiers where they were given.
+            $kept = array_filter($values, static function ($item) use ($keys, $open) {
+                return in_array($item, $keys, true) || ($open && $open($item));
+            });
+            return array_values(array_unique($kept));
+        }
+        // Keep the options' order so stored values are stable.
+        $known = array_values(array_intersect($keys, $values));
+        if (!$open) {
+            return $known;
+        }
+        $extra = array_filter(array_diff($values, $known), $open);
         return array_values(array_unique(array_merge($known, $extra)));
     }
 

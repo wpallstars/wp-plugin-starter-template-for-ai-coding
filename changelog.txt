@@ -3,6 +3,7 @@
 Every change to WP Plugin Starter. readme.txt lists the latest version in short.
 
 = Unreleased =
+* Developers: a multi setting can take ordered (true) to keep its chosen values in the order given instead of the options' order. Its panel lists the chosen ones first, in their saved order, each with a handle: drag it, or focus it and press the up or down arrow key, and the new order saves at once. For lists whose order shows, such as share buttons, where the plugin a feature replaces let people order them. The admin script now depends on jquery-ui-sortable. Found in SEO Pro Stack's Social sharing, which lost Kadence Simple Share's order on import; plugins made from the starter get it with scripts/sync-core.sh (GH#538).
 * Developers: scripts/deploy-sites.sh --apply no longer reports a LiteSpeed Cache purge as failed just after an update. LiteSpeed Cache's purge command delivers the purge with a request to the site's admin-ajax.php with WordPress's 5-second timeout, and a site's first requests after an update can take longer while the new code compiles (4.6-7 s seen on shared hosting); that request now gets 30 seconds. Found in SEO Pro Stack's 1.3.76 rollout; plugins made from the starter get it with scripts/sync-core.sh (GH#536).
 
 = 1.0.41 =
