@@ -90,7 +90,7 @@ class WPStarter_Network_Sites {
                 continue;
             }
             $options[$key] = $value;
-            if (!WPStarter_Settings::same($value, $defaults[$key])) {
+            if (!WPStarter_Settings::same($value, $defaults[$key], $key)) {
                 $before[$key] = $defaults[$key];
             }
         }
@@ -210,7 +210,7 @@ class WPStarter_Network_Sites {
     private static function run_saving_work(array $old, array $new) {
         $changed = array();
         foreach ($new as $key => $value) {
-            if (!WPStarter_Settings::same($old[$key] ?? null, $value)) {
+            if (!WPStarter_Settings::same($old[$key] ?? null, $value, (string) $key)) {
                 $changed[$key] = $value;
             }
         }
