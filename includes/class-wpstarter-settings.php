@@ -319,19 +319,24 @@ class WPStarter_Settings {
     }
 
     /**
-     * Whether two setting values are the same: lists in any order, switches
-     * as true or false, anything else as text.
+     * Whether two setting values are the same: lists in any order (in order
+     * for an `ordered` field, whose order is part of its value), switches as
+     * true or false, anything else as text.
      *
-     * @param mixed $a Value.
-     * @param mixed $b Value.
+     * @param mixed  $a   Value.
+     * @param mixed  $b   Value.
+     * @param string $key Setting key, so an ordered field compares in order.
      * @return bool
      */
-    public static function same($a, $b) {
+    public static function same($a, $b, $key = '') {
         if (is_array($a) || is_array($b)) {
-            $a = array_map('strval', array_filter((array) $a, 'is_scalar'));
-            $b = array_map('strval', array_filter((array) $b, 'is_scalar'));
-            sort($a);
-            sort($b);
+            $a = array_values(array_map('strval', array_filter((array) $a, 'is_scalar')));
+            $b = array_values(array_map('strval', array_filter((array) $b, 'is_scalar')));
+            $schema = '' === $key ? array() : self::schema();
+            if (empty($schema[$key]['ordered'])) {
+                sort($a);
+                sort($b);
+            }
             return $a === $b;
         }
         if (is_bool($a) || is_bool($b)) {
@@ -439,7 +444,7 @@ class WPStarter_Settings {
             $previous = array();
             foreach ($values as $key => $value) {
                 $was = array_key_exists($key, $stored) ? $stored[$key] : ($defaults[$key] ?? null);
-                if (!self::same($was, $value)) {
+                if (!self::same($was, $value, (string) $key)) {
                     $previous[$key] = $was;
                     $stored[$key]   = $value;
                 }

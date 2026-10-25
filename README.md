@@ -151,7 +151,7 @@ Deleting the plugin removes its settings (on multisite, every site's and the net
 
 ### Unreleased
 
-- Developers: a multi setting can take `ordered` (true) to keep its chosen values in the order given; its panel lists them first, each with a handle to drag or move with the arrow keys, and saves the new order at once. Plugins get it with `scripts/sync-core.sh` (GH#538).
+- Developers: a multi setting can take `ordered` (true) to keep its chosen values in the order given; its panel lists them first, each with a handle to drag or move with the arrow keys, and saves the new order at once. `WPStarter_Settings::same()` takes the key as a third argument and compares such a field in order, so reordering alone counts as a change on the network screen (GH#540). Plugins get it with `scripts/sync-core.sh` (GH#538).
 - Developers: `scripts/deploy-sites.sh --apply` no longer reports a LiteSpeed Cache purge as failed just after an update: the purge request LiteSpeed Cache sends to the site's `admin-ajax.php` gets 30 seconds instead of WordPress's 5, as a site's first requests after an update can be slower. Plugins get it with `scripts/sync-core.sh` (GH#536).
 
 ### 1.0.41
