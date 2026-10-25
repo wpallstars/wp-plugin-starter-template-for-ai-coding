@@ -135,7 +135,8 @@
 				}
 				event.preventDefault();
 				var $row = $(this).closest('.wps-checkbox-row');
-				var $to = up ? $row.prev('.wps-checkbox-row') : $row.next('.wps-checkbox-row');
+				// The nearest movable row, past any locked choice between.
+				var $to = (up ? $row.prevAll('.wps-checkbox-row') : $row.nextAll('.wps-checkbox-row')).first();
 				if (!$to.length) {
 					return;
 				}
