@@ -202,14 +202,17 @@ skipped_note() {
 	return 0
 }
 
-# owner/repo of the origin remote when it is on GitHub, else nothing.
+# owner/repo of the origin remote when it is on GitHub, else nothing. The
+# host must be github.com itself: https://[user@]github.com/o/r,
+# git@github.com:o/r or ssh://git@github.com[:port]/o/r.
 origin_repo() {
 	local url
+	local pattern='^(https?://|ssh://)?([A-Za-z0-9_.-]+@)?github\.com(:[0-9]+)?[:/]([A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+)$'
 	url="$(git remote get-url origin 2>/dev/null || true)"
 	url="${url%/}"
 	url="${url%.git}"
-	if [[ "$url" =~ github\.com[:/]([A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+)$ ]]; then
-		printf '%s' "${BASH_REMATCH[1]}"
+	if [[ "$url" =~ $pattern ]]; then
+		printf '%s' "${BASH_REMATCH[4]}"
 	fi
 	return 0
 }
