@@ -10,7 +10,7 @@
 [![CodeFactor](https://www.codefactor.io/repository/github/wpallstars/wp-plugin-starter-template-for-ai-coding/badge)](https://www.codefactor.io/repository/github/wpallstars/wp-plugin-starter-template-for-ai-coding)
 [![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/wpallstars/wp-plugin-starter-template-for-ai-coding/badge)](https://scorecard.dev/viewer/?uri=github.com/wpallstars/wp-plugin-starter-template-for-ai-coding)
 [![License: GPL v3 or later](https://img.shields.io/badge/License-GPL%20v3%20or%20later-blue.svg)](LICENSE)
-[![Latest release](https://img.shields.io/badge/release-v1.0.42-blue.svg)](https://github.com/wpallstars/wp-plugin-starter-template-for-ai-coding/releases)
+[![Latest release](https://img.shields.io/badge/release-v1.0.43-blue.svg)](https://github.com/wpallstars/wp-plugin-starter-template-for-ai-coding/releases)
 
 [![Requires WordPress](https://img.shields.io/badge/WordPress-6.2%2B-21759B.svg?logo=wordpress)](readme.txt)
 [![Tested up to](https://img.shields.io/badge/tested%20up%20to-7.1-21759B.svg?logo=wordpress)](readme.txt)
@@ -27,7 +27,7 @@ WP Plugin Starter is what wpallstars plugins are made from. It has no features o
 
 If this saves you time, headaches and costs, feel free to [buy me a coffee](https://buymeacoffee.com/marcusquinn), or whatever you like, to invest in making more things open-source.
 
-Version: 1.0.42
+Version: 1.0.43
 
 <!-- github-only:start -->
 ## Screenshots
@@ -149,7 +149,7 @@ Deleting the plugin removes its settings (on multisite, every site's and the net
 
 ## Changelog
 
-### Unreleased
+### 1.0.43
 
 - Developers: every plugin's `README.md` ends the same: Built with AI, License, then the aidevops-managed Star History and Built with aidevops sections (`managed-readme-helper.sh sync`, with `docs/assets/star-history.svg` and `.github/workflows/star-history.yml`). `scripts/preflight-release.sh` warns when one is missing or out of order, the Read Me tab leaves the managed sections out, and this README has them too. Plugins get the check and the tab change with `scripts/sync-core.sh`.
 - Developers: `scripts/sync-core.sh` and the weekly Starter sync work in an add-on that leaves core files out on purpose: it lists them in its own `scripts/core-skip.txt`. Without an admin screen the CSS prefix comes from `scripts/core-public-classes.txt`, and without a `GitHub Plugin URI` header the repository comes from the `origin` remote (GH#550).
