@@ -252,8 +252,9 @@ How changes are made and checked: `DEVELOPMENT.md`. Releases: `RELEASING.md`.
   `<!-- aidevops:managed-readme:end -->`. aidevops writes and refreshes that
   block (`managed-readme-helper.sh sync --repo OWNER/REPO --root .`), with
   the chart `docs/assets/star-history.svg` and the weekly
-  `.github/workflows/star-history.yml` (a core file, pinned to the same
-  aidevops commit as `repo-metrics.yml`; the helper writes the workflow only
+  `.github/workflows/star-history.yml` (a core file, pinned for `uses:` and `aidevops_ref` to one
+  aidevops commit, v3.39.78 or later, where a repository without `SYNC_PAT`
+  gets a skipped run with a warning; the helper writes the workflow only
   when it is missing); never edit inside it by hand. The
   Read Me tab leaves it out, as the chart does not ship and Built with AI
   already credits aidevops. `scripts/preflight-release.sh` warns when the

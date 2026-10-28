@@ -3,8 +3,9 @@
 # SYNC_PAT (GitHub only shows when stars were given to collaborators).
 #
 # The work is the aidevops reusable workflow (https://aidevops.sh), pinned
-# with its helper scripts to the same aidevops commit as repo-metrics.yml;
-# update both together.
+# with its helper scripts to the same aidevops commit. From v3.39.78 a
+# repository without SYNC_PAT gets a warning and a skipped run, not a failed
+# one; keep uses: and aidevops_ref on the same commit.
 name: Update Star History
 
 on:
@@ -17,10 +18,10 @@ permissions:
 
 jobs:
   update:
-    uses: marcusquinn/aidevops/.github/workflows/star-history-reusable.yml@821b82a18712bb74b72ec9b55d9ae0a98adb46e9 # v3.39.1
+    uses: marcusquinn/aidevops/.github/workflows/star-history-reusable.yml@baabd4dce4cb801a05d8fc4955b66c5a3427dab1 # v3.39.78
     permissions:
       contents: write
     with:
-      aidevops_ref: 821b82a18712bb74b72ec9b55d9ae0a98adb46e9 # v3.39.1, the same commit as uses:
+      aidevops_ref: baabd4dce4cb801a05d8fc4955b66c5a3427dab1 # v3.39.78, the same commit as uses:
     secrets:
       SYNC_PAT: ${{ secrets.SYNC_PAT }}
