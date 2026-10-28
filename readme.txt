@@ -5,7 +5,7 @@ Tags: starter, boilerplate, settings, developer, template
 Requires at least: 6.2
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 1.0.42
+Stable tag: 1.0.43
 License: GPLv3 or later
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 
@@ -62,8 +62,8 @@ GitHub releases are the stable beta channel: each version comes out there first.
 
 == Changelog ==
 
-= 1.0.42 =
-* Developers: multi settings can keep their values in an order people choose by dragging (ordered), and deploy-sites.sh gives LiteSpeed Cache's purge request 30 seconds. The settings screen looks and works the same until a plugin uses ordered.
+= 1.0.43 =
+* Developers: sync-core.sh works in add-ons with no admin screen (scripts/core-skip.txt), a long ordered multi list stays one column, deploy-sites.sh says why a single-site install failed, and preflight checks how README.md ends. The settings screen looks and works the same.
 
 Every change: changelog.txt.
 
