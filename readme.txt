@@ -5,7 +5,7 @@ Tags: starter, boilerplate, settings, developer, template
 Requires at least: 6.2
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 1.0.41
+Stable tag: 1.0.42
 License: GPLv3 or later
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 
@@ -62,8 +62,8 @@ GitHub releases are the stable beta channel: each version comes out there first.
 
 == Changelog ==
 
-= 1.0.41 =
-* Developers: two more public core classes (wps-code and wps-main--wide, with a 'wide' tab option), a quieter core class check, and deploy-sites.sh counts each PHP log on its own. The settings screen looks and works the same.
+= 1.0.42 =
+* Developers: multi settings can keep their values in an order people choose by dragging (ordered), and deploy-sites.sh gives LiteSpeed Cache's purge request 30 seconds. The settings screen looks and works the same until a plugin uses ordered.
 
 Every change: changelog.txt.
 
