@@ -6,8 +6,8 @@
  * (headings with GitHub-style IDs, paragraphs and list items that wrap over
  * several lines, lists, tables, fenced code blocks, bold, italic, inline
  * code, http(s) links, links to headings and images from the plugin's
- * folder). HTML comments, the GitHub badges block and github-only blocks are
- * left out.
+ * folder). HTML comments, the GitHub badges block, the managed Star History
+ * and Built with aidevops block and github-only blocks are left out.
  *
  * SPDX-License-Identifier: GPL-3.0-or-later
  * SPDX-FileCopyrightText: 2026 Marcus Quinn
@@ -46,9 +46,11 @@ class WPStarter_Readme_Manager {
     public static function parse_markdown($markdown) {
         $markdown = str_replace('{WPSTARTER_VERSION}', WPSTARTER_VERSION, $markdown);
         $markdown = str_replace(array("\r\n", "\r"), "\n", $markdown);
-        // GitHub-only parts: the badges block (remote images), github-only
-        // blocks (such as screenshots, which do not ship) and HTML comments.
-        $markdown = (string) preg_replace('/^<!-- (aidevops:badges|github-only):start -->$.*?^<!-- \1:end -->$/ms', '', $markdown);
+        // GitHub-only parts: the badges block (remote images), the managed
+        // Star History and Built with aidevops sections (their chart does not
+        // ship; Built with AI already credits aidevops), github-only blocks
+        // (such as screenshots, which do not ship) and HTML comments.
+        $markdown = (string) preg_replace('/^<!-- (aidevops:badges|aidevops:managed-readme|github-only):start -->$.*?^<!-- \1:end -->$/ms', '', $markdown);
         $markdown = (string) preg_replace('/^[ \t]*<!--(?:(?!-->).)*-->[ \t]*$/ms', '', $markdown);
 
         // The open list ('ul' or 'ol'), table ('head' after the header row,

@@ -88,9 +88,11 @@ How changes are made and checked: `DEVELOPMENT.md`. Releases: `RELEASING.md`.
   (`![alt](admin/images/banner.svg)`). Use only that Markdown, or extend the
   renderer in the same change. The tab leaves out HTML comments, anything
   between `<!-- github-only:start -->` and `<!-- github-only:end -->`
-  (GitHub-only parts such as the screenshots section) and the badges block
+  (GitHub-only parts such as the screenshots section), the badges block
   under the title (`<!-- aidevops:badges:start -->` to
-  `<!-- aidevops:badges:end -->`). The `Version: X.Y.Z` line under the
+  `<!-- aidevops:badges:end -->`) and the managed block at the end
+  (`<!-- aidevops:managed-readme:start -->` to
+  `<!-- aidevops:managed-readme:end -->`; Structure below). The `Version: X.Y.Z` line under the
   intro holds the version itself (GitHub shows it as written) and changes
   with every release (`RELEASING.md`).
 - The badges block is the starter's, the same in every plugin, and other
@@ -240,7 +242,18 @@ How changes are made and checked: `DEVELOPMENT.md`. Releases: `RELEASING.md`.
   site. Keep it out of `readme.txt`, admin notices and the plugin's screens
   other than the Read Me tab, where WordPress.org's reviewers look for
   plugins promoting others. `scripts/preflight-release.sh` warns when the
-  line is missing from `README.md` or appears in `readme.txt`.
+  line is missing from `README.md` or appears in `readme.txt`. SEO Pro Stack
+  names the other public wpallstars plugins there instead.
+- `README.md` ends the same in every plugin: **Built with AI**, **License**,
+  then the aidevops-managed **Star History** and **Built with aidevops**
+  sections, last, between `<!-- aidevops:managed-readme:start -->` and
+  `<!-- aidevops:managed-readme:end -->`. aidevops writes and refreshes that
+  block (`managed-readme-helper.sh sync --repo OWNER/REPO --root .`), with
+  the chart `docs/assets/star-history.svg` and the weekly
+  `.github/workflows/star-history.yml`; never edit inside it by hand. The
+  Read Me tab leaves it out, as the chart does not ship and Built with AI
+  already credits aidevops. `scripts/preflight-release.sh` warns when the
+  order, the block, the chart or the workflow is missing.
 - `.distignore` lists files kept out of the release zip. Add new
   development-only files there (the preflight fails when a known one gets
   in), then check the build with Plugin Check.
