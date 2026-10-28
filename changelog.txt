@@ -2,7 +2,7 @@
 
 Every change to WP Plugin Starter. readme.txt lists the latest version in short.
 
-= Unreleased =
+= 1.0.45 =
 * Developers: scripts/preflight-release.sh's README.md ending section also checks the aidevops-managed block's headings: it warns when '## Star History' or '## Built with aidevops' is missing or outside the block's markers, or when '## Built with aidevops' comes first, and then does not print its ok line. Before, a block with both markers passed whatever it held. scripts/rename-plugin.sh's Before 1.0 checklist asks for the managed ending in README.md only: readme.txt has its Built with AI credit in the description and ends with its changelog and upgrade notice; both files keep the "Made from" credit. Plugins get the check with scripts/sync-core.sh (GH#560).
 
 = 1.0.44 =
