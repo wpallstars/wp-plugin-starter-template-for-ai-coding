@@ -149,6 +149,10 @@ Deleting the plugin removes its settings (on multisite, every site's and the net
 
 ## Changelog
 
+### Unreleased
+
+- Developers: `scripts/deploy-sites.sh --apply` says why a single-site install failed (`FAIL: WordPress load failed (exit N: …)`) instead of a bare `FAIL`, and keeps WP-CLI's exit code. Plugins get it with `scripts/sync-core.sh`.
+
 ### 1.0.42
 
 - Developers: a multi setting can take `ordered` (true) to keep its chosen values in the order given; its panel lists them first, each with a handle to drag or move with the arrow keys, and saves the new order at once. `WPStarter_Settings::same()` takes the key as a third argument and compares such a field in order, so reordering alone counts as a change on the network screen (GH#540). Plugins get it with `scripts/sync-core.sh` (GH#538).
