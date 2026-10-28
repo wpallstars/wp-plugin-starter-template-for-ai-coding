@@ -26,6 +26,10 @@
 #
 # The list of core files and their contents come from the starter at REF;
 # the plugin's names come from this repository's main file at HEAD.
+# A plugin that leaves some core files out on purpose (an add-on with no
+# admin screen) lists them in scripts/core-skip.txt here: one path per line
+# in this plugin's names, a trailing / for every file below. They are not
+# compared or added, and the summary counts them.
 # Review the changes with git diff, then commit them.
 
 # SPDX-License-Identifier: GPL-3.0-or-later
@@ -50,6 +54,8 @@ die() {
 }
 
 TMP_FILE=""
+# Every core path at REF, and the ones this plugin carries.
+ALL_FILE=""
 LIST_FILE=""
 OWN_FILE=""
 # A starter version being compared, the versions of one path, and each
@@ -62,7 +68,7 @@ NEW_FILE=""
 
 cleanup() {
 	local file
-	for file in "$TMP_FILE" "$LIST_FILE" "$OWN_FILE" "$CAND_FILE" "$BLOBS_FILE" "$CLASS_FILE" "$NEW_FILE"; do
+	for file in "$TMP_FILE" "$ALL_FILE" "$LIST_FILE" "$OWN_FILE" "$CAND_FILE" "$BLOBS_FILE" "$CLASS_FILE" "$NEW_FILE"; do
 		[[ -z "$file" ]] || rm -f "$file"
 	done
 	return 0
@@ -105,7 +111,7 @@ same_mode() {
 }
 
 usage() {
-	sed -n '2,29p' "$0" | sed -e 's/^# \{0,1\}//' -e "s/<STARTER_REPO_DIR>/$STARTER_REPO_DIR/"
+	sed -n '2,33p' "$0" | sed -e 's/^# \{0,1\}//' -e "s/<STARTER_REPO_DIR>/$STARTER_REPO_DIR/"
 	return 0
 }
 
@@ -132,6 +138,82 @@ core_paths() {
 		esac
 	done < <(printf '%s\n' "$list" | sed -e 's/[[:space:]]*$//' -e '/^#/d' -e '/^$/d')
 	[[ -s "$out" ]] || die "scripts/core-files.txt in the starter at $ref lists no files"
+	return 0
+}
+
+# Core files this plugin leaves out on purpose, one path per line in its
+# own names; a trailing / means every file below.
+readonly SKIP_LIST="scripts/core-skip.txt"
+# Core files left out (skip_paths counts them).
+SKIPPED=0
+
+# Whether TARGET (a core path in this plugin's names) is one of ENTRIES.
+skip_match() {
+	local target="$1"
+	local entries="$2"
+	local entry
+	while IFS= read -r entry; do
+		case "$entry" in
+		"") ;;
+		*/) [[ "$target" != "$entry"* ]] || return 0 ;;
+		*) [[ "$target" != "$entry" ]] || return 0 ;;
+		esac
+	done <<<"$entries"
+	return 1
+}
+
+# Copy the core paths in LIST into KEPT, without the ones SKIP_LIST names.
+# A line that names no core file is reported, so a stale list is noticed.
+skip_paths() {
+	local list="$1"
+	local kept="$2"
+	local entries="" targets="" path target entry found
+	if [[ -f "$SKIP_LIST" ]]; then
+		entries="$(sed -e 's/[[:space:]]*$//' -e '/^#/d' -e '/^$/d' "$SKIP_LIST")"
+	fi
+	: >"$kept"
+	while IFS= read -r path; do
+		target="$(printf '%s' "$path" | plugin_map)"
+		targets="$targets$target"$'\n'
+		if [[ -n "$entries" ]] && skip_match "$target" "$entries"; then
+			SKIPPED=$((SKIPPED + 1))
+		else
+			printf '%s\n' "$path" >>"$kept"
+		fi
+	done <"$list"
+	while IFS= read -r entry; do
+		[[ -n "$entry" ]] || continue
+		found=0
+		while IFS= read -r target; do
+			if [[ -n "$target" ]] && skip_match "$target" "$entry"; then
+				found=1
+				break
+			fi
+		done <<<"$targets"
+		[[ "$found" -eq 1 ]] || printf 'sync-core: %s lists %s, which is not a core file; remove the line\n' "$SKIP_LIST" "$entry" >&2
+	done <<<"$entries"
+	[[ -s "$kept" ]] || die "$SKIP_LIST leaves out every core file"
+	return 0
+}
+
+# ", N left out (scripts/core-skip.txt)" for the summary, when any are.
+skipped_note() {
+	[[ "$SKIPPED" -eq 0 ]] || printf ', %d left out (%s)' "$SKIPPED" "$SKIP_LIST"
+	return 0
+}
+
+# owner/repo of the origin remote when it is on GitHub, else nothing. The
+# host must be github.com itself: https://[user@]github.com/o/r,
+# git@github.com:o/r or ssh://git@github.com[:port]/o/r.
+origin_repo() {
+	local url
+	local pattern='^(https?://|ssh://)?([A-Za-z0-9_.-]+@)?github\.com(:[0-9]+)?[:/]([A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+)$'
+	url="$(git remote get-url origin 2>/dev/null || true)"
+	url="${url%/}"
+	url="${url%.git}"
+	if [[ "$url" =~ $pattern ]]; then
+		printf '%s' "${BASH_REMATCH[4]}"
+	fi
 	return 0
 }
 
@@ -166,6 +248,14 @@ main() {
 	root="$(git rev-parse --show-toplevel)" || die "run this inside a checkout of the plugin"
 	cd "$root"
 	plugin_identity HEAD || die "cannot tell which plugin this is"
+	# Without a GitHub Plugin URI header (an add-on its parent updates), the
+	# repository comes from the origin remote; else the starter's repository
+	# name would only get this plugin's slug.
+	if [[ -z "$PLUGIN_REPO" ]]; then
+		PLUGIN_REPO="$(origin_repo)"
+		[[ -n "$PLUGIN_REPO" ]] ||
+			printf 'sync-core: no GitHub Plugin URI header and no GitHub origin remote: links to the starter'\''s repository will not name this plugin'\''s\n' >&2
+	fi
 	plugin_names_as TO
 
 	if [[ -z "$from" ]]; then
@@ -192,12 +282,14 @@ main() {
 	DIFFER=0
 	trap cleanup EXIT
 	TMP_FILE="$(mktemp "${TMPDIR:-/tmp}/sync-core.XXXXXX")"
+	ALL_FILE="$(mktemp "${TMPDIR:-/tmp}/sync-core-all.XXXXXX")"
 	LIST_FILE="$(mktemp "${TMPDIR:-/tmp}/sync-core-list.XXXXXX")"
 	OWN_FILE="$(mktemp "${TMPDIR:-/tmp}/sync-core-own.XXXXXX")"
 	CAND_FILE="$(mktemp "${TMPDIR:-/tmp}/sync-core-cand.XXXXXX")"
 	BLOBS_FILE="$(mktemp "${TMPDIR:-/tmp}/sync-core-blobs.XXXXXX")"
 	CLASS_FILE="$(mktemp "${TMPDIR:-/tmp}/sync-core-class.XXXXXX")"
-	core_paths "$from" "$ref" "$LIST_FILE"
+	core_paths "$from" "$ref" "$ALL_FILE"
+	skip_paths "$ALL_FILE" "$LIST_FILE"
 	# Validate and classify every file before writing any: a late malformed
 	# block, or a file a sync would lose work in, must not leave the plugin
 	# partly synced.
@@ -214,13 +306,13 @@ main() {
 
 	if [[ "$check" -eq 1 ]]; then
 		if [[ "$DIFFER" -eq 0 ]]; then
-			printf 'All %d core files match the starter.\n' "$count"
+			printf 'All %d core files match the starter%s.\n' "$count" "$(skipped_note)"
 			return 0
 		fi
-		printf '%d of %d core files differ from the starter. Run scripts/sync-core.sh, or change the starter first.\n' "$DIFFER" "$count"
+		printf '%d of %d core files differ from the starter%s. Run scripts/sync-core.sh, or change the starter first.\n' "$DIFFER" "$count" "$(skipped_note)"
 		return 1
 	fi
-	printf '%d of %d core files updated. Review with git diff, then commit.\n' "$DIFFER" "$count"
+	printf '%d of %d core files updated%s. Review with git diff, then commit.\n' "$DIFFER" "$count" "$(skipped_note)"
 	return 0
 }
 
