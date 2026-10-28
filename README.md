@@ -152,6 +152,7 @@ Deleting the plugin removes its settings (on multisite, every site's and the net
 ### Unreleased
 
 - Developers: every plugin's `README.md` ends the same: Built with AI, License, then the aidevops-managed Star History and Built with aidevops sections (`managed-readme-helper.sh sync`, with `docs/assets/star-history.svg` and `.github/workflows/star-history.yml`). `scripts/preflight-release.sh` warns when one is missing or out of order, the Read Me tab leaves the managed sections out, and this README has them too. Plugins get the check and the tab change with `scripts/sync-core.sh`.
+- Developers: `scripts/sync-core.sh` and the weekly Starter sync work in an add-on that leaves core files out on purpose: it lists them in its own `scripts/core-skip.txt`. Without an admin screen the CSS prefix comes from `scripts/core-public-classes.txt`, and without a `GitHub Plugin URI` header the repository comes from the `origin` remote (GH#550).
 - Developers: `scripts/deploy-sites.sh --apply` says why a single-site install failed (`FAIL: WordPress load failed (exit N: …)`) instead of a bare `FAIL`, and keeps WP-CLI's exit code. Plugins get it with `scripts/sync-core.sh`.
 - Developers: an ordered multi setting with more than 12 choices stays one column in its scroll box, as its rows only drag up and down. Plugins get it with `scripts/sync-core.sh` (GH#547).
 

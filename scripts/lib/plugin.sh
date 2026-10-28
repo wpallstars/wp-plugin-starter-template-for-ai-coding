@@ -16,7 +16,10 @@
 #   PLUGIN_PREFIX     the option, hook and transient prefix: PLUGIN_CONST in
 #                     lower case (wpstarter)
 #   PLUGIN_CSS        the CSS class and data attribute prefix, from the admin
-#                     screen's "wrap <css>-wrap" class (wps: .wps-card)
+#                     screen's "wrap <css>-wrap" class (wps: .wps-card), or
+#                     for a plugin with no admin screen of its own (an add-on
+#                     beside its parent), the <css>-wrap line of
+#                     scripts/core-public-classes.txt
 #   PLUGIN_REPO       the GitHub Plugin URI header, owner/repo (may be empty)
 #
 # Files come from the Git ref, never the working tree, like the release build.
@@ -98,7 +101,11 @@ plugin_identity() {
 	PLUGIN_REPO="$(plugin_header_field "${text:0:8192}" "GitHub Plugin URI")"
 	PLUGIN_CSS="$(git show "$ref:admin/includes/class-admin-manager.php" 2>/dev/null | sed -nE 's/.*class="wrap ([a-z0-9]+)-wrap.*/\1/p' | head -n 1)"
 	if [[ -z "$PLUGIN_CSS" ]]; then
-		printf 'plugin: no "wrap <css>-wrap" class in admin/includes/class-admin-manager.php at %s\n' "$ref" >&2
+		text="$(git show "$ref:scripts/core-public-classes.txt" 2>/dev/null || true)"
+		PLUGIN_CSS="$(sed -nE '/^[[:space:]]*[a-z0-9]+-wrap[[:space:]]*$/{s/^[[:space:]]*([a-z0-9]+)-wrap.*/\1/p;q;}' <<<"$text")"
+	fi
+	if [[ -z "$PLUGIN_CSS" ]]; then
+		printf 'plugin: no "wrap <css>-wrap" class in admin/includes/class-admin-manager.php, and no <css>-wrap line in scripts/core-public-classes.txt, at %s\n' "$ref" >&2
 		return 1
 	fi
 	return 0

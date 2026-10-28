@@ -388,6 +388,28 @@ versions. The classes need the starter's history: from a shallow clone
 `--check` marks such files "unknown (shallow starter clone)", and a sync
 stops until `git -C ../<starter> fetch --unshallow`.
 
+An add-on (a plugin that runs only beside its parent plugin, made from it
+or from the starter) may leave core files out on purpose: the settings
+store, the admin screen, the updater, or a CI workflow or tool
+configuration of its own. It lists them in its own `scripts/core-skip.txt`,
+one path per line in its own names (as `--check` prints them), a trailing
+`/` for every file below, `#` for comments:
+
+```text
+# The parent plugin has the settings store, admin screen and updater.
+includes/class-{prefix}.php
+includes/github-updater/
+admin/
+.github/workflows/ci.yml
+```
+
+A sync neither compares nor adds them, the summary counts them ("N left
+out"), and a line that names no core file is reported. With no admin
+screen, the scripts take `{css}` from the `{css}-wrap` line of
+`scripts/core-public-classes.txt`, and with no `GitHub Plugin URI` header
+(its parent updates it), `sync-core.sh` takes the repository from the
+`origin` remote. Its other core files get its own names, like any plugin's.
+
 When a sync adds a core doc at the top of the repository (such as
 `STYLING.md`) and the aidevops commit hook rejects it as a new root file,
 add its name to `root_files.allow` in the plugin's `.aidevops.json`, as for
