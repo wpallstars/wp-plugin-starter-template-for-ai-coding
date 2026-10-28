@@ -117,7 +117,8 @@ wp_checked() {
 	if [[ "$status" -ne 0 || "$output$errors" == *"Error establishing a database connection"* || "$output$errors" == *"WordPress database error"* ]]; then
 		[[ -z "$output" ]] || printf '%s\n' "$output" >&2
 		[[ -z "$errors" ]] || printf '%s\n' "$errors" >&2
-		return 1
+		[[ "$status" -ne 0 ]] || status=1
+		return "$status"
 	fi
 	printf '%s\n' "$output"
 	return 0
@@ -255,10 +256,11 @@ active_guard() {
 	# Validate the machine-readable snapshot before ANY mutation.
 	FLEET_BEFORE="$before" wp_checked "$root" --skip-plugins --skip-themes eval \
 		'if (!is_array(json_decode(getenv("FLEET_BEFORE"), true))) { WP_CLI::error("Invalid activation snapshot output"); }' >/dev/null || return 1
-	wp_checked "$root" "$@" || status=1
-	active_check "$root" "$before" "$add" "$remove" || status=1
-	[[ "$status" -eq 0 ]] || return 1
-	return 0
+	wp_checked "$root" "$@" || status=$?
+	if ! active_check "$root" "$before" "$add" "$remove"; then
+		[[ "$status" -ne 0 ]] || status=1
+	fi
+	return "$status"
 }
 
 # Discover log files before installation, then print the lines each one gained.
@@ -456,9 +458,10 @@ home_check() {
 check_sites() {
 	local root="$1"
 	local kind urls url status result reason warn load purged line network=0
+	local load_errors load_status summary
 	local url_args=()
 	SITES_TOTAL=0 SITES_FAILED=0 SITES_PURGED=0 PURGE_FAILED=0 SITE_LINES=""
-	MAIN_STATUS="?" MAIN_CODE="000" MAIN_CACHE="none"
+	MAIN_STATUS="?" MAIN_CODE="000" MAIN_CACHE="none" MAIN_REASON=""
 	kind="$(wp_bare "$root" eval 'echo is_multisite() ? "multisite" : "single";')" || return 1
 	case "$kind" in
 	multisite) network=1 ;;
@@ -466,12 +469,13 @@ check_sites() {
 	*) return 1 ;;
 	esac
 	urls="$(site_urls "$root" "$kind")" || return 1
+	load_errors="$(mktemp)" || return 1
 	while IFS= read -r url; do
 		[[ -n "$url" ]] || continue
 		SITES_TOTAL=$((SITES_TOTAL + 1))
 		[[ "$network" -eq 0 ]] || url_args=(--url="$url")
 		reason="" warn="" result="ok" purged="no"
-		if load="$(active_guard "$root" "" "" ${url_args[@]+"${url_args[@]}"} eval "$(load_code)")"; then
+		if load="$(active_guard "$root" "" "" ${url_args[@]+"${url_args[@]}"} eval "$(load_code)" 2>"$load_errors")"; then
 			case "$load" in
 			*purged=yes*) purged="yes" SITES_PURGED=$((SITES_PURGED + 1)) ;;
 			*purged=failed*)
@@ -481,8 +485,15 @@ check_sites() {
 			*) ;;
 			esac
 		else
-			reason="WordPress load failed; "
+			load_status=$?
+			# Keep the full diagnostics on stderr, but one short, printable
+			# line on the report (also when WP-CLI itself printed no error).
+			summary="$(tail -n 3 "$load_errors" | LC_ALL=C tr '\t\r\n' '   ' | LC_ALL=C tr -cd '[:print:]')"
+			reason="WordPress load failed (exit $load_status"
+			[[ -z "$summary" ]] || reason+=": ${summary:0:300}"
+			reason+="); "
 		fi
+		cat "$load_errors" >&2
 		if ! status="$(wp_bare "$root" ${url_args[@]+"${url_args[@]}"} plugin list --name="$SLUG" --field=status)" || [[ -z "$status" ]]; then
 			reason+="status read failed; "
 		fi
@@ -500,12 +511,14 @@ check_sites() {
 		fi
 		if [[ "$SITES_TOTAL" -eq 1 ]]; then
 			MAIN_STATUS="$status" MAIN_CODE="$HOME_CODE" MAIN_CACHE="$HOME_CACHE"
+			MAIN_REASON="${reason%; }"
 		fi
 		if [[ "$network" -eq 1 ]]; then
 			printf -v line '    site %s\tstatus=%s\tpurged=%s\thome=%s\tcache=%s\t%s\n' "$url" "${status:-?}" "$purged" "$HOME_CODE" "$HOME_CACHE" "$result"
 			SITE_LINES+="$line"
 		fi
 	done <<<"$urls"
+	rm -f "$load_errors"
 	[[ "$SITES_TOTAL" -gt 0 ]] || return 1
 	return 0
 }
@@ -567,6 +580,9 @@ apply_one() {
 	[[ "$MAIN_CACHE" != *hit* ]] || warn+="cached, "
 	if [[ "$after" != "$want" || "$new_lines" -gt 0 || "$SITES_FAILED" -gt 0 ]]; then
 		result="FAIL"
+		if [[ -z "$SITE_LINES" && -n "$MAIN_REASON" ]]; then
+			result+=": $MAIN_REASON"
+		fi
 		FAILED=1
 	elif [[ -n "$warn" ]]; then
 		result="WARN ${warn%, }"
@@ -581,7 +597,7 @@ apply_one() {
 	if [[ "$new_lines" -gt 0 ]]; then
 		new_log_text | sed 's/^/    /'
 	fi
-	if [[ "$result" == "FAIL" ]]; then
+	if [[ "$result" == FAIL* ]]; then
 		printf '    restore: rm -rf %q && tar -xzf %q -C %q\n' "$plugins/$SLUG" "$backup" "$plugins"
 	fi
 	return 0

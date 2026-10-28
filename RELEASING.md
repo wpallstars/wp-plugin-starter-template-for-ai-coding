@@ -155,8 +155,10 @@ expected in the GitHub zip too.
    ignores query strings), so PHP did not run for that fetch. Both warn
    rather than fail.
    A failed load, status read or home (5xx or no answer) fails the install;
-   4xx is reported only. All sites are checked even after one fails. A
-   failed install prints its restore command and the backup folder
+   4xx is reported only. All sites are checked even after one fails. On a
+   single site, the FAIL line gives the reason (`FAIL: WordPress load
+   failed (exit N: <last lines of WP-CLI's errors>)`); the full errors go
+   to stderr. A failed install prints its restore command and the backup folder
    (`~/.{slug}-deploy/` on the host). `--parent` names the WordPress
    folders on hosts with another layout, and `--skip` leaves an install
    out. It never uses `wp plugin update`: behind an HTTP request limiter,
