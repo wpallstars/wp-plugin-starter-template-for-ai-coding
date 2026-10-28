@@ -151,7 +151,7 @@ Deleting the plugin removes its settings (on multisite, every site's and the net
 
 ### Unreleased
 
-- Developers: `.github/workflows/star-history.yml` is pinned to the same aidevops commit as `repo-metrics.yml` instead of following its `main`, and only its job may write. Plugins get it with `scripts/sync-core.sh`.
+- Developers: `.github/workflows/star-history.yml` is pinned to one aidevops commit, v3.39.78, instead of following its `main`, and only its job may write. Without the `SYNC_PAT` secret the run is skipped with a warning, not failed. Plugins get it with `scripts/sync-core.sh`.
 
 ### 1.0.43
 
