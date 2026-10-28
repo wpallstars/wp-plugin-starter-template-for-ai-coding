@@ -149,11 +149,14 @@ Deleting the plugin removes its settings (on multisite, every site's and the net
 
 ## Changelog
 
+### Unreleased
+
+- Developers: `scripts/preflight-release.sh` warns when the aidevops-managed block in `README.md` has lost `## Star History` or `## Built with aidevops`, has one outside its markers, or has them the wrong way round. `scripts/rename-plugin.sh`'s Before 1.0 checklist asks for that ending in `README.md` only, not `readme.txt` (GH#560).
+
 ### 1.0.44
 
 - Developers: `scripts/preflight-release.sh --from DIR` selects the starter checkout for the core-files comparison, so its missing-checkout hint works in linked worktrees too. Without `--from`, defaults and environment overrides are unchanged. Plugins get it with `scripts/sync-core.sh` (GH#559).
 - Developers: `.github/workflows/star-history.yml` is pinned to one aidevops commit, v3.39.78, instead of following its `main`, and only its job may write. Without the `SYNC_PAT` secret the run is skipped with a warning, not failed. Plugins get it with `scripts/sync-core.sh`.
-- Developers: `scripts/preflight-release.sh` warns when the aidevops-managed block in `README.md` has lost `## Star History` or `## Built with aidevops`, has one outside its markers, or has them the wrong way round. `scripts/rename-plugin.sh`'s Before 1.0 checklist asks for that ending in `README.md` only, not `readme.txt` (GH#560).
 
 ### 1.0.43
 
