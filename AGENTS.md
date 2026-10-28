@@ -77,3 +77,8 @@ Keep this file a short map: guidance for one kind of task goes in `docs/`
 Install the GitHub build on a local test site with
 `scripts/preview-site.sh` (see `DEVELOPMENT.md`), or install the GitHub
 zip from `scripts/build-release.sh` on any test site.
+
+The starter is foundation code, not installed on any live site: its
+release ends with `scripts/update-test.sh`. Skip `RELEASING.md` → GitHub
+release, step 5 (`scripts/deploy-sites.sh`), which is for plugins on
+the owner's sites.
