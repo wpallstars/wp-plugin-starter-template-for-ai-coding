@@ -151,6 +151,7 @@ Deleting the plugin removes its settings (on multisite, every site's and the net
 
 ### Unreleased
 
+- Developers: every plugin's `README.md` ends the same: Built with AI, License, then the aidevops-managed Star History and Built with aidevops sections (`managed-readme-helper.sh sync`, with `docs/assets/star-history.svg` and `.github/workflows/star-history.yml`). `scripts/preflight-release.sh` warns when one is missing or out of order, the Read Me tab leaves the managed sections out, and this README has them too. Plugins get the check and the tab change with `scripts/sync-core.sh`.
 - Developers: `scripts/deploy-sites.sh --apply` says why a single-site install failed (`FAIL: WordPress load failed (exit N: …)`) instead of a bare `FAIL`, and keeps WP-CLI's exit code. Plugins get it with `scripts/sync-core.sh`.
 
 ### 1.0.42
@@ -432,3 +433,18 @@ GPL-3.0-or-later (the full text is in `LICENSE`), with the additional terms in `
 Copying, renaming or adapting this plugin or part of it, by hand or with an AI assistant: read `ATTRIBUTION.txt` first. It says what every copy keeps, with a section for AI assistants.
 
 Copyright (C) 2026 Marcus Quinn
+
+<!-- aidevops:managed-readme:start -->
+<!-- managed by aidevops; refresh with managed-readme-helper.sh sync -->
+## Star History
+
+![wpallstars/wp-plugin-starter-template-for-ai-coding stars over time](docs/assets/star-history.svg)
+
+## Built with aidevops
+
+This project was created and is maintained with
+[aidevops.sh](https://aidevops.sh).
+
+[View wpallstars on GitHub](https://github.com/wpallstars) ·
+[aidevops repository](https://github.com/marcusquinn/aidevops)
+<!-- aidevops:managed-readme:end -->

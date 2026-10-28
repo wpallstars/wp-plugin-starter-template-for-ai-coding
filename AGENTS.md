@@ -60,7 +60,9 @@ Keep this file a short map: guidance for one kind of task goes in `docs/`
   `readme.txt`: **Built with AI** to aidevops (<https://aidevops.sh>), which
   is also where users take questions, and the "Made from" line crediting the
   starter (`STANDARDS.md` → Structure). `scripts/rename-plugin.sh` writes
-  that line from split strings; keep them split.
+  that line from split strings; keep them split. `README.md` then ends with
+  License and the aidevops-managed Star History and Built with aidevops
+  block (`managed-readme-helper.sh sync`).
 - Licence and credit, here and in every copy: GPL-3.0-or-later with the
   terms in `ATTRIBUTION.txt`. Keep `LICENSE`, `ATTRIBUTION.txt`, the licence
   and Provenance lines at the top of each file, every copyright line and the

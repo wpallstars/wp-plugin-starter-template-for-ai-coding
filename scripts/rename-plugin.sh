@@ -249,7 +249,7 @@ leftovers lists what is still the starter's).
   starter's.
 - [ ] \`README.md\` and \`readme.txt\` open with this plugin's own offering (what
   it does, for whom, why it differs), then getting started and a guide. Keep
-  both credits (Built with AI, Made from).
+  the ending: Built with AI, License, then \`managed-readme-helper.sh sync\`.
 - [ ] \`readme.txt\`: under 10 KB, up to 5 tags, Tested up to the latest
   WordPress, FAQ, an External services section for every service the plugin
   contacts, one Screenshots caption per screenshot.

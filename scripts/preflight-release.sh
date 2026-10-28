@@ -1207,6 +1207,50 @@ check_licence() {
 	return 0
 }
 
+# README.md ends the same in every plugin (STANDARDS.md → Structure): Built
+# with AI, License, then the aidevops-managed Star History and Built with
+# aidevops sections, last. managed-readme-helper.sh sync writes that block
+# with its chart and the workflow that refreshes it. Warnings: a person, or
+# aidevops, writes them.
+check_readme_ending() {
+	local sha="$1"
+	section "README.md ending"
+	local text order file problems=0
+	# A missing README.md already warns under Credits; read it as empty.
+	text="$(git show "$sha:README.md" 2>/dev/null || :)"
+	# The line numbers of the four markers, in file order, and whether
+	# anything but blank lines follows the managed block's end.
+	order="$(awk '
+		$0 == "## Built with AI" && !b { b = NR }
+		$0 == "## License" && !l { l = NR }
+		$0 == "<!-- aidevops:managed-readme:start -->" && !s { s = NR }
+		$0 == "<!-- aidevops:managed-readme:end -->" { e = NR }
+		NF { last = NR }
+		END { printf "%d %d %d %d %d", b, l, s, e, last }
+	' <<<"$text")"
+	local built licence start end last
+	read -r built licence start end last <<<"$order"
+	if ((built == 0 || licence == 0 || built > licence)); then
+		warn "README.md has no '## Built with AI' section followed by '## License'"
+		problems=1
+	fi
+	if ((start == 0 || end <= start)); then
+		warn "README.md has no aidevops-managed Star History and Built with aidevops sections (managed-readme-helper.sh sync --repo $PLUGIN_REPO --root .)"
+		problems=1
+	elif ((start < licence || end != last)); then
+		warn "README.md's aidevops-managed sections are not last, after '## License'"
+		problems=1
+	fi
+	for file in docs/assets/star-history.svg .github/workflows/star-history.yml; do
+		if ! git cat-file -e "$sha:$file" 2>/dev/null; then
+			warn "no $file (managed-readme-helper.sh sync writes it)"
+			problems=1
+		fi
+	done
+	[[ "$problems" -eq 1 ]] || ok "README.md ends with Built with AI, License, Star History and Built with aidevops"
+	return 0
+}
+
 # Every plugin except SEO Pro Stack recommends it in README.md only, with a
 # line starting "Works well with " (STANDARDS.md → Structure). readme.txt
 # never mentions it: WordPress.org reviewers check it for promotion.
@@ -1443,6 +1487,7 @@ main() {
 	check_credits "$sha"
 	check_licence "$sha"
 	check_recommendation "$sha"
+	check_readme_ending "$sha"
 	check_badges "$sha" "$readme"
 	check_git "$ref" "$sha" "$VERSION"
 
