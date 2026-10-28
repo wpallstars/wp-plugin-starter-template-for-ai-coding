@@ -6,8 +6,9 @@
 # Errors stop a release. Warnings need a look and a decision; most matter only
 # for WordPress.org. Notes are for information.
 #
-# Usage: scripts/preflight-release.sh [--ref REF] [--offline] [--strict] [--no-docker]
+# Usage: scripts/preflight-release.sh [--ref REF] [--from DIR] [--offline] [--strict] [--no-docker]
 #   --ref REF    Commit, branch or tag to check (default: HEAD).
+#   --from DIR   Starter checkout for the core comparison (sync-core.sh defaults otherwise).
 #   --offline    Skip checks that ask WordPress.org (latest WordPress version,
 #                slug, contributor profiles).
 #   --strict     Fail on warnings too (use before a WordPress.org submission).
@@ -72,6 +73,7 @@ TMP_DIR=""
 OFFLINE=0
 USE_DOCKER=1
 CHANGELOG_TXT=""
+CORE_CHECK_ARGS=(--check)
 
 die() {
 	local message="$1"
@@ -80,7 +82,7 @@ die() {
 }
 
 usage() {
-	sed -n '2,18p' "$0" | sed 's/^# \{0,1\}//'
+	sed -n '2,19p' "$0" | sed 's/^# \{0,1\}//'
 	return 0
 }
 
@@ -791,11 +793,17 @@ check_replaced_count() {
 check_core_files() {
 	section "Core files"
 	local out status=0
-	out="$(bash "$SCRIPT_DIR/sync-core.sh" --check 2>&1)" || status=$?
+	out="$(bash "$SCRIPT_DIR/sync-core.sh" "${CORE_CHECK_ARGS[@]}" 2>&1)" || status=$?
 	case "$status" in
 	0) ok "$(printf '%s\n' "$out" | tail -n 1)" ;;
 	1) warn "$(printf '%s\n' "$out" | sed -n '2,$p' | tr '\n' ' ')" ;;
-	*) note "not compared: ${out#sync-core: }" ;;
+	*)
+		if [[ ${#CORE_CHECK_ARGS[@]} -gt 1 ]]; then
+			err "not compared: ${out#sync-core: }"
+		else
+			note "not compared: ${out#sync-core: }"
+		fi
+		;;
 	esac
 	return 0
 }
@@ -1425,10 +1433,16 @@ main() {
 	local arg
 	while [[ $# -gt 0 ]]; do
 		arg="$1"
+		local value="${2:-}"
 		case "$arg" in
 		--ref)
 			[[ $# -ge 2 ]] || die "--ref needs a value"
-			ref="$2"
+			ref="$value"
+			shift
+			;;
+		--from)
+			[[ $# -ge 2 ]] || die "--from needs a value"
+			CORE_CHECK_ARGS=(--check --from "$value")
 			shift
 			;;
 		--offline) OFFLINE=1 ;;

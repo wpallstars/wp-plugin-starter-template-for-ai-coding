@@ -151,6 +151,7 @@ Deleting the plugin removes its settings (on multisite, every site's and the net
 
 ### Unreleased
 
+- Developers: `scripts/preflight-release.sh --from DIR` selects the starter checkout for the core-files comparison, so its missing-checkout hint works in linked worktrees too. Without `--from`, defaults and environment overrides are unchanged. Plugins get it with `scripts/sync-core.sh` (GH#559).
 - Developers: `.github/workflows/star-history.yml` is pinned to one aidevops commit, v3.39.78, instead of following its `main`, and only its job may write. Without the `SYNC_PAT` secret the run is skipped with a warning, not failed. Plugins get it with `scripts/sync-core.sh`.
 
 ### 1.0.43

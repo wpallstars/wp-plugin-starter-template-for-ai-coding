@@ -169,6 +169,12 @@ Every pull request and every push to `main` runs these in GitHub Actions
 
 `scripts/lint.sh` with no arguments runs the first seven.
 
+Release preflight also compares core files with a local starter checkout.
+If it is not next to the plugin (for example, in a linked worktree), use
+`scripts/preflight-release.sh --from "<starter checkout>"`. The path is
+passed to `scripts/sync-core.sh --check`; without `--from`, its usual
+`{PREFIX}_STARTER_DIR` override and neighbouring-checkout default apply.
+
 CI downloads actionlint 1.7.12 as a release binary and verifies its published
 SHA-256 checksum; it needs no Docker Hub pull. Before Plugin Check and the
 smoke tests, GitHub-hosted runners configure Docker to use Google's public

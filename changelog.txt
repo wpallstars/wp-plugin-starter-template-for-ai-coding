@@ -3,6 +3,7 @@
 Every change to WP Plugin Starter. readme.txt lists the latest version in short.
 
 = Unreleased =
+* Developers: scripts/preflight-release.sh accepts --from DIR for its core-files comparison, passing the starter checkout to scripts/sync-core.sh --check. The missing-checkout note's advice now works in preflight too, including linked worktrees. Without --from, starter-path defaults and environment overrides are unchanged. Plugins get it with scripts/sync-core.sh (GH#559).
 * Developers: .github/workflows/star-history.yml is pinned to one aidevops commit, v3.39.78, for both the reusable workflow and its aidevops_ref, instead of following aidevops's main, and only its job may write to the repository (the workflow reads). Plugins that already had a pinned copy no longer show it as changed here; plugins made from the starter get it with scripts/sync-core.sh. managed-readme-helper.sh writes the workflow only when it is missing, so the pinned copy stays. From v3.39.78 a repository without the SYNC_PAT secret gets a warning and a skipped run instead of a failed one.
 
 = 1.0.43 =
