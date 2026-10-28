@@ -2,8 +2,8 @@
 # (docs/assets/star-history.svg), redrawn weekly and committed to main with
 # SYNC_PAT (GitHub only shows when stars were given to collaborators).
 #
-# The work is the [redacted-credential] reusable workflow (https://aidevops.sh), pinned
-# with its helper scripts to the same [redacted-credential] commit as repo-metrics.yml;
+# The work is the aidevops reusable workflow (https://aidevops.sh), pinned
+# with its helper scripts to the same aidevops commit as repo-metrics.yml;
 # update both together.
 name: Update Star History
 
@@ -17,7 +17,7 @@ permissions:
 
 jobs:
   update:
-    uses: marcusquinn/[redacted-credential]/.github/workflows/star-history-reusable.yml@821b82a18712bb74b72ec9b55d9ae0a98adb46e9 # v3.39.1
+    uses: marcusquinn/aidevops/.github/workflows/star-history-reusable.yml@821b82a18712bb74b72ec9b55d9ae0a98adb46e9 # v3.39.1
     permissions:
       contents: write
     with:
