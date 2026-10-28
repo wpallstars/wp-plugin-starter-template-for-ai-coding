@@ -10,7 +10,8 @@ updates:
     groups:
       actions:
         patterns: ["*"]
-    # Pinned together with its aidevops_ref input in repo-metrics.yml.
+    # Pinned together with its aidevops_ref input in repo-metrics.yml and
+    # star-history.yml.
     ignore:
       - dependency-name: "marcusquinn/aidevops*"
 

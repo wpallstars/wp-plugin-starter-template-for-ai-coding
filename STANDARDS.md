@@ -252,7 +252,9 @@ How changes are made and checked: `DEVELOPMENT.md`. Releases: `RELEASING.md`.
   `<!-- aidevops:managed-readme:end -->`. aidevops writes and refreshes that
   block (`managed-readme-helper.sh sync --repo OWNER/REPO --root .`), with
   the chart `docs/assets/star-history.svg` and the weekly
-  `.github/workflows/star-history.yml`; never edit inside it by hand. The
+  `.github/workflows/star-history.yml` (a core file, pinned to the same
+  aidevops commit as `repo-metrics.yml`; the helper writes the workflow only
+  when it is missing); never edit inside it by hand. The
   Read Me tab leaves it out, as the chart does not ship and Built with AI
   already credits aidevops. `scripts/preflight-release.sh` warns when the
   order, the block, the chart or the workflow is missing.
