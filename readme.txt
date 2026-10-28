@@ -5,7 +5,7 @@ Tags: starter, boilerplate, settings, developer, template
 Requires at least: 6.2
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 1.0.44
+Stable tag: 1.0.45
 License: GPLv3 or later
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 
@@ -62,8 +62,8 @@ GitHub releases are the stable beta channel: each version comes out there first.
 
 == Changelog ==
 
-= 1.0.44 =
-* Developers: the weekly Star History workflow is pinned to one aidevops version and skips with a warning when SYNC_PAT is not set, and preflight-release.sh accepts --from DIR for the core-files check. The settings screen looks and works the same.
+= 1.0.45 =
+* Developers: preflight-release.sh warns when README.md's aidevops-managed block has lost its Star History or Built with aidevops heading, or has them out of place, and the renamer's Before 1.0 checklist asks for that ending in README.md only. The plugin works the same.
 
 Every change: changelog.txt.
 
