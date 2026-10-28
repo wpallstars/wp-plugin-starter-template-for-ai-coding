@@ -222,7 +222,12 @@ Every change: changelog.txt."
 	set_section README.md "## Changelog" '^## ' "### $VERSION
 
 - $first"
-	# Launch state belongs to this plugin, not the repository it was copied from.
+	set_launch
+	return 0
+}
+
+# Launch state belongs to this plugin, not the repository it was copied from.
+set_launch() {
 	cat >"$TMP_FILE" <<EOF
 # $TO_NAME launch state
 
