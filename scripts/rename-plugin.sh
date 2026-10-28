@@ -222,7 +222,12 @@ Every change: changelog.txt."
 	set_section README.md "## Changelog" '^## ' "### $VERSION
 
 - $first"
-	# Launch state belongs to this plugin, not the repository it was copied from.
+	set_launch
+	return 0
+}
+
+# Launch state belongs to this plugin, not the repository it was copied from.
+set_launch() {
 	cat >"$TMP_FILE" <<EOF
 # $TO_NAME launch state
 
@@ -248,8 +253,11 @@ leftovers lists what is still the starter's).
   description (150 characters at most) say what this plugin does, not the
   starter's.
 - [ ] \`README.md\` and \`readme.txt\` open with this plugin's own offering (what
-  it does, for whom, why it differs), then getting started and a guide. Keep
-  the ending: Built with AI, License, then \`managed-readme-helper.sh sync\`.
+  it does, for whom, why it differs), then getting started and a guide. Both
+  keep the starter's credit, the line starting \`Made from\`.
+- [ ] \`README.md\` keeps its ending: Built with AI, License, then
+  \`managed-readme-helper.sh sync\`. (\`readme.txt\` has its Built with AI
+  credit in the description and ends with its changelog and upgrade notice.)
 - [ ] \`readme.txt\`: under 10 KB, up to 5 tags, Tested up to the latest
   WordPress, FAQ, an External services section for every service the plugin
   contacts, one Screenshots caption per screenshot.
