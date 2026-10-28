@@ -797,7 +797,13 @@ check_core_files() {
 	case "$status" in
 	0) ok "$(printf '%s\n' "$out" | tail -n 1)" ;;
 	1) warn "$(printf '%s\n' "$out" | sed -n '2,$p' | tr '\n' ' ')" ;;
-	*) note "not compared: ${out#sync-core: }" ;;
+	*)
+		if [[ ${#CORE_CHECK_ARGS[@]} -gt 1 ]]; then
+			err "not compared: ${out#sync-core: }"
+		else
+			note "not compared: ${out#sync-core: }"
+		fi
+		;;
 	esac
 	return 0
 }
