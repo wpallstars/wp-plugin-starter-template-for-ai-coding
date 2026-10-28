@@ -149,6 +149,10 @@ Deleting the plugin removes its settings (on multisite, every site's and the net
 
 ## Changelog
 
+### Unreleased
+
+- Developers: `.github/workflows/star-history.yml` is pinned to the same aidevops commit as `repo-metrics.yml` instead of following its `main`, and only its job may write. Plugins get it with `scripts/sync-core.sh`.
+
 ### 1.0.43
 
 - Developers: every plugin's `README.md` ends the same: Built with AI, License, then the aidevops-managed Star History and Built with aidevops sections (`managed-readme-helper.sh sync`, with `docs/assets/star-history.svg` and `.github/workflows/star-history.yml`). `scripts/preflight-release.sh` warns when one is missing or out of order, the Read Me tab leaves the managed sections out, and this README has them too. Plugins get the check and the tab change with `scripts/sync-core.sh`.
