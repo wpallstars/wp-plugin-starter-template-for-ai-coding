@@ -152,6 +152,7 @@ Deleting the plugin removes its settings (on multisite, every site's and the net
 ### Unreleased
 
 - Developers: `scripts/deploy-sites.sh --apply` says why a single-site install failed (`FAIL: WordPress load failed (exit N: …)`) instead of a bare `FAIL`, and keeps WP-CLI's exit code. Plugins get it with `scripts/sync-core.sh`.
+- Developers: an ordered multi setting with more than 12 choices stays one column in its scroll box, as its rows only drag up and down. Plugins get it with `scripts/sync-core.sh` (GH#547).
 
 ### 1.0.42
 

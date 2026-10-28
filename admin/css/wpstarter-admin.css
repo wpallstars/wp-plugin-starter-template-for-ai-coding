@@ -578,9 +578,13 @@
 }
 
 /* An ordered list (a multi field's `ordered` key): one row each, with a
-   handle to drag or move with the arrow keys. */
+   handle to drag or move with the arrow keys. A long one (is-long) stays one
+   column in its scroll box: rows only move up and down. */
 .wps-checkboxes[data-wps-ordered] {
+	display: flex;
+	columns: auto;
 	flex-direction: column;
+	flex-wrap: nowrap;
 	align-items: flex-start;
 	gap: 2px;
 }
