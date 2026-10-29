@@ -162,12 +162,10 @@ prune_folder() {
 	else
 		rm -f "$TMP_DIR/site" "$TMP_DIR/credentials" || return 1
 	fi
-	# Only known zip files; unknown files keep their containing directory.
-	local zip
-	for zip in "$TMP_DIR/zips/"*.zip; do
-		[[ -f "$zip" && ! -L "$zip" ]] || continue
-		rm -f "$zip" || return 1
-	done
+	# Only the zip reinstall writes; unknown files keep their directory.
+	if [[ "$SLUG" =~ ^[a-zA-Z0-9_-]+$ && -f "$TMP_DIR/zips/$SLUG.zip" && ! -L "$TMP_DIR/zips/$SLUG.zip" ]]; then
+		rm -f "$TMP_DIR/zips/$SLUG.zip" || return 1
+	fi
 	rmdir "$TMP_DIR/zips" 2>/dev/null || true
 	REMOVE_STATE=1
 	return 0
@@ -211,6 +209,7 @@ load_site() {
 	# Read data, never execute state files as shell code.
 	{ IFS= read -r PHP_VERSION; IFS= read -r MULTISITE; IFS= read -r BASE_URL; } <"$TMP_DIR/site"
 	[[ "$PHP_VERSION" =~ ^[0-9]+\.[0-9]+$ && "$MULTISITE" =~ ^[01]$ ]] || die 'invalid site state'
+	[[ -n "$BASE_URL" ]] || die 'incomplete site; run down to clear it'
 	return 0
 }
 
@@ -321,7 +320,7 @@ main() {
 		printf '%s\n' "$PHP_VERSION" "$MULTISITE" "$BASE_URL" "$root" "$branch" "$digest" "$SLUG" >"$TMP_DIR/site" # NOSONAR: disposable HTTP bound only to 127.0.0.1.
 		STARTED=0
 		printf 'Site: %s\nAdmin: %s/wp-admin/\nLogin: admin / %s\nDatabase password: %s\nCredentials: %s/credentials\n' "$BASE_URL" "$BASE_URL" "$ADMIN_PASSWORD" "$DB_PASSWORD" "$TMP_DIR" # NOSONAR: disposable HTTP bound only to 127.0.0.1.
-		site_notice
+		site_notice || printf 'test-site: could not list other test sites.\n' >&2
 		;;
 	reinstall) load_site; reinstall ;;
 	wp) load_site; wp_cli "$@" ;;

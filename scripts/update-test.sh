@@ -110,7 +110,17 @@ cleanup() {
 			if ! docker volume inspect "$NAME-wp" >/dev/null 2>&1 && ! docker volume inspect "$NAME-db" >/dev/null 2>&1 && ! docker network inspect "$NAME" >/dev/null 2>&1; then
 				break
 			fi
-			[[ "$attempt" -eq 3 ]] && printf 'update-test: could not remove %s-wp or network %s\n' "$NAME" "$NAME" >&2
+			if [[ "$attempt" -eq 3 ]]; then
+				if docker volume inspect "$NAME-wp" >/dev/null 2>&1; then
+					printf 'update-test: could not remove %s-wp\n' "$NAME" >&2
+				fi
+				if docker volume inspect "$NAME-db" >/dev/null 2>&1; then
+					printf 'update-test: could not remove %s-db\n' "$NAME" >&2
+				fi
+				if docker network inspect "$NAME" >/dev/null 2>&1; then
+					printf 'update-test: could not remove network %s\n' "$NAME" >&2
+				fi
+			fi
 			sleep 2
 		done
 	fi

@@ -67,7 +67,7 @@ cleanup() {
 			if ! docker volume inspect "$NAME-wp" >/dev/null 2>&1 && ! docker volume inspect "$NAME-db" >/dev/null 2>&1 && ! docker network inspect "$NAME" >/dev/null 2>&1; then
 				break
 			fi
-			[[ "$attempt" -eq 3 ]] && printf 'plugin-check: could not remove %s-wp or network %s\n' "$NAME" "$NAME" >&2
+			[[ "$attempt" -eq 3 ]] && printf 'plugin-check: could not remove %s-wp, %s-db, or network %s\n' "$NAME" "$NAME" "$NAME" >&2
 			sleep 2
 		done
 	fi
