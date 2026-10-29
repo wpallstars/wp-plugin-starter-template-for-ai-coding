@@ -3,7 +3,7 @@
 # this plugin, with this plugin's names. Core files hold no code for one
 # plugin, so they match the starter apart from names and marked own blocks.
 #
-# Usage: scripts/sync-core.sh [--check] [--from DIR] [--ref REF] [--discard-local]
+# Usage: scripts/sync-core.sh [--check] [--from DIR] [--ref REF] [--repo OWNER/REPO] [--discard-local]
 #   --check          Change nothing; list core files that differ from the
 #                    starter's, each with its class, and exit 1 if any do
 #                    (scripts/preflight-release.sh warns).
@@ -11,6 +11,9 @@
 #                    then <STARTER_REPO_DIR> next to this repository).
 #   --ref REF        Starter commit, branch or tag to copy from (default: HEAD
 #                    of that checkout; use origin/main after a git fetch there).
+#   --repo OWNER/REPO  This plugin's GitHub repository, for the links in core
+#                    files (default: the main file's GitHub Plugin URI, then
+#                    the origin remote). A sync stops when none is known.
 #   --discard-local  Also replace files changed here (below), once their
 #                    change is in the starter or no longer needed.
 #
@@ -111,7 +114,7 @@ same_mode() {
 }
 
 usage() {
-	sed -n '2,33p' "$0" | sed -e 's/^# \{0,1\}//' -e "s/<STARTER_REPO_DIR>/$STARTER_REPO_DIR/"
+	sed -n '2,36p' "$0" | sed -e 's/^# \{0,1\}//' -e "s/<STARTER_REPO_DIR>/$STARTER_REPO_DIR/"
 	return 0
 }
 
@@ -218,7 +221,7 @@ origin_repo() {
 }
 
 main() {
-	local check=0 discard=0 from="" ref="HEAD"
+	local check=0 discard=0 from="" ref="HEAD" repo=""
 	while [[ $# -gt 0 ]]; do
 		local arg="$1"
 		local value="${2:-}"
@@ -228,6 +231,12 @@ main() {
 		--from)
 			[[ $# -ge 2 ]] || die "--from needs a value"
 			from="$value"
+			shift
+			;;
+		--repo)
+			[[ $# -ge 2 ]] || die "--repo needs a value"
+			[[ "$value" =~ ^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$ ]] || die "--repo needs OWNER/REPO, not $value"
+			repo="$value"
 			shift
 			;;
 		--ref)
@@ -249,12 +258,15 @@ main() {
 	cd "$root"
 	plugin_identity HEAD || die "cannot tell which plugin this is"
 	# Without a GitHub Plugin URI header (an add-on its parent updates), the
-	# repository comes from the origin remote; else the starter's repository
-	# name would only get this plugin's slug.
-	if [[ -z "$PLUGIN_REPO" ]]; then
+	# repository comes from the origin remote. With neither, stop: the
+	# starter's repository name would only get this plugin's slug, an
+	# address that does not exist (Composer package, security report link).
+	if [[ -n "$repo" ]]; then
+		PLUGIN_REPO="$repo"
+	elif [[ -z "$PLUGIN_REPO" ]]; then
 		PLUGIN_REPO="$(origin_repo)"
 		[[ -n "$PLUGIN_REPO" ]] ||
-			printf 'sync-core: no GitHub Plugin URI header and no GitHub origin remote: links to the starter'\''s repository will not name this plugin'\''s\n' >&2
+			die "no GitHub Plugin URI header and no GitHub origin remote, so the links in core files cannot name this plugin's repository; pass --repo OWNER/REPO"
 	fi
 	plugin_names_as TO
 

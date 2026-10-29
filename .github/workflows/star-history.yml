@@ -1,6 +1,7 @@
 # The stars-over-time chart at the end of README.md
 # (docs/assets/star-history.svg), redrawn weekly and committed to main with
-# SYNC_PAT (GitHub only shows when stars were given to collaborators).
+# SYNC_PAT (GitHub shows when each star was given only to the repository's
+# collaborators).
 #
 # The work is the aidevops reusable workflow (https://aidevops.sh), pinned
 # with its helper scripts to the same aidevops commit. From v3.39.78 a
