@@ -220,6 +220,23 @@ origin_repo() {
 	return 0
 }
 
+# Set PLUGIN_REPO: --repo when given, else the GitHub Plugin URI header,
+# else the origin remote (an add-on its parent updates has no header). With
+# none, stop: the starter's repository name would only get this plugin's
+# slug, an address that does not exist (Composer package, security report).
+resolve_repo() {
+	local repo="$1"
+	if [[ -n "$repo" ]]; then
+		[[ "$repo" =~ ^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$ ]] || die "--repo needs OWNER/REPO, not $repo"
+		PLUGIN_REPO="$repo"
+	elif [[ -z "$PLUGIN_REPO" ]]; then
+		PLUGIN_REPO="$(origin_repo)"
+		[[ -n "$PLUGIN_REPO" ]] ||
+			die "no GitHub Plugin URI header and no GitHub origin remote, so the links in core files cannot name this plugin's repository; pass --repo OWNER/REPO"
+	fi
+	return 0
+}
+
 main() {
 	local check=0 discard=0 from="" ref="HEAD" repo=""
 	while [[ $# -gt 0 ]]; do
@@ -235,7 +252,6 @@ main() {
 			;;
 		--repo)
 			[[ $# -ge 2 ]] || die "--repo needs a value"
-			[[ "$value" =~ ^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$ ]] || die "--repo needs OWNER/REPO, not $value"
 			repo="$value"
 			shift
 			;;
@@ -257,17 +273,7 @@ main() {
 	root="$(git rev-parse --show-toplevel)" || die "run this inside a checkout of the plugin"
 	cd "$root"
 	plugin_identity HEAD || die "cannot tell which plugin this is"
-	# Without a GitHub Plugin URI header (an add-on its parent updates), the
-	# repository comes from the origin remote. With neither, stop: the
-	# starter's repository name would only get this plugin's slug, an
-	# address that does not exist (Composer package, security report link).
-	if [[ -n "$repo" ]]; then
-		PLUGIN_REPO="$repo"
-	elif [[ -z "$PLUGIN_REPO" ]]; then
-		PLUGIN_REPO="$(origin_repo)"
-		[[ -n "$PLUGIN_REPO" ]] ||
-			die "no GitHub Plugin URI header and no GitHub origin remote, so the links in core files cannot name this plugin's repository; pass --repo OWNER/REPO"
-	fi
+	resolve_repo "$repo"
 	plugin_names_as TO
 
 	if [[ -z "$from" ]]; then
