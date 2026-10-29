@@ -26,6 +26,9 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 readonly SCRIPT_DIR
 # shellcheck source=scripts/lib/plugin.sh disable=SC1091 # followed only with -x
 . "$SCRIPT_DIR/lib/plugin.sh"
+# shellcheck source=scripts/lib/docker-wordpress.sh disable=SC1091
+. "$SCRIPT_DIR/lib/docker-wordpress.sh"
+DOCKER_LABELS=()
 # Set in main() from the plugin's main file.
 SLUG=""
 MAIN_FILE=""
@@ -59,12 +62,12 @@ cleanup() {
 				docker rm -f "$id" >/dev/null 2>&1 || true
 			done
 			docker rm -f "$NAME-db" >/dev/null 2>&1 || true
-			docker volume rm "$NAME-wp" >/dev/null 2>&1 || true
+			docker volume rm "$NAME-wp" "$NAME-db" >/dev/null 2>&1 || true
 			docker network rm "$NAME" >/dev/null 2>&1 || true
-			if ! docker volume inspect "$NAME-wp" >/dev/null 2>&1 && ! docker network inspect "$NAME" >/dev/null 2>&1; then
+			if ! docker volume inspect "$NAME-wp" >/dev/null 2>&1 && ! docker volume inspect "$NAME-db" >/dev/null 2>&1 && ! docker network inspect "$NAME" >/dev/null 2>&1; then
 				break
 			fi
-			[[ "$attempt" -eq 3 ]] && printf 'plugin-check: could not remove %s-wp or network %s\n' "$NAME" "$NAME" >&2
+			[[ "$attempt" -eq 3 ]] && printf 'plugin-check: could not remove %s-wp, %s-db, or network %s\n' "$NAME" "$NAME" "$NAME" >&2
 			sleep 2
 		done
 	fi
@@ -77,7 +80,7 @@ cleanup() {
 # wp-cli in the disposable site; zips are mounted at /zips. The image's
 # 128 MB PHP memory limit is too small to unpack WordPress.
 wp_cli() {
-	docker run --rm --network "$NAME" -v "$NAME-wp:/var/www/html" -v "$TMP_DIR/zips:/zips:ro" \
+	docker run --rm ${DOCKER_LABELS[@]+"${DOCKER_LABELS[@]}"} --network "$NAME" -v "$NAME-wp:/var/www/html" -v "$TMP_DIR/zips:/zips:ro" \
 		--user 33:33 "$CLI_IMAGE" php -d memory_limit=1G /usr/local/bin/wp "$@"
 	return $?
 }
@@ -106,12 +109,14 @@ start_site() {
 	pull_image "$DB_IMAGE" || die "could not pull $DB_IMAGE after 3 attempts"
 	pull_image "$CLI_IMAGE" || die "could not pull $CLI_IMAGE after 3 attempts"
 	STARTED=1
-	docker network create "$NAME" >/dev/null
-	docker volume create "$NAME-wp" >/dev/null
-	docker run -d --name "$NAME-db" --network "$NAME" \
+	docker network create ${DOCKER_LABELS[@]+"${DOCKER_LABELS[@]}"} "$NAME" >/dev/null
+	docker volume create ${DOCKER_LABELS[@]+"${DOCKER_LABELS[@]}"} "$NAME-wp" >/dev/null
+	docker volume create ${DOCKER_LABELS[@]+"${DOCKER_LABELS[@]}"} "$NAME-db" >/dev/null
+	docker run -d ${DOCKER_LABELS[@]+"${DOCKER_LABELS[@]}"} --name "$NAME-db" --network "$NAME" \
+		-v "$NAME-db:/var/lib/mysql" \
 		-e MARIADB_ROOT_PASSWORD="$DB_PASSWORD" -e MARIADB_DATABASE=wordpress "$DB_IMAGE" >/dev/null
 	# The volume starts owned by root; let www-data (33) write to it.
-	docker run --rm -v "$NAME-wp:/var/www/html" --user 0:0 "$CLI_IMAGE" chown 33:33 /var/www/html
+	docker run --rm ${DOCKER_LABELS[@]+"${DOCKER_LABELS[@]}"} -v "$NAME-wp:/var/www/html" --user 0:0 "$CLI_IMAGE" chown 33:33 /var/www/html
 
 	# Ping over TCP: the image's first, socket-only server answers on the
 	# socket before the real server is listening.
@@ -280,6 +285,7 @@ $(cd "$(dirname "$value")" && pwd)/$(basename "$value")"
 	CLI_IMAGE="$(plugin_env CLI_IMAGE wordpress:cli-php8.3)"
 	DB_IMAGE="$(plugin_env DB_IMAGE mariadb:10.6)"
 	NAME="$SLUG-plugincheck-$$"
+	docker_owner_labels "$root" || die 'cannot read Docker owner labels'
 
 	trap cleanup EXIT
 	TMP_DIR="$(mktemp -d "${TMPDIR:-/tmp}/$SLUG-plugincheck.XXXXXX")"

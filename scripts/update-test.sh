@@ -31,6 +31,9 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 readonly SCRIPT_DIR
 # shellcheck source=scripts/lib/plugin.sh disable=SC1091 # followed only with -x
 . "$SCRIPT_DIR/lib/plugin.sh"
+# shellcheck source=scripts/lib/docker-wordpress.sh disable=SC1091
+. "$SCRIPT_DIR/lib/docker-wordpress.sh"
+DOCKER_LABELS=()
 
 readonly TOKEN_NAME="WPALLSTARS_GITHUB_TOKEN"
 
@@ -102,12 +105,22 @@ cleanup() {
 				docker rm -f "$id" >/dev/null 2>&1 || true
 			done
 			docker rm -f "$NAME-web" "$NAME-db" >/dev/null 2>&1 || true
-			docker volume rm "$NAME-wp" >/dev/null 2>&1 || true
+			docker volume rm "$NAME-wp" "$NAME-db" >/dev/null 2>&1 || true
 			docker network rm "$NAME" >/dev/null 2>&1 || true
-			if ! docker volume inspect "$NAME-wp" >/dev/null 2>&1 && ! docker network inspect "$NAME" >/dev/null 2>&1; then
+			if ! docker volume inspect "$NAME-wp" >/dev/null 2>&1 && ! docker volume inspect "$NAME-db" >/dev/null 2>&1 && ! docker network inspect "$NAME" >/dev/null 2>&1; then
 				break
 			fi
-			[[ "$attempt" -eq 3 ]] && printf 'update-test: could not remove %s-wp or network %s\n' "$NAME" "$NAME" >&2
+			if [[ "$attempt" -eq 3 ]]; then
+				if docker volume inspect "$NAME-wp" >/dev/null 2>&1; then
+					printf 'update-test: could not remove %s-wp\n' "$NAME" >&2
+				fi
+				if docker volume inspect "$NAME-db" >/dev/null 2>&1; then
+					printf 'update-test: could not remove %s-db\n' "$NAME" >&2
+				fi
+				if docker network inspect "$NAME" >/dev/null 2>&1; then
+					printf 'update-test: could not remove network %s\n' "$NAME" >&2
+				fi
+			fi
 			sleep 2
 		done
 	fi
@@ -126,7 +139,7 @@ random_password() {
 # The token, when set, is passed by name only, so its value is in no
 # command line.
 wp_cli() {
-	docker run --rm --network "$NAME" -v "$NAME-wp:/var/www/html" -v "$TMP_DIR/zips:/zips:ro" \
+	docker run --rm ${DOCKER_LABELS[@]+"${DOCKER_LABELS[@]}"} --network "$NAME" -v "$NAME-wp:/var/www/html" -v "$TMP_DIR/zips:/zips:ro" \
 		-e WP_CLI_CACHE_DIR=/tmp/wp-cli-cache ${TOKEN_ARGS[@]+"${TOKEN_ARGS[@]}"} \
 		--user 33:33 "wordpress:cli-php$PHP_VERSION" php -d memory_limit=1G /usr/local/bin/wp "$@" || return 1
 	return 0
@@ -210,11 +223,13 @@ start_site() {
 	STARTED=1
 	DB_PASSWORD="$(random_password)"
 	ADMIN_PASSWORD="$(random_password)"
-	docker network create "$NAME" >/dev/null
-	docker volume create "$NAME-wp" >/dev/null
-	docker run -d --name "$NAME-db" --network "$NAME" \
+	docker network create ${DOCKER_LABELS[@]+"${DOCKER_LABELS[@]}"} "$NAME" >/dev/null
+	docker volume create ${DOCKER_LABELS[@]+"${DOCKER_LABELS[@]}"} "$NAME-wp" >/dev/null
+	docker volume create ${DOCKER_LABELS[@]+"${DOCKER_LABELS[@]}"} "$NAME-db" >/dev/null
+	docker run -d ${DOCKER_LABELS[@]+"${DOCKER_LABELS[@]}"} --name "$NAME-db" --network "$NAME" \
+		-v "$NAME-db:/var/lib/mysql" \
 		-e MARIADB_ROOT_PASSWORD="$DB_PASSWORD" -e MARIADB_DATABASE=wordpress "$DB_IMAGE" >/dev/null
-	docker run --rm -v "$NAME-wp:/var/www/html" --user 0:0 "wordpress:cli-php$PHP_VERSION" chown 33:33 /var/www/html
+	docker run --rm ${DOCKER_LABELS[@]+"${DOCKER_LABELS[@]}"} -v "$NAME-wp:/var/www/html" --user 0:0 "wordpress:cli-php$PHP_VERSION" chown 33:33 /var/www/html
 
 	local waited=0
 	until docker exec "$NAME-db" mariadb-admin ping -h127.0.0.1 -uroot -p"$DB_PASSWORD" --silent >/dev/null 2>&1; do
@@ -225,7 +240,7 @@ start_site() {
 
 	# Core first, so the web image finds WordPress and does not copy its own.
 	wp_cli core download --version="$WP_VERSION" --quiet
-	docker run -d --name "$NAME-web" --network "$NAME" -v "$NAME-wp:/var/www/html" \
+	docker run -d ${DOCKER_LABELS[@]+"${DOCKER_LABELS[@]}"} --name "$NAME-web" --network "$NAME" -v "$NAME-wp:/var/www/html" \
 		${TOKEN_ARGS[@]+"${TOKEN_ARGS[@]}"} -p 127.0.0.1::80 "wordpress:php$PHP_VERSION-apache" >/dev/null
 	# Plain HTTP on purpose: a throwaway site that only listens on 127.0.0.1.
 	BASE_URL="http://$(docker port "$NAME-web" 80 | head -n 1)"
@@ -437,6 +452,7 @@ main() {
 	[[ "$REPO" =~ ^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$ ]] || die "the main file has no GitHub Plugin URI header (owner/repo)"
 	DB_IMAGE="$(plugin_env DB_IMAGE mariadb:10.6)"
 	NAME="$SLUG-update-$$"
+	docker_owner_labels "$root" || die 'cannot read Docker owner labels'
 	if [[ -n "${!TOKEN_NAME:-}" ]]; then
 		TOKEN_ARGS=(-e "$TOKEN_NAME")
 	fi

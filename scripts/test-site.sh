@@ -20,6 +20,9 @@ FILES=""
 BASE_URL=""
 DB_PASSWORD=""
 ADMIN_PASSWORD=""
+DOCKER_LABELS=()
+REMOVE_STATE=0
+DRY_RUN=0
 
 die() {
 	local message="$1"
@@ -31,6 +34,7 @@ usage() {
 	printf '%s\n' 'Usage: scripts/test-site.sh COMMAND' \
 		'  up [--ref REF] [--wp VERSION] [--php VERSION] [--multisite]' \
 		'  reinstall [--ref REF]' '  wp [--files DIR] ARGS...' '  url | log | down' \
+		'  prune [--dry-run]   Remove orphaned sites across all checkouts' \
 		'One site per plugin, branch and checkout; Docker listens on 127.0.0.1 only.'
 	return 0
 }
@@ -38,7 +42,7 @@ usage() {
 wp_cli() {
 	local mounts=()
 	[[ -z "$FILES" ]] || mounts=(-v "$FILES:/files:ro")
-	docker run --rm --label "$DOCKER_LABEL" --network "$NAME" \
+	docker run --rm ${DOCKER_LABELS[@]+"${DOCKER_LABELS[@]}"} --network "$NAME" \
 		-v "$NAME-wp:/var/www/html" -v "$TMP_DIR/zips:/zips:ro" \
 		${mounts[@]+"${mounts[@]}"} --user 33:33 "wordpress:cli-php$PHP_VERSION" \
 		php -d memory_limit=1G /usr/local/bin/wp "$@" || return 1
@@ -84,17 +88,119 @@ down() {
 	done
 	# Only remove our known state files, never a recursively chosen directory.
 	rm -f "$TMP_DIR/site" "$TMP_DIR/credentials" "$TMP_DIR/zips/$SLUG.zip" || return 1
+	rmdir "$TMP_DIR/zips" 2>/dev/null || true
+	REMOVE_STATE=1
 	printf 'Removed test site %s (label %s).\n' "$NAME" "$DOCKER_LABEL"
 	return 0
 }
 
 finish() {
-	local status="$?"
+	local status="$1"
 	if [[ "$status" -ne 0 && "$STARTED" -eq 1 ]]; then
 		printf 'test-site: setup failed; removing its labelled resources\n' >&2
 		down || printf 'test-site: cleanup incomplete; run down again\n' >&2
 	fi
 	rmdir "$TMP_DIR/lock"
+	if [[ "$REMOVE_STATE" -eq 1 ]]; then
+		rmdir "$TMP_DIR" 2>/dev/null || true
+	fi
+	return 0
+}
+
+# Full digests from every resource kind, including stopped/interrupted sites.
+site_digests() {
+	local kind ids id format
+	for kind in container volume network; do
+		format='{{index .Labels "wpallstars.test-site"}}'
+		if [[ "$kind" = container ]]; then
+			ids="$(docker ps -aq --filter label=wpallstars.test-site)" || return 1
+			format='{{index .Config.Labels "wpallstars.test-site"}}'
+		else
+			ids="$(docker "$kind" ls -q --filter label=wpallstars.test-site)" || return 1
+		fi
+		while IFS= read -r id; do
+			[[ -n "$id" ]] || continue
+			docker "$kind" inspect --format "$format" "$id" || return 1
+		done <<<"$ids"
+	done
+	return 0
+}
+
+prune_folder() {
+	local digests line owner="" digest="" index=0 found=0 kind ids existing=""
+	SLUG=""
+	if [[ -f "$TMP_DIR/site" && ! -L "$TMP_DIR/site" ]]; then
+		while IFS= read -r line; do
+			index=$((index + 1))
+			case "$index" in 4) owner="$line" ;; 6) digest="$line" ;; 7) SLUG="$line" ;; *) ;; esac
+		done <"$TMP_DIR/site"
+	fi
+	if [[ "$digest" =~ ^[0-9a-f]{64}$ && "$NAME" = *-test-"${digest:0:16}" && "$SLUG" =~ ^[a-zA-Z0-9_-]+$ ]]; then
+		DOCKER_LABEL="wpallstars.test-site=$digest"
+		for kind in container volume network; do
+			ids="$(resources "$kind")" || return 1
+			existing+="$ids"
+		done
+		# An existing checkout with any resources is never an orphan.
+		[[ -z "$existing" || ( "$owner" = /* && ! -e "$owner" ) ]] || return 0
+	else
+		# Legacy state has no owner/full digest. A matching short suffix is
+		# enough to KEEP it, never enough to authorize resource deletion.
+		# Inventory after acquiring the lock, not before another up can finish.
+		digests="$(site_digests)" || return 1
+		while IFS= read -r line; do
+			[[ "$line" =~ ^[0-9a-f]{64}$ ]] || continue
+			[[ "$NAME" != *-test-"${line:0:16}" ]] || found=1
+		done <<<"$digests"
+		[[ "$found" -eq 0 ]] || return 0
+		existing=""
+	fi
+	printf '%s orphaned test site %s%s\n' "$([[ "$DRY_RUN" -eq 1 ]] && printf 'Would remove' || printf 'Removing')" "$NAME" "${existing:+ (with labelled Docker resources)}"
+	[[ "$DRY_RUN" -eq 0 ]] || return 0
+	if [[ -n "$existing" ]]; then
+		down || return 1
+	else
+		rm -f "$TMP_DIR/site" "$TMP_DIR/credentials" || return 1
+	fi
+	# Only the zip reinstall writes; unknown files keep their directory.
+	if [[ "$SLUG" =~ ^[a-zA-Z0-9_-]+$ && -f "$TMP_DIR/zips/$SLUG.zip" && ! -L "$TMP_DIR/zips/$SLUG.zip" ]]; then
+		rm -f "$TMP_DIR/zips/$SLUG.zip" || return 1
+	fi
+	rmdir "$TMP_DIR/zips" 2>/dev/null || true
+	REMOVE_STATE=1
+	return 0
+}
+
+prune_sites() {
+	local state_home="$1"
+	local folder
+	[[ -d "$state_home" && ! -L "$state_home" ]] || return 0
+	for folder in "$state_home/"*-test-*; do
+		[[ -d "$folder" && ! -L "$folder" && ! -e "$folder/lock" && ! -L "$folder/lock" && ! -L "$folder/zips" ]] || continue
+		TMP_DIR="$folder"
+		NAME="${folder##*/}"
+		REMOVE_STATE=0
+		if [[ "$DRY_RUN" -eq 0 ]]; then
+			mkdir "$TMP_DIR/lock" 2>/dev/null || continue
+			trap 'finish "$?"' EXIT
+		fi
+		prune_folder || return 1
+		if [[ "$DRY_RUN" -eq 0 ]]; then
+			finish 0
+			trap - EXIT
+		fi
+	done
+	return 0
+}
+
+site_notice() {
+	local labels label count=0
+	labels="$(docker ps --filter label=wpallstars.test-site --format '{{.Label "wpallstars.test-site"}}' | sort -u)" || return 1
+	while IFS= read -r label; do
+		[[ -z "$label" || "wpallstars.test-site=$label" = "$DOCKER_LABEL" ]] || count=$((count + 1))
+	done <<<"$labels"
+	printf 'Other running test sites: %s.\n' "$count"
+	[[ "$count" -le 5 ]] || printf 'Run scripts/test-site.sh prune --dry-run to check for orphaned sites.\n'
 	return 0
 }
 
@@ -103,6 +209,7 @@ load_site() {
 	# Read data, never execute state files as shell code.
 	{ IFS= read -r PHP_VERSION; IFS= read -r MULTISITE; IFS= read -r BASE_URL; } <"$TMP_DIR/site"
 	[[ "$PHP_VERSION" =~ ^[0-9]+\.[0-9]+$ && "$MULTISITE" =~ ^[01]$ ]] || die 'invalid site state'
+	[[ -n "$BASE_URL" ]] || die 'incomplete site; run down to clear it'
 	return 0
 }
 
@@ -128,7 +235,7 @@ main() {
 	local command="${1:---help}"
 	[[ $# -eq 0 ]] || shift
 	case "$command" in -h | --help | help) usage; return 0 ;; *) ;; esac
-	case "$command" in up | reinstall | wp | url | log | down) ;; *) die "unknown command: $command" ;; esac
+	case "$command" in up | reinstall | wp | url | log | down | prune) ;; *) die "unknown command: $command" ;; esac
 	local arg value
 	if [[ "$command" = wp ]]; then
 		if [[ "${1:-}" = --files ]]; then
@@ -148,12 +255,20 @@ main() {
 			up:--php) [[ "$value" =~ ^[0-9]+\.[0-9]+$ ]] || die 'invalid PHP version'; PHP_VERSION="$value"; shift ;;
 			up:--wp) [[ "$value" =~ ^(latest|[0-9]+\.[0-9]+(\.[0-9]+)?)$ ]] || die 'invalid WordPress version'; WP_VERSION="$value"; shift ;;
 			up:--multisite) MULTISITE=1 ;;
+			prune:--dry-run) DRY_RUN=1 ;;
 			*) die "unknown option for $command: $arg" ;;
 			esac
 			shift
 		done
 	fi
 	local root branch identity digest state_home
+	state_home="${XDG_STATE_HOME:-$HOME/.local/state}/wpallstars-test-sites"
+	command -v docker >/dev/null || die 'needs Docker'
+	docker info >/dev/null 2>&1 || die 'Docker is not running'
+	if [[ "$command" = prune ]]; then
+		prune_sites "$state_home"
+		return $?
+	fi
 	root="$(git -C "$SCRIPT_DIR/.." rev-parse --show-toplevel)"
 	cd "$root"
 	plugin_identity HEAD || die 'cannot identify this plugin'
@@ -163,18 +278,17 @@ main() {
 	digest="$(printf '%s' "$identity" | shasum -a 256)"; digest="${digest%% *}"
 	NAME="${SLUG:0:32}-test-${digest:0:16}"
 	DOCKER_LABEL="wpallstars.test-site=$digest"
-	state_home="${XDG_STATE_HOME:-$HOME/.local/state}/wpallstars-test-sites"
+	DOCKER_LABELS=(--label "$DOCKER_LABEL")
+	docker_owner_labels "$root" --ttl-hours 168 || die 'cannot read Docker owner labels'
 	umask 077
 	mkdir -p "$state_home/$NAME/zips"
 	TMP_DIR="$state_home/$NAME"
 	# The CLI image runs as uid 33; only non-secret zips are traversable/readable.
 	chmod 755 "$TMP_DIR" "$TMP_DIR/zips"
 	mkdir "$TMP_DIR/lock" 2>/dev/null || die 'another command is running (or a stale lock needs removal)'
-	trap finish EXIT
+	trap 'finish "$?"' EXIT
 	trap 'exit 130' INT
 	trap 'exit 143' TERM
-	command -v docker >/dev/null || die 'needs Docker'
-	docker info >/dev/null 2>&1 || die 'Docker is not running'
 	case "$command" in
 	up)
 		[[ ! -f "$TMP_DIR/site" && ! -f "$TMP_DIR/credentials" ]] || die 'site already exists; use url, reinstall or down'
@@ -187,6 +301,8 @@ main() {
 		# Used by docker_start_site in the sourced helper.
 		# shellcheck disable=SC2034
 		DB_IMAGE="$(plugin_env DB_IMAGE mariadb:10.6)"
+		# Persist ownership before setup too, so interrupted starts can be pruned.
+		printf '%s\n' "$PHP_VERSION" "$MULTISITE" "$BASE_URL" "$root" "$branch" "$digest" "$SLUG" >"$TMP_DIR/site"
 		docker_start_site
 		if [[ "$MULTISITE" -eq 1 ]]; then
 			# WP-CLI refuses a port during installation, but core can serve it
@@ -201,9 +317,10 @@ main() {
 		wp_cli config set DISABLE_WP_CRON false --raw --quiet
 		reinstall
 		printf 'admin_user=admin\nadmin_password=%s\ndatabase_user=root\ndatabase_password=%s\n' "$ADMIN_PASSWORD" "$DB_PASSWORD" >"$TMP_DIR/credentials"
-		printf '%s\n' "$PHP_VERSION" "$MULTISITE" "$BASE_URL" >"$TMP_DIR/site" # NOSONAR: disposable HTTP bound only to 127.0.0.1.
+		printf '%s\n' "$PHP_VERSION" "$MULTISITE" "$BASE_URL" "$root" "$branch" "$digest" "$SLUG" >"$TMP_DIR/site" # NOSONAR: disposable HTTP bound only to 127.0.0.1.
 		STARTED=0
 		printf 'Site: %s\nAdmin: %s/wp-admin/\nLogin: admin / %s\nDatabase password: %s\nCredentials: %s/credentials\n' "$BASE_URL" "$BASE_URL" "$ADMIN_PASSWORD" "$DB_PASSWORD" "$TMP_DIR" # NOSONAR: disposable HTTP bound only to 127.0.0.1.
+		site_notice || printf 'test-site: could not list other test sites.\n' >&2
 		;;
 	reinstall) load_site; reinstall ;;
 	wp) load_site; wp_cli "$@" ;;
