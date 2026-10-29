@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Shared disposable WordPress setup. Callers supply NAME, TMP_DIR, versions,
-# DB_IMAGE, MULTISITE, wp_cli, start_network and die. Optional DOCKER_LABEL
+# DB_IMAGE, MULTISITE, wp_cli, start_network and die. Optional DOCKER_LABELS
 # labels every resource; the caller owns persistence and cleanup.
 # STARTED and CURL_ARGS are consumed by the callers, not this library.
 # shellcheck disable=SC2034
@@ -8,6 +8,19 @@
 # SPDX-FileCopyrightText: 2026 Marcus Quinn
 # Additional terms (GPL-3.0 section 7(b)): ATTRIBUTION.txt
 # Provenance: wpas-e4502af0f07e8a92. Copies, even of part, keep these lines.
+
+# Arguments are Docker options, not words to split (worktree paths may contain spaces).
+docker_owner_labels() {
+	local root="$1"
+	shift
+	local helper="$HOME/.aidevops/agents/scripts/docker-resource-helper.sh" labels label
+	[[ -x "$helper" ]] || return 0
+	labels="$("$helper" labels --worktree "$root" "$@")" || return 1
+	while IFS= read -r label; do
+		[[ -z "$label" ]] || DOCKER_LABELS+=("$label")
+	done <<<"$labels"
+	return 0
+}
 
 random_password() {
 	# No early-closing pipeline (SIGPIPE under pipefail).
@@ -21,9 +34,7 @@ write_htaccess() {
 }
 
 docker_prepare_core() {
-	local labels=()
-	[[ -z "${DOCKER_LABEL:-}" ]] || labels=(--label "$DOCKER_LABEL")
-	docker run --rm ${labels[@]+"${labels[@]}"} -v "$NAME-wp:/var/www/html" --user 0:0 "wordpress:cli-php$PHP_VERSION" chown 33:33 /var/www/html
+	docker run --rm ${DOCKER_LABELS[@]+"${DOCKER_LABELS[@]}"} -v "$NAME-wp:/var/www/html" --user 0:0 "wordpress:cli-php$PHP_VERSION" chown 33:33 /var/www/html
 	local waited=0
 	until docker exec "$NAME-db" mariadb-admin ping -h127.0.0.1 -uroot -p"$DB_PASSWORD" --silent >/dev/null 2>&1; do
 		[[ "$waited" -lt 90 ]] || die "the database did not start"
@@ -57,16 +68,14 @@ docker_start_site() {
 	STARTED=1
 	DB_PASSWORD="$(random_password)"
 	ADMIN_PASSWORD="$(random_password)"
-	local labels=()
-	[[ -z "${DOCKER_LABEL:-}" ]] || labels=(--label "$DOCKER_LABEL")
-	docker network create ${labels[@]+"${labels[@]}"} "$NAME" >/dev/null
-	docker volume create ${labels[@]+"${labels[@]}"} "$NAME-wp" >/dev/null
-	docker volume create ${labels[@]+"${labels[@]}"} "$NAME-db" >/dev/null
-	docker run -d ${labels[@]+"${labels[@]}"} --name "$NAME-db" --network "$NAME" \
+	docker network create ${DOCKER_LABELS[@]+"${DOCKER_LABELS[@]}"} "$NAME" >/dev/null
+	docker volume create ${DOCKER_LABELS[@]+"${DOCKER_LABELS[@]}"} "$NAME-wp" >/dev/null
+	docker volume create ${DOCKER_LABELS[@]+"${DOCKER_LABELS[@]}"} "$NAME-db" >/dev/null
+	docker run -d ${DOCKER_LABELS[@]+"${DOCKER_LABELS[@]}"} --name "$NAME-db" --network "$NAME" \
 		-v "$NAME-db:/var/lib/mysql" \
 		-e MARIADB_ROOT_PASSWORD="$DB_PASSWORD" -e MARIADB_DATABASE=wordpress "$DB_IMAGE" >/dev/null
 	docker_prepare_core
-	docker run -d ${labels[@]+"${labels[@]}"} --name "$NAME-web" --network "$NAME" -v "$NAME-wp:/var/www/html" \
+	docker run -d ${DOCKER_LABELS[@]+"${DOCKER_LABELS[@]}"} --name "$NAME-web" --network "$NAME" -v "$NAME-wp:/var/www/html" \
 		-p 127.0.0.1::80 "wordpress:php$PHP_VERSION-apache" >/dev/null
 	local published
 	published="$(docker port "$NAME-web" 80)"

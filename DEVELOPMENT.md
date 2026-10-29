@@ -64,6 +64,8 @@ scripts/test-site.sh wp --files "<import folder>" eval 'var_dump(is_readable("/f
 scripts/test-site.sh reinstall --ref HEAD        # commit fixes first
 scripts/test-site.sh log                        # wp-content/debug.log
 scripts/test-site.sh down                       # delete this site's data
+scripts/test-site.sh prune --dry-run            # list orphaned sites across checkouts
+scripts/test-site.sh prune                      # remove them and their state folders
 scripts/test-site.sh up --wp 6.2 --php 7.4       # minimum versions
 scripts/test-site.sh down
 scripts/test-site.sh up --multisite              # network activation; /two/ too
@@ -90,6 +92,22 @@ folder only after checking no command is running, then run `down`.
 including interrupted WP-CLI containers. It never touches the preview site
 or other Docker resources. A failed `up` attempts the same scoped cleanup;
 run `down` again if Docker interrupted it.
+
+When aidevops is installed, every container, network and volume also carries
+its owner labels: removing the worktree through aidevops cleans up its Docker
+resources automatically. Persistent sites have a seven-day TTL (168 hours);
+Plugin Check and update-test sites use aidevops' default TTL and still clean
+up on exit. Without aidevops these scripts work as before.
+
+`down` removes the site's state folder when empty. `prune` works from any
+directory, not just the checkout that created a site. It removes sites whose
+recorded checkout is gone, and state folders with no labelled Docker
+resources. It skips locked folders and preserves sites with resources while
+their checkout exists. Old state without a recorded checkout is removed only
+when no resources match its identity. Deletion is always by exact Docker
+label; unknown files keep their containing folder. Use `--dry-run` first to
+list candidates without changing anything. `up` reports the number of other
+running test sites and suggests pruning when more than five are running.
 
 ### Checking screens in a browser
 
