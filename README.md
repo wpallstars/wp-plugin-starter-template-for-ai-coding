@@ -152,6 +152,7 @@ Deleting the plugin removes its settings (on multisite, every site's and the net
 ### Unreleased
 
 - Developers: `scripts/sync-core.sh` stops when it cannot tell the plugin's GitHub repository (no `GitHub Plugin URI` header and no GitHub `origin` remote), instead of writing core files with links to a repository that does not exist; `--repo OWNER/REPO` gives it. The `SYNC_PAT` comment in `.github/workflows/star-history.yml` now says it the right way round. Plugins get both with `scripts/sync-core.sh` (wpallstars/seoprostack#1001).
+- Developers: `scripts/preflight-release.sh` no longer warns that `## Star History` or `## Built with aidevops` is outside the aidevops-managed block when the block holds it and an earlier heading of the same name appears above (wpallstars/seoprostack#1007).
 
 ### 1.0.45
 

@@ -1228,16 +1228,18 @@ check_readme_ending() {
 	text="$(git show "$sha:README.md" 2>/dev/null || :)"
 	# The line numbers of the four markers and of the managed block's two
 	# headings, and the last line that is not blank (so nothing follows the
-	# block's end).
+	# block's end). A heading inside the block wins over an earlier one of
+	# the same name elsewhere; with none inside, the first anywhere is kept
+	# so the check below can say it is outside the block.
 	order="$(awk '
 		$0 == "## Built with AI" && !b { b = NR }
 		$0 == "## License" && !l { l = NR }
-		$0 == "## Star History" && !h { h = NR }
-		$0 == "## Built with aidevops" && !a { a = NR }
-		$0 == "<!-- aidevops:managed-readme:start -->" && !s { s = NR }
-		$0 == "<!-- aidevops:managed-readme:end -->" { e = NR }
+		$0 == "<!-- aidevops:managed-readme:start -->" && !s { s = NR; inside = 1 }
+		$0 == "<!-- aidevops:managed-readme:end -->" { e = NR; inside = 0 }
+		$0 == "## Star History" { if (inside && !hi) hi = NR; if (!ho) ho = NR }
+		$0 == "## Built with aidevops" { if (inside && !ai) ai = NR; if (!ao) ao = NR }
 		NF { last = NR }
-		END { printf "%d %d %d %d %d %d %d", b, l, s, e, last, h, a }
+		END { printf "%d %d %d %d %d %d %d", b, l, s, e, last, (hi ? hi : ho), (ai ? ai : ao) }
 	' <<<"$text")"
 	local built licence start end last stars credit
 	read -r built licence start end last stars credit <<<"$order"
