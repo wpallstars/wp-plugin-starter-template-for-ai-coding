@@ -414,7 +414,10 @@ out"), and a line that names no core file is reported. With no admin
 screen, the scripts take `{css}` from the `{css}-wrap` line of
 `scripts/core-public-classes.txt`, and with no `GitHub Plugin URI` header
 (its parent updates it), `sync-core.sh` takes the repository from the
-`origin` remote. Its other core files get its own names, like any plugin's.
+`origin` remote; when that is not on GitHub either, it stops (exit 2) until
+you pass `--repo OWNER/REPO`, so no core file gets a link to a repository
+that does not exist. Its other core files get its own names, like any
+plugin's.
 
 When a sync adds a core doc at the top of the repository (such as
 `STYLING.md`) and the aidevops commit hook rejects it as a new root file,
