@@ -38,7 +38,7 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
-final class WPAllStars_Reports {
+final class WPAllStars_Reports { // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals -- Shared across wpallstars products; see STANDARDS.md, Problem reports.
 
     /** Admin screen slug (Tools → Report a problem); wpallstars_report_url() uses it too. */
     const PAGE = 'wpallstars-report';
@@ -116,7 +116,7 @@ final class WPAllStars_Reports {
          *                                      name, type (plugin or theme), version and
          *                                      support (GitHub issues address or mailto:address).
          */
-        $listed   = apply_filters('wpallstars_report_products', array());
+        $listed   = apply_filters('wpallstars_report_products', array()); // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals -- Shared across wpallstars products; see STANDARDS.md, Problem reports.
         $products = array();
         foreach ((array) $listed as $slug => $product) {
             if (!is_string($slug) || !is_array($product)) {

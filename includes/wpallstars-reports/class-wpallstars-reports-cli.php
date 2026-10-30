@@ -22,7 +22,7 @@ if (!defined('ABSPATH')) {
  * wpallstars plugins and themes. Drafts wait for an administrator to review
  * and send them in Tools → Report a problem; nothing here sends anything.
  */
-final class WPAllStars_Reports_CLI {
+final class WPAllStars_Reports_CLI { // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals -- Shared across wpallstars products; see STANDARDS.md, Problem reports.
 
     /**
      * Register the command.
