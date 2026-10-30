@@ -29,7 +29,8 @@ How changes are made and checked: `DEVELOPMENT.md`. Releases: `RELEASING.md`.
   `includes/class-{prefix}-network-settings.php`,
   `includes/class-{prefix}-network-sites.php`,
   `includes/class-{prefix}-network-differences.php`), the admin screen, its
-  network screen and Read Me tab (`admin/`), the shared GitHub updater (`includes/github-updater/`), the
+  network screen and Read Me tab (`admin/`), the shared GitHub updater (`includes/github-updater/`),
+  the shared problem reports (`includes/wpallstars-reports/`), the
   scripts, the CI workflow, tool configuration and the shared docs (this
   file, `STYLING.md`, `DEVELOPMENT.md`, `RELEASING.md`, `CONTRIBUTING.md`,
   `CODE_OF_CONDUCT.md`, `SECURITY.md`). They hold no code for one plugin (a
@@ -174,9 +175,12 @@ How changes are made and checked: `DEVELOPMENT.md`. Releases: `RELEASING.md`.
   `{Prefix}_Admin_Manager::page_url()` or `tab_url()`, never a fixed
   `options-general.php` address. Its header links come from
   `{Prefix}_Setup::header_links()`: `source` (the GitHub repository,
-  **Source code**), `support` (its issues, **Support**) and `donate` (**Buy
-  me a coffee**); leave one out for no button, and keep labels short so they
-  fit one row. The plugin's own screens show the same header
+  **Source code**), `support` (where problem reports go, **Support**: the
+  GitHub issues address of a public repository, or `mailto:` the maker's
+  help desk address for a private one, whose issues its users cannot open;
+  Problem reports below) and `donate` (**Buy me a coffee**); leave one out
+  for no button, and keep labels short so they fit one row. The plugin's
+  own screens show the same header
   (`{Prefix}_Admin_Manager::enqueue_header()`, `render_header()`) and their
   sections as the same tabs (`{Prefix}_Admin_Page::sections_nav()`).
   Settings tabs in one group (between dividers) switch without a reload; a
@@ -541,6 +545,45 @@ which replaces Git Updater.
   Updates screens). "Check again" on the Updates screen, even when core
   skips its own check, or a core check without the `update_plugins` site
   transient asks GitHub again, at most once a minute.
+
+## Problem reports
+
+Every site's owners point their own AI assistants at their sites. When one
+finds a problem in, or an improvement for, a wpallstars plugin or theme,
+it should reach the maker, so the fix ships to every site. The shared
+problem reports in `includes/wpallstars-reports/` do that, with a site
+administrator's approval:
+
+- Every plugin made from the starter, and every theme made from the child
+  theme starter, carries a copy. Each copy registers its version from
+  `load.php`; on `after_setup_theme` (so themes' copies count) only the
+  newest copy loads, once, for every product.
+- Each product lists itself through `wpallstars_report_products` (the
+  bootstrap does it from `{Prefix}_Setup::header_links()['support']`). A
+  GitHub issues address makes reports public GitHub issues; `mailto:address`
+  makes them private emails, sent with the site's own mailer (`wp_mail()`,
+  so the site's SMTP set-up), to the maker's help desk. A private
+  repository's support link is always `mailto:` the maker's help desk
+  address, which files each email as a support ticket.
+- Assistants only draft: the `wpallstars/report-problem` and
+  `wpallstars/reports` abilities (WordPress 6.9+, `manage_options`) and
+  `wp wpallstars report create|list|show|delete|products`. Nothing has a
+  way to send. An administrator reviews, edits and sends each report in
+  **Tools → Report a problem**, which shows exactly what leaves the site.
+  The Dashboard, Plugins and Themes screens say when an assistant's drafts
+  wait.
+- A GitHub report is a prefilled new issue that the administrator submits
+  with their own account, with the site's address, email and IP addresses,
+  server paths and anything that looks like a key taken out. An email keeps
+  the site's address, versions, theme and active plugins, with the
+  administrator as Reply-To; keys are taken out of it too.
+- It is the same in every product apart from its text domain and
+  `@package`. Change it in the starter, raise the version in its
+  `load.php`, and copy it to each plugin and theme. Products use only its
+  filter and `wpallstars_report_url()`, never its class.
+- `README.md` → Report a problem tells site owners and their assistants
+  about it: the release zip leaves out `AGENTS.md` and `docs/`, so the
+  Read Me is what an assistant looking at an installed product finds.
 
 ## Releases
 

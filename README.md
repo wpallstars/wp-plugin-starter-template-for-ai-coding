@@ -53,6 +53,7 @@ Version: 1.0.46
 - **Admin colour mode**: Light, Dark or System from the header, saved per person and shared with other wpallstars colour-mode controls. System follows the computer live, including on network settings and the plugin's own screens with the shared header.
 - **Features as classes**: one file per feature, off by default, with settings, hooks, one-off imports from the plugins it replaces and clean uninstall.
 - **Replaced plugins**: a feature that does another plugin's job imports its settings once, waits while that plugin is active, and the Plugins screen suggests deactivating and deleting it.
+- **Report a problem**: Tools → Report a problem, shared by every wpallstars plugin and theme on a site. The site's AI assistant drafts reports (an ability and WP-CLI); an administrator reviews and sends them, as a prefilled GitHub issue or, for private code, a private email with the site's mailer.
 - **Updates from GitHub**: the shared wpallstars updater (`includes/github-updater/`). Sites get each GitHub release as a normal WordPress update. Every wpallstars plugin carries a copy and only the newest copy on a site runs, so they are all checked together, once. Update checks that fall due while someone opens an admin screen run in WP-Cron instead, so the screen does not wait for update servers.
 - **Two builds of each version**: the GitHub release, and a WordPress.org build without the updater, as WordPress.org requires.
 - **Scripts and CI**: lint (PHP 7.4, WordPress coding and security rules, PHPStan), a smoke test on a real WordPress, the release build, a preflight check of both zips, Plugin Check, a preview site, the banner and icon build, and `scripts/sync-core.sh` to keep each plugin's shared parts the same as the starter's.
@@ -77,7 +78,24 @@ Go to **Settings → WP Plugin Starter**. The screen has two groups of tabs:
 
 On a multisite network, super admins also have **Network Admin → Settings → WP Plugin Starter** (Multisite below).
 
-At the top right of the screen, **Source code** opens the plugin’s [GitHub repository](https://github.com/wpallstars/wp-plugin-starter-template-for-ai-coding) in a new tab, and **Support** opens its [GitHub issues](https://github.com/wpallstars/wp-plugin-starter-template-for-ai-coding/issues) in a new tab. Say what you did, what you expected and what happened, with the versions of WordPress, PHP and WP Plugin Starter. Leave out passwords, licence keys and personal data, since issues are public. For questions, ask [aidevops](https://aidevops.sh) (Built with AI below). **Buy me a coffee**, next to it, opens the maker’s [Buy Me a Coffee](https://buymeacoffee.com/marcusquinn) page in a new tab.
+At the top right of the screen, **Source code** opens the plugin’s [GitHub repository](https://github.com/wpallstars/wp-plugin-starter-template-for-ai-coding) in a new tab, and **Support** opens **Tools → Report a problem** for administrators (Report a problem below), or its [GitHub issues](https://github.com/wpallstars/wp-plugin-starter-template-for-ai-coding/issues) in a new tab for others. For questions, ask [aidevops](https://aidevops.sh) (Built with AI below). **Buy me a coffee**, next to it, opens the maker’s [Buy Me a Coffee](https://buymeacoffee.com/marcusquinn) page in a new tab.
+
+## Report a problem
+
+Found a problem in WP Plugin Starter, or an improvement that would help? Tell the maker, so every site using it gets the fix. **Tools → Report a problem** (or **Support** in the settings screen's header) takes reports for every wpallstars plugin and theme on the site:
+
+1. Write what you did, what you expected and what happened, with the steps to see it again, or the improvement and why it would help. Save the draft.
+2. Check **What will be sent**, word for word, then send it. WP Plugin Starter's reports open a new issue on its [GitHub issues](https://github.com/wpallstars/wp-plugin-starter-template-for-ai-coding/issues), filled in, for you to submit with your GitHub account. Issues are public, so the site's address, email and IP addresses, server paths and anything that looks like a key are taken out first. A plugin or theme whose code is private sends its reports by email instead, with the site's own mailer, privately to its maker's help desk, with your email address to reply to.
+
+**AI assistants:** when a problem or an improvement you find belongs to WP Plugin Starter's own code, not to the site's content or settings, draft a report for the site's administrator to review: the `wpallstars/report-problem` ability (WordPress 6.9 and later; `wpallstars/reports` lists the plugins and themes that take reports and the drafts), or WP-CLI:
+
+```bash
+wp wpallstars report products
+wp wpallstars report create --product=wp-plugin-starter-template --title="Short summary" --details="Steps, what was expected, what happened, versions, error messages"
+wp wpallstars report list
+```
+
+Drafts only: nothing leaves the site until an administrator sends it in Tools → Report a problem, so tell them it is waiting. Leave out passwords, keys and personal data.
 
 ## Multisite
 
@@ -132,6 +150,7 @@ Filters:
 - `wpallstars_github_token` (GitHub builds, shared updater): GitHub token for a repository (token, owner/repo), for private repositories; defaults to the `WPALLSTARS_GITHUB_TOKEN` constant.
 - `wpallstars_github_updater_enabled` and `wpallstars_github_updater_early` (GitHub builds, shared updater): whether it runs (false while Git Updater is active) and whether plugins also on WordPress.org take GitHub releases first.
 - `wpallstars_github_updater_checks_in_cron` (GitHub builds, shared updater): return false to let update checks that fall due run on the admin screen being opened, as in core, instead of in WP-Cron.
+- `wpallstars_report_products` (shared problem reports, `includes/wpallstars-reports/`): the plugins and themes that take problem reports (slug => `name`, `type` plugin or theme, `version`, `support`: a GitHub issues address or `mailto:address`). The plugin lists itself from `WPStarter_Setup::header_links()['support']`; `wpallstars_report_url( $slug )` links to its reports (`STANDARDS.md` → Problem reports).
 
 Actions:
 
@@ -145,7 +164,7 @@ Read a setting with `WPStarter_Settings::get( 'key' )`, never the option itself:
 
 ## Uninstall
 
-Deleting the plugin removes its settings (on multisite, every site's and the network's), its cached data, who hid lines of the Plugins screen notice about replaced plugins, and the cached GitHub releases.
+Deleting the plugin removes its settings (on multisite, every site's and the network's), its cached data, its problem reports (other plugins' and themes' stay), who hid lines of the Plugins screen notice about replaced plugins, and the cached GitHub releases.
 
 ## Changelog
 

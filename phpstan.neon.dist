@@ -29,6 +29,15 @@ parameters:
 				- missingType.property
 				- missingType.return
 			reportUnmatched: false
+		# The shared problem reports' WP-CLI command: the starter's dev
+		# dependencies have no WP-CLI stubs, so PHPStan does not know WP_CLI
+		# and its format_items(). It loads only under WP-CLI.
+		-
+			identifiers:
+				- class.notFound
+				- function.notFound
+			path: includes/wpallstars-reports/class-wpallstars-reports-cli.php
+			reportUnmatched: false
 	phpVersion: 70400
 	# Result cache, kept between CI runs so only changed files are analysed again.
 	tmpDir: .cache/phpstan

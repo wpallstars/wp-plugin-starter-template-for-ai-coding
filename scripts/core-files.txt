@@ -16,6 +16,10 @@ includes/class-wpstarter-network-differences.php
 # Shared GitHub updater: only the newest copy on a site runs.
 includes/github-updater/
 
+# Shared problem reports (Tools → Report a problem): only the newest copy on
+# a site runs, for every wpallstars plugin and theme.
+includes/wpallstars-reports/
+
 # Admin screen, its network screen, Read Me tab and the Plugins screen notes
 # for replaced plugins.
 admin/settings.php
