@@ -332,8 +332,9 @@ it reads it. A small plugin has only `AGENTS.md`; a large one adds docs.
   (`?{prefix}_done=…`), adds that argument to `removable_query_args`, so
   WordPress takes it out of the address and a reload does not repeat it.
 - Prefix everything global with `{prefix}_`, `{Prefix}_` or `{PREFIX}_`,
-  except the shared GitHub updater: its `wpallstars_` names are the same in
-  every plugin, so that one copy can stand in for the others.
+  except the shared GitHub updater and problem reports: their `wpallstars_`
+  and `WPAllStars_` names are the same in every product, so that one copy can
+  stand in for the others (Updates from GitHub and Problem reports below).
 - Admin copy: short, plain words, sentence case, no jargon.
 - Decide for the user. Within a feature, the plugin makes the choices
   (which plugins, screens or items it applies to) from what it can detect.
@@ -581,6 +582,13 @@ administrator's approval:
   `@package`. Change it in the starter, raise the version in its
   `load.php`, and copy it to each plugin and theme. Products use only its
   filter and `wpallstars_report_url()`, never its class.
+- Keep the shared `wpallstars_` / `WPAllStars_` names, including the global
+  copy registry: a plugin-specific prefix would break the newest-copy loader
+  and the API other products use. Each declaration, registry assignment and
+  shared filter has a line-scoped `phpcs:ignore
+  WordPress.NamingConventions.PrefixAllGlobals` with this reason. Plugin Check
+  honors these annotations in the WordPress.org zip too; do not exclude the
+  component or disable prefix checking for the rest of a plugin.
 - `README.md` → Report a problem tells site owners and their assistants
   about it: the release zip leaves out `AGENTS.md` and `docs/`, so the
   Read Me is what an assistant looking at an installed product finds.

@@ -35,16 +35,16 @@ if (!defined('ABSPATH')) {
 }
 
 if (!isset($GLOBALS['wpallstars_reports']) || !is_array($GLOBALS['wpallstars_reports'])) {
-    $GLOBALS['wpallstars_reports'] = array();
+    $GLOBALS['wpallstars_reports'] = array(); // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals -- Shared across wpallstars products; see STANDARDS.md, Problem reports.
 }
 // Version of this copy => its class file.
-$GLOBALS['wpallstars_reports']['1.0.3'] = __DIR__ . '/class-wpallstars-reports.php';
+$GLOBALS['wpallstars_reports']['1.0.4'] = __DIR__ . '/class-wpallstars-reports.php'; // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals -- Shared across wpallstars products; see STANDARDS.md, Problem reports.
 
 if (!function_exists('wpallstars_reports_load')) {
     /**
      * Load the newest registered copy (after_setup_theme).
      */
-    function wpallstars_reports_load() {
+    function wpallstars_reports_load() { // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals -- Shared across wpallstars products; see STANDARDS.md, Problem reports.
         if (class_exists('WPAllStars_Reports', false) || empty($GLOBALS['wpallstars_reports'])) {
             return;
         }
@@ -69,7 +69,7 @@ if (!function_exists('wpallstars_report_url')) {
      * @param string $product Product slug (plugin folder or theme stylesheet); empty for all.
      * @return string
      */
-    function wpallstars_report_url($product = '') {
+    function wpallstars_report_url($product = '') { // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals -- Shared across wpallstars products; see STANDARDS.md, Problem reports.
         $args = array('page' => 'wpallstars-report');
         if ('' !== (string) $product) {
             $args['product'] = (string) $product;
