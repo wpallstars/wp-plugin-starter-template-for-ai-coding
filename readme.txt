@@ -5,7 +5,7 @@ Tags: starter, boilerplate, settings, developer, template
 Requires at least: 6.2
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 1.0.46
+Stable tag: 1.0.47
 License: GPLv3 or later
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 
@@ -63,8 +63,8 @@ GitHub releases are the stable beta channel: each version comes out there first.
 
 == Changelog ==
 
-= 1.0.46 =
-* Developers: sync-core.sh stops when it cannot tell the plugin's GitHub repository (--repo gives it), preflight-release.sh reads the README ending's headings from inside the managed block first, and test sites carry aidevops owner labels, with test-site.sh prune for orphaned ones. The plugin works the same.
+= 1.0.47 =
+* Developers: deploy-sites.sh refuses downgrades unless --allow-downgrade is passed, and dry runs mark newer installs. Plugins get the guard with sync-core.sh.
 
 Every change: changelog.txt.
 
