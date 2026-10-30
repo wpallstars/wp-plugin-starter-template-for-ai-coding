@@ -3,8 +3,8 @@
 # run by hand: deploy-sites.sh streams it to bash on the host for a dry run,
 # and for --apply copies it with the zip to a private folder there first.
 #
-# Usage: bash deploy-remote.sh list  SLUG PARENT [SKIP]...
-#        bash deploy-remote.sh apply SLUG PARENT VERSION ZIP SHA256 BACKUPS [SKIP]...
+# Usage: bash deploy-remote.sh list  SLUG PARENT [--version=X.Y.Z] [--allow-downgrade] [SKIP]...
+#        bash deploy-remote.sh apply SLUG PARENT VERSION ZIP SHA256 BACKUPS [--allow-downgrade] [SKIP]...
 #
 # PARENT is a pattern for the WordPress folders (wp-config.php and the
 # plugin's main file inside); a leading ~/ is the home folder. Only installs
@@ -36,6 +36,7 @@ WP_CLI="${DEPLOY_WP_CLI:-wp}"
 WEB_ERROR_LOG="${DEPLOY_WEB_ERROR_LOG:-}"
 SLUG=""
 FAILED=0
+ALLOW_DOWNGRADE=0
 RUN_STAMP=""
 FETCHES=0
 SKIPS=()
@@ -362,13 +363,29 @@ installs() {
 	return 0
 }
 
+# The host provides coreutils sort -V; equal versions may be reinstalled.
+newer_than() {
+	local installed="$1"
+	local want="$2"
+	[[ -n "$installed" && "$installed" != "$want" ]] || return 1
+	[[ "$(printf '%s\n%s\n' "$want" "$installed" | sort -V | tail -n 1)" == "$installed" ]] || return 1
+	return 0
+}
+
 list_one() {
 	local root="$1"
 	local name="$2"
-	local version kind
+	local want="${3:-}"
+	local version kind note=""
 	version="$(plugin_version "$root/wp-content/plugins/$SLUG/$SLUG.php")"
 	kind="$(wp_bare "$root" eval 'echo is_multisite() ? "multisite" : "single";')" || return 1
-	printf '%s\t%s\t%s\t%s\n' "$name" "${version:-?}" "${kind:-unknown}" "$root"
+	if [[ -n "$want" ]] && newer_than "$version" "$want"; then
+		note="newer than tag; --apply will refuse"
+		[[ "$ALLOW_DOWNGRADE" -eq 0 ]] || note="newer than tag; downgrade allowed (--allow-downgrade)"
+	fi
+	printf '%s\t%s\t%s\t%s' "$name" "${version:-?}" "${kind:-unknown}" "$root"
+	[[ -z "$note" ]] || printf '\t%s' "$note"
+	printf '\n'
 	return 0
 }
 
@@ -534,6 +551,11 @@ apply_one() {
 	local before after backup new_lines result="ok" warn="" index file current added
 
 	before="$(plugin_version "$main")"
+	if [[ "$ALLOW_DOWNGRADE" -eq 0 ]] && newer_than "$before" "$want"; then
+		printf '%s\tFAIL: has %s, newer than %s; not installed (--allow-downgrade to install anyway)\n' "$name" "$before" "$want"
+		FAILED=1
+		return 0
+	fi
 	backup="$backups/$SLUG-$name-${before:-unknown}.tar.gz"
 	if ! tar -czf "$backup" -C "$plugins" "$SLUG"; then
 		printf '%s\tFAIL: could not back up %s; not installed\n' "$name" "$plugins/$SLUG"
@@ -637,12 +659,20 @@ main() {
 			say "deploy-remote: list needs SLUG PARENT"
 			return 2
 		}
+		if [[ "${1:-}" == --version=* ]]; then
+			want="${1#--version=}"
+			shift
+		fi
 		;;
 	*)
 		say "deploy-remote: the first argument is list or apply"
 		return 2
 		;;
 	esac
+	if [[ "${1:-}" == --allow-downgrade ]]; then
+		ALLOW_DOWNGRADE=1
+		shift
+	fi
 	SKIPS=("$@")
 	if [[ ! "$SLUG" =~ ^[a-z0-9-]+$ ]]; then
 		say "deploy-remote: not a plugin slug: $SLUG"
@@ -682,7 +712,7 @@ main() {
 		if [[ "$apply" -eq 1 ]]; then
 			apply_one "$root" "$name" "$want" "$zip" "$backups"
 		else
-			if ! list_one "$root" "$name"; then
+			if ! list_one "$root" "$name" "$want"; then
 				printf '%s\tFAIL: cannot read WordPress; no change made, no restore needed\n' "$name"
 				FAILED=1
 			fi
