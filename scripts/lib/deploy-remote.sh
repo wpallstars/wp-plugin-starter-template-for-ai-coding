@@ -267,7 +267,7 @@ active_guard() {
 # Discover log files before installation, then print the lines each one gained.
 log_files() {
 	local root="$1"
-	local wp_debug php_error path candidate existing duplicate
+	local wp_debug php_error path folder candidate existing duplicate
 	local candidates=()
 	local unique=()
 	wp_debug="$(wp_bare "$root" eval 'echo defined("WP_DEBUG_LOG") && is_string(WP_DEBUG_LOG) && !in_array(strtolower(WP_DEBUG_LOG), array("1", "true"), true) ? WP_DEBUG_LOG : (defined("WP_DEBUG_LOG") && WP_DEBUG_LOG ? WP_CONTENT_DIR . "/debug.log" : "");')" || return 1
@@ -281,9 +281,17 @@ log_files() {
 		else
 			path="$root/$WEB_ERROR_LOG"
 		fi
+		folder="$(dirname "$path")"
+		if [[ ! -d "$folder" ]]; then
+			say "deploy-remote: the web PHP log's folder does not exist: $folder"
+			return 1
+		fi
 		if [[ -e "$path" && ( ! -f "$path" || ! -r "$path" ) ]]; then
 			say "deploy-remote: web PHP log is not a readable regular file: $path"
 			return 1
+		fi
+		if [[ ! -e "$path" ]]; then
+			say "web PHP log $path: not there yet (counted if the install creates it)"
 		fi
 		candidates+=("$path")
 	fi
