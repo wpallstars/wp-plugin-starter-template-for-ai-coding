@@ -64,9 +64,6 @@ GitHub releases are the stable beta channel: each version comes out there first.
 == Changelog ==
 
 = 1.0.47 =
-* New: Tools → Report a problem, shared by every wpallstars plugin and theme on a site. The site's AI assistant drafts reports; an administrator reviews and sends them.
-* Fix: Report a problem keeps its form's row headers for screen readers.
-* Developers: deploy-sites.sh --apply checks the web PHP log's folder before installing.
 * Developers: deploy-sites.sh --apply holds a per-plugin lock on the host, so overlapping rollouts cannot install over each other.
 * Developers: deploy-sites.sh refuses downgrades unless --allow-downgrade is passed, and dry runs mark newer installs. Plugins get the guard with sync-core.sh.
 * New: Tools → Report a problem: the site's AI assistant drafts reports for wpallstars plugins and themes; an administrator reviews and sends them.
