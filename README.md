@@ -170,6 +170,7 @@ Deleting the plugin removes its settings (on multisite, every site's and the net
 
 ### 1.0.47
 
+- Developers: `scripts/deploy-sites.sh --apply` holds a per-plugin lock on the host (`~/.{slug}-deploy/.lock`, made with `mkdir`) until it ends, so overlapping rollouts of the same plugin cannot install over each other. While another run holds it, `--apply` installs nothing, names that run (tag, start time, parent) and exits 3; a lock whose run is gone is taken over with a warning, and the dry run says when a run is active. Plugins get it with `scripts/sync-core.sh` (GH#573).
 - Developers: `scripts/deploy-sites.sh --apply` refuses an install whose current version is newer than the requested tag, checking just before the backup and install. Use `--allow-downgrade` for an intentional rollback. Dry runs identify newer installs and whether the override allows them; equal-version reinstalls and upgrades still work. Plugins get the guard with `scripts/sync-core.sh` (GH#576).
 
 ### 1.0.46

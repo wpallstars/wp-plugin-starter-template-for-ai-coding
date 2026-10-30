@@ -64,6 +64,7 @@ GitHub releases are the stable beta channel: each version comes out there first.
 == Changelog ==
 
 = 1.0.47 =
+* Developers: deploy-sites.sh --apply holds a per-plugin lock on the host, so overlapping rollouts cannot install over each other.
 * Developers: deploy-sites.sh refuses downgrades unless --allow-downgrade is passed, and dry runs mark newer installs. Plugins get the guard with sync-core.sh.
 
 Every change: changelog.txt.
