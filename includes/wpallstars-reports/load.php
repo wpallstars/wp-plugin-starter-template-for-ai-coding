@@ -38,7 +38,7 @@ if (!isset($GLOBALS['wpallstars_reports']) || !is_array($GLOBALS['wpallstars_rep
     $GLOBALS['wpallstars_reports'] = array();
 }
 // Version of this copy => its class file.
-$GLOBALS['wpallstars_reports']['1.0.2'] = __DIR__ . '/class-wpallstars-reports.php';
+$GLOBALS['wpallstars_reports']['1.0.3'] = __DIR__ . '/class-wpallstars-reports.php';
 
 if (!function_exists('wpallstars_reports_load')) {
     /**
