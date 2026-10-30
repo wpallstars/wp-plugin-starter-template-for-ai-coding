@@ -29,6 +29,21 @@ function wpstarter_uninstall_site() {
     // The network option's save lock (main site only), if a save stopped.
     delete_option('wpstarter_network_lock');
 
+    // This plugin's problem reports (the shared wpallstars reports); other
+    // plugins' and themes' stay, and the option goes with the last report.
+    $reports = get_option('wpallstars_reports');
+    if (is_array($reports)) {
+        $slug    = dirname(plugin_basename(__FILE__));
+        $reports = array_filter($reports, function ($report) use ($slug) {
+            return !is_array($report) || !isset($report['product']) || $report['product'] !== $slug;
+        });
+        if ($reports) {
+            update_option('wpallstars_reports', $reports, false);
+        } else {
+            delete_option('wpallstars_reports');
+        }
+    }
+
     $patterns = array('_transient_wpstarter_', '_transient_timeout_wpstarter_');
     foreach ($patterns as $pattern) {
         // phpcs:ignore WordPress.DB.DirectDatabaseQuery -- one-off cleanup of our transients.

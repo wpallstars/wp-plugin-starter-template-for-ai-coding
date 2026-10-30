@@ -78,33 +78,44 @@ class WPStarter_Admin_Page {
     /**
      * Render the header's buttons: Source code (or, from older
      * {Prefix}_Setup classes, the maker's website), Support and Buy me a
-     * coffee, each only when its link is set.
+     * coffee, each only when its link is set. For people who can send
+     * problem reports, Support opens Tools → Report a problem for this
+     * plugin (the shared wpallstars reports); for others, the link itself.
      *
      * @param array<string,string> $links WPStarter_Setup::header_links().
      */
     private static function header_links(array $links) {
         $buttons = array();
         if (!empty($links['source'])) {
-            $buttons[] = array($links['source'], __('Source code', 'wp-plugin-starter-template'), 'editor-code', 'wps-header__support');
+            $buttons[] = array($links['source'], __('Source code', 'wp-plugin-starter-template'), 'editor-code', 'wps-header__support', true);
         } elseif (!empty($links['website'])) {
-            $buttons[] = array($links['website'], __('Visit website', 'wp-plugin-starter-template'), '', '');
+            $buttons[] = array($links['website'], __('Visit website', 'wp-plugin-starter-template'), '', '', true);
         }
         if (!empty($links['support'])) {
-            $buttons[] = array($links['support'], __('Support', 'wp-plugin-starter-template'), 'sos', 'wps-header__support');
+            $report    = function_exists('wpallstars_report_url') && current_user_can('manage_options');
+            $buttons[] = array(
+                $report ? wpallstars_report_url(WPStarter::slug()) : $links['support'],
+                __('Support', 'wp-plugin-starter-template'),
+                'sos',
+                'wps-header__support',
+                !$report,
+            );
         }
         if (!empty($links['donate'])) {
-            $buttons[] = array($links['donate'], __('Buy me a coffee', 'wp-plugin-starter-template'), 'coffee', 'wps-header__support wps-header__donate');
+            $buttons[] = array($links['donate'], __('Buy me a coffee', 'wp-plugin-starter-template'), 'coffee', 'wps-header__support wps-header__donate', true);
         }
         ?>
                 <div class="wps-header__actions">
                     <?php foreach ($buttons as $button) : ?>
-                        <?php list($url, $label, $icon, $class) = $button; ?>
-                        <a class="<?php echo esc_attr(trim('button ' . $class)); ?>" href="<?php echo esc_url($url); ?>" target="_blank" rel="noopener noreferrer">
+                        <?php list($url, $label, $icon, $class, $new_tab) = $button; ?>
+                        <a class="<?php echo esc_attr(trim('button ' . $class)); ?>" href="<?php echo esc_url($url); ?>"<?php echo $new_tab ? ' target="_blank" rel="noopener noreferrer"' : ''; ?>>
                             <?php if ('' !== $icon) : ?>
                                 <span class="dashicons dashicons-<?php echo esc_attr($icon); ?>" aria-hidden="true"></span>
                             <?php endif; ?>
                             <?php echo esc_html($label); ?>
-                            <span class="screen-reader-text"><?php esc_html_e('(opens in a new tab)', 'wp-plugin-starter-template'); ?></span>
+                            <?php if ($new_tab) : ?>
+                                <span class="screen-reader-text"><?php esc_html_e('(opens in a new tab)', 'wp-plugin-starter-template'); ?></span>
+                            <?php endif; ?>
                         </a>
                     <?php endforeach; ?>
                 </div>

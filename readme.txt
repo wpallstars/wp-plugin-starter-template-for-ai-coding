@@ -20,6 +20,7 @@ WP Plugin Starter is what wpallstars plugins are made from. It has no features o
 * **A Read Me tab** that shows the plugin's README.md, banner included.
 * **Admin colour mode**: Light, Dark or System in the header, saved per person and shared with other wpallstars colour-mode controls, on settings, network settings and own screens.
 * **Features as classes**, off by default, with settings, hooks, one-off imports from the plugins they replace and clean uninstall.
+* **Report a problem** (Tools): the site's AI assistant drafts problem reports and improvements for wpallstars plugins and themes; an administrator reviews and sends them.
 * **Release and check scripts**: lint, smoke test, release build, preflight and Plugin Check.
 
 Start a plugin from it on GitHub (wpallstars/wp-plugin-starter-template-for-ai-coding): the Read Me tab explains how.
@@ -41,15 +42,15 @@ Made from WP Plugin Starter (https://github.com/wpallstars/wp-plugin-starter-tem
 
 = Does it do anything on its own? =
 
-No. It adds an empty settings screen and a Read Me tab, ready for a plugin's features.
+No. It adds an empty settings screen, a Read Me tab and Tools → Report a problem, ready for a plugin's features.
 
 = Where do I get help? =
 
-Ask aidevops (https://aidevops.sh): open the plugin's repository, or your site, with it and ask. To report a problem, use the Support link on the settings screen.
+Ask aidevops (https://aidevops.sh): open the plugin's repository, or your site, with it and ask. To report a problem or suggest an improvement, use Tools → Report a problem (also the Support link on the settings screen). Your site's AI assistant can draft reports there too; nothing is sent until an administrator reviews and sends it.
 
 = Does it contact other services? =
 
-No. The WordPress.org build contacts nothing outside WordPress.
+No. The WordPress.org build contacts nothing outside WordPress. A problem report goes out only when an administrator sends it from Tools → Report a problem: as a GitHub issue they submit themselves, or by email with the site's own mailer for plugins and themes whose code is private.
 
 = When do versions reach WordPress.org? =
 
