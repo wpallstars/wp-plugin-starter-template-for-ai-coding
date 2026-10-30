@@ -769,7 +769,7 @@ final class WPAllStars_Reports {
         echo '<h1 class="wp-heading-inline">' . esc_html__('Report a problem', 'wp-plugin-starter-template') . '</h1>';
         if ('new' !== $id) {
             $new_url = self::url('new', $product ? array('product' => $product) : array());
-            echo ' <a class="page-title-action" href="' . esc_url($new_url) . '">' . esc_html__('New report', 'wp-plugin-starter-template') . '</a>';
+            printf(' <a class="page-title-action" href="%1$s">%2$s</a>', esc_url($new_url), esc_html__('New report', 'wp-plugin-starter-template'));
         }
         echo '<hr class="wp-header-end">';
         self::render_done($done);
@@ -940,7 +940,7 @@ final class WPAllStars_Reports {
                 <tr>
                     <th scope="row"><label for="wpallstars-report-details"><?php esc_html_e('Details', 'wp-plugin-starter-template'); ?></label></th>
                     <td>
-                        <textarea id="wpallstars-report-details" name="details" class="large-text code" rows="14" maxlength="<?php echo esc_attr((string) self::DETAILS_MAX); ?>" required<?php echo esc_attr($disabled); ?>><?php echo esc_textarea($details); ?></textarea>
+                        <textarea id="wpallstars-report-details" name="details" class="large-text code" rows="14" maxlength="<?php echo esc_attr((string) self::DETAILS_MAX); ?>" required<?php echo esc_attr($disabled); ?>><?php printf('%s', esc_textarea($details)); ?></textarea>
                         <p class="description"><?php esc_html_e('What you did, what you expected and what happened, with the steps to see it again, or the improvement and why it would help. Leave out passwords and licence keys.', 'wp-plugin-starter-template'); ?></p>
                     </td>
                 </tr>
