@@ -128,6 +128,7 @@ parse_args() {
 		case "$arg" in
 		--host | --tag | --parent | --skip | --wp-cli | --web-error-log)
 			[[ $# -ge 2 ]] || die "$arg needs a value"
+			[[ "$value" != -* ]] || die "$arg needs a value, not an option: $value"
 			case "$arg" in
 			--host) HOST="$value" ;;
 			--tag) TAG="$value" ;;

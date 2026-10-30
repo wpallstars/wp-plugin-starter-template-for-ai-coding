@@ -364,11 +364,14 @@ installs() {
 }
 
 # The host provides coreutils sort -V; equal versions may be reinstalled.
+# Return 2 on comparison failure, distinct from 1 (not newer).
 newer_than() {
 	local installed="$1"
 	local want="$2"
+	local sorted
 	[[ -n "$installed" && "$installed" != "$want" ]] || return 1
-	[[ "$(printf '%s\n%s\n' "$want" "$installed" | sort -V | tail -n 1)" == "$installed" ]] || return 1
+	sorted="$(printf '%s\n%s\n' "$want" "$installed" | sort -V)" || return 2
+	[[ "${sorted##*$'\n'}" == "$installed" ]] || return 1
 	return 0
 }
 
@@ -376,12 +379,22 @@ list_one() {
 	local root="$1"
 	local name="$2"
 	local want="${3:-}"
-	local version kind note=""
+	local version kind note="" comparison=0
 	version="$(plugin_version "$root/wp-content/plugins/$SLUG/$SLUG.php")"
 	kind="$(wp_bare "$root" eval 'echo is_multisite() ? "multisite" : "single";')" || return 1
-	if [[ -n "$want" ]] && newer_than "$version" "$want"; then
-		note="newer than tag; --apply will refuse"
-		[[ "$ALLOW_DOWNGRADE" -eq 0 ]] || note="newer than tag; downgrade allowed (--allow-downgrade)"
+	if [[ -n "$want" ]]; then
+		newer_than "$version" "$want" || comparison=$?
+		case "$comparison" in
+		0)
+			note="newer than tag; --apply will refuse"
+			[[ "$ALLOW_DOWNGRADE" -eq 0 ]] || note="newer than tag; downgrade allowed (--allow-downgrade)"
+			;;
+		1) ;;
+		*)
+			note="FAIL: cannot compare versions; --apply will refuse without --allow-downgrade"
+			FAILED=1
+			;;
+		esac
 	fi
 	printf '%s\t%s\t%s\t%s' "$name" "${version:-?}" "${kind:-unknown}" "$root"
 	[[ -z "$note" ]] || printf '\t%s' "$note"
@@ -549,12 +562,24 @@ apply_one() {
 	local plugins="$root/wp-content/plugins"
 	local main="$plugins/$SLUG/$SLUG.php"
 	local before after backup new_lines result="ok" warn="" index file current added
+	local comparison=0
 
 	before="$(plugin_version "$main")"
-	if [[ "$ALLOW_DOWNGRADE" -eq 0 ]] && newer_than "$before" "$want"; then
-		printf '%s\tFAIL: has %s, newer than %s; not installed (--allow-downgrade to install anyway)\n' "$name" "$before" "$want"
-		FAILED=1
-		return 0
+	if [[ "$ALLOW_DOWNGRADE" -eq 0 ]]; then
+		newer_than "$before" "$want" || comparison=$?
+		case "$comparison" in
+		0)
+			printf '%s\tFAIL: has %s, newer than %s; not installed (--allow-downgrade to install anyway)\n' "$name" "$before" "$want"
+			FAILED=1
+			return 0
+			;;
+		1) ;;
+		*)
+			printf '%s\tFAIL: cannot compare versions; not installed\n' "$name"
+			FAILED=1
+			return 0
+			;;
+		esac
 	fi
 	backup="$backups/$SLUG-$name-${before:-unknown}.tar.gz"
 	if ! tar -czf "$backup" -C "$plugins" "$SLUG"; then
