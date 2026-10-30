@@ -910,7 +910,7 @@ final class WPAllStars_Reports {
             <input type="hidden" name="action" value="<?php echo esc_attr(self::ACTION); ?>" />
             <input type="hidden" name="report" value="<?php echo esc_attr($report ? $report['id'] : ''); ?>" />
             <?php wp_nonce_field(self::ACTION); ?>
-            <table class="form-table" role="presentation">
+            <table class="form-table">
                 <tr>
                     <th scope="row"><label for="wpallstars-report-product"><?php esc_html_e('Plugin or theme', 'wp-plugin-starter-template'); ?></label></th>
                     <td>
