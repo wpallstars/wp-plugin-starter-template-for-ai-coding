@@ -171,7 +171,9 @@ expected in the GitHub zip too.
    deploy separately with `--parent`/`--skip` when sites use different paths.
    Only file destinations are supported, not syslog or stderr. This path,
    the CLI PHP destination, `WP_DEBUG_LOG` and the two default paths are
-   checked, including files first created during installation.
+    checked, including files first created during installation. A missing
+    folder fails the install; a missing file in an existing folder is reported
+    and counted if installation creates it.
    With aidevops, `wp-fleet-helper.sh` (plan, backup, deploy, verify and
    report across hosts, with a reviewed plan) is the alternative.
 
