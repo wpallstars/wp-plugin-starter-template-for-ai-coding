@@ -41,6 +41,15 @@
 # version not reached or new log lines, with the restore command. Host names,
 # folders and backups stay out of the repository: they are only arguments.
 #
+# --apply holds a lock per plugin on the host (~/.{slug}-deploy/.lock, made
+# with mkdir, so no flock is needed) from before the first install to the
+# end, so two runs, even with different --parent, never install over each
+# other. While another run holds it, --apply installs nothing, names that
+# run (tag, start time, parent, PID) and exits 3: wait for it, then run
+# again. A lock left by a run that is no longer running (killed with
+# kill -9, or the host restarted) is taken over with a warning. The dry run
+# takes no lock and says when a run is active.
+#
 # Needs gh (signed in to read a private repository), ssh, and bash, WP-CLI,
 # tar and curl on the host. aidevops users can use wp-fleet-helper.sh instead
 # (RELEASING.md step 5).
@@ -222,6 +231,10 @@ apply() {
 	command="$(remote_words env "DEPLOY_WP_CLI=$WP_CLI" "DEPLOY_WEB_ERROR_LOG=$WEB_ERROR_LOG" bash "$dir/deploy-remote.sh" apply "$SLUG" "$PARENT" \
 		"$VERSION" "$dir/$SLUG-$VERSION.zip" "$SHA" "$dir/backups" ${DOWNGRADE_ARGS[@]+"${DOWNGRADE_ARGS[@]}"} ${SKIPS[@]+"${SKIPS[@]}"})"
 	remote "$command" || status=$?
+	if [[ "$status" -eq 3 ]]; then
+		printf '\nAnother deploy of %s is running on %s (named above), so nothing was installed. Wait for it to finish, then run again.\n' "$SLUG" "$HOST" >&2
+		exit 3
+	fi
 	if [[ "$status" -ne 0 ]]; then
 		printf '\nDeploy of %s on %s failed (exit %s): see the FAIL lines and their restore commands above.\n' "$TAG" "$HOST" "$status"
 		return 1
