@@ -65,6 +65,7 @@ GitHub releases are the stable beta channel: each version comes out there first.
 
 = 1.0.47 =
 * Developers: deploy-sites.sh refuses downgrades unless --allow-downgrade is passed, and dry runs mark newer installs. Plugins get the guard with sync-core.sh.
+* New: Tools → Report a problem: the site's AI assistant drafts reports for wpallstars plugins and themes; an administrator reviews and sends them.
 
 Every change: changelog.txt.
 

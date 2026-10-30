@@ -171,6 +171,8 @@ Deleting the plugin removes its settings (on multisite, every site's and the net
 ### 1.0.47
 
 - Developers: `scripts/deploy-sites.sh --apply` refuses an install whose current version is newer than the requested tag, checking just before the backup and install. Use `--allow-downgrade` for an intentional rollback. Dry runs identify newer installs and whether the override allows them; equal-version reinstalls and upgrades still work. Plugins get the guard with `scripts/sync-core.sh` (GH#576).
+- Developers: `scripts/deploy-sites.sh` refuses a `--web-error-log` in a missing folder and reports a missing log file (GH#584).
+- New: Report a problem (Tools), shared by every wpallstars plugin and theme on a site (`includes/wpallstars-reports/`, 1.0.2). The site's AI assistant drafts reports (`wpallstars/report-problem` ability, `wp wpallstars report`); an administrator reviews and sends them, as a prefilled GitHub issue without the site's details or, for private code, by email with the site's mailer. Plugins get it with `scripts/sync-core.sh` (GH#574, GH#577, GH#579, GH#581).
 
 ### 1.0.46
 
