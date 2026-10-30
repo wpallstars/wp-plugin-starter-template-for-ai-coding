@@ -108,19 +108,18 @@ final class WPAllStars_Reports_CLI {
             'title'   => isset($assoc_args['title']) ? (string) $assoc_args['title'] : '',
             'details' => $details,
         ), 'assistant');
+        // WP_CLI::error() exits: no return after it.
         if (is_wp_error($report)) {
             WP_CLI::error($report->get_error_message());
-            return;
-        }
-        if (!empty($assoc_args['porcelain'])) {
+        } elseif (!empty($assoc_args['porcelain'])) {
             WP_CLI::line($report['id']);
-            return;
+        } else {
+            WP_CLI::success(sprintf(
+                'Draft %1$s saved; nothing has been sent. Ask a site administrator to review and send it in Tools → Report a problem: %2$s',
+                $report['id'],
+                WPAllStars_Reports::url($report['id'])
+            ));
         }
-        WP_CLI::success(sprintf(
-            'Draft %1$s saved; nothing has been sent. Ask a site administrator to review and send it in Tools → Report a problem: %2$s',
-            $report['id'],
-            WPAllStars_Reports::url($report['id'])
-        ));
     }
 
     /**
@@ -175,14 +174,14 @@ final class WPAllStars_Reports_CLI {
         $report = WPAllStars_Reports::get((string) $args[0]);
         if (!$report) {
             WP_CLI::error('No report with that ID.');
-            return;
+        } else {
+            $view = WPAllStars_Reports::view($report, true);
+            if ('json' === self::format($assoc_args, 'yaml')) {
+                WP_CLI::line((string) wp_json_encode($view, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE));
+            } else {
+                WP_CLI\Utils\format_items('yaml', array($view), array_keys($view));
+            }
         }
-        $view = WPAllStars_Reports::view($report, true);
-        if ('json' === self::format($assoc_args, 'yaml')) {
-            WP_CLI::line((string) wp_json_encode($view, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE));
-            return;
-        }
-        WP_CLI\Utils\format_items('yaml', array($view), array_keys($view));
     }
 
     /**
@@ -200,9 +199,9 @@ final class WPAllStars_Reports_CLI {
         unset($assoc_args);
         if (!WPAllStars_Reports::delete((string) $args[0])) {
             WP_CLI::error('No report with that ID.');
-            return;
+        } else {
+            WP_CLI::success('Report deleted.');
         }
-        WP_CLI::success('Report deleted.');
     }
 
     /**
