@@ -79,3 +79,8 @@ MODELS.md
 
 # Release builds (scripts/build-release.sh)
 /dist/
+
+# This plugin's own ignore lines go between these markers; a Starter sync
+# keeps them (DEVELOPMENT.md → Starter sync).
+# wps-own:start
+# wps-own:end
