@@ -409,8 +409,12 @@ list_one() {
 			;;
 		1) ;;
 		*)
-			note="FAIL: cannot compare versions; --apply will refuse without --allow-downgrade"
-			FAILED=1
+			if [[ "$ALLOW_DOWNGRADE" -eq 0 ]]; then
+				note="FAIL: cannot compare versions; --apply will refuse without --allow-downgrade"
+				FAILED=1
+			else
+				note="cannot compare versions; install allowed (--allow-downgrade)"
+			fi
 			;;
 		esac
 	fi
@@ -733,8 +737,9 @@ lock_live() {
 # cannot move a lock another takeover has just made. Under it the lock's
 # PID and liveness are read again, the lock is moved aside (atomic) and its
 # PID is compared once more; a lock that is not the stale one is put back.
-# A takeover lock older than two minutes is from a run that died during
-# its takeover, which takes a moment, and is removed.
+# A takeover lock more than a minute old (find -mmin +1; GNU find counts
+# whole minutes, so up to two) is from a run that died during its
+# takeover, which takes a moment, and is removed.
 lock_break() {
 	local dir="$1"
 	local stale_pid="$2"
@@ -744,7 +749,7 @@ lock_break() {
 	until mkdir "$guard" 2>/dev/null; do
 		tries=$((tries + 1))
 		[[ "$tries" -le 10 ]] || return 0
-		if [[ -n "$(find "$guard" -maxdepth 0 -mmin +2 2>/dev/null)" ]]; then
+		if [[ -n "$(find "$guard" -maxdepth 0 -mmin +1 2>/dev/null)" ]]; then
 			rmdir "$guard" 2>/dev/null || true
 		else
 			sleep 1
