@@ -2,7 +2,7 @@
 
 Every change to WP Plugin Starter. readme.txt lists the latest version in short.
 
-= Unreleased =
+= 1.0.48 =
 * Developers: shared problem reports 1.0.4 documents its intentional wpallstars_ / WPAllStars_ names with line-scoped prefix-check annotations, so Plugin Check no longer warns about the seven shared names in the WordPress.org zip. The copy registry, newest-copy loader and public API stay unchanged. Plugins and themes get it with scripts/sync-core.sh; STANDARDS.md → Problem reports (GH#590).
 * Developers: CI no longer leaves a pull request's required checks skipped when a commit is pushed as it is marked ready for review. GitHub can then run the ready-for-review event on the old commit, or cancel it, leaving the new commit only a run whose event still says draft, so the release build and smoke tests were skipped and the merge blocked; a re-run kept the old flag. The lint job now reads whether the pull request is still a draft when it ends (the event's flag if GitHub cannot be read), and draft and ready runs are in separate concurrency groups, so a draft run never cancels a ready one. Plugins get it with scripts/sync-core.sh (GH#592).
 
