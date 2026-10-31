@@ -158,9 +158,9 @@ jobs:
           if pr_json="$(curl -fsSL --retry 2 --proto '=https' --tlsv1.2 \
             -H "Authorization: Bearer $GH_TOKEN" \
             -H "Accept: application/vnd.github+json" "$PR_API")"; then
-            draft="$(printf '%s' "$pr_json" | php -r '$pr = json_decode(stream_get_contents(STDIN)); if (is_object($pr) && isset($pr->draft) && is_bool($pr->draft)) { echo $pr->draft ? "true" : "false"; }')" || draft=""
+            draft="$(printf '%s' "$pr_json" | php -r 'echo json_encode(json_decode(stream_get_contents(STDIN), true)["draft"] ?? null);')" || draft=""
           fi
-          if [[ -z "$draft" ]]; then
+          if [[ "$draft" != "true" && "$draft" != "false" ]]; then
             draft="$EVENT_DRAFT"
             printf '::warning::Could not read whether the pull request is a draft; using the event'"'"'s value (%s).\n' "$draft"
           elif [[ "$draft" != "$EVENT_DRAFT" ]]; then
