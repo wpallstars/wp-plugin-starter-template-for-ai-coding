@@ -590,8 +590,11 @@ money and most code-review services are paid. Until then, work moves fast:
 - Fix any failure your change causes before merging. For a failure your
   change did not cause, open an issue with the run link and the first error,
   and merge anyway.
-- Draft pull requests run only the lint job. A new push cancels the run for
-  the previous one.
+- Draft pull requests run only the lint job. Lint reads whether the pull
+  request is still a draft when it ends, so a run that started just before
+  it was marked ready, or a re-run of one, still runs the release and smoke
+  tests. A new push cancels the run for the previous one, but a draft run
+  never cancels a ready one.
 - The build zips and Plugin Check reports are kept for seven days on each
   run (artifact `<repository>-build-…`) for testing a branch on a site.
 - Review apps that are already installed (CodeRabbit, qlty, Socket) give
