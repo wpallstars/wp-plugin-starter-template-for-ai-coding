@@ -379,12 +379,15 @@ installs() {
 }
 
 # The host provides coreutils sort -V; equal versions may be reinstalled.
-# Return 2 on comparison failure, distinct from 1 (not newer).
+# Return 2 on comparison failure, distinct from 1 (not newer): also for an
+# installed version that cannot be read, which may be newer. A prerelease
+# of the target (2.0.0-rc1 for 2.0.0) is older, though sort -V puts it after.
 newer_than() {
 	local installed="$1"
 	local want="$2"
 	local sorted
-	[[ -n "$installed" && "$installed" != "$want" ]] || return 1
+	[[ -n "$installed" ]] || return 2
+	[[ "$installed" != "$want" && "$installed" != "$want"-* ]] || return 1
 	sorted="$(printf '%s\n%s\n' "$want" "$installed" | sort -V)" || return 2
 	[[ "${sorted##*$'\n'}" == "$installed" ]] || return 1
 	return 0
@@ -406,8 +409,12 @@ list_one() {
 			;;
 		1) ;;
 		*)
-			note="FAIL: cannot compare versions; --apply will refuse without --allow-downgrade"
-			FAILED=1
+			if [[ "$ALLOW_DOWNGRADE" -eq 0 ]]; then
+				note="FAIL: cannot compare versions; --apply will refuse without --allow-downgrade"
+				FAILED=1
+			else
+				note="cannot compare versions; install allowed (--allow-downgrade)"
+			fi
 			;;
 		esac
 	fi
@@ -590,7 +597,7 @@ apply_one() {
 			;;
 		1) ;;
 		*)
-			printf '%s\tFAIL: cannot compare versions; not installed\n' "$name"
+			printf '%s\tFAIL: cannot compare versions (has %s); not installed (--allow-downgrade to install anyway)\n' "$name" "${before:-no readable Version}"
 			FAILED=1
 			return 0
 			;;
@@ -705,8 +712,9 @@ lock_holder() {
 }
 
 # Whether the lock's run is still going: its PID runs deploy-remote.sh (ps
-# also rules out a reused PID), or, without ps, kill -0 finds it. A lock
-# with no owner file yet is being taken: live for its first two minutes.
+# also rules out a reused PID), or, where ps -p fails (no ps, BusyBox ps,
+# no readable process table), kill -0 finds it. A lock with no owner file
+# yet is being taken: live for its first two minutes.
 lock_live() {
 	local dir="$1"
 	local pid args
@@ -716,8 +724,7 @@ lock_live() {
 		return 0
 	fi
 	[[ "$pid" =~ ^[0-9]+$ ]] || return 1
-	if command -v ps >/dev/null 2>&1; then
-		args="$(ps -p "$pid" -o args= 2>/dev/null)" || return 1
+	if command -v ps >/dev/null 2>&1 && args="$(ps -p "$pid" -o args= 2>/dev/null)"; then
 		[[ "$args" == *deploy-remote* ]] || return 1
 		return 0
 	fi
@@ -725,22 +732,38 @@ lock_live() {
 	return 0
 }
 
-# Remove a stale lock only if it is still the one judged stale: move it
-# aside (atomic), then compare its PID. A lock another run took meanwhile
-# is put back.
+# Remove a stale lock only if it is still the one judged stale. Takeovers
+# take turns under a second lock (DIR.takeover, made with mkdir), so a run
+# cannot move a lock another takeover has just made. Under it the lock's
+# PID and liveness are read again, the lock is moved aside (atomic) and its
+# PID is compared once more; a lock that is not the stale one is put back.
+# A takeover lock more than a minute old (find -mmin +1; GNU find counts
+# whole minutes, so up to two) is from a run that died during its
+# takeover, which takes a moment, and is removed.
 lock_break() {
 	local dir="$1"
 	local stale_pid="$2"
+	local guard="$dir.takeover"
 	local moved="$dir.stale.$$"
-	mv "$dir" "$moved" 2>/dev/null || return 0
-	if [[ "$(lock_field "$moved" pid)" == "$stale_pid" ]]; then
-		rm -rf "$moved"
-		return 0
+	local tries=0
+	until mkdir "$guard" 2>/dev/null; do
+		tries=$((tries + 1))
+		[[ "$tries" -le 10 ]] || return 0
+		if [[ -n "$(find "$guard" -maxdepth 0 -mmin +1 2>/dev/null)" ]]; then
+			rmdir "$guard" 2>/dev/null || true
+		else
+			sleep 1
+		fi
+	done
+	if [[ -d "$dir" && "$(lock_field "$dir" pid)" == "$stale_pid" ]] && ! lock_live "$dir" &&
+		mv "$dir" "$moved" 2>/dev/null; then
+		if [[ "$(lock_field "$moved" pid)" == "$stale_pid" ]]; then
+			rm -rf "$moved"
+		elif [[ -e "$dir" ]] || ! mv "$moved" "$dir" 2>/dev/null; then
+			say "deploy-remote: WARN a lock taken during the takeover was moved to $moved; remove it once no deploy of $SLUG runs"
+		fi
 	fi
-	if [[ ! -e "$dir" ]] && mv "$moved" "$dir" 2>/dev/null; then
-		return 0
-	fi
-	say "deploy-remote: WARN a lock taken during the takeover was moved to $moved; remove it once no deploy of $SLUG runs"
+	rmdir "$guard" 2>/dev/null || true
 	return 0
 }
 
@@ -759,8 +782,18 @@ lock_take() {
 		tries=$((tries + 1))
 		if mkdir "$dir" 2>/dev/null; then
 			if ! printf 'pid=%s\ntag=%s\nstarted=%s\nparent=%s\n' "$$" "$tag" \
-				"$(date -u +%Y-%m-%dT%H:%M:%SZ)" "$(printf '%s' "$parent" | tr '\n' ' ')" >"$dir/owner" 2>/dev/null ||
-				[[ "$(lock_field "$dir" pid)" != "$$" ]]; then
+				"$(date -u +%Y-%m-%dT%H:%M:%SZ)" "$(printf '%s' "$parent" | tr '\n' ' ')" >"$dir/owner" 2>/dev/null; then
+				# The redirect may have made an empty or partial owner file (a full
+				# disk): remove it only while it is empty or this run's, then the
+				# folder with rmdir, which leaves another run's owner file alone.
+				case "$(lock_field "$dir" pid)" in
+				"" | "$$") rm -f "$dir/owner" ;;
+				esac
+				rmdir "$dir" 2>/dev/null || true
+				say "deploy-remote: cannot write the deploy lock's owner file $dir/owner; nothing installed"
+				return 2
+			fi
+			if [[ "$(lock_field "$dir" pid)" != "$$" ]]; then
 				say "deploy-remote: lost the deploy lock $dir while taking it; nothing installed"
 				return 3
 			fi
