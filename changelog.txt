@@ -4,6 +4,7 @@ Every change to WP Plugin Starter. readme.txt lists the latest version in short.
 
 = Unreleased =
 * Developers: .github/workflows/sonarcloud.yml uses SonarSource/sonarqube-scan-action v8.4.0. Plugins that took Dependabot's bump no longer show the file as changed here, which stopped their Starter sync. .gitignore has an empty own block at the end, as .distignore has, so a plugin can keep ignore lines of its own through a sync instead of having .gitignore shown as changed here. Plugins get both with scripts/sync-core.sh (GH#596). .gitignore ends with a newline, like the other core files with own blocks: a sync keeps own blocks by rewriting the file line by line, which ends the last line too, so a copy without one never matched the starter's and showed as changed here (GH#598).
+* Developers: CI's lint job gives up reading the pull request's draft state after 20 seconds a try (10 to connect), about a minute with its two retries, and then uses the event's flag with a warning. Before, a stalled GitHub response held the lint job until its 15-minute limit. Plugins get it with scripts/sync-core.sh (GH#600).
 
 = 1.0.48 =
 * Developers: shared problem reports 1.0.4 documents its intentional wpallstars_ / WPAllStars_ names with line-scoped prefix-check annotations, so Plugin Check no longer warns about the seven shared names in the WordPress.org zip. The copy registry, newest-copy loader and public API stay unchanged. Plugins and themes get it with scripts/sync-core.sh; STANDARDS.md → Problem reports (GH#590).

@@ -155,7 +155,7 @@ jobs:
           EVENT_DRAFT: ${{ github.event.pull_request.draft }}
         run: |
           draft=""
-          if pr_json="$(curl -fsSL --retry 2 --proto '=https' --tlsv1.2 \
+          if pr_json="$(curl -fsSL --retry 2 --connect-timeout 10 --max-time 20 --proto '=https' --tlsv1.2 \
             -H "Authorization: Bearer $GH_TOKEN" \
             -H "Accept: application/vnd.github+json" "$PR_API")"; then
             draft="$(printf '%s' "$pr_json" | php -r 'echo json_encode(json_decode(stream_get_contents(STDIN), true)["draft"] ?? null);')" || draft=""
