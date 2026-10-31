@@ -4,6 +4,10 @@
 #
 # Lint runs on every push. The release and smoke-test jobs take longer, so
 # draft pull requests skip them until they are marked ready for review.
+# Whether the pull request is still a draft is read when lint ends, not
+# taken from the event: a commit pushed as it is marked ready can leave only
+# a run that started while it was a draft. Draft and ready runs are in
+# separate concurrency groups, so a draft run never cancels a ready one.
 # Actions are pinned to commit SHAs; Dependabot keeps them up to date.
 #
 # Jobs run on GitHub-hosted runners unless the repository variable CI_RUNNER
@@ -23,7 +27,7 @@ permissions:
   contents: read
 
 concurrency:
-  group: ci-${{ github.event.pull_request.number || github.ref }}
+  group: ci-${{ github.event.pull_request.number || github.ref }}-${{ github.event.pull_request.draft && 'draft' || 'ready' }}
   cancel-in-progress: true
 
 jobs:
@@ -31,6 +35,11 @@ jobs:
     name: Lint (PHP 7.4)
     runs-on: ${{ vars.CI_RUNNER || 'ubuntu-latest' }}
     timeout-minutes: 15
+    permissions:
+      contents: read
+      pull-requests: read # the Draft state step
+    outputs:
+      draft: ${{ steps.draft.outputs.draft }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -134,10 +143,37 @@ jobs:
           tar -xzf "$archive" -C "$tool_dir" actionlint
           "$tool_dir/actionlint" -color
 
+      # The pull request's draft state now, for the release and smoke jobs.
+      # The event's draft flag is from when the event happened, and a re-run
+      # keeps it. If GitHub cannot be read, the event's flag is used.
+      - name: Draft state
+        id: draft
+        if: github.event_name == 'pull_request'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR_API: ${{ github.event.pull_request.url }}
+          EVENT_DRAFT: ${{ github.event.pull_request.draft }}
+        run: |
+          draft=""
+          if pr_json="$(curl -fsSL --retry 2 --proto '=https' --tlsv1.2 \
+            -H "Authorization: Bearer $GH_TOKEN" \
+            -H "Accept: application/vnd.github+json" "$PR_API")"; then
+            draft="$(printf '%s' "$pr_json" | php -r 'echo json_encode(json_decode(stream_get_contents(STDIN), true)["draft"] ?? null);')" || draft=""
+          fi
+          if [[ "$draft" != "true" && "$draft" != "false" ]]; then
+            draft="$EVENT_DRAFT"
+            printf '::warning::Could not read whether the pull request is a draft; using the event'"'"'s value (%s).\n' "$draft"
+          elif [[ "$draft" != "$EVENT_DRAFT" ]]; then
+            printf 'Draft: %s (the event said %s).\n' "$draft" "$EVENT_DRAFT"
+          else
+            printf 'Draft: %s.\n' "$draft"
+          fi
+          echo "draft=$draft" >> "$GITHUB_OUTPUT"
+
   release:
     name: Release build, preflight and Plugin Check
     needs: lint
-    if: github.event_name != 'pull_request' || !github.event.pull_request.draft
+    if: needs.lint.outputs.draft != 'true'
     runs-on: ${{ vars.CI_RUNNER || 'ubuntu-latest' }}
     timeout-minutes: 20
     steps:
@@ -185,7 +221,7 @@ jobs:
   smoke:
     name: Smoke test (WordPress ${{ matrix.wp }}, PHP ${{ matrix.php }}${{ matrix.multisite && ', multisite' || '' }})
     needs: lint
-    if: github.event_name != 'pull_request' || !github.event.pull_request.draft
+    if: needs.lint.outputs.draft != 'true'
     runs-on: ${{ vars.CI_RUNNER || 'ubuntu-latest' }}
     timeout-minutes: 20
     strategy:
