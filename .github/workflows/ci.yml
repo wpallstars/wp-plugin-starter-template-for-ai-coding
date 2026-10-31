@@ -4,6 +4,7 @@
 #
 # Lint runs on every push. The release and smoke-test jobs take longer, so
 # draft pull requests skip them until they are marked ready for review.
+# Separate draft and ready concurrency groups keep draft runs from cancelling ready runs.
 # Actions are pinned to commit SHAs; Dependabot keeps them up to date.
 #
 # Jobs run on GitHub-hosted runners unless the repository variable CI_RUNNER
@@ -23,7 +24,7 @@ permissions:
   contents: read
 
 concurrency:
-  group: ci-${{ github.event.pull_request.number || github.ref }}
+  group: ci-${{ github.event.pull_request.number || github.ref }}-${{ github.event.pull_request.draft && 'draft' || 'ready' }}
   cancel-in-progress: true
 
 jobs:
