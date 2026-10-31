@@ -1,2 +1,3 @@
 Throwaway file for the GH#592 CI race test. Never merged.
 Second commit: pushed together with gh pr ready.
+Round 2 race commit, with the live draft-state check.
