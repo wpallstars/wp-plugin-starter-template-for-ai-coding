@@ -10,7 +10,7 @@
 [![CodeFactor](https://www.codefactor.io/repository/github/wpallstars/wp-plugin-starter-template-for-ai-coding/badge)](https://www.codefactor.io/repository/github/wpallstars/wp-plugin-starter-template-for-ai-coding)
 [![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/wpallstars/wp-plugin-starter-template-for-ai-coding/badge)](https://scorecard.dev/viewer/?uri=github.com/wpallstars/wp-plugin-starter-template-for-ai-coding)
 [![License: GPL v3 or later](https://img.shields.io/badge/License-GPL%20v3%20or%20later-blue.svg)](LICENSE)
-[![Latest release](https://img.shields.io/badge/release-v1.0.48-blue.svg)](https://github.com/wpallstars/wp-plugin-starter-template-for-ai-coding/releases)
+[![Latest release](https://img.shields.io/badge/release-v1.0.49-blue.svg)](https://github.com/wpallstars/wp-plugin-starter-template-for-ai-coding/releases)
 
 [![Requires WordPress](https://img.shields.io/badge/WordPress-6.2%2B-21759B.svg?logo=wordpress)](readme.txt)
 [![Tested up to](https://img.shields.io/badge/tested%20up%20to-7.1-21759B.svg?logo=wordpress)](readme.txt)
@@ -27,7 +27,7 @@ WP Plugin Starter is what wpallstars plugins are made from. It has no features o
 
 If this saves you time, headaches and costs, feel free to [buy me a coffee](https://buymeacoffee.com/marcusquinn), or whatever you like, to invest in making more things open-source.
 
-Version: 1.0.48
+Version: 1.0.49
 
 <!-- github-only:start -->
 ## Screenshots
@@ -167,6 +167,12 @@ Read a setting with `WPStarter_Settings::get( 'key' )`, never the option itself:
 Deleting the plugin removes its settings (on multisite, every site's and the network's), its cached data, its problem reports (other plugins' and themes' stay), who hid lines of the Plugins screen notice about replaced plugins, and the cached GitHub releases.
 
 ## Changelog
+
+### 1.0.49
+
+- Developers: `scripts/deploy-sites.sh --apply`'s deploy lock and downgrade guard close four gaps. Where `ps -p` fails (BusyBox `ps`, no readable process table), a run's liveness falls back to `kill -0`, so a running deploy's lock is no longer taken over as stale. Takeovers of a stale lock take turns under a second lock and read the lock again under it. When the lock's owner file cannot be written, the run removes its own lock and exits 2 instead of reporting another deploy. An installed version that cannot be read is refused like a newer one, and a prerelease of the tag counts as older; `--allow-downgrade` installs anyway. `RELEASING.md` lists `--allow-downgrade` and says the lock keeps apart only runs from one SSH account. Plugins get it with `scripts/sync-core.sh` (GH#601).
+- Developers: CI's lint job gives up reading the pull request's draft state after 20 seconds a try and uses the event's flag, so a stalled GitHub response no longer holds lint for 15 minutes. Plugins get it with `scripts/sync-core.sh` (GH#600).
+- Developers: `.github/workflows/sonarcloud.yml` uses `SonarSource/sonarqube-scan-action` v8.4.0, and `.gitignore` has an own block and ends with a newline, so a plugin's own ignore lines and Dependabot's action bump no longer stop its Starter sync. Plugins get both with `scripts/sync-core.sh` (GH#596, GH#598).
 
 ### 1.0.48
 
