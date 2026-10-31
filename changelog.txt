@@ -2,6 +2,9 @@
 
 Every change to WP Plugin Starter. readme.txt lists the latest version in short.
 
+= Unreleased =
+* New: the Plugins screen has a Redundant view, beside All, Active and Inactive, listing every installed plugin a setting replaces, active or not, with the note under its row saying what to do (WordPress 6.3 or later). Every plugin made from the starter adds its own to the same view, so a site with several has one Redundant view. Before WordPress 7.0 the list only takes core's views, so the view sets the list's status itself and names its own link. Developers: the new wpstarter_redundant_plugins filter (plugin files) adds other plugins to it, such as plugins whose job WordPress now does. Plugins get it with scripts/sync-core.sh (GH#606).
+
 = 1.0.49 =
 * Developers: .github/workflows/sonarcloud.yml uses SonarSource/sonarqube-scan-action v8.4.0. Plugins that took Dependabot's bump no longer show the file as changed here, which stopped their Starter sync. .gitignore has an empty own block at the end, as .distignore has, so a plugin can keep ignore lines of its own through a sync instead of having .gitignore shown as changed here. Plugins get both with scripts/sync-core.sh (GH#596). .gitignore ends with a newline, like the other core files with own blocks: a sync keeps own blocks by rewriting the file line by line, which ends the last line too, so a copy without one never matched the starter's and showed as changed here (GH#598).
 * Developers: CI's lint job gives up reading the pull request's draft state after 20 seconds a try (10 to connect), about a minute with its two retries, and then uses the event's flag with a warning. Before, a stalled GitHub response held the lint job until its 15-minute limit. Plugins get it with scripts/sync-core.sh (GH#600).

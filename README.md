@@ -52,7 +52,7 @@ Version: 1.0.49
 - **A Read Me tab** that shows this file, banner included, so users read the same guide inside WordPress as on GitHub.
 - **Admin colour mode**: Light, Dark or System from the header, saved per person and shared with other wpallstars colour-mode controls. System follows the computer live, including on network settings and the plugin's own screens with the shared header.
 - **Features as classes**: one file per feature, off by default, with settings, hooks, one-off imports from the plugins it replaces and clean uninstall.
-- **Replaced plugins**: a feature that does another plugin's job imports its settings once, waits while that plugin is active, and the Plugins screen suggests deactivating and deleting it.
+- **Replaced plugins**: a feature that does another plugin's job imports its settings once, waits while that plugin is active, and the Plugins screen suggests deactivating and deleting it and lists it under **Redundant**.
 - **Report a problem**: Tools → Report a problem, shared by every wpallstars plugin and theme on a site. The site's AI assistant drafts reports (an ability and WP-CLI); an administrator reviews and sends them, as a prefilled GitHub issue or, for private code, a private email with the site's mailer.
 - **Updates from GitHub**: the shared wpallstars updater (`includes/github-updater/`). Sites get each GitHub release as a normal WordPress update. Every wpallstars plugin carries a copy and only the newest copy on a site runs, so they are all checked together, once. Update checks that fall due while someone opens an admin screen run in WP-Cron instead, so the screen does not wait for update servers.
 - **Two builds of each version**: the GitHub release, and a WordPress.org build without the updater, as WordPress.org requires.
@@ -144,6 +144,7 @@ Filters:
 - `wpstarter_troubleshooting_open`: whether a setting's Troubleshooting section starts open (open, setting key), for a feature that fell back after an error.
 - `wpstarter_can_change_settings`: return false to stop the current user changing WP Plugin Starter’s settings (on top of `manage_options`).
 - `wpstarter_replaced_plugin_extras`: what a replaced plugin does on this site that WP Plugin Starter does not (plain names, plugin folder). The Plugins screen names them instead of saying the plugin can go.
+- `wpstarter_redundant_plugins`: plugin files the Plugins screen's **Redundant** view lists besides the plugins a setting replaces, such as plugins whose job WordPress now does. Every plugin made from the starter adds to the same view (WordPress 6.3 or later).
 - `wpstarter_replaces_link`: the link a setting's card shows while a plugin it replaces is active (`url` and `label`, plain text; plugin folder, plugin file, name). It defaults to Deactivate; return another step to take first, such as an import, or an empty value for no link.
 - `wpstarter_stored_active_plugins` and `wpstarter_plugins_skipped`: for code that skips plugins on some requests, the active plugin files as stored and whether some are skipped on this request, so features still count those plugins as active.
 - `wpallstars_github_plugins` (GitHub builds, shared updater): change which plugins update from GitHub releases (plugin file => `repo` as owner/repo, `asset_only`, `version`, `name`).
