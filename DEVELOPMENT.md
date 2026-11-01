@@ -217,8 +217,10 @@ daemon configuration.
 Optionally set repository secrets `DOCKERHUB_USERNAME` and `DOCKERHUB_TOKEN`
 for a Docker Hub account and read-only access token. Before Plugin Check and
 each smoke test, CI logs in with `docker login --password-stdin` only when
-both are present, giving fallback pulls the account's higher limit. Without
-them (including forks), it skips login; the explicit mirror needs no secret.
+both are present, giving fallback pulls the account's higher limit. Login
+uses a private temporary Docker config and always logs out afterward, leaving
+a self-hosted runner's existing credentials alone. Without the secrets
+(including forks), it skips login; the explicit mirror needs no secret.
 
 `{PREFIX}_DB_IMAGE` overrides MariaDB in both scripts; `{PREFIX}_CLI_IMAGE`
 overrides WP-CLI in Plugin Check. Smoke-test WordPress images follow `--php`.
