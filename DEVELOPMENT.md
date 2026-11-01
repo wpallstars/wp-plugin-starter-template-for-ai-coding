@@ -372,7 +372,7 @@ repository. It needs no setup. Steps: `RELEASING.md` → GitHub release.
 
 ### Starter sync
 
-`.github/workflows/starter-sync.yml` runs every Monday (and from the
+`.github/workflows/starter-sync.yml` runs every day (and from the
 Actions tab, **Run workflow**). It checks out the starter's default branch,
 with its history, next to the plugin and runs the starter's
 `scripts/sync-core.sh --check`, so the newest check is used. When core
@@ -402,7 +402,7 @@ blocks), and `--check` puts its class under it:
 |---|---|---|
 | behind | a starter version `--ref` contains (default: the starter checkout's `HEAD`) | updates it |
 | missing | not there | adds it |
-| newer | a starter version `--ref` does not contain: later on `main`, or on another branch | stops: sync from a starter ref that contains it, the starter's `main` (what the weekly check uses) or a later tag. There is no option to go backwards. |
+| newer | a starter version `--ref` does not contain: later on `main`, or on another branch | stops: sync from a starter ref that contains it, the starter's `main` (what the daily check uses) or a later tag. There is no option to go backwards. |
 | changed here | no starter version: the plugin changed it outside its `{css}-own` blocks | stops: take the change to the starter first (a pull request, or an issue there with the plugin's case), or move the plugin-only lines into `{css}-own` blocks; then run again with `--discard-local`, which replaces changed-here files only |
 
 While any file is newer or changed here, a sync writes nothing (exit 2)

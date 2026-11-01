@@ -1,4 +1,4 @@
-# Weekly check that this plugin's core files (scripts/core-files.txt) match
+# Daily check that this plugin's core files (scripts/core-files.txt) match
 # the starter's. When any differ, it opens one issue labelled starter-sync,
 # or updates the open one, with the files and the steps to sync; when all
 # match again, it closes that issue. STANDARDS.md → Structure.
@@ -13,7 +13,7 @@ name: Starter sync
 
 on:
   schedule:
-    - cron: "41 5 * * 1"
+    - cron: "41 5 * * *"
   workflow_dispatch:
 
 permissions:
@@ -125,7 +125,7 @@ jobs:
           4. Read the starter's \`changelog.txt\` since this plugin last synced, for changes that need work in this plugin's own files (its Setup class, \`phpstan-plugin.neon\`, \`.distignore\` entries, README or readme.txt sections).
           5. \`scripts/lint.sh\` and \`scripts/smoke-test.sh\` pass; add a changelog line; open a pull request.
 
-          The weekly Starter sync workflow (\`.github/workflows/starter-sync.yml\`) updates this issue while files differ and closes it once they match.
+          The daily Starter sync workflow (\`.github/workflows/starter-sync.yml\`) updates this issue while files differ and closes it once they match.
 
           ## Verification
 

@@ -527,7 +527,7 @@ stop_if_unsafe() {
 	{
 		printf 'sync-core: nothing written. A sync from the starter at %s could lose work in these core files:\n%s' "$ref" "$list"
 		if [[ "$newer" -eq 1 ]]; then
-			printf 'Newer: this plugin has a later starter version than %s. Sync from a starter ref that contains it: the starter'\''s main (what the weekly Starter sync checks against), or a later tag. There is no option to go backwards.\n' "$ref"
+			printf 'Newer: this plugin has a later starter version than %s. Sync from a starter ref that contains it: the starter'\''s main (what the daily Starter sync checks against), or a later tag. There is no option to go backwards.\n' "$ref"
 		fi
 		if [[ "$changed" -eq 1 ]]; then
 			printf 'Changed here: this plugin changed it outside its %s-own blocks. Take the change to the starter first (a pull request, or an issue there with this plugin'\''s case), or move plugin-only lines into %s-own blocks. Then run again with --discard-local.\n' "$TO_CSS" "$TO_CSS"
