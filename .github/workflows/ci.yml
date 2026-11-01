@@ -212,7 +212,9 @@ jobs:
             DOCKER_CONFIG="$(mktemp -d "$RUNNER_TEMP/docker-auth.XXXXXX")"
             printf 'config=%s\n' "$DOCKER_CONFIG" >> "$GITHUB_OUTPUT"
             printf 'DOCKER_CONFIG=%s\n' "$DOCKER_CONFIG" >> "$GITHUB_ENV"
-            printf '%s' "$DOCKERHUB_TOKEN" | docker login --username "$DOCKERHUB_USERNAME" --password-stdin
+            if ! printf '%s' "$DOCKERHUB_TOKEN" | docker login --username "$DOCKERHUB_USERNAME" --password-stdin; then
+              printf '::warning::Optional Docker Hub login failed; continuing with anonymous mirror pulls.\n'
+            fi
           else
             printf 'Docker Hub credentials absent; using anonymous pulls.\n'
           fi
@@ -280,7 +282,9 @@ jobs:
             DOCKER_CONFIG="$(mktemp -d "$RUNNER_TEMP/docker-auth.XXXXXX")"
             printf 'config=%s\n' "$DOCKER_CONFIG" >> "$GITHUB_OUTPUT"
             printf 'DOCKER_CONFIG=%s\n' "$DOCKER_CONFIG" >> "$GITHUB_ENV"
-            printf '%s' "$DOCKERHUB_TOKEN" | docker login --username "$DOCKERHUB_USERNAME" --password-stdin
+            if ! printf '%s' "$DOCKERHUB_TOKEN" | docker login --username "$DOCKERHUB_USERNAME" --password-stdin; then
+              printf '::warning::Optional Docker Hub login failed; continuing with anonymous mirror pulls.\n'
+            fi
           else
             printf 'Docker Hub credentials absent; using anonymous pulls.\n'
           fi
