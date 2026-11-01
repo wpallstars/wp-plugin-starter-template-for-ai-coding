@@ -201,6 +201,17 @@ jobs:
         shell: bash
         run: bash scripts/ci-docker-mirror.sh
 
+      - name: Optional Docker Hub login
+        env:
+          DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
+          DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
+        run: |
+          if [[ -n "$DOCKERHUB_USERNAME" && -n "$DOCKERHUB_TOKEN" ]]; then
+            printf '%s' "$DOCKERHUB_TOKEN" | docker login --username "$DOCKERHUB_USERNAME" --password-stdin
+          else
+            printf 'Docker Hub credentials absent; using anonymous pulls.\n'
+          fi
+
       - name: Plugin Check
         run: |
           args=()
@@ -246,6 +257,17 @@ jobs:
         if: runner.environment == 'github-hosted'
         shell: bash
         run: bash scripts/ci-docker-mirror.sh
+
+      - name: Optional Docker Hub login
+        env:
+          DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
+          DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
+        run: |
+          if [[ -n "$DOCKERHUB_USERNAME" && -n "$DOCKERHUB_TOKEN" ]]; then
+            printf '%s' "$DOCKERHUB_TOKEN" | docker login --username "$DOCKERHUB_USERNAME" --password-stdin
+          else
+            printf 'Docker Hub credentials absent; using anonymous pulls.\n'
+          fi
 
       - name: Smoke test
         env:
