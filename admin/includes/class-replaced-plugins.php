@@ -17,6 +17,11 @@
  * Each of those plugins, and inactive ones whose replacing setting is off,
  * also gets a note under its own row with the same step.
  *
+ * The list's Redundant view (WordPress 6.3 or later) shows every installed
+ * plugin a setting replaces, whatever its step, and the plugins the
+ * `wpstarter_redundant_plugins` filter adds. Every plugin made from the
+ * starter adds to the same view, so a site with several has one.
+ *
  * Shown on the Plugins screen to people who can activate plugins. "Hide"
  * hides the plugins listed at the time for that person; a plugin that needs
  * a different step later shows again.
@@ -49,6 +54,12 @@ class WPStarter_Replaced_Plugins {
     const DONE = 'wpstarter-deactivated';
 
     /**
+     * The Plugins screen's view (`plugin_status`) of redundant plugins. The
+     * same in every plugin made from the starter, so they share one view.
+     */
+    const VIEW = 'redundant';
+
+    /**
      * Register hooks.
      */
     public static function init() {
@@ -71,6 +82,82 @@ class WPStarter_Replaced_Plugins {
         add_action(is_network_admin() ? 'network_admin_notices' : 'admin_notices', array(__CLASS__, 'notice'));
         add_action('after_plugin_row', array(__CLASS__, 'row_note'), 10, 1);
         add_action('admin_head', array(__CLASS__, 'row_note_style'));
+        add_filter('plugins_list', array(__CLASS__, 'redundant_list'), 20);
+        add_filter('views_plugins', array(__CLASS__, 'redundant_view'));
+        add_filter('views_plugins-network', array(__CLASS__, 'redundant_view'));
+    }
+
+    /**
+     * Add the Redundant list to the Plugins screen's lists: installed plugins
+     * a setting replaces and the plugins the `wpstarter_redundant_plugins`
+     * filter adds, with what other plugins made from the starter added, in
+     * the order of All.
+     *
+     * @param mixed $plugins Plugin lists, keyed by view: plugin file => data.
+     * @return mixed
+     */
+    public static function redundant_list($plugins) {
+        global $status;
+        if (!is_array($plugins) || empty($plugins['all']) || !is_array($plugins['all'])) {
+            return $plugins;
+        }
+        $files    = array();
+        $replaced = self::replaced();
+        foreach (array_keys($plugins['all']) as $file) {
+            if (isset($replaced[dirname((string) $file)])) {
+                $files[(string) $file] = true;
+            }
+        }
+        /**
+         * Plugin files the Plugins screen lists as Redundant, besides the
+         * plugins a setting replaces, such as plugins whose job WordPress
+         * now does itself.
+         *
+         * @param string[] $files Plugin files.
+         */
+        foreach ((array) apply_filters('wpstarter_redundant_plugins', array()) as $file) {
+            if (is_string($file) && '' !== $file) {
+                $files[$file] = true;
+            }
+        }
+        if (isset($plugins[self::VIEW]) && is_array($plugins[self::VIEW])) {
+            $files += array_fill_keys(array_map('strval', array_keys($plugins[self::VIEW])), true);
+        }
+        $list = array_intersect_key($plugins['all'], $files);
+        if (!$list) {
+            return $plugins;
+        }
+        $plugins[self::VIEW] = $list;
+        // Before WordPress 7.0 the list only takes core's own views and
+        // shows All for any other; this filter runs before it reads them.
+        // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- the list being shown.
+        $asked = isset($_REQUEST['plugin_status']) ? sanitize_key(wp_unslash($_REQUEST['plugin_status'])) : '';
+        if ('all' === $status && self::VIEW === $asked) {
+            $status = self::VIEW; // phpcs:ignore WordPress.WP.GlobalVariablesOverride.Prohibited -- the list's own view, as WordPress 7.0 sets it.
+        }
+        return $plugins;
+    }
+
+    /**
+     * The Redundant view's link above the list, with its name: before
+     * WordPress 7.0 the list has no name for views it does not know.
+     *
+     * @param mixed $views View links, keyed by view.
+     * @return mixed
+     */
+    public static function redundant_view($views) {
+        global $totals, $status;
+        if (!is_array($views) || empty($totals[self::VIEW])) {
+            return $views;
+        }
+        $views[self::VIEW] = sprintf(
+            '<a href="%1$s"%2$s>%3$s <span class="count">(%4$s)</span></a>',
+            esc_url(add_query_arg('plugin_status', self::VIEW, 'plugins.php')),
+            self::VIEW === $status ? ' class="current" aria-current="page"' : '',
+            esc_html__('Redundant', 'wp-plugin-starter-template'),
+            esc_html(number_format_i18n((int) $totals[self::VIEW]))
+        );
+        return $views;
     }
 
     /**
