@@ -47,7 +47,7 @@ How changes are made and checked: `DEVELOPMENT.md`. Releases: `RELEASING.md`.
   renamed with `scripts/rename-plugin.sh`. An add-on that runs only beside
   its parent plugin lists the core files it leaves out (such as `admin/`)
   in its own `scripts/core-skip.txt` (`DEVELOPMENT.md` → Starter sync).
-- Every plugin keeps up with the starter: the weekly Starter sync workflow
+- Every plugin keeps up with the starter: the daily Starter sync workflow
   keeps one `starter-sync` issue open while core files differ
   (`DEVELOPMENT.md` → Starter sync). Work it like any issue: sync, check the
   starter's changelog for changes the plugin's own files need, lint, smoke

@@ -396,7 +396,7 @@ set_credit() {
 	for file in README.md readme.txt; do
 		[[ -f "$file" ]] || continue
 		if [[ "$file" = README.md ]]; then
-			line="Made from [$name]($url), the wpallstars starter plugin. Its shared standards and the weekly Starter sync keep this plugin up to date."
+			line="Made from [$name]($url), the wpallstars starter plugin. Its shared standards and the daily Starter sync keep this plugin up to date."
 		else
 			line="Made from $name ($url), the wpallstars starter plugin."
 		fi
