@@ -9,6 +9,42 @@
 # Additional terms (GPL-3.0 section 7(b)): ATTRIBUTION.txt
 # Provenance: wpas-e4502af0f07e8a92. Copies, even of part, keep these lines.
 
+# Keep cached images. In GitHub Actions, address the official-image cache
+# directly: a daemon mirror can silently fall back to rate-limited Docker Hub.
+pull_image() {
+	local image="$1"
+	local attempt official="" mirror
+	if docker image inspect "$image" >/dev/null 2>&1; then
+		return 0
+	fi
+	if [[ "${GITHUB_ACTIONS:-}" == "true" && "$image" != *@* ]]; then
+		case "$image" in
+		library/*) official="${image#library/}" ;;
+		docker.io/library/*) official="${image#docker.io/library/}" ;;
+		*/*) ;; # Private, namespaced and other-registry overrides stay unchanged.
+		*) official="$image" ;;
+		esac
+		if [[ -n "$official" && "$official" != */* ]]; then
+			mirror="mirror.gcr.io/library/$official"
+			printf 'Pulling %s from %s.\n' "$image" "$mirror"
+			if docker pull "$mirror" && docker tag "$mirror" "$image"; then
+				return 0
+			fi
+			printf 'Mirror pull or tag failed for %s; falling back to Docker Hub.\n' "$image" >&2
+		fi
+	fi
+	for attempt in 1 2 3; do
+		if docker pull "$image"; then
+			return 0
+		fi
+		if [[ "$attempt" -lt 3 ]]; then
+			printf 'Pull failed for %s (attempt %s/3); retrying in 20 seconds.\n' "$image" "$attempt" >&2
+			sleep 20
+		fi
+	done
+	return 1
+}
+
 # Arguments are Docker options, not words to split (worktree paths may contain spaces).
 docker_owner_labels() {
 	local root="$1"

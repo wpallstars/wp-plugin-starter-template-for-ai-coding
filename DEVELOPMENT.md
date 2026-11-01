@@ -203,9 +203,25 @@ this reduces rate-limit failures rather than guaranteeing every pull.
 Self-hosted runners keep their existing daemon configuration (a restart
 could interrupt other jobs); configure a mirror there administratively.
 
-Both scripts keep locally cached images, as before, and pull missing images
-up to three times, waiting 20 seconds between failures, before creating any
-containers. Local runs do not change Docker's daemon configuration.
+Both scripts keep locally cached images, as before. In GitHub Actions only
+(`GITHUB_ACTIONS=true`, including self-hosted runners), the shared
+`pull_image` in `scripts/lib/docker-wordpress.sh` first pulls missing official
+images explicitly as `mirror.gcr.io/library/<name>:<tag>` and tags them with
+the requested name. This avoids a daemon mirror silently falling back to
+Docker Hub. If the mirror pull or tag fails, the plain pull still runs up
+to three times, waiting 20 seconds between failures, before creating any
+containers. Namespaced, other-registry and digest overrides are not rewritten.
+Local runs use only the existing plain pulls and do not change Docker's
+daemon configuration.
+
+Optionally set repository secrets `DOCKERHUB_USERNAME` and `DOCKERHUB_TOKEN`
+for a Docker Hub account and read-only access token. Before Plugin Check and
+each smoke test, CI logs in with `docker login --password-stdin` only when
+both are present, giving fallback pulls the account's higher limit. Login
+uses a private temporary Docker config and always logs out afterward, leaving
+a self-hosted runner's existing credentials alone. Without the secrets
+(including forks), it skips login; the explicit mirror needs no secret.
+
 `{PREFIX}_DB_IMAGE` overrides MariaDB in both scripts; `{PREFIX}_CLI_IMAGE`
 overrides WP-CLI in Plugin Check. Smoke-test WordPress images follow `--php`.
 Overrides may name another registry or a locally cached image.

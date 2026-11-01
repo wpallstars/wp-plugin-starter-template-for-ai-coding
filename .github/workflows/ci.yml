@@ -201,6 +201,24 @@ jobs:
         shell: bash
         run: bash scripts/ci-docker-mirror.sh
 
+      - name: Optional Docker Hub login
+        id: dockerhub
+        env:
+          DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
+          DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
+        run: |
+          if [[ -n "$DOCKERHUB_USERNAME" && -n "$DOCKERHUB_TOKEN" ]]; then
+            export DOCKER_CONFIG
+            DOCKER_CONFIG="$(mktemp -d "$RUNNER_TEMP/docker-auth.XXXXXX")"
+            printf 'config=%s\n' "$DOCKER_CONFIG" >> "$GITHUB_OUTPUT"
+            printf 'DOCKER_CONFIG=%s\n' "$DOCKER_CONFIG" >> "$GITHUB_ENV"
+            if ! printf '%s' "$DOCKERHUB_TOKEN" | docker login --username "$DOCKERHUB_USERNAME" --password-stdin; then
+              printf '::warning::Optional Docker Hub login failed; continuing with anonymous mirror pulls.\n'
+            fi
+          else
+            printf 'Docker Hub credentials absent; using anonymous pulls.\n'
+          fi
+
       - name: Plugin Check
         run: |
           args=()
@@ -208,6 +226,12 @@ jobs:
             args+=(--zip "$zip")
           done
           scripts/plugin-check.sh "${args[@]}" --keep-output dist/plugin-check
+
+      - name: Docker Hub logout
+        if: always() && steps.dockerhub.outputs.config != ''
+        env:
+          DOCKER_CONFIG: ${{ steps.dockerhub.outputs.config }}
+        run: docker logout
 
       - name: Keep the zips and reports for testing
         if: always()
@@ -247,6 +271,24 @@ jobs:
         shell: bash
         run: bash scripts/ci-docker-mirror.sh
 
+      - name: Optional Docker Hub login
+        id: dockerhub
+        env:
+          DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
+          DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
+        run: |
+          if [[ -n "$DOCKERHUB_USERNAME" && -n "$DOCKERHUB_TOKEN" ]]; then
+            export DOCKER_CONFIG
+            DOCKER_CONFIG="$(mktemp -d "$RUNNER_TEMP/docker-auth.XXXXXX")"
+            printf 'config=%s\n' "$DOCKER_CONFIG" >> "$GITHUB_OUTPUT"
+            printf 'DOCKER_CONFIG=%s\n' "$DOCKER_CONFIG" >> "$GITHUB_ENV"
+            if ! printf '%s' "$DOCKERHUB_TOKEN" | docker login --username "$DOCKERHUB_USERNAME" --password-stdin; then
+              printf '::warning::Optional Docker Hub login failed; continuing with anonymous mirror pulls.\n'
+            fi
+          else
+            printf 'Docker Hub credentials absent; using anonymous pulls.\n'
+          fi
+
       - name: Smoke test
         env:
           SMOKE_WP: ${{ matrix.wp }}
@@ -258,6 +300,12 @@ jobs:
             args+=(--multisite)
           fi
           scripts/smoke-test.sh "${args[@]}"
+
+      - name: Docker Hub logout
+        if: always() && steps.dockerhub.outputs.config != ''
+        env:
+          DOCKER_CONFIG: ${{ steps.dockerhub.outputs.config }}
+        run: docker logout
 
       - name: Keep debug.log
         if: failure()
