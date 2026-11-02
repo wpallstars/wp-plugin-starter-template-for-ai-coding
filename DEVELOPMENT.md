@@ -609,8 +609,10 @@ money and most code-review services are paid. Until then, work moves fast:
 - Draft pull requests run only the lint job. Lint reads whether the pull
   request is still a draft when it ends, so a run that started just before
   it was marked ready, or a re-run of one, still runs the release and smoke
-  tests. A new push cancels the run for the previous one, but a draft run
-  never cancels a ready one.
+  tests. Draft and ready runs are in separate concurrency groups: a new
+  push cancels an earlier run of the same kind only. A draft run never
+  cancels a ready one, and a ready run does not cancel a draft run still
+  going, which finishes as well.
 - The build zips and Plugin Check reports are kept for seven days on each
   run (artifact `<repository>-build-…`) for testing a branch on a site.
 - Review apps that are already installed (CodeRabbit, qlty, Socket) give
