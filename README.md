@@ -10,7 +10,7 @@
 [![CodeFactor](https://www.codefactor.io/repository/github/wpallstars/wp-plugin-starter-template-for-ai-coding/badge)](https://www.codefactor.io/repository/github/wpallstars/wp-plugin-starter-template-for-ai-coding)
 [![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/wpallstars/wp-plugin-starter-template-for-ai-coding/badge)](https://scorecard.dev/viewer/?uri=github.com/wpallstars/wp-plugin-starter-template-for-ai-coding)
 [![License: GPL v3 or later](https://img.shields.io/badge/License-GPL%20v3%20or%20later-blue.svg)](LICENSE)
-[![Latest release](https://img.shields.io/badge/release-v1.0.49-blue.svg)](https://github.com/wpallstars/wp-plugin-starter-template-for-ai-coding/releases)
+[![Latest release](https://img.shields.io/badge/release-v1.0.50-blue.svg)](https://github.com/wpallstars/wp-plugin-starter-template-for-ai-coding/releases)
 
 [![Requires WordPress](https://img.shields.io/badge/WordPress-6.2%2B-21759B.svg?logo=wordpress)](readme.txt)
 [![Tested up to](https://img.shields.io/badge/tested%20up%20to-7.1-21759B.svg?logo=wordpress)](readme.txt)
@@ -27,7 +27,7 @@ WP Plugin Starter is what wpallstars plugins are made from. It has no features o
 
 If this saves you time, headaches and costs, feel free to [buy me a coffee](https://buymeacoffee.com/marcusquinn), or whatever you like, to invest in making more things open-source.
 
-Version: 1.0.49
+Version: 1.0.50
 
 <!-- github-only:start -->
 ## Screenshots
@@ -168,6 +168,13 @@ Read a setting with `WPStarter_Settings::get( 'key' )`, never the option itself:
 Deleting the plugin removes its settings (on multisite, every site's and the network's), its cached data, its problem reports (other plugins' and themes' stay), who hid lines of the Plugins screen notice about replaced plugins, and the cached GitHub releases.
 
 ## Changelog
+
+### 1.0.50
+
+- New: the Plugins screen has a Redundant view, beside All, Active and Inactive, listing every installed plugin a setting replaces, active or not, with the note under its row saying what to do (WordPress 6.3 or later). Every plugin made from the starter adds its own to the same view, so a site with several has one Redundant view. Developers: the new `wpstarter_redundant_plugins` filter (plugin files) adds other plugins to it. Plugins get it with `scripts/sync-core.sh` (GH#606).
+- Developers: the Starter sync workflow runs every day at 05:41 UTC instead of every Monday, so a starter change reaches every plugin's starter-sync issue within a day. It still keeps one issue per plugin. Plugins get it with `scripts/sync-core.sh`; a plugin's own README credit line says weekly until it is changed there (GH#608).
+- Developers: CI pulls official images from Google's Docker Hub cache (`mirror.gcr.io`) first, then from Docker Hub with retries, and logs in to Docker Hub before Plugin Check and the smoke tests when the optional `DOCKERHUB_USERNAME` and `DOCKERHUB_TOKEN` secrets are set (GH#605). The login (new core script `scripts/ci-docker-login.sh`) uses a Docker config of the job's own, so it never reaches a self-hosted runner's credential helper or stored credentials; only a login that worked is used, and the job removes it at the end. Plugins get it with `scripts/sync-core.sh` (GH#613).
+- Developers: when `scripts/deploy-sites.sh --apply` cannot write its deploy lock's owner file, it removes the lock only while the owner file names its own run, so a failed run can no longer remove another run's new lock. Plugins get it with `scripts/sync-core.sh` (GH#613).
 
 ### 1.0.49
 
