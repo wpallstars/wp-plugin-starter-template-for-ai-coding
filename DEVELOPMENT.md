@@ -217,10 +217,16 @@ daemon configuration.
 Optionally set repository secrets `DOCKERHUB_USERNAME` and `DOCKERHUB_TOKEN`
 for a Docker Hub account and read-only access token. Before Plugin Check and
 each smoke test, CI logs in with `docker login --password-stdin` only when
-both are present, giving fallback pulls the account's higher limit. Login
-uses a private temporary Docker config and always logs out afterward, leaving
-a self-hosted runner's existing credentials alone. Without the secrets
-(including forks), it skips login; the explicit mirror needs no secret.
+both are present, giving fallback pulls the account's higher limit.
+`scripts/ci-docker-login.sh` logs in with a Docker config of the job's own:
+the runner's settings (its Docker context, proxies) without its credential
+settings, and Docker Hub kept in that config's own file, so a self-hosted
+runner's credential helper and stored credentials are never used, changed
+or removed, and jobs never share a login. A runner with a Docker config
+needs `jq` for the copy; without it the job skips login. A failed login
+leaves pulls anonymous; a login that worked is removed when the job ends.
+Without the secrets (including forks), it skips login; the explicit mirror
+needs no secret.
 
 `{PREFIX}_DB_IMAGE` overrides MariaDB in both scripts; `{PREFIX}_CLI_IMAGE`
 overrides WP-CLI in Plugin Check. Smoke-test WordPress images follow `--php`.
