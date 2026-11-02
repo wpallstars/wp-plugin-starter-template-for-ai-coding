@@ -220,13 +220,13 @@ each smoke test, CI logs in with `docker login --password-stdin` only when
 both are present, giving fallback pulls the account's higher limit.
 `scripts/ci-docker-login.sh` logs in with a Docker config of the job's own:
 the runner's settings (its Docker context, proxies) without its credential
-settings, and Docker Hub kept in that config's own file, so a self-hosted
-runner's credential helper and stored credentials are never used, changed
-or removed, and jobs never share a login. A runner with a Docker config
-needs `jq` for the copy; without it the job skips login. A failed login
-leaves pulls anonymous; a login that worked is removed when the job ends.
-Without the secrets (including forks), it skips login; the explicit mirror
-needs no secret.
+settings, and Docker Hub kept in that config's own file, so the login never
+reaches a self-hosted runner's credential helper or stored credentials, and
+jobs never share a login. A runner with a Docker config needs `jq` for the
+copy; without it the job skips login. After a skipped or failed login, pulls
+use the runner's own Docker config, as before; a login that worked is
+removed when the job ends. Without the secrets (including forks), it skips
+login; the explicit mirror needs no secret.
 
 `{PREFIX}_DB_IMAGE` overrides MariaDB in both scripts; `{PREFIX}_CLI_IMAGE`
 overrides WP-CLI in Plugin Check. Smoke-test WordPress images follow `--php`.

@@ -20,17 +20,27 @@ set -euo pipefail
 
 readonly HUB='https://index.docker.io/v1/'
 
-# Writes the job's config into $2 from the runner's config folder $1.
+# Writes the job's config into $2 from the runner's config folder $1. Fails
+# unless the result holds the Docker Hub entry: an empty or broken copy would
+# hold no auth, which brings back the host's credential helper.
 make_config() {
 	local source="$1"
 	local dir="$2"
 	local entry
+	if [[ -d "$source" ]]; then
+		# Absolute, so the links below resolve from the job's folder.
+		source="$(cd "$source" && pwd -P)" || return 1
+	fi
 	if [[ -f "$source/config.json" ]]; then
 		command -v jq >/dev/null 2>&1 || return 1
-		jq --arg hub "$HUB" 'del(.auths, .credsStore, .credHelpers) | .auths = {($hub): {}}' \
+		jq -e --arg hub "$HUB" \
+			'if type == "object" then del(.auths, .credsStore, .credHelpers) | .auths = {($hub): {}} else error("not an object") end' \
 			"$source/config.json" >"$dir/config.json" || return 1
+		jq -e --arg hub "$HUB" '.auths[$hub] == {} and .credsStore == null and .credHelpers == null' \
+			"$dir/config.json" >/dev/null || return 1
 	else
-		printf '{"auths": {"%s": {}}}\n' "$HUB" >"$dir/config.json"
+		printf '{"auths": {"%s": {}}}\n' "$HUB" >"$dir/config.json" || return 1
+		grep -qF "\"$HUB\"" "$dir/config.json" || return 1
 	fi
 	for entry in contexts cli-plugins; do
 		if [[ -e "$source/$entry" ]]; then
@@ -44,19 +54,19 @@ login() {
 	local source="${DOCKER_CONFIG:-$HOME/.docker}"
 	local dir
 	if [[ -z "${DOCKERHUB_USERNAME:-}" || -z "${DOCKERHUB_TOKEN:-}" ]]; then
-		printf 'Docker Hub credentials absent; using anonymous pulls.\n'
+		printf 'Docker Hub credentials absent; skipping the optional login.\n'
 		return 0
 	fi
 	dir="$(mktemp -d "${RUNNER_TEMP:?}/docker-auth.XXXXXX")"
 	if ! make_config "$source" "$dir"; then
 		rm -rf "$dir"
-		printf '::warning::Could not copy the runner'"'"'s Docker config (jq is needed when it has one); skipping the optional Docker Hub login, so pulls stay anonymous.\n'
+		printf '::warning::Could not copy the runner'"'"'s Docker config (jq is needed when it has one); skipping the optional Docker Hub login; pulls use the runner'"'"'s own Docker config.\n'
 		return 0
 	fi
 	if ! printf '%s' "$DOCKERHUB_TOKEN" |
 		DOCKER_CONFIG="$dir" docker login --username "$DOCKERHUB_USERNAME" --password-stdin; then
 		rm -rf "$dir"
-		printf '::warning::Optional Docker Hub login failed; continuing with anonymous pulls.\n'
+		printf '::warning::Optional Docker Hub login failed; pulls use the runner'"'"'s own Docker config.\n'
 		return 0
 	fi
 	printf 'config=%s\n' "$dir" >>"${GITHUB_OUTPUT:?}"
