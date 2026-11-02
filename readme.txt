@@ -5,7 +5,7 @@ Tags: starter, boilerplate, settings, developer, template
 Requires at least: 6.2
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 1.0.49
+Stable tag: 1.0.50
 License: GPLv3 or later
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 
@@ -63,9 +63,9 @@ GitHub releases are the stable beta channel: each version comes out there first.
 
 == Changelog ==
 
-= 1.0.49 =
-* Developers: deploy-sites.sh --apply's deploy lock holds where ps cannot read processes, takeovers of a stale lock take turns, and an unreadable installed version is refused unless --allow-downgrade is passed.
-* Developers: CI's draft-state request has a time limit, and Starter syncs keep a plugin's own .gitignore lines and its SonarQube action pin.
+= 1.0.50 =
+* New: a Redundant view on the Plugins screen lists the installed plugins a setting replaces, with what to do about each (WordPress 6.3 or later).
+* Developers: CI pulls Docker images from Google's mirror of Docker Hub, with an optional Docker Hub login, and the Starter sync runs daily.
 
 Every change: changelog.txt.
 
