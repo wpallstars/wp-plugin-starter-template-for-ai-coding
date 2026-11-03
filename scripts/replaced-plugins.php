@@ -68,8 +68,10 @@ function tokens($file) {
  * Small evaluator for the expressions used in 'replaces'.
  */
 final class Replaces_Reader {
-    /** @var array "Class::NAME" => array(file, tokens, start, class). */
+    /** @var array "Class::NAME" => array(file, start, class). */
     private $consts = array();
+    /** @var array The last other file a constant was read from: array(file, tokens). */
+    private $cache = array('', array());
     /** @var array Slug => name. */
     public $plugins = array();
     /** @var array Slug => list of "file:line". */
@@ -100,14 +102,21 @@ final class Replaces_Reader {
             }
         }
         sort($files);
-        $parsed = array();
+        // Tokens take about 400 bytes each, so only one file's are kept at a
+        // time: a large plugin's includes/ would not fit in PHP's default
+        // 128 MB. The second pass tokenises again only the files with a
+        // 'replaces' key, and constants are read from their file on demand.
+        $with_replaces = array();
         foreach ($files as $file) {
-            $parsed[$file] = tokens($file);
-            $this->collect_consts($file, $parsed[$file]);
+            $this->collect_consts($file, tokens($file));
+            if (false !== strpos((string) file_get_contents($file), "'replaces'")) {
+                $with_replaces[] = $file;
+            }
         }
-        foreach ($parsed as $file => $t) {
-            $this->collect_replaces($file, $t, $dir);
+        foreach ($with_replaces as $file) {
+            $this->collect_replaces($file, tokens($file), $dir);
         }
+        $this->cache = array('', array());
         ksort($this->plugins);
     }
 
@@ -118,9 +127,26 @@ final class Replaces_Reader {
                 $class = $t[$i + 1][1];
             }
             if (T_CONST === $tok[0] && '' !== $class && isset($t[$i + 2]) && '=' === $t[$i + 2][0]) {
-                $this->consts[$class . '::' . $t[$i + 1][1]] = array($file, $t, $i + 3, $class);
+                $this->consts[$class . '::' . $t[$i + 1][1]] = array($file, $i + 3, $class);
             }
         }
+    }
+
+    /**
+     * A file's tokens: the current file's, the cached file's, or read now
+     * (and cached in place of the last).
+     *
+     * @param string $file Path.
+     * @return array
+     */
+    private function file_tokens($file) {
+        if ($file === $this->file) {
+            return $this->t;
+        }
+        if ($file !== $this->cache[0]) {
+            $this->cache = array($file, tokens($file));
+        }
+        return $this->cache[1];
     }
 
     private function collect_replaces($file, array $t, $dir) {
@@ -260,9 +286,9 @@ final class Replaces_Reader {
         if (!isset($this->consts[$key])) {
             $this->error("unknown constant $key");
         }
-        list($file, $t, $start, $class) = $this->consts[$key];
+        list($file, $start, $class) = $this->consts[$key];
         $saved = array($this->file, $this->t, $this->i, $this->class);
-        list($this->file, $this->t, $this->i, $this->class) = array($file, $t, $start, $class);
+        list($this->file, $this->t, $this->i, $this->class) = array($file, $this->file_tokens($file), $start, $class);
         $value = $this->expr();
         list($this->file, $this->t, $this->i, $this->class) = $saved;
         return $value;
