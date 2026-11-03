@@ -16,9 +16,12 @@
 pull_mirror() {
 	local mirror="$1"
 	local limit="${DOCKER_MIRROR_TIMEOUT:-180}"
-	if [[ ! "$limit" =~ ^[1-9][0-9]*$ ]]; then
+	if [[ ! "$limit" =~ ^0*[1-9][0-9]*$ ]]; then
 		limit=180
 	fi
+	while [[ "$limit" == 0?* ]]; do
+		limit="${limit#0}"
+	done
 	if command -v timeout >/dev/null 2>&1; then
 		timeout "$limit" docker pull "$mirror" || return 1
 		return 0
