@@ -19,9 +19,7 @@ pull_mirror() {
 	if [[ ! "$limit" =~ ^0*[1-9][0-9]*$ ]]; then
 		limit=180
 	fi
-	while [[ "$limit" == 0?* ]]; do
-		limit="${limit#0}"
-	done
+	limit="${limit#"${limit%%[!0]*}"}"
 	if command -v timeout >/dev/null 2>&1; then
 		timeout "$limit" docker pull "$mirror" || return 1
 		return 0
