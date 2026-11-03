@@ -9,6 +9,20 @@
 # Additional terms (GPL-3.0 section 7(b)): ATTRIBUTION.txt
 # Provenance: wpas-e4502af0f07e8a92. Copies, even of part, keep these lines.
 
+# Pull from the mirror with a time limit (DOCKER_MIRROR_TIMEOUT seconds,
+# default 180) where timeout exists, as on GitHub's runners: a stalled mirror
+# would otherwise run until the job's time limit, and the Docker Hub fallback
+# would never run.
+pull_mirror() {
+	local mirror="$1"
+	if command -v timeout >/dev/null 2>&1; then
+		timeout "${DOCKER_MIRROR_TIMEOUT:-180}" docker pull "$mirror" || return 1
+		return 0
+	fi
+	docker pull "$mirror" || return 1
+	return 0
+}
+
 # Keep cached images. In GitHub Actions, address the official-image cache
 # directly: a daemon mirror can silently fall back to rate-limited Docker Hub.
 pull_image() {
@@ -27,10 +41,10 @@ pull_image() {
 		if [[ -n "$official" && "$official" != */* ]]; then
 			mirror="mirror.gcr.io/library/$official"
 			printf 'Pulling %s from %s.\n' "$image" "$mirror"
-			if docker pull "$mirror" && docker tag "$mirror" "$image"; then
+			if pull_mirror "$mirror" && docker tag "$mirror" "$image"; then
 				return 0
 			fi
-			printf 'Mirror pull or tag failed for %s; falling back to Docker Hub.\n' "$image" >&2
+			printf 'Mirror pull or tag failed or timed out for %s; falling back to Docker Hub.\n' "$image" >&2
 		fi
 	fi
 	for attempt in 1 2 3; do

@@ -63,6 +63,9 @@ GitHub releases are the stable beta channel: each version comes out there first.
 
 == Changelog ==
 
+= Unreleased =
+* Developers: a deploy lock with no owner yet is reported as such, and CI's Docker mirror pull has a time limit.
+
 = 1.0.50 =
 * New: a Redundant view on the Plugins screen lists the installed plugins a setting replaces, with what to do about each (WordPress 6.3 or later).
 * Developers: CI pulls Docker images from Google's mirror of Docker Hub, with an optional isolated Docker Hub login, the Starter sync runs daily, and a deploy run that cannot write its lock no longer removes another run's lock.
