@@ -10,7 +10,7 @@
 [![CodeFactor](https://www.codefactor.io/repository/github/wpallstars/wp-plugin-starter-template-for-ai-coding/badge)](https://www.codefactor.io/repository/github/wpallstars/wp-plugin-starter-template-for-ai-coding)
 [![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/wpallstars/wp-plugin-starter-template-for-ai-coding/badge)](https://scorecard.dev/viewer/?uri=github.com/wpallstars/wp-plugin-starter-template-for-ai-coding)
 [![License: GPL v3 or later](https://img.shields.io/badge/License-GPL%20v3%20or%20later-blue.svg)](LICENSE)
-[![Latest release](https://img.shields.io/badge/release-v1.0.50-blue.svg)](https://github.com/wpallstars/wp-plugin-starter-template-for-ai-coding/releases)
+[![Latest release](https://img.shields.io/badge/release-v1.0.51-blue.svg)](https://github.com/wpallstars/wp-plugin-starter-template-for-ai-coding/releases)
 
 [![Requires WordPress](https://img.shields.io/badge/WordPress-6.2%2B-21759B.svg?logo=wordpress)](readme.txt)
 [![Tested up to](https://img.shields.io/badge/tested%20up%20to-7.1-21759B.svg?logo=wordpress)](readme.txt)
@@ -27,7 +27,7 @@ WP Plugin Starter is what wpallstars plugins are made from. It has no features o
 
 If this saves you time, headaches and costs, feel free to [buy me a coffee](https://buymeacoffee.com/marcusquinn), or whatever you like, to invest in making more things open-source.
 
-Version: 1.0.50
+Version: 1.0.51
 
 <!-- github-only:start -->
 ## Screenshots
@@ -169,7 +169,7 @@ Deleting the plugin removes its settings (on multisite, every site's and the net
 
 ## Changelog
 
-### Unreleased
+### 1.0.51
 
 - Developers: `scripts/deploy-sites.sh --apply` and its dry run say when the deploy lock has no owner file yet, and that a run two minutes later takes it over, instead of naming a running deploy. In CI, the `mirror.gcr.io` pull gives up after a positive-integer `DOCKER_MIRROR_TIMEOUT` in seconds (default 180), so zero or non-numeric values cannot disable or skip the limit and a stalled mirror falls back to Docker Hub. Plugins get both with `scripts/sync-core.sh` (GH#619, GH#621).
 - Developers: `scripts/replaced-plugins.php` keeps only one file's tokens at a time, so the release preflight's replaced plugins check no longer runs out of memory at PHP's default 128 MB on a large plugin (SEO Pro Stack: 18 MB instead of 130 MB). Its list, count and messages are unchanged. Plugins get it with `scripts/sync-core.sh` (GH#623).

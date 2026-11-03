@@ -2,7 +2,7 @@
 
 Every change to WP Plugin Starter. readme.txt lists the latest version in short.
 
-= Unreleased =
+= 1.0.51 =
 * Developers: scripts/deploy-sites.sh --apply and its dry run say when the host's deploy lock has no owner file yet (another run is taking it, or one could not write it), and that a run two minutes later takes it over, instead of naming a running deploy with "PID ?". In GitHub Actions, the mirror.gcr.io pull in scripts/lib/docker-wordpress.sh gives up after a positive-integer DOCKER_MIRROR_TIMEOUT in seconds (default 180) where timeout exists, so zero or non-numeric values cannot disable or skip the limit, and a stalled mirror falls back to Docker Hub instead of running until the job's time limit. Plugins get both with scripts/sync-core.sh (GH#619, GH#621).
 * Developers: scripts/replaced-plugins.php keeps only one file's tokens at a time: it reads every file under includes/ once for its class constants, keeping only where each value starts, then tokenises again only the files with a 'replaces' key, and a constant's file when its value is read. Before, it kept every file's tokens (about 400 bytes each) for both passes, so on a large plugin the release preflight's replaced plugins check ran out of memory at PHP's default CLI memory_limit of 128 MB, and passed in GitHub Actions only because setup-php lifts the limit (SEO Pro Stack: 18 MB at peak instead of 130 MB). Its list, count, --check and --write output and its errors are unchanged. Plugins get it with scripts/sync-core.sh (GH#623).
 
