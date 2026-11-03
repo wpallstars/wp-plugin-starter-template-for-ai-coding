@@ -812,7 +812,11 @@ lock_take() {
 		# Gone since mkdir failed: another run's takeover; try again.
 		[[ -d "$dir" ]] || continue
 		if lock_live "$dir"; then
-			say "deploy-remote: another deploy of $SLUG is running on this host ($(lock_holder "$dir")); nothing installed. Wait for it to finish, then run again."
+			if [[ -z "$(lock_field "$dir" pid)" ]]; then
+				say "deploy-remote: the deploy lock $dir has no owner yet: another run is taking it, or one could not write its owner file; nothing installed. Run again in two minutes, when a lock with no owner is taken over."
+			else
+				say "deploy-remote: another deploy of $SLUG is running on this host ($(lock_holder "$dir")); nothing installed. Wait for it to finish, then run again."
+			fi
 			return 3
 		fi
 		pid="$(lock_field "$dir" pid)"
@@ -841,7 +845,9 @@ lock_report() {
 	local dir
 	dir="$(lock_path)"
 	[[ -d "$dir" ]] || return 0
-	if lock_live "$dir"; then
+	if lock_live "$dir" && [[ -z "$(lock_field "$dir" pid)" ]]; then
+		say "A deploy lock of $SLUG with no owner yet is on this host ($dir): another run is taking it, or one could not write its owner file. --apply stops until it is two minutes old, then takes it over."
+	elif lock_live "$dir"; then
 		say "A deploy of $SLUG is running on this host ($(lock_holder "$dir")); --apply stops until it ends."
 	else
 		say "A stale deploy lock of $SLUG is on this host ($(lock_holder "$dir")); --apply will take it over."

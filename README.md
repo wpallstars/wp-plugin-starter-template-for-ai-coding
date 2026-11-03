@@ -169,6 +169,10 @@ Deleting the plugin removes its settings (on multisite, every site's and the net
 
 ## Changelog
 
+### Unreleased
+
+- Developers: `scripts/deploy-sites.sh --apply` and its dry run say when the deploy lock has no owner file yet, and that a run two minutes later takes it over, instead of naming a running deploy. In CI, the `mirror.gcr.io` pull gives up after `DOCKER_MIRROR_TIMEOUT` seconds (default 180), so a stalled mirror falls back to Docker Hub. Plugins get both with `scripts/sync-core.sh` (GH#619).
+
 ### 1.0.50
 
 - New: the Plugins screen has a Redundant view, beside All, Active and Inactive, listing every installed plugin a setting replaces, active or not, with the note under its row saying what to do (WordPress 6.3 or later). Every plugin made from the starter adds its own to the same view, so a site with several has one Redundant view. Developers: the new `wpstarter_redundant_plugins` filter (plugin files) adds other plugins to it. Plugins get it with `scripts/sync-core.sh` (GH#606).
