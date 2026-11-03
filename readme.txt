@@ -64,7 +64,7 @@ GitHub releases are the stable beta channel: each version comes out there first.
 == Changelog ==
 
 = Unreleased =
-* Developers: a deploy lock with no owner yet is reported as such, and CI's Docker mirror pull has a time limit.
+* Developers: a deploy lock with no owner yet is reported as such, and CI's Docker mirror pull defaults zero or non-numeric time limits to 180 seconds.
 
 = 1.0.50 =
 * New: a Redundant view on the Plugins screen lists the installed plugins a setting replaces, with what to do about each (WordPress 6.3 or later).
