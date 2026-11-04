@@ -16,8 +16,10 @@
 # headers, or redirected:HOST when a redirect dropped that query; WARN cached
 # means a cache ignored the query string, so PHP did not run for that fetch,
 # and WARN purge failed that visitors may still get pages pointing at the old
-# CSS and JS. apply exits 1 on a failed site, a version
-# not reached or new log lines.
+# CSS and JS. A home that gives 5xx or no answer is fetched once more after
+# DEPLOY_HOME_RETRY_DELAY seconds (default 5); a pass then is WARN home
+# retried (CODE), a second failure fails the site. apply exits 1 on a failed
+# site, a version not reached or new log lines.
 #
 # apply holds a per-plugin lock on the host, ~/.SLUG-deploy/.lock (mkdir,
 # with an owner file: PID, tag, start time, parent), from before the first
@@ -47,6 +49,9 @@ ALLOW_DOWNGRADE=0
 RUN_STAMP=""
 LOCK_DIR=""
 FETCHES=0
+# Seconds before a home page that gave 5xx or no answer is fetched again.
+HOME_RETRY_DELAY="${DEPLOY_HOME_RETRY_DELAY:-5}"
+[[ "$HOME_RETRY_DELAY" =~ ^[0-9]+$ ]] || HOME_RETRY_DELAY=5
 SKIPS=()
 LOG_FILES=()
 LOG_BEFORE=()
@@ -504,7 +509,7 @@ home_check() {
 				cache = cache (cache == "" ? "" : ",") line
 			}
 		}
-		END { print cache == "" ? "none" : cache }
+		END { print (cache == "" ? "none" : cache) }
 	' "$headers")"
 	if [[ "$final_url" != *"?$fetch" && "$final_url" != *"?$fetch&"* && "$final_url" != *"&$fetch" && "$final_url" != *"&$fetch&"* ]]; then
 		final_host="${final_url#*://}"
@@ -520,10 +525,11 @@ home_check() {
 check_sites() {
 	local root="$1"
 	local kind urls url status result reason warn load purged line network=0
-	local load_errors load_status summary
+	local load_errors load_status summary first_code
+	local check_error="home check failed; "
 	local url_args=()
 	SITES_TOTAL=0 SITES_FAILED=0 SITES_PURGED=0 PURGE_FAILED=0 SITE_LINES=""
-	MAIN_STATUS="?" MAIN_CODE="000" MAIN_CACHE="none" MAIN_REASON=""
+	MAIN_STATUS="?" MAIN_CODE="000" MAIN_CACHE="none" MAIN_REASON="" MAIN_RETRIED=""
 	kind="$(wp_bare "$root" eval 'echo is_multisite() ? "multisite" : "single";')" || return 1
 	case "$kind" in
 	multisite) network=1 ;;
@@ -559,10 +565,21 @@ check_sites() {
 		if ! status="$(wp_bare "$root" ${url_args[@]+"${url_args[@]}"} plugin list --name="$SLUG" --field=status)" || [[ -z "$status" ]]; then
 			reason+="status read failed; "
 		fi
-		home_check "$url" || reason+="home check failed; "
+		home_check "$url" || reason+="$check_error"
+		# A busy host can answer one fetch with 5xx (or not at all) while the
+		# site is fine: fetch once more after a pause, and fail only if that
+		# fails too. A pass on the second fetch is a warning, not silence.
+		first_code=""
+		if [[ "$HOME_CODE" == 5* || "$HOME_CODE" == "000" ]]; then
+			first_code="$HOME_CODE"
+			sleep "$HOME_RETRY_DELAY"
+			home_check "$url" || [[ "$reason" == *"$check_error"* ]] || reason+="$check_error"
+		fi
 		# 4xx may be the host's firewall: report, but do not fail it.
 		if [[ "$HOME_CODE" == 5* || "$HOME_CODE" == "000" ]]; then
-			reason+="home failed; "
+			reason+="home failed${first_code:+ ($first_code, then $HOME_CODE)}; "
+		elif [[ -n "$first_code" ]]; then
+			warn+="home retried ($first_code), "
 		fi
 		[[ "$HOME_CACHE" != *hit* || "$HOME_CACHE" == redirected:* ]] || warn+="cached, "
 		if [[ -n "$reason" ]]; then
@@ -573,7 +590,7 @@ check_sites() {
 		fi
 		if [[ "$SITES_TOTAL" -eq 1 ]]; then
 			MAIN_STATUS="$status" MAIN_CODE="$HOME_CODE" MAIN_CACHE="$HOME_CACHE"
-			MAIN_REASON="${reason%; }"
+			MAIN_REASON="${reason%; }" MAIN_RETRIED="$first_code"
 		fi
 		if [[ "$network" -eq 1 ]]; then
 			printf -v line '    site %s\tstatus=%s\tpurged=%s\thome=%s\tcache=%s\t%s\n' "$url" "${status:-?}" "$purged" "$HOME_CODE" "$HOME_CACHE" "$result"
@@ -657,6 +674,7 @@ apply_one() {
 	# Single sites have no site row on which to show these warnings.
 	[[ "$PURGE_FAILED" -eq 0 ]] || warn+="purge failed, "
 	[[ "$MAIN_CACHE" != *hit* ]] || warn+="cached, "
+	[[ -z "$MAIN_RETRIED" ]] || warn+="home retried ($MAIN_RETRIED), "
 	if [[ "$after" != "$want" || "$new_lines" -gt 0 || "$SITES_FAILED" -gt 0 ]]; then
 		result="FAIL"
 		if [[ -z "$SITE_LINES" && -n "$MAIN_REASON" ]]; then
