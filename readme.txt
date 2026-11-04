@@ -63,6 +63,9 @@ GitHub releases are the stable beta channel: each version comes out there first.
 
 == Changelog ==
 
+= Unreleased =
+* Developers: a deploy fetches a home page that gave 5xx once more before failing the site.
+
 = 1.0.51 =
 * Developers: a deploy lock with no owner yet is reported as such, CI's Docker mirror pull defaults zero or non-numeric time limits to 180 seconds, and the replaced plugins count no longer runs out of memory on large plugins.
 

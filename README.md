@@ -169,6 +169,10 @@ Deleting the plugin removes its settings (on multisite, every site's and the net
 
 ## Changelog
 
+### Unreleased
+
+- Developers: `scripts/deploy-sites.sh --apply` fetches a home page that gave 5xx or no answer once more after 5 seconds before failing the site, so one busy-host 500 no longer fails a deploy of a working install. A pass then reports `WARN home retried (CODE)`; a second failure fails the site with both codes. The home check also runs in macOS's awk. Plugins get both with `scripts/sync-core.sh` (GH#628).
+
 ### 1.0.51
 
 - Developers: `scripts/deploy-sites.sh --apply` and its dry run say when the deploy lock has no owner file yet, and that a run two minutes later takes it over, instead of naming a running deploy. In CI, the `mirror.gcr.io` pull gives up after a positive-integer `DOCKER_MIRROR_TIMEOUT` in seconds (default 180), so zero or non-numeric values cannot disable or skip the limit and a stalled mirror falls back to Docker Hub. Plugins get both with `scripts/sync-core.sh` (GH#619, GH#621).
