@@ -12,10 +12,11 @@
 # gets one line; networks also get one indented line per site, excluding
 # archived, deleted and spam sites. Each site is loaded, its page cache purged
 # (LiteSpeed Cache, when its WP-CLI command is there; purged=N/SITES) and
-# fetched with a unique query string. cache= lists the response's cache
-# headers; WARN cached means a cache ignored the query string, so PHP did not
-# run for that fetch, and WARN purge failed that visitors may still get pages
-# pointing at the old CSS and JS. apply exits 1 on a failed site, a version
+# fetched with a unique query string. cache= lists the final response's cache
+# headers, or redirected:HOST when a redirect dropped that query; WARN cached
+# means a cache ignored the query string, so PHP did not run for that fetch,
+# and WARN purge failed that visitors may still get pages pointing at the old
+# CSS and JS. apply exits 1 on a failed site, a version
 # not reached or new log lines.
 #
 # apply holds a per-plugin lock on the host, ~/.SLUG-deploy/.lock (mkdir,
@@ -482,13 +483,16 @@ PHP
 # Sets HOME_CODE/HOME_CACHE and advances FETCHES in the caller's shell.
 home_check() {
 	local url="$1"
-	local headers
+	local headers fetch result final_url final_host
 	FETCHES=$((FETCHES + 1))
 	HOME_CODE="000"
 	HOME_CACHE="none"
+	fetch="deploy-check=${RUN_STAMP}-${FETCHES}"
 	headers="$(mktemp)" || return 1
-	HOME_CODE="$(curl -s -o /dev/null -L -D "$headers" -w '%{http_code}' --max-time 30 \
-		"${url%/}/?deploy-check=${RUN_STAMP}-${FETCHES}" || true)"
+	result="$(curl -s -o /dev/null -L -D "$headers" -w '%{http_code} %{url_effective}' --max-time 30 \
+		"${url%/}/?${fetch}" || true)"
+	HOME_CODE="${result%% *}"
+	final_url="${result#* }"
 	HOME_CACHE="$(awk '
 		/^HTTP\// { cache = "" }
 		{
@@ -502,6 +506,12 @@ home_check() {
 		}
 		END { print cache == "" ? "none" : cache }
 	' "$headers")"
+	if [[ "$final_url" != *"?$fetch" && "$final_url" != *"?$fetch&"* && "$final_url" != *"&$fetch" && "$final_url" != *"&$fetch&"* ]]; then
+		final_host="${final_url#*://}"
+		final_host="${final_host%%/*}"
+		final_host="${final_host##*@}"
+		HOME_CACHE="redirected:${final_host:-unknown}"
+	fi
 	rm -f "$headers"
 	return 0
 }
@@ -554,7 +564,7 @@ check_sites() {
 		if [[ "$HOME_CODE" == 5* || "$HOME_CODE" == "000" ]]; then
 			reason+="home failed; "
 		fi
-		[[ "$HOME_CACHE" != *hit* ]] || warn+="cached, "
+		[[ "$HOME_CACHE" != *hit* || "$HOME_CACHE" == redirected:* ]] || warn+="cached, "
 		if [[ -n "$reason" ]]; then
 			result="FAIL: ${reason%; }"
 			SITES_FAILED=$((SITES_FAILED + 1))
