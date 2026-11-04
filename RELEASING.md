@@ -134,9 +134,10 @@ expected in the GitHub zip too.
    Only installs that already have the plugin are touched. Each install line gives
    the old and new version, the status (`active-network` on a network
    activation), `purged=N/SITES` (the sites whose page cache was purged), the
-   main home page's HTTP code, `cache=` (the final response's
-   `x-litespeed-cache`, `x-cache` and `cf-cache-status` headers, or `none`) and
-   the log lines gained. Networks add `sites=PASSED/TOTAL` and one indented
+    main home page's HTTP code, `cache=` (the final response's
+    `x-litespeed-cache`, `x-cache` and `cf-cache-status` headers, `none`, or
+    `redirected:HOST` when a redirect dropped the unique query string) and the
+    log lines gained. Networks add `sites=PASSED/TOTAL` and one indented
    `site` line per site, with its status, `purged=yes`, `no` or `failed`, home
    code, cache headers and result.
    Every site that is not archived, deleted or spam gets a guarded full load
@@ -151,8 +152,10 @@ expected in the GitHub zip too.
    network-activated); other page caches are not purged, so purge them by
    hand. `wp cache flush` is not enough: it empties the object cache, not the
    pages. `WARN purge failed` means the purge command failed, so visitors may
-   still get the old files. `WARN cached` means a cache answered anyway (it
-   ignores query strings), so PHP did not run for that fetch. Both warn
+    still get the old files. `WARN cached` means a cache answered anyway (it
+    ignores query strings), so PHP did not run for that fetch. A redirect that
+    drops the unique query reports `cache=redirected:HOST` instead, because any
+    final cache response belongs to another address. Both warn
    rather than fail.
    A failed load, status read or home (5xx or no answer) fails the install;
    4xx is reported only. All sites are checked even after one fails. On a
