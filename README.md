@@ -10,7 +10,7 @@
 [![CodeFactor](https://www.codefactor.io/repository/github/wpallstars/wp-plugin-starter-template-for-ai-coding/badge)](https://www.codefactor.io/repository/github/wpallstars/wp-plugin-starter-template-for-ai-coding)
 [![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/wpallstars/wp-plugin-starter-template-for-ai-coding/badge)](https://scorecard.dev/viewer/?uri=github.com/wpallstars/wp-plugin-starter-template-for-ai-coding)
 [![License: GPL v3 or later](https://img.shields.io/badge/License-GPL%20v3%20or%20later-blue.svg)](LICENSE)
-[![Latest release](https://img.shields.io/badge/release-v1.0.51-blue.svg)](https://github.com/wpallstars/wp-plugin-starter-template-for-ai-coding/releases)
+[![Latest release](https://img.shields.io/badge/release-v1.0.52-blue.svg)](https://github.com/wpallstars/wp-plugin-starter-template-for-ai-coding/releases)
 
 [![Requires WordPress](https://img.shields.io/badge/WordPress-6.2%2B-21759B.svg?logo=wordpress)](readme.txt)
 [![Tested up to](https://img.shields.io/badge/tested%20up%20to-7.1-21759B.svg?logo=wordpress)](readme.txt)
@@ -27,7 +27,7 @@ WP Plugin Starter is what wpallstars plugins are made from. It has no features o
 
 If this saves you time, headaches and costs, feel free to [buy me a coffee](https://buymeacoffee.com/marcusquinn), or whatever you like, to invest in making more things open-source.
 
-Version: 1.0.51
+Version: 1.0.52
 
 <!-- github-only:start -->
 ## Screenshots
@@ -169,10 +169,12 @@ Deleting the plugin removes its settings (on multisite, every site's and the net
 
 ## Changelog
 
-### Unreleased
+### 1.0.52
 
+- Developers: `scripts/deploy-sites.sh --apply` runs the plugin's own WP-Cron events once on each site after its full load (`cron=N/M` on the install line) and fails the install, with its restore command, on a PHP fatal error or non-zero exit in one. Before, a fatal error that only a cron callback reached passed the deploy unseen, as the host's cron job runs WP-Cron from the command line. Each event gets `DEPLOY_CRON_TIMEOUT` seconds (default 120, `0` for no limit); one that times out only warns. Plugins get it with `scripts/sync-core.sh` (GH#635).
 - Developers: `scripts/update-test.sh` run straight after a release waits up to 2 minutes for the GitHub address the test site reads (the `releases/latest` redirect, or the API with a token) to name the new release, then checks a missing offer 3 more times, 20 seconds apart, asking GitHub afresh each time. Before, a run within a few minutes of publishing could fail with no offer and pass on a rerun. For a public repository the failure now says GitHub may not list the release yet, instead of naming the token. Plugins get it with `scripts/sync-core.sh` (GH#634).
 - Developers: `scripts/deploy-sites.sh --apply` fetches a home page that gave 5xx or no answer once more after 5 seconds before failing the site, so one busy-host 500 no longer fails a deploy of a working install. A pass then reports `WARN home retried (CODE)`; a second failure fails the site with both codes. The home check also runs in macOS's awk. Plugins get both with `scripts/sync-core.sh` (GH#628).
+- Developers: a `scripts/deploy-sites.sh --apply` home fetch that a redirect sent to another address without its unique query string reports `cache=redirected:HOST`, not that host's cache headers, and no longer warns `cached` on the install or site line. Plugins get it with `scripts/sync-core.sh` (GH#626).
 
 ### 1.0.51
 

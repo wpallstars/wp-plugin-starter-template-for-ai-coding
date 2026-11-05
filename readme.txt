@@ -5,7 +5,7 @@ Tags: starter, boilerplate, settings, developer, template
 Requires at least: 6.2
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 1.0.51
+Stable tag: 1.0.52
 License: GPLv3 or later
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 
@@ -63,12 +63,8 @@ GitHub releases are the stable beta channel: each version comes out there first.
 
 == Changelog ==
 
-= Unreleased =
-* Developers: the update test waits for GitHub to list a new release before failing with no offer.
-* Developers: a deploy fetches a home page that gave 5xx once more before failing the site.
-
-= 1.0.51 =
-* Developers: a deploy lock with no owner yet is reported as such, CI's Docker mirror pull defaults zero or non-numeric time limits to 180 seconds, and the replaced plugins count no longer runs out of memory on large plugins.
+= 1.0.52 =
+* Developers: a deploy runs the plugin's own scheduled events once on each site and fails on a fatal error in one, fetches a home page that gave 5xx once more before failing the site, and reports a redirected home fetch as such instead of as cached; the update test waits for GitHub to list a new release before failing with no offer.
 
 Every change: changelog.txt.
 
