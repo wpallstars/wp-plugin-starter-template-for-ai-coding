@@ -64,6 +64,7 @@ GitHub releases are the stable beta channel: each version comes out there first.
 == Changelog ==
 
 = Unreleased =
+* Developers: the update test waits for GitHub to list a new release before failing with no offer.
 * Developers: a deploy fetches a home page that gave 5xx once more before failing the site.
 
 = 1.0.51 =
