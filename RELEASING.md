@@ -133,27 +133,29 @@ expected in the GitHub zip too.
 
    Only installs that already have the plugin are touched. Each install line gives
    the old and new version, the status (`active-network` on a network
-   activation), `purged=N/SITES` (the sites whose page cache was purged), `cron=N/M` (below), the
-    main home page's HTTP code, `cache=` (the final response's
+   activation), `purged=N/SITES` (the sites whose page cache was purged),
+   `cron=N/M` (below), the main home page's HTTP code, `cache=` (the final response's
     `x-litespeed-cache`, `x-cache` and `cf-cache-status` headers, `none`, or
     `redirected:HOST` when a redirect dropped the unique query string) and the
     log lines gained. Networks add `sites=PASSED/TOTAL` and one indented
    `site` line per site, with its status, `purged=yes`, `no` or `failed`, home
    code, cache headers and result.
-    After each site's full load, the plugin's own WP-Cron events (hooks in the
-    site's cron schedule with a callback in the plugin's folder) run once on
-    that site, each in its own `wp cron event run` process, shown as `cron=N/M`
-    on the install line. A fatal error that only a cron callback reaches does
-    not show in the load, the home fetch or the web PHP log (the host's cron
-    job runs WP-Cron from the command line), so a PHP fatal error or non-zero
-    exit in one fails the install, with its restore command. Side effect:
-    running an event early also reschedules it, as `wp cron event run` by hand
-    does. A hook runs all its callbacks, so a shared hook also runs core and
-    other-plugin callbacks, and a failure in one counts against the install.
-    An event gets `DEPLOY_CRON_TIMEOUT` seconds (default 120, `0` for no
-    limit); one that times out is a warning, not a failure. On a network each
-    site runs its own.
-    Every site that is not archived, deleted or spam gets a guarded full load
+   After each site's full load, the plugin's own WP-Cron events (hooks in the
+   site's cron schedule with a callback in the plugin's folder) run once on
+   that site, each in its own `wp cron event run` process, shown as `cron=N/M`
+   on the install line. A fatal error that only a cron callback reaches does
+   not show in the load, the home fetch or the web PHP log (the host's cron
+   job runs WP-Cron from the command line), so a PHP fatal error, database
+   error or non-zero exit in one fails the install, with its restore command,
+   and so does a change to the activation lists during the run. Side effect:
+   running an event early also reschedules it, as `wp cron event run` by hand
+   does. A hook runs all its callbacks, so a shared hook also runs core and
+   other-plugin callbacks, and a failure in one counts against the install.
+   An event gets `DEPLOY_CRON_TIMEOUT` seconds (default 120, `0` for no
+   limit, which a host without `timeout` needs when there is an event to
+   run); one that times out is a warning, not a failure. On a network each
+   site runs its own.
+   Every site that is not archived, deleted or spam gets a guarded full load
    for its settings upgrade, a page cache purge and a home fetch with a query
    string unique to that fetch. The purge matters: WordPress versions the
    plugin's CSS and JS by `?ver=`, and a cached page keeps pointing at the old

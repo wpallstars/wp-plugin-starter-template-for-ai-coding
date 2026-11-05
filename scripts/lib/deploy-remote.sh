@@ -18,7 +18,8 @@
 # and WARN purge failed that visitors may still get pages pointing at the old
 # CSS and JS. After each load the plugin's own WP-Cron events run once on
 # that site (cron=N/M); a PHP fatal error or non-zero exit in one fails the
-# site, as the host's cron job would hit it from the command line. A home that gives 5xx or no answer is fetched once more after
+# site, as the host's cron job would hit it from the command line. A home
+# that gives 5xx or no answer is fetched once more after
 # DEPLOY_HOME_RETRY_DELAY seconds (default 5); a pass then is WARN home
 # retried (CODE), a second failure fails the site. apply exits 1 on a failed
 # site, a version not reached or new log lines.
@@ -492,7 +493,9 @@ PHP
 # one "cronhook:NAME" line each. It needs no hook prefix. Running a hook runs
 # all its callbacks, so a shared hook also runs core and other-plugin
 # callbacks, and a failure in one of them counts as this plugin's. Callbacks
-# registered only while WP-Cron runs (DOING_CRON) are not seen here.
+# registered only while WP-Cron runs (DOING_CRON) are not seen here. A name
+# with a control character (it would break the line) or a leading "-" (WP-CLI
+# would read it as an option) is left out.
 cron_list_code() {
 	cat <<'PHP'
 $base = realpath(WP_PLUGIN_DIR . "/" . getenv("DEPLOY_SLUG"));
@@ -503,7 +506,8 @@ $dir = rtrim(wp_normalize_path($base), "/") . "/";
 $seen = array();
 foreach ((array) _get_cron_array() as $events) {
     foreach ((array) $events as $hook => $unused) {
-        if (isset($seen[$hook]) || !preg_match("/^[A-Za-z0-9_.:-]+$/", (string) $hook) || empty($GLOBALS["wp_filter"][$hook])) {
+        $hook = (string) $hook;
+        if (isset($seen[$hook]) || "" === $hook || "-" === $hook[0] || preg_match("/[\\x00-\\x1f\\x7f]/", $hook) || empty($GLOBALS["wp_filter"][$hook])) {
             continue;
         }
         foreach ($GLOBALS["wp_filter"][$hook]->callbacks as $callbacks) {
@@ -551,17 +555,20 @@ run_site_cron() {
 	local cmd=()
 	CRON_RUN=0 CRON_TOTAL=0 CRON_FAILURE="" CRON_WARN=""
 	[[ "$limit" =~ ^[0-9]+$ ]] || limit=120
-	if [[ "$limit" -gt 0 ]] && command -v timeout >/dev/null 2>&1; then
-		cmd=(timeout "$limit")
-	elif [[ "$limit" -gt 0 ]]; then
-		CRON_FAILURE="cron events not run: timeout is not installed on this host (set DEPLOY_CRON_TIMEOUT=0 for no limit); "
-		return 0
-	fi
 	hooks="$(DEPLOY_SLUG="$SLUG" wp_checked "$root" "$@" eval "$(cron_list_code)")" || {
-		CRON_FAILURE="cron list failed"
+		CRON_FAILURE="cron list failed; "
 		return 0
 	}
 	hooks="$(printf '%s\n' "$hooks" | sed -n 's/^cronhook://p')"
+	# The time limit needs timeout, but only when there is an event to run.
+	[[ -n "$hooks" ]] || return 0
+	if [[ "$limit" -gt 0 ]] && command -v timeout >/dev/null 2>&1; then
+		cmd=(timeout "$limit")
+	elif [[ "$limit" -gt 0 ]]; then
+		CRON_TOTAL="$(printf '%s\n' "$hooks" | grep -c .)"
+		CRON_FAILURE="cron events not run: timeout is not installed on this host (set DEPLOY_CRON_TIMEOUT=0 for no limit); "
+		return 0
+	fi
 	while IFS= read -r hook; do
 		[[ -n "$hook" ]] || continue
 		CRON_TOTAL=$((CRON_TOTAL + 1))

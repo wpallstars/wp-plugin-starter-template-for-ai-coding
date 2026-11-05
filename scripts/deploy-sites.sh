@@ -34,15 +34,17 @@
 # fetch. After each load the plugin's own WP-Cron events run once on the site
 # (cron=N/M; running one early reschedules it, as wp cron event run does); a
 # PHP fatal error or non-zero exit in one fails the install, with the restore
-# command. Networks skip archived, deleted and spam sites and print one
-# indented line per site. Each fetch uses a unique query string; cache= lists
-# the response's cache headers. WARN cached means a cache ignored query
-# strings, so PHP did not run for that fetch; WARN purge failed means
-# visitors may still get the old CSS and JS. Each install line gives old ->
-# new version, status, purged=N/SITES, cron=N/M, home HTTP code, cache headers and new
-# log lines; networks add sites=PASSED/TOTAL. Exits 1 on a failed site, a
-# version not reached or new log lines, with the restore command. Host names,
-# folders and backups stay out of the repository: they are only arguments.
+# command. Each event gets DEPLOY_CRON_TIMEOUT seconds (default 120, 0 for no
+# limit, which a host without timeout needs); one that times out only warns.
+# Networks skip archived, deleted and spam sites and print one indented line
+# per site. Each fetch uses a unique query string; cache= lists the
+# response's cache headers. WARN cached means a cache ignored query strings,
+# so PHP did not run for that fetch; WARN purge failed means visitors may
+# still get the old CSS and JS. Each install line gives old -> new version,
+# status, purged=N/SITES, cron=N/M, home HTTP code, cache headers and new log
+# lines; networks add sites=PASSED/TOTAL. Exits 1 on a failed site, a version
+# not reached or new log lines, with the restore command. Host names, folders
+# and backups stay out of the repository: they are only arguments.
 #
 # --apply holds a lock per plugin on the host (~/.{slug}-deploy/.lock, made
 # with mkdir, so no flock is needed) from before the first install to the
