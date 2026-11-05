@@ -21,43 +21,37 @@
 #   --apply            Install the release on each of them.
 #   --allow-downgrade  Allow installing a release older than the installed version.
 #
-# The zip ({slug}-X.Y.Z.zip) is downloaded with gh and must match the
-# asset's SHA-256 on GitHub and, when the release has one, its provenance
-# bundle (gh attestation verify). With --apply it is copied to a private
-# folder on the host (~/.{slug}-deploy/<tag>-<time>, mode 700, files 600)
-# and checked again there. Then, for each install that already has
-# wp-content/plugins/{slug}/{slug}.php (the plugin is never added anywhere):
-# a tar backup of the plugin folder, wp plugin install --force (activation
-# and network activation are kept), then per site a full load for its
-# settings upgrade, a page cache purge (LiteSpeed Cache, when its WP-CLI
-# command is there) so pages stop pointing at the old CSS and JS, and a home
-# fetch. After each load the plugin's own WP-Cron events run once on the site
-# (cron=N/M; running one early reschedules it, as wp cron event run does); a
-# PHP fatal error or non-zero exit in one fails the install, with the restore
-# command. Each event gets DEPLOY_CRON_TIMEOUT seconds (default 120, 0 for no
-# limit, which a host without timeout needs); one that times out only warns.
-# Networks skip archived, deleted and spam sites and print one indented line
-# per site. Each fetch uses a unique query string; cache= lists the
-# response's cache headers. WARN cached means a cache ignored query strings,
-# so PHP did not run for that fetch; WARN purge failed means visitors may
-# still get the old CSS and JS. Each install line gives old -> new version,
-# status, purged=N/SITES, cron=N/M, home HTTP code, cache headers and new log
-# lines; networks add sites=PASSED/TOTAL. Exits 1 on a failed site, a version
-# not reached or new log lines, with the restore command. Host names, folders
-# and backups stay out of the repository: they are only arguments.
+# The zip ({slug}-X.Y.Z.zip) is downloaded with gh and must match the asset's
+# SHA-256 on GitHub and its provenance bundle, if any (gh attestation verify).
+# With --apply it is copied to a private folder on the host
+# (~/.{slug}-deploy/<tag>-<time>, mode 700, files 600) and checked again.
+# Then, for each install that already has wp-content/plugins/{slug}/{slug}.php
+# (the plugin is never added anywhere): a tar backup of the plugin folder, wp
+# plugin install --force (activation and network activation are kept), then
+# per site a full load for its settings upgrade, a LiteSpeed Cache purge (when
+# its WP-CLI command is there) so pages stop pointing at the old CSS and JS,
+# and a home fetch. After each load the plugin's own WP-Cron events run once
+# on the site (this reschedules them, as wp cron event run does); a PHP fatal
+# error or non-zero exit in one fails the install. Each event gets
+# DEPLOY_CRON_TIMEOUT seconds (default 120; 0, no limit, for a host without
+# timeout); a timeout only warns. Networks skip archived, deleted and spam
+# sites. Each fetch uses a unique query string: WARN cached means a cache
+# ignored it, so PHP did not run; WARN purge failed means visitors may still
+# get the old CSS and JS. Each install line gives old -> new version, status,
+# purged=N/SITES, cron=N/M, home HTTP code, cache= headers and new log lines;
+# networks add sites=PASSED/TOTAL and a line per site. Exits 1 on a failed
+# site, a version not reached or new log lines, with the restore command.
+# Host names, folders and backups stay out of the repository: only arguments.
 #
-# --apply holds a lock per plugin on the host (~/.{slug}-deploy/.lock, made
-# with mkdir, so no flock is needed) from before the first install to the
-# end, so two runs, even with different --parent, never install over each
-# other. While another run holds it, --apply installs nothing, names that
-# run (tag, start time, parent, PID) and exits 3: wait for it, then run
-# again. A lock left by a run that is no longer running (killed with
-# kill -9, or the host restarted) is taken over with a warning. The dry run
-# takes no lock and says when a run is active.
+# --apply holds a per-plugin lock on the host (~/.{slug}-deploy/.lock, made
+# with mkdir) from the first install to the end, so two runs, even with
+# different --parent, never install over each other. While another run holds
+# it, --apply installs nothing, names that run (tag, start, parent, PID) and
+# exits 3; a lock left by a run that has ended (kill -9, a restart) is taken
+# over with a warning. The dry run takes no lock and says when one is active.
 #
-# Needs gh (signed in to read a private repository), ssh, and bash, WP-CLI,
-# tar and curl on the host. aidevops users can use wp-fleet-helper.sh instead
-# (RELEASING.md step 5).
+# Needs gh (signed in for a private repository), ssh, and bash, WP-CLI, tar
+# and curl on the host; aidevops users can use wp-fleet-helper.sh instead.
 
 # SPDX-License-Identifier: GPL-3.0-or-later
 # SPDX-FileCopyrightText: 2026 Marcus Quinn
