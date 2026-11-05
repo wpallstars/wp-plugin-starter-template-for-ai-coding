@@ -31,15 +31,20 @@
 # and network activation are kept), then per site a full load for its
 # settings upgrade, a page cache purge (LiteSpeed Cache, when its WP-CLI
 # command is there) so pages stop pointing at the old CSS and JS, and a home
-# fetch. Networks skip archived, deleted and spam sites and print one
-# indented line per site. Each fetch uses a unique query string; cache= lists
-# the response's cache headers. WARN cached means a cache ignored query
-# strings, so PHP did not run for that fetch; WARN purge failed means
-# visitors may still get the old CSS and JS. Each install line gives old ->
-# new version, status, purged=N/SITES, home HTTP code, cache headers and new
-# log lines; networks add sites=PASSED/TOTAL. Exits 1 on a failed site, a
-# version not reached or new log lines, with the restore command. Host names,
-# folders and backups stay out of the repository: they are only arguments.
+# fetch. After each load the plugin's own WP-Cron events run once on the site
+# (cron=N/M; running one early reschedules it, as wp cron event run does); a
+# PHP fatal error or non-zero exit in one fails the install, with the restore
+# command. Each event gets DEPLOY_CRON_TIMEOUT seconds (default 120, 0 for no
+# limit, which a host without timeout needs); one that times out only warns.
+# Networks skip archived, deleted and spam sites and print one indented line
+# per site. Each fetch uses a unique query string; cache= lists the
+# response's cache headers. WARN cached means a cache ignored query strings,
+# so PHP did not run for that fetch; WARN purge failed means visitors may
+# still get the old CSS and JS. Each install line gives old -> new version,
+# status, purged=N/SITES, cron=N/M, home HTTP code, cache headers and new log
+# lines; networks add sites=PASSED/TOTAL. Exits 1 on a failed site, a version
+# not reached or new log lines, with the restore command. Host names, folders
+# and backups stay out of the repository: they are only arguments.
 #
 # --apply holds a lock per plugin on the host (~/.{slug}-deploy/.lock, made
 # with mkdir, so no flock is needed) from before the first install to the
@@ -228,7 +233,7 @@ apply() {
 	remote "umask 077; cat >$(remote_words "$dir/deploy-remote.sh")" <"$REMOTE_PART" || die "cannot copy the remote part to $HOST"
 	remote "chmod 600 $(remote_words "$dir/$SLUG-$VERSION.zip" "$dir/deploy-remote.sh")" || die "cannot set the files' mode on $HOST"
 	printf '\nInstalling %s on %s (folder %s):\n' "$TAG" "$HOST" "$dir"
-	command="$(remote_words env "DEPLOY_WP_CLI=$WP_CLI" "DEPLOY_WEB_ERROR_LOG=$WEB_ERROR_LOG" bash "$dir/deploy-remote.sh" apply "$SLUG" "$PARENT" \
+	command="$(remote_words env "DEPLOY_WP_CLI=$WP_CLI" "DEPLOY_WEB_ERROR_LOG=$WEB_ERROR_LOG" "DEPLOY_CRON_TIMEOUT=${DEPLOY_CRON_TIMEOUT:-120}" bash "$dir/deploy-remote.sh" apply "$SLUG" "$PARENT" \
 		"$VERSION" "$dir/$SLUG-$VERSION.zip" "$SHA" "$dir/backups" ${DOWNGRADE_ARGS[@]+"${DOWNGRADE_ARGS[@]}"} ${SKIPS[@]+"${SKIPS[@]}"})"
 	remote "$command" || status=$?
 	if [[ "$status" -eq 3 ]]; then
