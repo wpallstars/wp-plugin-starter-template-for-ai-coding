@@ -488,15 +488,18 @@ PHP
 # Sets HOME_CODE/HOME_CACHE and advances FETCHES in the caller's shell.
 home_check() {
 	local url="$1"
-	local headers fetch result final_url final_host
+	local headers fetch result final_url final_host rc=0
 	FETCHES=$((FETCHES + 1))
 	HOME_CODE="000"
 	HOME_CACHE="none"
 	fetch="deploy-check=${RUN_STAMP}-${FETCHES}"
 	headers="$(mktemp)" || return 1
 	result="$(curl -s -o /dev/null -L -D "$headers" -w '%{http_code} %{url_effective}' --max-time 30 \
-		"${url%/}/?${fetch}" || true)"
+		"${url%/}/?${fetch}")" || rc=$?
 	HOME_CODE="${result%% *}"
+	# A fetch curl did not finish (timeout, reset) is no answer, even when
+	# the headers said 200.
+	[[ "$rc" -eq 0 ]] || HOME_CODE="000"
 	final_url="${result#* }"
 	HOME_CACHE="$(awk '
 		/^HTTP\// { cache = "" }

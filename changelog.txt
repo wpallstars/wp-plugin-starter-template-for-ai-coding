@@ -3,6 +3,7 @@
 Every change to WP Plugin Starter. readme.txt lists the latest version in short.
 
 = Unreleased =
+* Developers: scripts/deploy-sites.sh --apply counts a home fetch that curl did not finish (body stalled past the 30-second limit, or connection reset after a 200 header) as no answer (000), so it is fetched once more and fails the site if the second fetch fails too. Before, the 200 header passed it, and a 503 followed by such a fetch reported only WARN home retried. Plugins get it with scripts/sync-core.sh (GH#632).
 * Developers: scripts/deploy-sites.sh --apply fetches a home page that gave 5xx or no answer once more after 5 seconds before failing the site. A busy shared host can answer one fetch with 500 (for example during the page cache purge) while the site is fine, and that one fetch failed the whole deploy and printed a restore command for a working install. A pass on the second fetch reports WARN home retried (CODE); a second failure fails the site as before, with both codes (home failed (500, then 502)). The home check's cache-header summary also runs in BSD awk (macOS), which rejected the unparenthesised ternary. Plugins get both with scripts/sync-core.sh (GH#628).
 
 = 1.0.51 =
