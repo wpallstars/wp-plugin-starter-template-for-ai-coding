@@ -16,7 +16,9 @@
 # headers, or redirected:HOST when a redirect dropped that query; WARN cached
 # means a cache ignored the query string, so PHP did not run for that fetch,
 # and WARN purge failed that visitors may still get pages pointing at the old
-# CSS and JS. A home that gives 5xx or no answer is fetched once more after
+# CSS and JS. After each load the plugin's own WP-Cron events run once on
+# that site (cron=N/M); a PHP fatal error or non-zero exit in one fails the
+# site, as the host's cron job would hit it from the command line. A home that gives 5xx or no answer is fetched once more after
 # DEPLOY_HOME_RETRY_DELAY seconds (default 5); a pass then is WARN home
 # retried (CODE), a second failure fails the site. apply exits 1 on a failed
 # site, a version not reached or new log lines.
@@ -485,6 +487,87 @@ PHP
 	return 0
 }
 
+# The scheduled events of one site that belong to the plugin: hooks in the
+# site's cron array with a callback defined in the plugin's folder. Prints
+# one "cronhook:NAME" line each. It needs no hook prefix, and an event
+# another plugin owns is never run.
+cron_list_code() {
+	cat <<'PHP'
+$dir = rtrim(wp_normalize_path(WP_PLUGIN_DIR), "/") . "/" . getenv("DEPLOY_SLUG") . "/";
+$seen = array();
+foreach ((array) _get_cron_array() as $events) {
+    foreach ((array) $events as $hook => $unused) {
+        if (isset($seen[$hook]) || !preg_match("/^[A-Za-z0-9_.:-]+$/", (string) $hook) || empty($GLOBALS["wp_filter"][$hook])) {
+            continue;
+        }
+        foreach ($GLOBALS["wp_filter"][$hook]->callbacks as $callbacks) {
+            foreach ($callbacks as $callback) {
+                $fn = $callback["function"];
+                try {
+                    if (is_array($fn)) {
+                        $ref = new ReflectionMethod($fn[0], $fn[1]);
+                    } elseif (is_object($fn) && !($fn instanceof Closure)) {
+                        $ref = new ReflectionMethod($fn, "__invoke");
+                    } else {
+                        $ref = new ReflectionFunction($fn);
+                    }
+                } catch (Throwable $e) {
+                    continue;
+                }
+                if (0 === strpos(wp_normalize_path((string) $ref->getFileName()), $dir)) {
+                    $seen[$hook] = true;
+                    echo "cronhook:" . $hook . "\n";
+                    break 2;
+                }
+            }
+        }
+    }
+}
+PHP
+	return 0
+}
+
+# Runs the plugin's own scheduled events once on one site, each in its own
+# WP-CLI process (a fatal error ends one process, not the count). A fatal
+# error that only a cron callback reaches never shows in the full load, the
+# home fetch or the web PHP log: the host's cron job runs WP-Cron from the
+# command line. Running an event early reschedules it, as wp cron event run
+# does by hand. An event gets DEPLOY_CRON_TIMEOUT seconds (default 120, 0 for
+# no limit); one that times out is a warning, not a failure. Sets CRON_RUN,
+# CRON_TOTAL, CRON_FAILURE and CRON_WARN for the site.
+run_site_cron() {
+	local root="$1"
+	shift
+	local hooks hook out status limit="${DEPLOY_CRON_TIMEOUT:-120}" detail
+	local cmd=()
+	CRON_RUN=0 CRON_TOTAL=0 CRON_FAILURE="" CRON_WARN=""
+	[[ "$limit" =~ ^[0-9]+$ ]] || limit=120
+	if [[ "$limit" -gt 0 ]] && command -v timeout >/dev/null 2>&1; then
+		cmd=(timeout "$limit")
+	fi
+	hooks="$(DEPLOY_SLUG="$SLUG" wp_checked "$root" "$@" eval "$(cron_list_code)")" || {
+		CRON_FAILURE="cron list failed"
+		return 0
+	}
+	hooks="$(printf '%s\n' "$hooks" | sed -n 's/^cronhook://p')"
+	while IFS= read -r hook; do
+		[[ -n "$hook" ]] || continue
+		CRON_TOTAL=$((CRON_TOTAL + 1))
+		status=0
+		out="$("${cmd[@]+"${cmd[@]}"}" "$WP_CLI" --path="$root" "$@" cron event run "$hook" 2>&1)" || status=$?
+		if [[ "$status" -eq 124 && "${#cmd[@]}" -gt 0 ]]; then
+			CRON_WARN+="cron $hook timed out (${limit}s), "
+			CRON_RUN=$((CRON_RUN + 1))
+		elif [[ "$status" -ne 0 || "$out" == *"PHP Fatal error"* || "$out" == *"Fatal error:"* ]]; then
+			detail="$(printf '%s\n' "$out" | tail -n 3 | LC_ALL=C tr '\t\r\n' '   ' | LC_ALL=C tr -cd '[:print:]')"
+			CRON_FAILURE+="cron $hook failed (exit $status: ${detail:0:300}); "
+		else
+			CRON_RUN=$((CRON_RUN + 1))
+		fi
+	done <<<"$hooks"
+	return 0
+}
+
 # Sets HOME_CODE/HOME_CACHE and advances FETCHES in the caller's shell.
 home_check() {
 	local url="$1"
@@ -528,10 +611,11 @@ home_check() {
 check_sites() {
 	local root="$1"
 	local kind urls url status result reason warn load purged line network=0
-	local load_errors load_status summary first_code
+	local load_errors load_status summary first_code cron_note
 	local check_error="home check failed; "
 	local url_args=()
 	SITES_TOTAL=0 SITES_FAILED=0 SITES_PURGED=0 PURGE_FAILED=0 SITE_LINES=""
+	CRON_SUM_RUN=0 CRON_SUM_TOTAL=0 CRON_WARNED=""
 	MAIN_STATUS="?" MAIN_CODE="000" MAIN_CACHE="none" MAIN_REASON="" MAIN_RETRIED=""
 	kind="$(wp_bare "$root" eval 'echo is_multisite() ? "multisite" : "single";')" || return 1
 	case "$kind" in
@@ -545,7 +629,7 @@ check_sites() {
 		[[ -n "$url" ]] || continue
 		SITES_TOTAL=$((SITES_TOTAL + 1))
 		[[ "$network" -eq 0 ]] || url_args=(--url="$url")
-		reason="" warn="" result="ok" purged="no"
+		reason="" warn="" result="ok" purged="no" cron_note="cron=0/0"
 		if load="$(active_guard "$root" "" "" ${url_args[@]+"${url_args[@]}"} eval "$(load_code)" 2>"$load_errors")"; then
 			case "$load" in
 			*purged=yes*) purged="yes" SITES_PURGED=$((SITES_PURGED + 1)) ;;
@@ -555,6 +639,16 @@ check_sites() {
 				;;
 			*) ;;
 			esac
+			# The plugin's own scheduled events, once, after a good load.
+			run_site_cron "$root" ${url_args[@]+"${url_args[@]}"}
+			CRON_SUM_RUN=$((CRON_SUM_RUN + CRON_RUN))
+			CRON_SUM_TOTAL=$((CRON_SUM_TOTAL + CRON_TOTAL))
+			cron_note="cron=${CRON_RUN}/${CRON_TOTAL}"
+			[[ -z "$CRON_FAILURE" ]] || reason+="$CRON_FAILURE"
+			[[ -z "$CRON_WARN" ]] || {
+				warn+="$CRON_WARN"
+				CRON_WARNED=1
+			}
 		else
 			load_status=$?
 			# Keep the full diagnostics on stderr, but one short, printable
@@ -596,7 +690,7 @@ check_sites() {
 			MAIN_REASON="${reason%; }" MAIN_RETRIED="$first_code"
 		fi
 		if [[ "$network" -eq 1 ]]; then
-			printf -v line '    site %s\tstatus=%s\tpurged=%s\thome=%s\tcache=%s\t%s\n' "$url" "${status:-?}" "$purged" "$HOME_CODE" "$HOME_CACHE" "$result"
+			printf -v line '    site %s\tstatus=%s\tpurged=%s\t%s\thome=%s\tcache=%s\t%s\n' "$url" "${status:-?}" "$purged" "$cron_note" "$HOME_CODE" "$HOME_CACHE" "$result"
 			SITE_LINES+="$line"
 		fi
 	done <<<"$urls"
@@ -676,6 +770,7 @@ apply_one() {
 
 	# Single sites have no site row on which to show these warnings.
 	[[ "$PURGE_FAILED" -eq 0 ]] || warn+="purge failed, "
+	[[ -z "$CRON_WARNED" || -n "$SITE_LINES" ]] || warn+="cron timed out, "
 	[[ "$MAIN_CACHE" != *hit* || "$MAIN_CACHE" == redirected:* ]] || warn+="cached, "
 	[[ -z "$MAIN_RETRIED" ]] || warn+="home retried ($MAIN_RETRIED), "
 	if [[ "$after" != "$want" || "$new_lines" -gt 0 || "$SITES_FAILED" -gt 0 ]]; then
@@ -687,8 +782,8 @@ apply_one() {
 	elif [[ -n "$warn" ]]; then
 		result="WARN ${warn%, }"
 	fi
-	printf '%s\t%s -> %s\tstatus=%s\tpurged=%s/%s\thome=%s\tcache=%s\tnew_log_lines=%s' \
-		"$name" "${before:-?}" "${after:-?}" "$MAIN_STATUS" "$SITES_PURGED" "$SITES_TOTAL" "$MAIN_CODE" "$MAIN_CACHE" "$new_lines"
+	printf '%s\t%s -> %s\tstatus=%s\tpurged=%s/%s\tcron=%s/%s\thome=%s\tcache=%s\tnew_log_lines=%s' \
+		"$name" "${before:-?}" "${after:-?}" "$MAIN_STATUS" "$SITES_PURGED" "$SITES_TOTAL" "$CRON_SUM_RUN" "$CRON_SUM_TOTAL" "$MAIN_CODE" "$MAIN_CACHE" "$new_lines"
 	if [[ -n "$SITE_LINES" ]]; then
 		printf '\tsites=%s/%s' "$((SITES_TOTAL - SITES_FAILED))" "$SITES_TOTAL"
 	fi

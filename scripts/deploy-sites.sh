@@ -31,12 +31,15 @@
 # and network activation are kept), then per site a full load for its
 # settings upgrade, a page cache purge (LiteSpeed Cache, when its WP-CLI
 # command is there) so pages stop pointing at the old CSS and JS, and a home
-# fetch. Networks skip archived, deleted and spam sites and print one
+# fetch. After each load the plugin's own WP-Cron events run once on the site
+# (cron=N/M; running one early reschedules it, as wp cron event run does); a
+# PHP fatal error or non-zero exit in one fails the install, with the restore
+# command. Networks skip archived, deleted and spam sites and print one
 # indented line per site. Each fetch uses a unique query string; cache= lists
 # the response's cache headers. WARN cached means a cache ignored query
 # strings, so PHP did not run for that fetch; WARN purge failed means
 # visitors may still get the old CSS and JS. Each install line gives old ->
-# new version, status, purged=N/SITES, home HTTP code, cache headers and new
+# new version, status, purged=N/SITES, cron=N/M, home HTTP code, cache headers and new
 # log lines; networks add sites=PASSED/TOTAL. Exits 1 on a failed site, a
 # version not reached or new log lines, with the restore command. Host names,
 # folders and backups stay out of the repository: they are only arguments.
