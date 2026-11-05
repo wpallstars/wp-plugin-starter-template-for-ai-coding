@@ -123,7 +123,11 @@ expected in the GitHub zip too.
    sees the update with **Check again** on the Updates screen and installs
    it. For a private repository, export a read-only token as
    `WPALLSTARS_GITHUB_TOKEN` first (below); the test site reads it from the
-   environment. Without Docker, check the same by hand on a test site.
+   environment. GitHub can take a few minutes to list a new release
+   everywhere, so straight after one the test first waits up to 2 minutes
+   for the address the site reads to name it, and checks a missing offer 3
+   more times, 20 seconds apart. Without Docker, check the same by hand on a
+   test site.
 5. Roll the release out to the owner's own sites, one SSH host at a time:
 
    ```bash

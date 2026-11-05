@@ -19,6 +19,9 @@
 # (a read-only token) and the test site gets it from the environment. Fails
 # on a missing release or asset, no update offered, a failed update or any PHP
 # message in debug.log. Needs Docker, curl, gh and internet access.
+# GitHub can take a few minutes to list a new release everywhere, so a run
+# straight after a release first waits up to 2 minutes for the address the
+# site reads to name it, and checks the offer again 3 times, 20 seconds apart.
 
 # SPDX-License-Identifier: GPL-3.0-or-later
 # SPDX-FileCopyrightText: 2026 Marcus Quinn
@@ -36,6 +39,14 @@ readonly SCRIPT_DIR
 DOCKER_LABELS=()
 
 readonly TOKEN_NAME="WPALLSTARS_GITHUB_TOKEN"
+# The shared updater's cache of each repository's latest release.
+readonly RELEASES_CACHE="wpallstars_github_releases"
+# A new release can take a few minutes to reach every GitHub address: wait
+# this long for the one the site reads, then check the offer again this
+# many times, this many seconds apart.
+readonly WAIT_SECONDS=120
+readonly OFFER_RETRIES=3
+readonly OFFER_RETRY_SECONDS=20
 
 # Set in main() from the plugin's main file and the options.
 SLUG=""
@@ -49,6 +60,12 @@ WP_VERSION="latest"
 PHP_VERSION="8.3"
 FROM=""
 TO=""
+# The newest release gh lists, and whether the repository is private
+# (true, false, or empty when gh cannot tell).
+NEWEST=""
+PRIVATE=""
+# Shown as the offer when the update check itself fails.
+OFFER_ERROR="error"
 BASE_URL=""
 DB_PASSWORD=""
 ADMIN_PASSWORD=""
@@ -65,7 +82,7 @@ die() {
 }
 
 usage() {
-	sed -n '2,22p' "$0" | sed 's/^# \{0,1\}//'
+	sed -n '2,25p' "$0" | sed 's/^# \{0,1\}//'
 	return 0
 }
 
@@ -159,8 +176,9 @@ pick_versions() {
 	local versions
 	versions="$(release_versions)" || die "cannot list the releases of $REPO (is gh signed in?)"
 	[[ -n "$versions" ]] || die "$REPO has no vX.Y.Z releases"
+	NEWEST="$(head -n 1 <<<"$versions")"
 	if [[ -z "$TO" ]]; then
-		TO="$(head -n 1 <<<"$versions")"
+		TO="$NEWEST"
 	fi
 	grep -qxF "$TO" <<<"$versions" || die "no release v$TO in $REPO"
 	if [[ -z "$FROM" ]]; then
@@ -169,6 +187,56 @@ pick_versions() {
 	fi
 	grep -qxF "$FROM" <<<"$versions" || die "no release v$FROM in $REPO"
 	[[ "$FROM" != "$TO" ]] || die "--from and --to are the same version ($TO)"
+	return 0
+}
+
+# The tag GitHub names the latest release at the address the test site
+# reads: github.com's releases/latest redirect without a token (as the
+# shared updater reads a public repository), the API with one. Prints the
+# tag, or nothing when there is none or GitHub did not answer.
+latest_tag_seen() {
+	local location
+	if [[ "${#TOKEN_ARGS[@]}" -gt 0 ]]; then
+		gh api "repos/$REPO/releases/latest" --jq .tag_name 2>/dev/null || true
+		return 0
+	fi
+	location="$(curl -sS -o /dev/null -I --max-time 10 -w '%{redirect_url}' "https://github.com/$REPO/releases/latest" 2>/dev/null || true)"
+	case "$location" in
+	*/releases/tag/*) printf '%s' "${location##*/releases/tag/}" ;;
+	*) ;;
+	esac
+	return 0
+}
+
+# A private repository and no token: the test site cannot read the release,
+# so waiting for GitHub cannot help.
+unreadable() {
+	[[ "${#TOKEN_ARGS[@]}" -eq 0 && "$PRIVATE" == "true" ]] && return 0
+	return 1
+}
+
+# Straight after a release, GitHub can name the previous one as the latest
+# for a few minutes. Wait up to WAIT_SECONDS for the address the site reads
+# to name v$TO. Only for the newest release (no other can be offered), and
+# not when the site cannot read the repository (unreadable).
+wait_for_release() {
+	local seen waited=0
+	[[ "$TO" == "$NEWEST" ]] || return 0
+	unreadable && return 0
+	seen="$(latest_tag_seen)"
+	while [[ "$seen" != "v$TO" ]]; do
+		if [[ "$waited" -ge "$WAIT_SECONDS" ]]; then
+			printf 'GitHub still names %s the latest release after %ss; testing anyway.\n' "${seen:-no release}" "$waited"
+			return 0
+		fi
+		printf 'Waiting for GitHub to name v%s the latest release (it names %s)...\n' "$TO" "${seen:-none}"
+		sleep 10
+		waited=$((waited + 10))
+		seen="$(latest_tag_seen)"
+	done
+	if [[ "$waited" -gt 0 ]]; then
+		printf 'GitHub names v%s the latest release (after %ss).\n' "$TO" "$waited"
+	fi
 	return 0
 }
 
@@ -282,15 +350,38 @@ admin_page() {
 }
 
 # The update WordPress has on record for the plugin, after a fresh check:
-# "new_version package", or "none".
+# "new_version package", or "none". With "fresh", the shared updater's
+# cached release goes too, so it asks GitHub again even within the minute
+# in which a cleared update check reuses its last answer.
 update_offer() {
+	local fresh="${1:-}"
+	local clear=""
+	if [[ "$fresh" == "fresh" ]]; then
+		clear='delete_site_transient("'"$RELEASES_CACHE"'");'
+	fi
 	# shellcheck disable=SC2016 # PHP code: its $variables are PHP's, not the shell's.
-	wp_cli eval '
+	wp_cli eval "$clear"'
 		delete_site_transient("update_plugins");
 		wp_update_plugins();
 		$t = get_site_transient("update_plugins");
 		$r = isset($t->response["'"$BASENAME"'"]) ? $t->response["'"$BASENAME"'"] : null;
 		echo $r ? $r->new_version . " " . $r->package : "none";' || return 1
+	return 0
+}
+
+# What the shared updater last got from GitHub for the repository: "latest
+# vX.Y.Z", "no release", or "failed: <its error>", so a missing offer says why.
+updater_answer() {
+	local answer
+	# shellcheck disable=SC2016 # PHP code: its $variables are PHP's, not the shell's.
+	answer="$(wp_cli eval '
+		foreach ((array) get_site_transient("'"$RELEASES_CACHE"'") as $k => $e) {
+			if (0 !== stripos((string) $k, "'"$REPO"'|") || !is_array($e)) { continue; }
+			$tag = isset($e["release"]["tag"]) ? "latest " . $e["release"]["tag"] : "no release";
+			echo empty($e["failed"]) ? $tag : "failed: " . $e["failed"] . " (kept: " . $tag . ")";
+			echo "\n";
+		}' 2>/dev/null | head -n 1 || true)"
+	printf '%s' "${answer:-no answer stored}"
 	return 0
 }
 
@@ -301,28 +392,71 @@ install_from() {
 	return 0
 }
 
-check_offer() {
-	printf '\nUpdate check (WP-CLI):\n'
-	local offer repo
-	offer="$(update_offer)" || offer="error"
-	printf '  offer: %s\n' "$offer"
+# Whether an offer is the new release's asset: prints "asset" (its download
+# address), "api" (its API address, with the token) or "no".
+offer_kind() {
+	local offer="$1"
+	local repo=""
 	# Exactly the release asset. GitHub's own address may differ from the
 	# header's owner/repo in case only, so only that part ignores case.
 	local start="$TO https://github.com/"
 	local end="/releases/download/v$TO/$SLUG-$TO.zip"
-	repo=""
 	if [[ "$offer" == "$start"*"$end" ]]; then
 		repo="${offer#"$start"}"
 		repo="${repo%"$end"}"
 	fi
 	if [[ -n "$repo" && "$(tr '[:upper:]' '[:lower:]' <<<"$repo")" == "$(tr '[:upper:]' '[:lower:]' <<<"$REPO")" ]]; then
-		ok "offers $TO from the release asset"
+		printf 'asset'
 	elif [[ "${#TOKEN_ARGS[@]}" -gt 0 && -n "$ASSET_API" && "$offer" == "$TO $ASSET_API" ]]; then
-		ok "offers $TO from the release asset (its API address, with the token)"
-	elif [[ "${#TOKEN_ARGS[@]}" -gt 0 ]]; then
-		fail "no offer of $TO from $SLUG-$TO.zip (check that $TOKEN_NAME can read $REPO)"
+		printf 'api'
 	else
-		fail "no offer of $TO from $SLUG-$TO.zip (a private repository needs $TOKEN_NAME)"
+		printf 'no'
+	fi
+	return 0
+}
+
+check_offer() {
+	printf '\nUpdate check (WP-CLI):\n'
+	local offer kind retries="$OFFER_RETRIES" try=0
+	offer="$(update_offer)" || offer="$OFFER_ERROR"
+	printf '  offer: %s\n' "$offer"
+	kind="$(offer_kind "$offer")"
+	# GitHub may not list a new release everywhere yet, so check again; not
+	# when the site cannot read the repository (unreadable), nor for an older
+	# release, as sites are offered only the newest.
+	if unreadable || [[ "$TO" != "$NEWEST" ]]; then
+		retries=0
+	fi
+	while [[ "$kind" == "no" && "$try" -lt "$retries" ]]; do
+		printf '  updater: %s\n' "$(updater_answer)"
+		try=$((try + 1))
+		printf '  not %s yet; checking again in %ss (%s of %s)\n' "$TO" "$OFFER_RETRY_SECONDS" "$try" "$retries"
+		sleep "$OFFER_RETRY_SECONDS"
+		offer="$(update_offer fresh)" || offer="$OFFER_ERROR"
+		printf '  offer: %s\n' "$offer"
+		kind="$(offer_kind "$offer")"
+	done
+	local missing="no offer of $TO from $SLUG-$TO.zip"
+	if [[ "$kind" == "no" ]]; then
+		printf '  updater: %s\n' "$(updater_answer)"
+	fi
+	if [[ "$try" -gt 0 ]]; then
+		missing+=" after $try more checks"
+	fi
+	if [[ "$kind" == "asset" ]]; then
+		ok "offers $TO from the release asset"
+	elif [[ "$kind" == "api" ]]; then
+		ok "offers $TO from the release asset (its API address, with the token)"
+	elif [[ "$TO" != "$NEWEST" ]]; then
+		fail "$missing (v$TO is not the newest release, v$NEWEST, and sites are offered only the newest)"
+	elif [[ "${#TOKEN_ARGS[@]}" -gt 0 ]]; then
+		fail "$missing (check that $TOKEN_NAME can read $REPO, or GitHub may not list the release everywhere yet)"
+	elif [[ "$PRIVATE" == "false" ]]; then
+		fail "$missing ($REPO is public: GitHub may not list the release everywhere yet, so run this again in a few minutes)"
+	elif unreadable; then
+		fail "$missing (a private repository needs $TOKEN_NAME)"
+	else
+		fail "$missing (a private repository needs $TOKEN_NAME; for a public one, GitHub may not list the release everywhere yet)"
 	fi
 	return 0
 }
@@ -354,7 +488,7 @@ check_update() {
 	local status offer
 	expect "$(wp_cli plugin get "$SLUG" --field=version)" "$TO" "version after the update"
 	expect "$(wp_cli plugin get "$SLUG" --field=status)" "active" "status after the update"
-	offer="$(update_offer)" || offer="error"
+	offer="$(update_offer)" || offer="$OFFER_ERROR"
 	expect "$offer" "none" "update offered after updating"
 	# Settings → {Name}, or Settings in the plugin's own menu when
 	# {Prefix}_Setup::MENU_PARENT names one.
@@ -458,6 +592,7 @@ main() {
 	fi
 
 	pick_versions
+	PRIVATE="$(gh api "repos/$REPO" --jq .private 2>/dev/null || true)"
 	printf 'Update test for %s (%s): v%s to v%s\n\n' "$PLUGIN_NAME" "$REPO" "$FROM" "$TO"
 
 	trap cleanup EXIT
@@ -465,6 +600,7 @@ main() {
 	mkdir -p "$TMP_DIR/zips"
 	chmod 755 "$TMP_DIR" "$TMP_DIR/zips"
 	check_assets
+	wait_for_release
 
 	start_site
 	add_canary || die "could not add the debug.log canary"

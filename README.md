@@ -171,6 +171,7 @@ Deleting the plugin removes its settings (on multisite, every site's and the net
 
 ### Unreleased
 
+- Developers: `scripts/update-test.sh` run straight after a release waits up to 2 minutes for the GitHub address the test site reads (the `releases/latest` redirect, or the API with a token) to name the new release, then checks a missing offer 3 more times, 20 seconds apart, asking GitHub afresh each time. Before, a run within a few minutes of publishing could fail with no offer and pass on a rerun. For a public repository the failure now says GitHub may not list the release yet, instead of naming the token. Plugins get it with `scripts/sync-core.sh` (GH#634).
 - Developers: `scripts/deploy-sites.sh --apply` fetches a home page that gave 5xx or no answer once more after 5 seconds before failing the site, so one busy-host 500 no longer fails a deploy of a working install. A pass then reports `WARN home retried (CODE)`; a second failure fails the site with both codes. The home check also runs in macOS's awk. Plugins get both with `scripts/sync-core.sh` (GH#628).
 
 ### 1.0.51
