@@ -148,7 +148,9 @@ expected in the GitHub zip too.
     job runs WP-Cron from the command line), so a PHP fatal error or non-zero
     exit in one fails the install, with its restore command. Side effect:
     running an event early also reschedules it, as `wp cron event run` by hand
-    does. An event gets `DEPLOY_CRON_TIMEOUT` seconds (default 120, `0` for no
+    does. A hook runs all its callbacks, so a shared hook also runs core and
+    other-plugin callbacks, and a failure in one counts against the install.
+    An event gets `DEPLOY_CRON_TIMEOUT` seconds (default 120, `0` for no
     limit); one that times out is a warning, not a failure. On a network each
     site runs its own.
     Every site that is not archived, deleted or spam gets a guarded full load

@@ -489,11 +489,17 @@ PHP
 
 # The scheduled events of one site that belong to the plugin: hooks in the
 # site's cron array with a callback defined in the plugin's folder. Prints
-# one "cronhook:NAME" line each. It needs no hook prefix, and an event
-# another plugin owns is never run.
+# one "cronhook:NAME" line each. It needs no hook prefix. Running a hook runs
+# all its callbacks, so a shared hook also runs core and other-plugin
+# callbacks, and a failure in one of them counts as this plugin's. Callbacks
+# registered only while WP-Cron runs (DOING_CRON) are not seen here.
 cron_list_code() {
 	cat <<'PHP'
-$dir = rtrim(wp_normalize_path(WP_PLUGIN_DIR), "/") . "/" . getenv("DEPLOY_SLUG") . "/";
+$base = realpath(WP_PLUGIN_DIR . "/" . getenv("DEPLOY_SLUG"));
+if (false === $base) {
+    return;
+}
+$dir = rtrim(wp_normalize_path($base), "/") . "/";
 $seen = array();
 foreach ((array) _get_cron_array() as $events) {
     foreach ((array) $events as $hook => $unused) {
@@ -508,6 +514,9 @@ foreach ((array) _get_cron_array() as $events) {
                         $ref = new ReflectionMethod($fn[0], $fn[1]);
                     } elseif (is_object($fn) && !($fn instanceof Closure)) {
                         $ref = new ReflectionMethod($fn, "__invoke");
+                    } elseif (is_string($fn) && false !== strpos($fn, "::")) {
+                        $parts = explode("::", $fn, 2);
+                        $ref = new ReflectionMethod($parts[0], $parts[1]);
                     } else {
                         $ref = new ReflectionFunction($fn);
                     }
@@ -544,6 +553,9 @@ run_site_cron() {
 	[[ "$limit" =~ ^[0-9]+$ ]] || limit=120
 	if [[ "$limit" -gt 0 ]] && command -v timeout >/dev/null 2>&1; then
 		cmd=(timeout "$limit")
+	elif [[ "$limit" -gt 0 ]]; then
+		CRON_FAILURE="cron events not run: timeout is not installed on this host (set DEPLOY_CRON_TIMEOUT=0 for no limit); "
+		return 0
 	fi
 	hooks="$(DEPLOY_SLUG="$SLUG" wp_checked "$root" "$@" eval "$(cron_list_code)")" || {
 		CRON_FAILURE="cron list failed"
@@ -558,7 +570,7 @@ run_site_cron() {
 		if [[ "$status" -eq 124 && "${#cmd[@]}" -gt 0 ]]; then
 			CRON_WARN+="cron $hook timed out (${limit}s), "
 			CRON_RUN=$((CRON_RUN + 1))
-		elif [[ "$status" -ne 0 || "$out" == *"PHP Fatal error"* || "$out" == *"Fatal error:"* ]]; then
+		elif [[ "$status" -ne 0 || "$out" == *"PHP Fatal error"* || "$out" == *"Fatal error:"* || "$out" == *"WordPress database error"* || "$out" == *"Error establishing a database connection"* ]]; then
 			detail="$(printf '%s\n' "$out" | tail -n 3 | LC_ALL=C tr '\t\r\n' '   ' | LC_ALL=C tr -cd '[:print:]')"
 			CRON_FAILURE+="cron $hook failed (exit $status: ${detail:0:300}); "
 		else
@@ -611,7 +623,7 @@ home_check() {
 check_sites() {
 	local root="$1"
 	local kind urls url status result reason warn load purged line network=0
-	local load_errors load_status summary first_code cron_note
+	local load_errors load_status summary first_code cron_note cron_before
 	local check_error="home check failed; "
 	local url_args=()
 	SITES_TOTAL=0 SITES_FAILED=0 SITES_PURGED=0 PURGE_FAILED=0 SITE_LINES=""
@@ -640,7 +652,14 @@ check_sites() {
 			*) ;;
 			esac
 			# The plugin's own scheduled events, once, after a good load.
-			run_site_cron "$root" ${url_args[@]+"${url_args[@]}"}
+			# A cron callback must not change the activation lists either.
+			if cron_before="$(active_snapshot "$root")"; then
+				run_site_cron "$root" ${url_args[@]+"${url_args[@]}"}
+				active_check "$root" "$cron_before" "" "" || CRON_FAILURE+="activation lists changed during cron; "
+			else
+				CRON_RUN=0 CRON_TOTAL=0 CRON_WARN=""
+				CRON_FAILURE="cron skipped: activation snapshot failed; "
+			fi
 			CRON_SUM_RUN=$((CRON_SUM_RUN + CRON_RUN))
 			CRON_SUM_TOTAL=$((CRON_SUM_TOTAL + CRON_TOTAL))
 			cron_note="cron=${CRON_RUN}/${CRON_TOTAL}"
