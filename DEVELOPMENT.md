@@ -72,6 +72,16 @@ scripts/test-site.sh up --multisite              # network activation; /two/ too
 scripts/test-site.sh down
 ```
 
+**Licensed add-ons** (an `Update URI` header and no `GitHub Plugin URI`:
+updates come from the plugin's shop): `scripts/build-release.sh` leaves the
+`Update URI` as it is and builds only `{slug}-X.Y.Z.zip`, with no
+WordPress.org zip. `test-site.sh` first installs each parent named in
+`Requires Plugins:` from WordPress.org (an installed one is only activated)
+and activates it. A parent that is not on WordPress.org stops the run naming
+it: install its zip first with `wp --files DIR plugin install /files/x.zip`.
+`preview-site.sh` copies files only and changes no headers; the parent must
+already be on that site.
+
 `up --ref REF` tests another commit without changing the checkout. `up`
 prints the address and random local admin and database passwords; keep its
 output private. Credentials (mode 600) and site metadata live outside Git,
