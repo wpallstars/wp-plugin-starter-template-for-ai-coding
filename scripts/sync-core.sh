@@ -241,10 +241,12 @@ resolve_repo() {
 # The folder holding the repositories: the parent of the main checkout, so a
 # linked worktree finds the starter beside the main checkout, not in its own folder.
 default_starter_parent() {
-	local top="$1" common
-	common="$(git rev-parse --path-format=absolute --git-common-dir 2>/dev/null)" || common=""
-	if [[ "$(basename "$common")" = ".git" ]]; then
-		top="$(dirname "$common")"
+	local top="$1" main_wt
+	# The first entry of `git worktree list` is the main checkout, whatever the
+	# Git directory is named or located (no --path-format, so old Git works too).
+	main_wt="$(git worktree list --porcelain 2>/dev/null | sed -n '1s/^worktree //p')" || main_wt=""
+	if [[ -n "$main_wt" && -d "$main_wt" ]]; then
+		top="$main_wt"
 	fi
 	dirname "$top"
 	return 0
