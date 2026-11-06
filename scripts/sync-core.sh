@@ -8,7 +8,8 @@
 #                    starter's, each with its class, and exit 1 if any do
 #                    (scripts/preflight-release.sh warns).
 #   --from DIR       A checkout of the starter (default: <PREFIX>_STARTER_DIR,
-#                    then <STARTER_REPO_DIR> next to this repository).
+#                    then <STARTER_REPO_DIR> next to the main checkout, not a
+#                    linked worktree).
 #   --ref REF        Starter commit, branch or tag to copy from (default: HEAD
 #                    of that checkout; use origin/main after a git fetch there).
 #   --repo OWNER/REPO  This plugin's GitHub repository, for the links in core
@@ -114,7 +115,7 @@ same_mode() {
 }
 
 usage() {
-	sed -n '2,36p' "$0" | sed -e 's/^# \{0,1\}//' -e "s/<STARTER_REPO_DIR>/$STARTER_REPO_DIR/"
+	sed -n '2,37p' "$0" | sed -e 's/^# \{0,1\}//' -e "s/<STARTER_REPO_DIR>/$STARTER_REPO_DIR/"
 	return 0
 }
 
@@ -237,6 +238,31 @@ resolve_repo() {
 	return 0
 }
 
+# The folder holding the repositories: the parent of the main checkout, so a
+# linked worktree finds the starter beside the main checkout, not in its own folder.
+default_starter_parent() {
+	local top="$1" main_wt
+	# The first entry of `git worktree list` is the main checkout, whatever the
+	# Git directory is named or located (no --path-format, so old Git works too).
+	main_wt="$(git worktree list --porcelain 2>/dev/null | sed -n '1s/^worktree //p')" || main_wt=""
+	if [[ -n "$main_wt" && -d "$main_wt" ]]; then
+		top="$main_wt"
+	fi
+	dirname "$top"
+	return 0
+}
+
+# Name the starter checkout and its commit; warn when it is behind its upstream (no fetch).
+report_starter() {
+	local dir="$1" behind
+	printf 'Starter: %s @ %s\n' "$dir" "$(git -C "$dir" rev-parse --short HEAD)"
+	behind="$(git -C "$dir" rev-list --count 'HEAD..@{upstream}' 2>/dev/null)" || behind=0
+	if [[ "$behind" =~ ^[0-9]+$ && "$behind" -gt 0 ]]; then
+		printf 'Warning: the starter checkout is %s commit(s) behind its upstream; pull it, or pass --from\n' "$behind" >&2
+	fi
+	return 0
+}
+
 main() {
 	local check=0 discard=0 from="" ref="HEAD" repo=""
 	while [[ $# -gt 0 ]]; do
@@ -277,7 +303,7 @@ main() {
 	plugin_names_as TO
 
 	if [[ -z "$from" ]]; then
-		from="$(plugin_env STARTER_DIR "$(dirname "$root")/$STARTER_REPO_DIR")"
+		from="$(plugin_env STARTER_DIR "$(default_starter_parent "$root")/$STARTER_REPO_DIR")"
 	fi
 	[[ -d "$from" ]] || die "no starter checkout at $from; clone it there or pass --from DIR"
 	from="$(cd "$from" && pwd)"
@@ -295,6 +321,7 @@ main() {
 	printf 'Core files from %s (%s) into %s, as %s / %s / %s / %s / %s\n' \
 		"$FROM_NAME" "$(git -C "$from" rev-parse --short "$ref")" "$TO_NAME" \
 		"$TO_SLUG" "$TO_PREFIX" "$TO_PACKAGE" "$TO_CONST" "$TO_CSS"
+	report_starter "$from"
 
 	local path count=0
 	DIFFER=0
