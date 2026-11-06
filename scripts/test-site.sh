@@ -226,9 +226,9 @@ install_parents() {
 		[[ -n "$parent" ]] || continue
 		[[ "$parent" =~ ^[a-z0-9-]+$ ]] || die "invalid parent plugin slug in Requires Plugins: $parent"
 		if ! wp_cli plugin is-installed "$parent" >/dev/null 2>&1; then
-			wp_cli plugin install "$parent" >/dev/null 2>&1 || die "parent plugin $parent (Requires Plugins) is not on WordPress.org; install it on the test site first, for example with: scripts/test-site.sh wp --files DIR plugin install /files/$parent.zip"
+			wp_cli plugin install "$parent" || die "could not install parent plugin $parent (Requires Plugins); check the output above. If it is not on WordPress.org, install it first, for example with: scripts/test-site.sh wp --files DIR plugin install /files/$parent.zip"
 		fi
-		wp_cli plugin activate "$parent" ${network[@]+"${network[@]}"} || return 1
+		wp_cli plugin activate "$parent" ${network[@]+"${network[@]}"} || die "could not activate parent plugin $parent (Requires Plugins)"
 	done < <(printf '%s' "$PLUGIN_REQUIRES" | tr ',' '\n' | tr -d '[:blank:]')
 	return 0
 }
