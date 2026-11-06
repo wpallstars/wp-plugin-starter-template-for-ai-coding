@@ -238,6 +238,29 @@ resolve_repo() {
 	return 0
 }
 
+# The folder holding the repositories: the parent of the main checkout, so a
+# linked worktree finds the starter beside the main checkout, not in its own folder.
+default_starter_parent() {
+	local top="$1" common
+	common="$(git rev-parse --path-format=absolute --git-common-dir 2>/dev/null)" || common=""
+	if [[ "$(basename "$common")" = ".git" ]]; then
+		top="$(dirname "$common")"
+	fi
+	dirname "$top"
+	return 0
+}
+
+# Name the starter checkout and its commit; warn when it is behind its upstream (no fetch).
+report_starter() {
+	local dir="$1" behind
+	printf 'Starter: %s @ %s\n' "$dir" "$(git -C "$dir" rev-parse --short HEAD)"
+	behind="$(git -C "$dir" rev-list --count 'HEAD..@{upstream}' 2>/dev/null)" || behind=0
+	if [[ "$behind" =~ ^[0-9]+$ && "$behind" -gt 0 ]]; then
+		printf 'Warning: the starter checkout is %s commit(s) behind its upstream; pull it, or pass --from\n' "$behind" >&2
+	fi
+	return 0
+}
+
 main() {
 	local check=0 discard=0 from="" ref="HEAD" repo=""
 	while [[ $# -gt 0 ]]; do
@@ -278,13 +301,7 @@ main() {
 	plugin_names_as TO
 
 	if [[ -z "$from" ]]; then
-		# A linked worktree sits in a shared folder; the starter is beside the main checkout.
-		local common main_root="$root"
-		common="$(git rev-parse --path-format=absolute --git-common-dir 2>/dev/null)" || common=""
-		if [[ "$(basename "$common")" = ".git" ]]; then
-			main_root="$(dirname "$common")"
-		fi
-		from="$(plugin_env STARTER_DIR "$(dirname "$main_root")/$STARTER_REPO_DIR")"
+		from="$(plugin_env STARTER_DIR "$(default_starter_parent "$root")/$STARTER_REPO_DIR")"
 	fi
 	[[ -d "$from" ]] || die "no starter checkout at $from; clone it there or pass --from DIR"
 	from="$(cd "$from" && pwd)"
@@ -302,12 +319,7 @@ main() {
 	printf 'Core files from %s (%s) into %s, as %s / %s / %s / %s / %s\n' \
 		"$FROM_NAME" "$(git -C "$from" rev-parse --short "$ref")" "$TO_NAME" \
 		"$TO_SLUG" "$TO_PREFIX" "$TO_PACKAGE" "$TO_CONST" "$TO_CSS"
-	printf 'Starter: %s @ %s\n' "$from" "$(git -C "$from" rev-parse --short HEAD)"
-	local behind
-	behind="$(git -C "$from" rev-list --count 'HEAD..@{upstream}' 2>/dev/null)" || behind=0
-	if [[ "$behind" =~ ^[0-9]+$ && "$behind" -gt 0 ]]; then
-		printf 'Warning: the starter checkout is %s commit(s) behind its upstream; pull it, or pass --from\n' "$behind" >&2
-	fi
+	report_starter "$from"
 
 	local path count=0
 	DIFFER=0
