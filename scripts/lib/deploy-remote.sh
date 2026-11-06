@@ -383,12 +383,20 @@ new_log_text() {
 	return 0
 }
 
-# How many new log lines are WordPress core's cron-save contention notices.
-# Matches the untranslated error code, not the translated message.
-count_cron_contention() {
-	local count
-	count="$(new_log_all | grep -Ec 'hook: .*: could_not_set, ' || true)"
-	printf '%s' "${count:-0}"
+# "TOTAL CONTENTION": new log lines, and how many of them are WordPress
+# core's cron-save contention notices, both counted from one snapshot of the
+# log text. Matches the untranslated error code, not the translated message,
+# and only a hook name directly before it (hook: NAME: could_not_set, ).
+count_log_and_contention() {
+	local text total contention
+	text="$(new_log_all)"
+	if [[ -z "$text" ]]; then
+		printf '0 0'
+		return 0
+	fi
+	total="$(printf '%s\n' "$text" | wc -l | tr -d ' ')"
+	contention="$(printf '%s\n' "$text" | grep -Ec 'hook: [^[:space:]:]+: could_not_set, ' || true)"
+	printf '%s %s' "$total" "${contention:-0}"
 	return 0
 }
 
@@ -816,8 +824,9 @@ apply_one() {
 	after="$(plugin_version "$main")"
 	new_lines="$(count_new_lines)"
 	if [[ "$new_lines" -gt 0 ]]; then
-		contention="$(count_cron_contention)"
-		if [[ "$contention" -eq "$new_lines" ]]; then
+		# Classify one snapshot, so a line arriving mid-check cannot hide an error.
+		read -r snap_total contention <<<"$(count_log_and_contention)"
+		if [[ "$snap_total" -gt 0 && "$contention" -eq "$snap_total" ]]; then
 			# Two cron runners saved the cron option at once: not a failure.
 			warn+="cron save contention ($contention lines), "
 			log_fail=0
