@@ -343,7 +343,7 @@ log_files() {
 	return 0
 }
 
-new_log_text() {
+new_log_all() {
 	local index=0
 	local file start
 	for file in ${LOG_FILES[@]+"${LOG_FILES[@]}"}; do
@@ -352,10 +352,51 @@ new_log_text() {
 			if [[ "$(file_lines "$file")" -lt "${LOG_BEFORE[index]}" ]]; then
 				start=1
 			fi
-			tail -n +"$start" "$file" | head -n 10
+			tail -n +"$start" "$file"
 		fi
 		index=$((index + 1))
 	done
+	return 0
+}
+
+# How many lines the web PHP logs gained since log_files.
+count_new_lines() {
+	local total=0 index=0 file current added
+	for file in ${LOG_FILES[@]+"${LOG_FILES[@]}"}; do
+		current="$(file_lines "$file")"
+		if [[ "$current" -lt "${LOG_BEFORE[index]}" ]]; then
+			# A truncated or rotated log contributes all of its current lines.
+			added="$current"
+		else
+			added=$((current - LOG_BEFORE[index]))
+		fi
+		total=$((total + added))
+		index=$((index + 1))
+	done
+	printf '%s' "$total"
+	return 0
+}
+
+# The first lines of the new log text, for the report.
+new_log_text() {
+	new_log_all | head -n 10
+	return 0
+}
+
+# "TOTAL CONTENTION": new log lines, and how many of them are WordPress
+# core's cron-save contention notices, both counted from one snapshot of the
+# log text. Matches the untranslated error code, not the translated message,
+# and only a hook name directly before it (hook: NAME: could_not_set, ).
+count_log_and_contention() {
+	local text total contention
+	text="$(new_log_all)"
+	if [[ -z "$text" ]]; then
+		printf '0 0'
+		return 0
+	fi
+	total="$(printf '%s\n' "$text" | wc -l | tr -d ' ')"
+	contention="$(printf '%s\n' "$text" | grep -Ec 'hook: [^[:space:]:]+: could_not_set, ' || true)"
+	printf '%s %s' "$total" "${contention:-0}"
 	return 0
 }
 
@@ -733,7 +774,8 @@ apply_one() {
 	local backups="$5"
 	local plugins="$root/wp-content/plugins"
 	local main="$plugins/$SLUG/$SLUG.php"
-	local before after backup new_lines result="ok" warn="" index file current added
+	local before after backup new_lines result="ok" warn=""
+	local contention log_fail=1
 	local comparison=0
 
 	before="$(plugin_version "$main")"
@@ -780,26 +822,23 @@ apply_one() {
 	fi
 
 	after="$(plugin_version "$main")"
-	new_lines=0
-	index=0
-	for file in ${LOG_FILES[@]+"${LOG_FILES[@]}"}; do
-		current="$(file_lines "$file")"
-		if [[ "$current" -lt "${LOG_BEFORE[index]}" ]]; then
-			# A truncated or rotated log contributes all of its current lines.
-			added="$current"
-		else
-			added=$((current - LOG_BEFORE[index]))
+	new_lines="$(count_new_lines)"
+	if [[ "$new_lines" -gt 0 ]]; then
+		# Classify one snapshot, so a line arriving mid-check cannot hide an error.
+		read -r snap_total contention <<<"$(count_log_and_contention)"
+		if [[ "$snap_total" -gt 0 && "$contention" -eq "$snap_total" ]]; then
+			# Two cron runners saved the cron option at once: not a failure.
+			warn+="cron save contention ($contention lines), "
+			log_fail=0
 		fi
-		new_lines=$((new_lines + added))
-		index=$((index + 1))
-	done
+	fi
 
 	# Single sites have no site row on which to show these warnings.
 	[[ "$PURGE_FAILED" -eq 0 ]] || warn+="purge failed, "
 	[[ -z "$CRON_WARNED" || -n "$SITE_LINES" ]] || warn+="cron timed out, "
 	[[ "$MAIN_CACHE" != *hit* || "$MAIN_CACHE" == redirected:* ]] || warn+="cached, "
 	[[ -z "$MAIN_RETRIED" ]] || warn+="home retried ($MAIN_RETRIED), "
-	if [[ "$after" != "$want" || "$new_lines" -gt 0 || "$SITES_FAILED" -gt 0 ]]; then
+	if [[ "$after" != "$want" || ("$new_lines" -gt 0 && "$log_fail" -eq 1) || "$SITES_FAILED" -gt 0 ]]; then
 		result="FAIL"
 		if [[ -z "$SITE_LINES" && -n "$MAIN_REASON" ]]; then
 			result+=": $MAIN_REASON"
