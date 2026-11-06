@@ -359,6 +359,24 @@ new_log_all() {
 	return 0
 }
 
+# How many lines the web PHP logs gained since log_files.
+count_new_lines() {
+	local total=0 index=0 file current added
+	for file in ${LOG_FILES[@]+"${LOG_FILES[@]}"}; do
+		current="$(file_lines "$file")"
+		if [[ "$current" -lt "${LOG_BEFORE[index]}" ]]; then
+			# A truncated or rotated log contributes all of its current lines.
+			added="$current"
+		else
+			added=$((current - LOG_BEFORE[index]))
+		fi
+		total=$((total + added))
+		index=$((index + 1))
+	done
+	printf '%s' "$total"
+	return 0
+}
+
 # The first lines of the new log text, for the report.
 new_log_text() {
 	new_log_all | head -n 10
@@ -748,7 +766,7 @@ apply_one() {
 	local backups="$5"
 	local plugins="$root/wp-content/plugins"
 	local main="$plugins/$SLUG/$SLUG.php"
-	local before after backup new_lines result="ok" warn="" index file current added
+	local before after backup new_lines result="ok" warn=""
 	local contention log_fail=1
 	local comparison=0
 
@@ -796,21 +814,7 @@ apply_one() {
 	fi
 
 	after="$(plugin_version "$main")"
-	new_lines=0
-	index=0
-	for file in ${LOG_FILES[@]+"${LOG_FILES[@]}"}; do
-		current="$(file_lines "$file")"
-		if [[ "$current" -lt "${LOG_BEFORE[index]}" ]]; then
-			# A truncated or rotated log contributes all of its current lines.
-			added="$current"
-		else
-			added=$((current - LOG_BEFORE[index]))
-		fi
-		new_lines=$((new_lines + added))
-		index=$((index + 1))
-	done
-
-	# Single sites have no site row on which to show these warnings.
+	new_lines="$(count_new_lines)"
 	if [[ "$new_lines" -gt 0 ]]; then
 		contention="$(count_cron_contention)"
 		if [[ "$contention" -eq "$new_lines" ]]; then
@@ -819,6 +823,8 @@ apply_one() {
 			log_fail=0
 		fi
 	fi
+
+	# Single sites have no site row on which to show these warnings.
 	[[ "$PURGE_FAILED" -eq 0 ]] || warn+="purge failed, "
 	[[ -z "$CRON_WARNED" || -n "$SITE_LINES" ]] || warn+="cron timed out, "
 	[[ "$MAIN_CACHE" != *hit* || "$MAIN_CACHE" == redirected:* ]] || warn+="cached, "
