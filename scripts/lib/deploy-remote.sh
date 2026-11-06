@@ -343,7 +343,7 @@ log_files() {
 	return 0
 }
 
-new_log_text() {
+new_log_all() {
 	local index=0
 	local file start
 	for file in ${LOG_FILES[@]+"${LOG_FILES[@]}"}; do
@@ -352,10 +352,25 @@ new_log_text() {
 			if [[ "$(file_lines "$file")" -lt "${LOG_BEFORE[index]}" ]]; then
 				start=1
 			fi
-			tail -n +"$start" "$file" | head -n 10
+			tail -n +"$start" "$file"
 		fi
 		index=$((index + 1))
 	done
+	return 0
+}
+
+# The first lines of the new log text, for the report.
+new_log_text() {
+	new_log_all | head -n 10
+	return 0
+}
+
+# How many new log lines are WordPress core's cron-save contention notices.
+# Matches the untranslated error code, not the translated message.
+count_cron_contention() {
+	local count
+	count="$(new_log_all | grep -Ec 'hook: .*: could_not_set, ' || true)"
+	printf '%s' "${count:-0}"
 	return 0
 }
 
@@ -734,6 +749,7 @@ apply_one() {
 	local plugins="$root/wp-content/plugins"
 	local main="$plugins/$SLUG/$SLUG.php"
 	local before after backup new_lines result="ok" warn="" index file current added
+	local contention log_fail=1
 	local comparison=0
 
 	before="$(plugin_version "$main")"
@@ -795,11 +811,19 @@ apply_one() {
 	done
 
 	# Single sites have no site row on which to show these warnings.
+	if [[ "$new_lines" -gt 0 ]]; then
+		contention="$(count_cron_contention)"
+		if [[ "$contention" -eq "$new_lines" ]]; then
+			# Two cron runners saved the cron option at once: not a failure.
+			warn+="cron save contention ($contention lines), "
+			log_fail=0
+		fi
+	fi
 	[[ "$PURGE_FAILED" -eq 0 ]] || warn+="purge failed, "
 	[[ -z "$CRON_WARNED" || -n "$SITE_LINES" ]] || warn+="cron timed out, "
 	[[ "$MAIN_CACHE" != *hit* || "$MAIN_CACHE" == redirected:* ]] || warn+="cached, "
 	[[ -z "$MAIN_RETRIED" ]] || warn+="home retried ($MAIN_RETRIED), "
-	if [[ "$after" != "$want" || "$new_lines" -gt 0 || "$SITES_FAILED" -gt 0 ]]; then
+	if [[ "$after" != "$want" || ("$new_lines" -gt 0 && "$log_fail" -eq 1) || "$SITES_FAILED" -gt 0 ]]; then
 		result="FAIL"
 		if [[ -z "$SITE_LINES" && -n "$MAIN_REASON" ]]; then
 			result+=": $MAIN_REASON"
