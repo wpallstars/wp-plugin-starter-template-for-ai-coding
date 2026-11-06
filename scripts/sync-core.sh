@@ -8,7 +8,8 @@
 #                    starter's, each with its class, and exit 1 if any do
 #                    (scripts/preflight-release.sh warns).
 #   --from DIR       A checkout of the starter (default: <PREFIX>_STARTER_DIR,
-#                    then <STARTER_REPO_DIR> next to this repository).
+#                    then <STARTER_REPO_DIR> next to the main checkout, not a
+#                    linked worktree).
 #   --ref REF        Starter commit, branch or tag to copy from (default: HEAD
 #                    of that checkout; use origin/main after a git fetch there).
 #   --repo OWNER/REPO  This plugin's GitHub repository, for the links in core
@@ -114,7 +115,7 @@ same_mode() {
 }
 
 usage() {
-	sed -n '2,36p' "$0" | sed -e 's/^# \{0,1\}//' -e "s/<STARTER_REPO_DIR>/$STARTER_REPO_DIR/"
+	sed -n '2,37p' "$0" | sed -e 's/^# \{0,1\}//' -e "s/<STARTER_REPO_DIR>/$STARTER_REPO_DIR/"
 	return 0
 }
 
@@ -277,7 +278,13 @@ main() {
 	plugin_names_as TO
 
 	if [[ -z "$from" ]]; then
-		from="$(plugin_env STARTER_DIR "$(dirname "$root")/$STARTER_REPO_DIR")"
+		# A linked worktree sits in a shared folder; the starter is beside the main checkout.
+		local common main_root="$root"
+		common="$(git rev-parse --path-format=absolute --git-common-dir 2>/dev/null)" || common=""
+		if [[ "$(basename "$common")" = ".git" ]]; then
+			main_root="$(dirname "$common")"
+		fi
+		from="$(plugin_env STARTER_DIR "$(dirname "$main_root")/$STARTER_REPO_DIR")"
 	fi
 	[[ -d "$from" ]] || die "no starter checkout at $from; clone it there or pass --from DIR"
 	from="$(cd "$from" && pwd)"
@@ -295,6 +302,12 @@ main() {
 	printf 'Core files from %s (%s) into %s, as %s / %s / %s / %s / %s\n' \
 		"$FROM_NAME" "$(git -C "$from" rev-parse --short "$ref")" "$TO_NAME" \
 		"$TO_SLUG" "$TO_PREFIX" "$TO_PACKAGE" "$TO_CONST" "$TO_CSS"
+	printf 'Starter: %s @ %s\n' "$from" "$(git -C "$from" rev-parse --short HEAD)"
+	local behind
+	behind="$(git -C "$from" rev-list --count 'HEAD..@{upstream}' 2>/dev/null)" || behind=0
+	if [[ "$behind" =~ ^[0-9]+$ && "$behind" -gt 0 ]]; then
+		printf 'Warning: the starter checkout is %s commit(s) behind its upstream; pull it, or pass --from\n' "$behind" >&2
+	fi
 
 	local path count=0
 	DIFFER=0
