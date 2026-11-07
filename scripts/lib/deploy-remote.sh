@@ -837,6 +837,85 @@ check_sites() {
 	return 0
 }
 
+# Replace $plugins/$SLUG with the folder in the zip using two rename() calls
+# inside the plugins folder (same filesystem, so each is atomic). Returns 1
+# with the live folder untouched if anything fails before the first rename;
+# if the second rename fails the old folder is put back.
+#
+# The release zip gives every file the same fixed time (reproducible builds)
+# and unzip keeps it, but PHP's OPcache revalidates a file only when its time
+# changes: the web server would go on running the old version's code, and
+# assets versioned by file time would keep their old addresses. So the
+# extracted files get the current time first, as WordPress's own updater
+# gives them.
+swap_plugin_folder() {
+	local plugins="$1"
+	local zip="$2"
+	local stamp staging old
+	stamp="$(date +%s)-$$"
+	staging="$plugins/.$SLUG-new-$stamp"
+	old="$plugins/.$SLUG-old-$stamp"
+
+	command -v unzip >/dev/null 2>&1 || return 1
+	mkdir "$staging" || return 1
+	if ! unzip -q "$zip" -d "$staging" || [[ ! -f "$staging/$SLUG/$SLUG.php" ]] \
+		|| ! find "$staging/$SLUG" -exec touch -c {} +; then
+		rm -rf "$staging"
+		return 1
+	fi
+	# A signal between the two renames would leave the plugin only in $old:
+	# put it back before exiting.
+	# shellcheck disable=SC2064
+	trap "[[ -d '$plugins/$SLUG' ]] || mv '$old' '$plugins/$SLUG'; rm -rf '$staging'; exit 143" INT TERM HUP
+	if ! mv "$plugins/$SLUG" "$old"; then
+		trap - INT TERM HUP
+		rm -rf "$staging"
+		return 1
+	fi
+	if ! mv "$staging/$SLUG" "$plugins/$SLUG"; then
+		if ! mv "$old" "$plugins/$SLUG"; then
+			trap - INT TERM HUP
+			printf '%s\tFAIL: folder swap and rollback failed; old copy kept at %s\n' "$SLUG" "$old" >&2
+			return 2
+		fi
+		trap - INT TERM HUP
+		rm -rf "$staging"
+		return 1
+	fi
+	trap - INT TERM HUP
+	rm -rf "$staging"
+	if ! rm -rf "$old"; then
+		printf '%s\tWARN: could not remove old folder %s\n' "$SLUG" "$old" >&2
+	fi
+	return 0
+}
+
+# Swap by two renames so running jobs never find the folder missing.
+# Activation (and network activation) is kept: the folder and main file
+# names do not change. If the swap cannot be made (no unzip, a different
+# filesystem, an odd zip), nothing has changed and install --force runs.
+install_build() {
+	local root="$1"
+	local name="$2"
+	local zip="$3"
+	local plugins="$4"
+	local backup="$5"
+
+	local swap_rc=0
+	swap_plugin_folder "$plugins" "$zip" || swap_rc=$?
+	[[ "$swap_rc" -eq 0 ]] && return 0
+	if [[ "$swap_rc" -eq 2 ]]; then
+		printf '%s\tFAIL: folder swap rollback failed; restore: tar -xzf %q -C %q\n' "$name" "$backup" "$plugins"
+		return 1
+	fi
+	printf '%s\tWARN: folder swap failed; using wp plugin install --force\n' "$name" >&2
+	if ! active_guard "$root" "" "" --skip-plugins --skip-themes plugin install "$zip" --force >/dev/null; then
+		printf '%s\tFAIL: guarded install stopped; restore: tar -xzf %q -C %q\n' "$name" "$backup" "$plugins"
+		return 1
+	fi
+	return 0
+}
+
 apply_one() {
 	local root="$1"
 	local name="$2"
@@ -879,9 +958,7 @@ apply_one() {
 		return 0
 	fi
 
-	# Activation (and network activation) is kept by install --force.
-	if ! active_guard "$root" "" "" --skip-plugins --skip-themes plugin install "$zip" --force >/dev/null; then
-		printf '%s\tFAIL: guarded install stopped; restore: tar -xzf %q -C %q\n' "$name" "$backup" "$plugins"
+	if ! install_build "$root" "$name" "$zip" "$plugins" "$backup"; then
 		FAILED=1
 		return 0
 	fi

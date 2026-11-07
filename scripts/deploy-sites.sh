@@ -27,7 +27,8 @@
 # (~/.{slug}-deploy/<tag>-<time>, mode 700, files 600) and checked again.
 # Then, for each install that already has wp-content/plugins/{slug}/{slug}.php
 # (the plugin is never added anywhere): a tar backup of the plugin folder, wp
-# plugin install --force (activation and network activation are kept), then
+# a folder swap by two renames (activation and network activation are kept;
+# files get the current time; wp plugin install --force if it cannot), then
 # per site a full load for its settings upgrade, a LiteSpeed Cache purge (when
 # its WP-CLI command is there) so pages stop pointing at the old CSS and JS,
 # and a home fetch. After each load the plugin's own WP-Cron events run once
