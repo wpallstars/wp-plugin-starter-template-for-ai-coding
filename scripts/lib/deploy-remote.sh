@@ -837,6 +837,14 @@ check_sites() {
 	return 0
 }
 
+# Put back the INT/TERM/HUP handlers saved with trap -p (empty: defaults).
+swap_restore_traps() {
+	local saved="$1"
+	trap - INT TERM HUP
+	[[ -z "$saved" ]] || eval "$saved"
+	return 0
+}
+
 # Replace $plugins/$SLUG with the folder in the zip using two rename() calls
 # inside the plugins folder (same filesystem, so each is atomic). Returns 1
 # with the live folder untouched if anything fails before the first rename;
@@ -851,38 +859,42 @@ check_sites() {
 swap_plugin_folder() {
 	local plugins="$1"
 	local zip="$2"
-	local stamp staging old
+	local stamp staging old prev_traps
 	stamp="$(date +%s)-$$"
 	staging="$plugins/.$SLUG-new-$stamp"
 	old="$plugins/.$SLUG-old-$stamp"
 
 	command -v unzip >/dev/null 2>&1 || return 1
 	mkdir "$staging" || return 1
-	if ! unzip -q "$zip" -d "$staging" || [[ ! -f "$staging/$SLUG/$SLUG.php" ]] \
+	# umask 022: the web server's account must be able to read what unzip makes.
+	if ! (umask 022 && unzip -q "$zip" -d "$staging") || [[ ! -f "$staging/$SLUG/$SLUG.php" ]] \
 		|| ! find "$staging/$SLUG" -exec touch -c {} +; then
 		rm -rf "$staging"
 		return 1
 	fi
 	# A signal between the two renames would leave the plugin only in $old:
 	# put it back before exiting.
-	# shellcheck disable=SC2064
-	trap "[[ -d '$plugins/$SLUG' ]] || mv '$old' '$plugins/$SLUG'; rm -rf '$staging'; exit 143" INT TERM HUP
+	# Single quotes: paths expand when the trap runs, so any character is safe.
+	prev_traps="$(trap -p INT TERM HUP)"
+	trap '[[ -d "$plugins/$SLUG" ]] || mv "$old" "$plugins/$SLUG"; rm -rf "$staging"; exit 143' INT TERM HUP
 	if ! mv "$plugins/$SLUG" "$old"; then
-		trap - INT TERM HUP
+		swap_restore_traps "$prev_traps"
 		rm -rf "$staging"
 		return 1
 	fi
-	if ! mv "$staging/$SLUG" "$plugins/$SLUG"; then
-		if ! mv "$old" "$plugins/$SLUG"; then
-			trap - INT TERM HUP
+	# Refuse to move into a destination another writer recreated (mv would nest
+	# the release inside it): roll back and keep the old copy.
+	if [[ -e "$plugins/$SLUG" ]] || ! mv "$staging/$SLUG" "$plugins/$SLUG"; then
+		if [[ -e "$plugins/$SLUG" ]] || ! mv "$old" "$plugins/$SLUG"; then
+			swap_restore_traps "$prev_traps"
 			printf '%s\tFAIL: folder swap and rollback failed; old copy kept at %s\n' "$SLUG" "$old" >&2
 			return 2
 		fi
-		trap - INT TERM HUP
+		swap_restore_traps "$prev_traps"
 		rm -rf "$staging"
 		return 1
 	fi
-	trap - INT TERM HUP
+	swap_restore_traps "$prev_traps"
 	rm -rf "$staging"
 	if ! rm -rf "$old"; then
 		printf '%s\tWARN: could not remove old folder %s\n' "$SLUG" "$old" >&2
