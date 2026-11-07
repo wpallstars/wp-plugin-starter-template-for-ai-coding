@@ -427,6 +427,35 @@ count_contention() {
 	return 0
 }
 
+# Classifies the new log lines from one snapshot, so a line arriving mid-check
+# cannot hide an error. Cron race lines for hooks this run executed are
+# warnings, not new lines. Sets LOG_NEW_LINES (lines that count), LOG_WARN
+# (warning text) and LOG_FAIL (1 when the new lines fail the install).
+classify_new_log() {
+	local snapshot classified entry contention
+	LOG_NEW_LINES=0 LOG_WARN="" LOG_FAIL=1
+	snapshot="$(new_log_all)"
+	if [[ -n "$snapshot" ]]; then
+		classified="$(printf '%s\n' "$snapshot" | classify_log "$CRON_HOOKS_RUN")"
+		while IFS= read -r entry; do
+			case "$entry" in
+			line) LOG_NEW_LINES=$((LOG_NEW_LINES + 1)) ;;
+			"race "*) LOG_WARN+="cron race ${entry#race }, " ;;
+			*) ;;
+			esac
+		done <<<"$classified"
+	fi
+	if [[ "$LOG_NEW_LINES" -gt 0 ]]; then
+		contention="$(printf '%s\n' "$snapshot" | count_contention)"
+		if [[ "$contention" -eq "$LOG_NEW_LINES" ]]; then
+			# Two cron runners saved the cron option at once: not a failure.
+			LOG_WARN+="cron save contention ($contention lines), "
+			LOG_FAIL=0
+		fi
+	fi
+	return 0
+}
+
 file_lines() {
 	local file="$1"
 	if [[ -f "$file" ]]; then
@@ -803,8 +832,8 @@ apply_one() {
 	local backups="$5"
 	local plugins="$root/wp-content/plugins"
 	local main="$plugins/$SLUG/$SLUG.php"
-	local before after backup new_lines result="ok" warn="" snapshot classified entry
-	local contention log_fail=1
+	local before after backup new_lines result="ok" warn=""
+	local log_fail=1
 	local comparison=0
 
 	before="$(plugin_version "$main")"
@@ -851,28 +880,10 @@ apply_one() {
 	fi
 
 	after="$(plugin_version "$main")"
-	# Classify one snapshot, so a line arriving mid-check cannot hide an error.
-	# Cron race lines for hooks this run executed are warnings, not new lines.
-	new_lines=0
-	snapshot="$(new_log_all)"
-	if [[ -n "$snapshot" ]]; then
-		classified="$(printf '%s\n' "$snapshot" | classify_log "$CRON_HOOKS_RUN")"
-		while IFS= read -r entry; do
-			case "$entry" in
-			line) new_lines=$((new_lines + 1)) ;;
-			"race "*) warn+="cron race ${entry#race }, " ;;
-			*) ;;
-			esac
-		done <<<"$classified"
-	fi
-	if [[ "$new_lines" -gt 0 ]]; then
-		contention="$(printf '%s\n' "$snapshot" | count_contention)"
-		if [[ "$contention" -eq "$new_lines" ]]; then
-			# Two cron runners saved the cron option at once: not a failure.
-			warn+="cron save contention ($contention lines), "
-			log_fail=0
-		fi
-	fi
+	classify_new_log
+	new_lines="$LOG_NEW_LINES"
+	warn+="$LOG_WARN"
+	log_fail="$LOG_FAIL"
 
 	# Single sites have no site row on which to show these warnings.
 	[[ "$PURGE_FAILED" -eq 0 ]] || warn+="purge failed, "
