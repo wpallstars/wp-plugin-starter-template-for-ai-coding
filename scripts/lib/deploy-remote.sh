@@ -58,6 +58,7 @@ HOME_RETRY_DELAY="${DEPLOY_HOME_RETRY_DELAY:-5}"
 SKIPS=()
 LOG_FILES=()
 LOG_BEFORE=()
+LOG_FIRST=()
 
 say() {
 	local message="$1"
@@ -337,21 +338,43 @@ log_files() {
 	done
 	LOG_FILES=(${unique[@]+"${unique[@]}"})
 	LOG_BEFORE=()
+	LOG_FIRST=()
 	for path in ${LOG_FILES[@]+"${LOG_FILES[@]}"}; do
 		LOG_BEFORE+=("$(file_lines "$path")")
+		LOG_FIRST+=("$(first_line "$path")")
 	done
 	return 0
 }
 
+# First line of a file, to tell a rotated or replaced log from a grown one.
+first_line() {
+	local file="$1"
+	if [[ -f "$file" ]]; then
+		head -n 1 "$file" 2>/dev/null || true
+	fi
+	return 0
+}
+
+# Line to read a log from: after the baseline, or from the top when the log
+# shrank or its first line changed (rotated, however far it has regrown).
+log_start() {
+	local file="$1" before="$2" first="$3"
+	if [[ "$(file_lines "$file")" -lt "$before" ]] || { [[ "$before" -gt 0 ]] && [[ "$(first_line "$file")" != "$first" ]]; }; then
+		printf '1'
+	else
+		printf '%s' "$((before + 1))"
+	fi
+	return 0
+}
+
+# Every line the web logs gained since log_files; a truncated or rotated log
+# contributes all of its current lines.
 new_log_all() {
 	local index=0
 	local file start
 	for file in ${LOG_FILES[@]+"${LOG_FILES[@]}"}; do
 		if [[ -f "$file" ]]; then
-			start=$((LOG_BEFORE[index] + 1))
-			if [[ "$(file_lines "$file")" -lt "${LOG_BEFORE[index]}" ]]; then
-				start=1
-			fi
+			start="$(log_start "$file" "${LOG_BEFORE[index]}" "${LOG_FIRST[index]}")"
 			tail -n +"$start" "$file"
 		fi
 		index=$((index + 1))
@@ -359,21 +382,32 @@ new_log_all() {
 	return 0
 }
 
-# How many lines the web PHP logs gained since log_files.
-count_new_lines() {
-	local total=0 index=0 file current added
-	for file in ${LOG_FILES[@]+"${LOG_FILES[@]}"}; do
-		current="$(file_lines "$file")"
-		if [[ "$current" -lt "${LOG_BEFORE[index]}" ]]; then
-			# A truncated or rotated log contributes all of its current lines.
-			added="$current"
-		else
-			added=$((current - LOG_BEFORE[index]))
-		fi
-		total=$((total + added))
-		index=$((index + 1))
-	done
-	printf '%s' "$total"
+# Reads log lines on stdin; HOOKS is the space-separated hooks this run
+# executed. Prints "race HOOK" once per hook for WordPress's could_not_set
+# reschedule/unschedule error on one of them (our forced run and the site's
+# own cron runner handled the same event at once), and "line" for every other
+# line, which still counts as new.
+classify_log() {
+	local hooks=" $1 "
+	awk -v hooks="$hooks" '
+		{
+			if (match($0, /Cron (reschedule|unschedule) event error for hook: [^,]+, Error code: could_not_set/) \
+				&& substr($0, 1, RSTART - 1) ~ /^(\[[^]]*\][[:space:]]*)*(PHP [A-Za-z ]+:[[:space:]]*)?$/ \
+				&& substr($0, RSTART + RLENGTH) ~ /^[[:space:]]*$/) {
+				text = substr($0, RSTART, RLENGTH)
+				sub(/^Cron (reschedule|unschedule) event error for hook: /, "", text)
+				sub(/, Error code: could_not_set$/, "", text)
+				if (index(hooks, " " text " ") > 0) {
+					if (!(text in seen)) {
+						seen[text] = 1
+						print "race " text
+					}
+					next
+				}
+			}
+			print "line"
+		}
+	'
 	return 0
 }
 
@@ -383,20 +417,13 @@ new_log_text() {
 	return 0
 }
 
-# "TOTAL CONTENTION": new log lines, and how many of them are WordPress
-# core's cron-save contention notices, both counted from one snapshot of the
-# log text. Matches the untranslated error code, not the translated message,
-# and only a hook name directly before it (hook: NAME: could_not_set, ).
-count_log_and_contention() {
-	local text total contention
-	text="$(new_log_all)"
-	if [[ -z "$text" ]]; then
-		printf '0 0'
-		return 0
-	fi
-	total="$(printf '%s\n' "$text" | wc -l | tr -d ' ')"
-	contention="$(printf '%s\n' "$text" | grep -Ec 'hook: [^[:space:]:]+: could_not_set, ' || true)"
-	printf '%s %s' "$total" "${contention:-0}"
+# Reads log lines on stdin; prints how many are WordPress core's cron-save
+# contention notices. Matches the untranslated error code, not the translated
+# message, and only a hook name directly before it (hook: NAME: could_not_set, ).
+count_contention() {
+	local count
+	count="$(grep -Ec 'hook: [^[:space:]:]+: could_not_set, ' || true)"
+	printf '%s' "${count:-0}"
 	return 0
 }
 
@@ -623,6 +650,8 @@ run_site_cron() {
 			CRON_FAILURE+="cron $hook failed (exit $status: ${detail:0:300}); "
 		else
 			CRON_RUN=$((CRON_RUN + 1))
+			# Only a hook that ran to completion can have raced with the site's cron.
+			CRON_HOOKS_RUN+="$hook "
 		fi
 	done <<<"$hooks"
 	return 0
@@ -675,7 +704,7 @@ check_sites() {
 	local check_error="home check failed; "
 	local url_args=()
 	SITES_TOTAL=0 SITES_FAILED=0 SITES_PURGED=0 PURGE_FAILED=0 SITE_LINES=""
-	CRON_SUM_RUN=0 CRON_SUM_TOTAL=0 CRON_WARNED=""
+	CRON_SUM_RUN=0 CRON_SUM_TOTAL=0 CRON_WARNED="" CRON_HOOKS_RUN=""
 	MAIN_STATUS="?" MAIN_CODE="000" MAIN_CACHE="none" MAIN_REASON="" MAIN_RETRIED=""
 	kind="$(wp_bare "$root" eval 'echo is_multisite() ? "multisite" : "single";')" || return 1
 	case "$kind" in
@@ -774,7 +803,7 @@ apply_one() {
 	local backups="$5"
 	local plugins="$root/wp-content/plugins"
 	local main="$plugins/$SLUG/$SLUG.php"
-	local before after backup new_lines result="ok" warn=""
+	local before after backup new_lines result="ok" warn="" snapshot classified entry
 	local contention log_fail=1
 	local comparison=0
 
@@ -822,11 +851,23 @@ apply_one() {
 	fi
 
 	after="$(plugin_version "$main")"
-	new_lines="$(count_new_lines)"
+	# Classify one snapshot, so a line arriving mid-check cannot hide an error.
+	# Cron race lines for hooks this run executed are warnings, not new lines.
+	new_lines=0
+	snapshot="$(new_log_all)"
+	if [[ -n "$snapshot" ]]; then
+		classified="$(printf '%s\n' "$snapshot" | classify_log "$CRON_HOOKS_RUN")"
+		while IFS= read -r entry; do
+			case "$entry" in
+			line) new_lines=$((new_lines + 1)) ;;
+			"race "*) warn+="cron race ${entry#race }, " ;;
+			*) ;;
+			esac
+		done <<<"$classified"
+	fi
 	if [[ "$new_lines" -gt 0 ]]; then
-		# Classify one snapshot, so a line arriving mid-check cannot hide an error.
-		read -r snap_total contention <<<"$(count_log_and_contention)"
-		if [[ "$snap_total" -gt 0 && "$contention" -eq "$snap_total" ]]; then
+		contention="$(printf '%s\n' "$snapshot" | count_contention)"
+		if [[ "$contention" -eq "$new_lines" ]]; then
 			# Two cron runners saved the cron option at once: not a failure.
 			warn+="cron save contention ($contention lines), "
 			log_fail=0

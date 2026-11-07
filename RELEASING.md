@@ -158,7 +158,13 @@ expected in the GitHub zip too.
    An event gets `DEPLOY_CRON_TIMEOUT` seconds (default 120, `0` for no
    limit, which a host without `timeout` needs when there is an event to
    run); one that times out is a warning, not a failure. On a network each
-   site runs its own.
+   site runs its own. When the site's own cron runner handles the same event
+   in the same second, WordPress logs `Cron reschedule event error for hook:
+   HOOK, Error code: could_not_set` (or `unschedule`). For a hook the check
+   just ran to completion, this message shows as `WARN cron race HOOK` and
+   is not counted in `new_log_lines`; the warning does not confirm a race, as
+   a cron-storage failure can log the same message. The same line for any other
+   hook, and every other new line, still fails.
    Every site that is not archived, deleted or spam gets a guarded full load
    for its settings upgrade, a page cache purge and a home fetch with a query
    string unique to that fetch. The purge matters: WordPress versions the
