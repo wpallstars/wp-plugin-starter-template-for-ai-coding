@@ -213,6 +213,26 @@ load_site() {
 	return 0
 }
 
+# Install and activate each parent named in the Requires Plugins header
+# before the plugin, so its activation does not fail. A parent already on the
+# site is only activated; one that WordPress.org does not have stops the run
+# with its name.
+install_parents() {
+	local parent
+	local network=()
+	[[ -n "$PLUGIN_REQUIRES" ]] || return 0
+	[[ "$MULTISITE" -eq 0 ]] || network=(--network)
+	while IFS= read -r parent; do
+		[[ -n "$parent" ]] || continue
+		[[ "$parent" =~ ^[a-z0-9-]+$ ]] || die "invalid parent plugin slug in Requires Plugins: $parent"
+		if ! wp_cli plugin is-installed "$parent" >/dev/null 2>&1; then
+			wp_cli plugin install "$parent" || die "could not install parent plugin $parent (Requires Plugins); check the output above. If it is not on WordPress.org, install it first, for example with: scripts/test-site.sh wp --files DIR plugin install /files/$parent.zip"
+		fi
+		wp_cli plugin activate "$parent" ${network[@]+"${network[@]}"} || die "could not activate parent plugin $parent (Requires Plugins)"
+	done < <(printf '%s' "$PLUGIN_REQUIRES" | tr ',' '\n' | tr -d '[:blank:]')
+	return 0
+}
+
 reinstall() {
 	local build built=()
 	plugin_identity "$REF" || die "cannot read plugin at $REF"
@@ -225,6 +245,7 @@ reinstall() {
 	chmod 644 "$TMP_DIR/zips/$SLUG.zip"
 	local activation=--activate
 	[[ "$MULTISITE" -eq 0 ]] || activation=--activate-network
+	install_parents
 	wp_cli plugin install "/zips/$SLUG.zip" --force "$activation"
 	# build is a directory created by mktemp immediately above, not state input.
 	rm -rf "$build"

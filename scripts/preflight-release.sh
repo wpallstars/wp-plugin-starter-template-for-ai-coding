@@ -246,7 +246,9 @@ check_versions() {
 		fi
 	done
 
-	if grep -Eiq '^[[:space:]*]*Update URI:' <<<"$main_php"; then
+	if [[ "$PLUGIN_SELF_UPDATING" -eq 1 ]]; then
+		ok "licensed add-on: its Update URI stays in Git (its shop owns the updates)"
+	elif grep -Eiq '^[[:space:]*]*Update URI:' <<<"$main_php"; then
 		err "Update URI header in $MAIN_FILE: scripts/build-release.sh adds it to the GitHub zip only (WordPress.org rejects it)"
 	else
 		ok "no Update URI header in Git (the GitHub zip gets one at build time)"
@@ -661,6 +663,13 @@ check_builds() {
 		ok "GitHub asset name $SLUG-$version.zip (sites install only that name)"
 	else
 		err "GitHub asset is $(basename "$github_zip"), expected $SLUG-$version.zip"
+	fi
+	if [[ "$PLUGIN_SELF_UPDATING" -eq 1 ]]; then
+		# Licensed add-on: one zip, no GitHub updater, no WordPress.org build.
+		UNPACKED=""
+		check_zip "$github_zip" "addon"
+		if grep -Eq "^[[:space:]*]*Update URI:" "$UNPACKED/$MAIN_FILE"; then ok "addon: has its Update URI header"; else err "addon: no Update URI header in $MAIN_FILE"; fi
+		return 0
 	fi
 	case "$(basename "$wporg_zip")" in
 	"$SLUG"*) err "WordPress.org zip name starts with $SLUG; sites could install it from GitHub" ;;

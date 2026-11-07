@@ -21,6 +21,12 @@
 #                     beside its parent), the <css>-wrap line of
 #                     scripts/core-public-classes.txt
 #   PLUGIN_REPO       the GitHub Plugin URI header, owner/repo (may be empty)
+#   PLUGIN_UPDATE_URI the Update URI header (may be empty)
+#   PLUGIN_REQUIRES   the Requires Plugins header: parent slugs, comma
+#                     separated (may be empty)
+#   PLUGIN_SELF_UPDATING  1 for a licensed add-on: an Update URI header and no
+#                     GitHub Plugin URI, so its updates come from its own
+#                     shop and the release scripts never touch that header
 #
 # Files come from the Git ref, never the working tree, like the release build.
 #
@@ -37,6 +43,9 @@ PLUGIN_CONST=""
 PLUGIN_PREFIX=""
 PLUGIN_CSS=""
 PLUGIN_REPO=""
+PLUGIN_UPDATE_URI=""
+PLUGIN_REQUIRES=""
+PLUGIN_SELF_UPDATING=0
 
 # Value of a "Key: value" header line in the text, case-insensitive.
 plugin_header_field() {
@@ -99,6 +108,10 @@ plugin_identity() {
 	fi
 	PLUGIN_PREFIX="$(printf '%s' "$PLUGIN_CONST" | tr '[:upper:]' '[:lower:]')"
 	PLUGIN_REPO="$(plugin_header_field "${text:0:8192}" "GitHub Plugin URI")"
+	PLUGIN_UPDATE_URI="$(plugin_header_field "${text:0:8192}" "Update URI")"
+	PLUGIN_REQUIRES="$(plugin_header_field "${text:0:8192}" "Requires Plugins")"
+	PLUGIN_SELF_UPDATING=0
+	if [[ -n "$PLUGIN_UPDATE_URI" ]] && [[ -z "$PLUGIN_REPO" ]]; then PLUGIN_SELF_UPDATING=1; fi
 	PLUGIN_CSS="$(git show "$ref:admin/includes/class-admin-manager.php" 2>/dev/null | sed -nE 's/.*class="wrap ([a-z0-9]+)-wrap.*/\1/p' | head -n 1)"
 	if [[ -z "$PLUGIN_CSS" ]]; then
 		text="$(git show "$ref:scripts/core-public-classes.txt" 2>/dev/null || true)"

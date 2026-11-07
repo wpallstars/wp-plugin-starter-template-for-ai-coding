@@ -27,6 +27,10 @@
 #   --out DIR   Output folder (default: dist/ in the repository, gitignored).
 #   --quiet     Print only the paths of the zips.
 #
+# A licensed add-on (an Update URI header and no GitHub Plugin URI: its
+# updates come from its own shop) gets only {slug}-X.Y.Z.zip, its headers
+# untouched, and no WordPress.org build.
+#
 # Needs git, rsync, zip, unzip and shasum or sha256sum (and perl with a
 # .wporg-links file).
 #
@@ -64,7 +68,7 @@ die() {
 }
 
 usage() {
-	sed -n '2,30p' "$0" | sed 's/^# \{0,1\}//'
+	sed -n '2,34p' "$0" | sed 's/^# \{0,1\}//'
 	return 0
 }
 
@@ -194,6 +198,48 @@ replace_wporg_links() {
 	return 0
 }
 
+# Zip a licensed add-on (its Update URI stays as it is), write SHA256SUMS and
+# report. The one zip is built from $TMP_DIR/github.
+build_addon_zip() {
+	local github_zip="$1"
+	local out="$2"
+	local quiet="$3"
+	local version="$4"
+	local ref="$5"
+	local sha="$6"
+	make_zip "$TMP_DIR/github" "$github_zip"
+	printf '%s  %s\n' "$(sha256_of "$github_zip")" "$(basename "$github_zip")" >"$out/SHA256SUMS"
+	if [[ "$quiet" -eq 1 ]]; then
+		printf '%s\n' "$github_zip"
+		return 0
+	fi
+	printf '%s %s from %s (%s)\n' "$PLUGIN_NAME" "$version" "$ref" "${sha:0:12}"
+	printf '  Licensed add-on (Update URI from its shop, no GitHub Plugin URI): Update URI left as it is, no WordPress.org build.\n'
+	printf '  Release zip:     %s (%s files)\n' "$github_zip" "$(unzip -Z1 "$github_zip" | grep -cv '/$')"
+	printf '  Checksums:       %s\n' "$out/SHA256SUMS"
+	return 0
+}
+
+# Make the WordPress.org build folder from the GitHub one at a commit.
+prepare_wporg_build() {
+	local sha="$1"
+	if git cat-file -e "$sha:$WPORG_IGNORE" 2>/dev/null; then
+		git show "$sha:$WPORG_IGNORE" >"$TMP_DIR/wporg-ignore"
+	else
+		: >"$TMP_DIR/wporg-ignore"
+	fi
+	# Screenshot copies and the banner only the GitHub updater shows (View
+	# details): WordPress.org shows its own, from the SVN assets/ folder.
+	printf '%s\n' "$WPORG_SCREENSHOTS" "$WPORG_DETAILS_BANNER" >>"$TMP_DIR/wporg-ignore"
+	rsync -a --exclude-from="$TMP_DIR/wporg-ignore" "$TMP_DIR/github/$SLUG/" "$TMP_DIR/wporg/$SLUG/"
+	strip_updater_headers "$TMP_DIR/wporg/$SLUG/$MAIN_FILE"
+	if git cat-file -e "$sha:$WPORG_LINKS" 2>/dev/null; then
+		git show "$sha:$WPORG_LINKS" >"$TMP_DIR/wporg-links"
+		replace_wporg_links "$TMP_DIR/wporg/$SLUG" "$TMP_DIR/wporg-links"
+	fi
+	return 0
+}
+
 main() {
 	local ref="HEAD"
 	local out=""
@@ -247,7 +293,8 @@ main() {
 
 	trap cleanup EXIT
 	TMP_DIR="$(mktemp -d "${TMPDIR:-/tmp}/$SLUG-build.XXXXXX")"
-	mkdir -p "$TMP_DIR/src" "$TMP_DIR/github/$SLUG" "$TMP_DIR/wporg/$SLUG"
+	mkdir -p "$TMP_DIR/src" "$TMP_DIR/github/$SLUG"
+	[[ "$PLUGIN_SELF_UPDATING" -eq 1 ]] || mkdir -p "$TMP_DIR/wporg/$SLUG"
 
 	git archive --format=tar "$sha" | tar -x -C "$TMP_DIR/src"
 	# .distignore lists itself and is export-ignored, so read it from Git.
@@ -255,24 +302,20 @@ main() {
 	rsync -a --exclude-from="$TMP_DIR/distignore" "$TMP_DIR/src/" "$TMP_DIR/github/$SLUG/"
 	[[ -f "$TMP_DIR/github/$SLUG/$MAIN_FILE" ]] || die "$MAIN_FILE is not in the build; check .distignore"
 
-	if git cat-file -e "$sha:$WPORG_IGNORE" 2>/dev/null; then
-		git show "$sha:$WPORG_IGNORE" >"$TMP_DIR/wporg-ignore"
-	else
-		: >"$TMP_DIR/wporg-ignore"
-	fi
-	# Screenshot copies and the banner only the GitHub updater shows (View
-	# details): WordPress.org shows its own, from the SVN assets/ folder.
-	printf '%s\n' "$WPORG_SCREENSHOTS" "$WPORG_DETAILS_BANNER" >>"$TMP_DIR/wporg-ignore"
-	rsync -a --exclude-from="$TMP_DIR/wporg-ignore" "$TMP_DIR/github/$SLUG/" "$TMP_DIR/wporg/$SLUG/"
-	strip_updater_headers "$TMP_DIR/wporg/$SLUG/$MAIN_FILE"
-	if git cat-file -e "$sha:$WPORG_LINKS" 2>/dev/null; then
-		git show "$sha:$WPORG_LINKS" >"$TMP_DIR/wporg-links"
-		replace_wporg_links "$TMP_DIR/wporg/$SLUG" "$TMP_DIR/wporg-links"
-	fi
-	add_update_uri "$TMP_DIR/github/$SLUG/$MAIN_FILE"
-
 	local github_zip="$out/$SLUG-$version.zip"
 	local wporg_zip="$out/wordpress-org-$SLUG-$version.zip"
+
+	if [[ "$PLUGIN_SELF_UPDATING" -eq 1 ]]; then
+		# Licensed add-on: its shop owns the updates. Keep its Update URI as
+		# it is and make no WordPress.org build.
+		rm -f "$wporg_zip"
+		build_addon_zip "$github_zip" "$out" "$quiet" "$version" "$ref" "$sha"
+		return 0
+	fi
+
+	prepare_wporg_build "$sha"
+	add_update_uri "$TMP_DIR/github/$SLUG/$MAIN_FILE"
+
 	make_zip "$TMP_DIR/github" "$github_zip"
 	make_zip "$TMP_DIR/wporg" "$wporg_zip"
 
