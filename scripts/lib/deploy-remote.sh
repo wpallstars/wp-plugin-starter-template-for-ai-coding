@@ -59,6 +59,7 @@ SKIPS=()
 LOG_FILES=()
 LOG_BEFORE=()
 LOG_FIRST=()
+LOG_INODE=()
 
 say() {
 	local message="$1"
@@ -339,9 +340,11 @@ log_files() {
 	LOG_FILES=(${unique[@]+"${unique[@]}"})
 	LOG_BEFORE=()
 	LOG_FIRST=()
+	LOG_INODE=()
 	for path in ${LOG_FILES[@]+"${LOG_FILES[@]}"}; do
 		LOG_BEFORE+=("$(file_lines "$path")")
 		LOG_FIRST+=("$(first_line "$path")")
+		LOG_INODE+=("$(file_inode "$path")")
 	done
 	return 0
 }
@@ -355,11 +358,23 @@ first_line() {
 	return 0
 }
 
+# File identity (inode), to tell a replaced log from a grown one even when the
+# replacement has the same first line and at least as many lines.
+file_inode() {
+	local file="$1"
+	if [[ -f "$file" ]]; then
+		# find -ls prints the inode first on GNU and BSD, without stat flags.
+		find "$file" -maxdepth 0 -ls 2>/dev/null | awk '{print $1}' || true
+	fi
+	return 0
+}
+
 # Line to read a log from: after the baseline, or from the top when the log
-# shrank or its first line changed (rotated, however far it has regrown).
+# shrank, was replaced (new inode) or its first line changed (rotated, however
+# far it has regrown).
 log_start() {
-	local file="$1" before="$2" first="$3"
-	if [[ "$(file_lines "$file")" -lt "$before" ]] || { [[ "$before" -gt 0 ]] && [[ "$(first_line "$file")" != "$first" ]]; }; then
+	local file="$1" before="$2" first="$3" inode="$4"
+	if [[ "$(file_lines "$file")" -lt "$before" ]] || [[ "$(file_inode "$file")" != "$inode" ]] || { [[ "$before" -gt 0 ]] && [[ "$(first_line "$file")" != "$first" ]]; }; then
 		printf '1'
 	else
 		printf '%s' "$((before + 1))"
@@ -374,7 +389,7 @@ new_log_all() {
 	local file start
 	for file in ${LOG_FILES[@]+"${LOG_FILES[@]}"}; do
 		if [[ -f "$file" ]]; then
-			start="$(log_start "$file" "${LOG_BEFORE[index]}" "${LOG_FIRST[index]}")"
+			start="$(log_start "$file" "${LOG_BEFORE[index]}" "${LOG_FIRST[index]}" "${LOG_INODE[index]}")"
 			tail -n +"$start" "$file"
 		fi
 		index=$((index + 1))
@@ -393,7 +408,7 @@ classify_log() {
 		{
 			if (match($0, /Cron (reschedule|unschedule) event error for hook: [^,]+, Error code: could_not_set/) \
 				&& substr($0, 1, RSTART - 1) ~ /^(\[[^]]*\][[:space:]]*)*(PHP [A-Za-z ]+:[[:space:]]*)?$/ \
-				&& substr($0, RSTART + RLENGTH) ~ /^[[:space:]]*$/) {
+				&& substr($0, RSTART + RLENGTH) ~ /^([[:space:]]*,[[:space:]]*Error message:.*)?[[:space:]]*$/) {
 				text = substr($0, RSTART, RLENGTH)
 				sub(/^Cron (reschedule|unschedule) event error for hook: /, "", text)
 				sub(/, Error code: could_not_set$/, "", text)
@@ -405,7 +420,11 @@ classify_log() {
 					next
 				}
 			}
-			print "line"
+			if ($0 ~ /hook: [^[:space:]:]+: could_not_set, /) {
+				print "contention"
+			} else {
+				print "line"
+			}
 		}
 	'
 	return 0
@@ -417,22 +436,12 @@ new_log_text() {
 	return 0
 }
 
-# Reads log lines on stdin; prints how many are WordPress core's cron-save
-# contention notices. Matches the untranslated error code, not the translated
-# message, and only a hook name directly before it (hook: NAME: could_not_set, ).
-count_contention() {
-	local count
-	count="$(grep -Ec 'hook: [^[:space:]:]+: could_not_set, ' || true)"
-	printf '%s' "${count:-0}"
-	return 0
-}
-
 # Classifies the new log lines from one snapshot, so a line arriving mid-check
 # cannot hide an error. Cron race lines for hooks this run executed are
 # warnings, not new lines. Sets LOG_NEW_LINES (lines that count), LOG_WARN
 # (warning text) and LOG_FAIL (1 when the new lines fail the install).
 classify_new_log() {
-	local snapshot classified entry contention
+	local snapshot classified entry contention=0
 	LOG_NEW_LINES=0 LOG_WARN="" LOG_FAIL=1
 	snapshot="$(new_log_all)"
 	if [[ -n "$snapshot" ]]; then
@@ -440,13 +449,17 @@ classify_new_log() {
 		while IFS= read -r entry; do
 			case "$entry" in
 			line) LOG_NEW_LINES=$((LOG_NEW_LINES + 1)) ;;
+			contention)
+				# Matches the untranslated error code (hook: NAME: could_not_set, ).
+				LOG_NEW_LINES=$((LOG_NEW_LINES + 1))
+				contention=$((contention + 1))
+				;;
 			"race "*) LOG_WARN+="cron race ${entry#race }, " ;;
 			*) ;;
 			esac
 		done <<<"$classified"
 	fi
 	if [[ "$LOG_NEW_LINES" -gt 0 ]]; then
-		contention="$(printf '%s\n' "$snapshot" | count_contention)"
 		if [[ "$contention" -eq "$LOG_NEW_LINES" ]]; then
 			# Two cron runners saved the cron option at once: not a failure.
 			LOG_WARN+="cron save contention ($contention lines), "
