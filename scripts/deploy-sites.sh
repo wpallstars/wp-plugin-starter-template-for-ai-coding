@@ -1,6 +1,10 @@
 #!/usr/bin/env bash
 # Roll out a published release (RELEASING.md step 5): install its zip on every
 # WordPress install on one SSH host that already has the plugin.
+# SPDX-License-Identifier: GPL-3.0-or-later
+# SPDX-FileCopyrightText: 2026 Marcus Quinn
+# Additional terms (GPL-3.0 section 7(b)): ATTRIBUTION.txt
+# Provenance: wpas-e4502af0f07e8a92. Copies, even of part, keep these lines.
 #
 # Usage: scripts/deploy-sites.sh --host SSH_HOST --tag vX.Y.Z
 #                                [--parent PATTERN] [--skip NAME]...
@@ -20,6 +24,16 @@
 #                      default).
 #   --apply            Install the release on each of them.
 #   --allow-downgrade  Allow installing a release older than the installed version.
+#   --keep-releases N  After a successful --apply, remove this plugin's older run
+#                      folders on the host (v<version>-<time> in ~/.{slug}-deploy),
+#                      keeping the current run and every run of the newest N tags
+#                      (default 3; 0 keeps everything). Skipped while another
+#                      deploy holds the lock. Other files there stay.
+#   --cloudflare-token-env NAME  The environment variable that holds a
+#                      Cloudflare API token limited to Zone > Cache Purge. With
+#                      it, each updated site's zone is purged from this
+#                      computer (the token never reaches the host); the dry run
+#                      lists the zones and purges nothing.
 #
 # The zip ({slug}-X.Y.Z.zip) is downloaded with gh and must match the asset's
 # SHA-256 on GitHub and its provenance bundle, if any (gh attestation verify).
@@ -41,8 +55,13 @@
 # timeout); a timeout only warns. Networks skip archived, deleted and spam
 # sites. Each fetch uses a unique query string: WARN cached means a cache
 # ignored it, so PHP did not run; WARN purge failed means visitors may still
-# get the old CSS and JS. Each install line gives old -> new version, status,
-# purged=N/SITES, cron=N/M, home HTTP code, cache= headers and new log lines;
+# get the old CSS and JS. With --cloudflare-token-env the zone of each site
+# (looked up by host name, then its parent domains) is purged once per run
+# (cdn=purged, cdn=failed MESSAGE; cdn=- without a token). Without the token,
+# the plain home address is fetched once: WARN Cloudflare keeps pages from
+# before the deploy means Cloudflare answered HIT with a page older than the
+# install. Each install line gives old -> new version, status,
+# purged=N/SITES, cron=N/M, home HTTP code, cache= headers, cdn= and new log lines;
 # networks add sites=PASSED/TOTAL and a line per site. Exits 1 on a failed
 # site, a version not reached or new log lines, with the restore command.
 # Host names, folders and backups stay out of the repository: only arguments.
@@ -56,11 +75,6 @@
 #
 # Needs gh (signed in for a private repository), ssh, and bash, WP-CLI, tar
 # and curl on the host; aidevops users can use wp-fleet-helper.sh instead.
-
-# SPDX-License-Identifier: GPL-3.0-or-later
-# SPDX-FileCopyrightText: 2026 Marcus Quinn
-# Additional terms (GPL-3.0 section 7(b)): ATTRIBUTION.txt
-# Provenance: wpas-e4502af0f07e8a92. Copies, even of part, keep these lines.
 
 set -euo pipefail
 
@@ -81,6 +95,15 @@ PARENT='~/domains/*/public_html'
 WP_CLI="wp"
 WEB_ERROR_LOG=""
 APPLY=0
+# Name of the environment variable that holds the Cloudflare token (never the
+# token itself in an argument), and the token, read from it in main().
+CF_TOKEN_ENV=""
+CF_TOKEN=""
+KEEP_RELEASES=3
+# Zones already handled in this run, one "ZONE_ID<TAB>RESULT" per line.
+CF_DONE=""
+CF_PURGED=0
+CF_FAILED=0
 DOWNGRADE_ARGS=()
 SKIPS=()
 TMP_DIR=""
@@ -138,7 +161,7 @@ parse_args() {
 		local arg="$1"
 		local value="${2:-}"
 		case "$arg" in
-		--host | --tag | --parent | --skip | --wp-cli | --web-error-log)
+		--host | --tag | --parent | --skip | --wp-cli | --web-error-log | --cloudflare-token-env | --keep-releases)
 			[[ $# -ge 2 ]] || die "$arg needs a value"
 			[[ "$value" != -* ]] || die "$arg needs a value, not an option: $value"
 			case "$arg" in
@@ -148,6 +171,8 @@ parse_args() {
 			--skip) SKIPS+=("$value") ;;
 			--wp-cli) WP_CLI="$value" ;;
 			--web-error-log) WEB_ERROR_LOG="$value" ;;
+			--cloudflare-token-env) CF_TOKEN_ENV="$value" ;;
+			--keep-releases) KEEP_RELEASES="$value" ;;
 			*) ;; # The outer pattern lists every option that takes a value.
 			esac
 			shift
@@ -168,6 +193,14 @@ parse_args() {
 	[[ "$TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]] || die "--tag must be vX.Y.Z, not '$TAG'"
 	VERSION="${TAG#v}"
 	[[ -n "$PARENT" ]] || die "--parent cannot be empty"
+	[[ "$KEEP_RELEASES" =~ ^[0-9]+$ ]] || die "--keep-releases takes a whole number, not '$KEEP_RELEASES'"
+	if [[ -n "$CF_TOKEN_ENV" ]]; then
+		[[ "$CF_TOKEN_ENV" =~ ^[A-Za-z_][A-Za-z0-9_]*$ ]] || die "--cloudflare-token-env takes the NAME of an environment variable, not a token"
+		CF_TOKEN="${!CF_TOKEN_ENV:-}"
+		[[ -n "$CF_TOKEN" ]] || die "the environment variable $CF_TOKEN_ENV is empty or not set"
+		# Goes into a curl config line: plain token characters only.
+		[[ "$CF_TOKEN" =~ ^[A-Za-z0-9._-]+$ ]] || die "the value of $CF_TOKEN_ENV is not a Cloudflare API token"
+	fi
 	if [[ "$APPLY" -eq 1 ]]; then
 		[[ -n "$WEB_ERROR_LOG" && "$WEB_ERROR_LOG" != "syslog" ]] ||
 			die "--apply requires --web-error-log PATH (the verified web PHP log file, not syslog)"
@@ -208,12 +241,216 @@ download_zip() {
 	return 0
 }
 
+# Cloudflare, called from this computer so the token never reaches the host.
+# The token goes to curl in a config read from a pipe, not in an argument
+# list, and is never printed. Needs a token limited to Zone > Cache Purge.
+cf_api() {
+	local method="$1"
+	local path="$2"
+	local data="${3:-}"
+	local args=(-s --max-time 30 -X "$method" -H 'Content-Type: application/json')
+	[[ -z "$data" ]] || args+=(--data "$data")
+	curl "${args[@]}" --config <(printf 'header = "Authorization: Bearer %s"\n' "$CF_TOKEN") \
+		"https://api.cloudflare.com/client/v4$path" </dev/null || return 1
+	return 0
+}
+
+# Cloudflare's own message from a response body, one short printable line.
+cf_message() {
+	local body="$1"
+	local message
+	message="$(printf '%s' "$body" | grep -o '"message":"[^"]*"' | head -n 1 | cut -d '"' -f 4 || true)"
+	[[ -n "$message" ]] || message="unexpected answer from Cloudflare"
+	printf '%s' "$message" | LC_ALL=C tr -cd '[:print:]' | cut -c 1-100
+	return 0
+}
+
+# The host name of a site address, lower case, without scheme, user, port or path.
+cdn_host() {
+	local rest="${1#*://}"
+	rest="${rest%%/*}"
+	rest="${rest##*@}"
+	rest="${rest%%:*}"
+	printf '%s' "$rest" | LC_ALL=C tr '[:upper:]' '[:lower:]'
+	return 0
+}
+
+# Finds the zone of a host, trying the host and then each parent domain
+# (a.b.example.co.uk, b.example.co.uk, example.co.uk). Sets CF_ZONE_ID and
+# CF_ZONE_NAME; on failure returns 1 with CF_ERR.
+cdn_zone() {
+	local candidate="$1"
+	local host="$1"
+	local body id
+	CF_ZONE_ID="" CF_ZONE_NAME="" CF_ERR=""
+	while [[ "$candidate" == *.* ]]; do
+		body="$(cf_api GET "/zones?name=$candidate")" || {
+			CF_ERR="cannot reach the Cloudflare API"
+			return 1
+		}
+		if [[ "$body" != *'"success":true'* ]]; then
+			CF_ERR="$(cf_message "$body")"
+			return 1
+		fi
+		id="$(printf '%s' "$body" | sed -n 's/.*"result":\[{"id":"\([0-9a-f]\{32\}\)".*/\1/p')"
+		if [[ -n "$id" ]]; then
+			CF_ZONE_ID="$id"
+			CF_ZONE_NAME="$candidate"
+			return 0
+		fi
+		candidate="${candidate#*.}"
+	done
+	CF_ERR="no Cloudflare zone for $host"
+	return 1
+}
+
+# Purges (or, in a dry run, only names) the Cloudflare zone of one site
+# address, once per zone in a run. Sets CDN_STATUS to purged, would-purge or
+# "failed MESSAGE".
+cdn_site() {
+	local url="$1"
+	local host body known
+	CDN_STATUS=""
+	host="$(cdn_host "$url")"
+	if [[ ! "$host" =~ ^[a-z0-9.-]+$ ]]; then
+		CDN_STATUS="failed no host name in $url"
+		return 0
+	fi
+	if ! cdn_zone "$host"; then
+		CDN_STATUS="failed $CF_ERR"
+		return 0
+	fi
+	known="$(awk -F '\t' -v z="$CF_ZONE_ID" '$1 == z { print $2; exit }' <<<"$CF_DONE")"
+	if [[ -z "$known" ]]; then
+		if [[ "$APPLY" -eq 1 ]]; then
+			if body="$(cf_api POST "/zones/$CF_ZONE_ID/purge_cache" '{"purge_everything":true}')" && [[ "$body" == *'"success":true'* ]]; then
+				known="purged"
+				CF_PURGED=$((CF_PURGED + 1))
+			else
+				known="failed $([[ -n "${body:-}" ]] && cf_message "$body" || printf 'cannot reach the Cloudflare API')"
+				CF_FAILED=$((CF_FAILED + 1))
+			fi
+		else
+			known="would-purge"
+			printf '  Cloudflare: %s is in zone %s; --apply would purge it\n' "$host" "$CF_ZONE_NAME"
+		fi
+		CF_DONE+="$CF_ZONE_ID"$'\t'"$known"$'\n'
+	fi
+	CDN_STATUS="$known"
+	return 0
+}
+
+# The cdn= value for the addresses of one install (one per line): purged, or
+# the first failure.
+cdn_result() {
+	local urls="$1"
+	local url
+	CDN_RESULT="-"
+	while IFS= read -r url; do
+		[[ -n "$url" ]] || continue
+		cdn_site "$url"
+		if [[ "$CDN_STATUS" == failed* ]]; then
+			CDN_RESULT="$CDN_STATUS"
+			return 0
+		fi
+		CDN_RESULT="purged"
+	done <<<"$urls"
+	return 0
+}
+
+# Passes the host's output through. With a token, @cdn lines (the sites of an
+# install) are read and not shown; cdn=@CDN@ on an install line becomes the
+# result of purging those sites' zones. A dry run lists the zones instead.
+stream_filter() {
+	local line pending="" url
+	if [[ -z "$CF_TOKEN" ]]; then
+		cat
+		return 0
+	fi
+	while IFS= read -r line || [[ -n "$line" ]]; do
+		case "$line" in
+		$'@cdn\t'*)
+			url="${line#@cdn$'\t'}"
+			if [[ "$APPLY" -eq 1 ]]; then
+				pending+="$url"$'\n'
+			else
+				cdn_site "$url"
+			fi
+			;;
+		*'cdn=@CDN@'*)
+			cdn_result "$pending"
+			pending=""
+			printf '%s\n' "${line%%cdn=@CDN@*}cdn=$CDN_RESULT${line#*cdn=@CDN@}"
+			;;
+		*) printf '%s\n' "$line" ;;
+		esac
+	done
+	if [[ "$APPLY" -eq 1 ]]; then
+		printf '\nCloudflare: %s zone(s) purged, %s failed.\n' "$CF_PURGED" "$CF_FAILED"
+	fi
+	return 0
+}
+
 dry_run() {
-	local command
-	command="$(remote_words env "DEPLOY_WP_CLI=$WP_CLI" bash -s -- list "$SLUG" "$PARENT" "--version=$VERSION" ${DOWNGRADE_ARGS[@]+"${DOWNGRADE_ARGS[@]}"} ${SKIPS[@]+"${SKIPS[@]}"})"
+	local command status=0
+	command="$(remote_words env "DEPLOY_WP_CLI=$WP_CLI" "DEPLOY_CDN_PURGE=$([[ -n "$CF_TOKEN" ]] && printf 1 || printf 0)" bash -s -- list "$SLUG" "$PARENT" "--version=$VERSION" ${DOWNGRADE_ARGS[@]+"${DOWNGRADE_ARGS[@]}"} ${SKIPS[@]+"${SKIPS[@]}"})"
 	printf '\nInstalls of %s on %s (name, version, kind, folder):\n' "$SLUG" "$HOST"
-	remote "$command" <"$REMOTE_PART" || die "the dry run on $HOST failed"
+	set +e
+	remote "$command" <"$REMOTE_PART" | stream_filter
+	status="${PIPESTATUS[0]}"
+	set -e
+	[[ "$status" -eq 0 ]] || die "the dry run on $HOST failed"
 	printf '\nDry run: nothing changed. Run again with --apply to install %s.\n' "$TAG"
+	return 0
+}
+
+# Runs on the host (bash -s): removes old run folders of this plugin, keeping
+# the current run and every run of the newest KEEP tags. Only directories named
+# v<version>-<YYYYMMDDTHHMMSSZ> are touched, and nothing is removed while a
+# deploy holds the lock.
+# shellcheck disable=SC2016 # The host expands these, not this shell.
+readonly PRUNE_REMOTE='
+prune() {
+	local base="$1"
+	local keep="$2"
+	local current="$3"
+	local runs="" tags d size count=0 kb=0
+	cd "$HOME/$base" 2>/dev/null || return 0
+	if [ -d .lock ]; then echo "skipped: another deploy holds the lock"; return 0; fi
+	for d in v*-*Z; do
+		[ -d "$d" ] && [ ! -L "$d" ] || continue
+		printf "%s\n" "$d" | grep -Eq "^v[0-9]+\.[0-9]+\.[0-9]+-[0-9]{8}T[0-9]{6}Z$" || continue
+		runs="$runs$d
+"
+	done
+	[ -n "$runs" ] || return 0
+	tags="$(printf "%s" "$runs" | sed "s/-[0-9]*T[0-9]*Z$//" | sort -u | sort -t. -k1.2,1nr -k2,2nr -k3,3nr | head -n "$keep")"
+	for d in $(printf "%s" "$runs"); do
+		[ "$d" != "$current" ] || continue
+		printf "%s\n" "$tags" | grep -qxF "${d%-*}" && continue
+		size="$(du -sk "$d" 2>/dev/null | cut -f1)"
+		if rm -rf "$d"; then
+			count=$((count + 1)); kb=$((kb + ${size:-0}))
+			echo "removed $d"
+		fi
+	done
+	echo "pruned $count run folder(s), freed $((kb / 1024)) MB"
+	return 0
+}
+prune "$@"
+'
+
+# After a successful install: keep the current run and the newest KEEP_RELEASES
+# tags on the host. A failure here only warns; the deploy has succeeded.
+prune_host() {
+	local current="$1"
+	local out
+	[[ "$KEEP_RELEASES" -gt 0 ]] || return 0
+	if out="$(remote "bash -s -- $(remote_words ".$SLUG-deploy" "$KEEP_RELEASES" "$current")" <<<"$PRUNE_REMOTE")"; then
+		printf '\nOld run folders on %s (keeping the newest %s tags):\n%s\n' "$HOST" "$KEEP_RELEASES" "  ${out//$'\n'/$'\n'  }"
+	else
+		printf '\nWARN could not remove old run folders on %s (the deploy itself succeeded).\n' "$HOST" >&2
+	fi
 	return 0
 }
 
@@ -231,9 +468,12 @@ apply() {
 	remote "umask 077; cat >$(remote_words "$dir/deploy-remote.sh")" <"$REMOTE_PART" || die "cannot copy the remote part to $HOST"
 	remote "chmod 600 $(remote_words "$dir/$SLUG-$VERSION.zip" "$dir/deploy-remote.sh")" || die "cannot set the files' mode on $HOST"
 	printf '\nInstalling %s on %s (folder %s):\n' "$TAG" "$HOST" "$dir"
-	command="$(remote_words env "DEPLOY_WP_CLI=$WP_CLI" "DEPLOY_WEB_ERROR_LOG=$WEB_ERROR_LOG" "DEPLOY_CRON_TIMEOUT=${DEPLOY_CRON_TIMEOUT:-120}" bash "$dir/deploy-remote.sh" apply "$SLUG" "$PARENT" \
+	command="$(remote_words env "DEPLOY_WP_CLI=$WP_CLI" "DEPLOY_WEB_ERROR_LOG=$WEB_ERROR_LOG" "DEPLOY_CRON_TIMEOUT=${DEPLOY_CRON_TIMEOUT:-120}" "DEPLOY_CDN_PURGE=$([[ -n "$CF_TOKEN" ]] && printf 1 || printf 0)" bash "$dir/deploy-remote.sh" apply "$SLUG" "$PARENT" \
 		"$VERSION" "$dir/$SLUG-$VERSION.zip" "$SHA" "$dir/backups" ${DOWNGRADE_ARGS[@]+"${DOWNGRADE_ARGS[@]}"} ${SKIPS[@]+"${SKIPS[@]}"})"
-	remote "$command" || status=$?
+	set +e
+	remote "$command" | stream_filter
+	status="${PIPESTATUS[0]}"
+	set -e
 	if [[ "$status" -eq 3 ]]; then
 		printf '\nAnother deploy of %s is running on %s (named above), so nothing was installed. Wait for it to finish, then run again.\n' "$SLUG" "$HOST" >&2
 		exit 3
@@ -243,6 +483,7 @@ apply() {
 		return 1
 	fi
 	printf '\nDeployed %s on %s. To undo one install: rm -rf its wp-content/plugins/%s, then tar -xzf its backup into wp-content/plugins.\n' "$TAG" "$HOST" "$SLUG"
+	prune_host "$TAG-$stamp"
 	return 0
 }
 
