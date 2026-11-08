@@ -21,11 +21,11 @@ on:
 
 jobs:
   triage:
-    uses: marcusquinn/aidevops/.github/workflows/issue-triage-gate-reusable.yml@356ba8bdfe60476dbc12758de99b875648e07f9a # v3.39.133 (main at pin time)
+    uses: marcusquinn/aidevops/.github/workflows/issue-triage-gate-reusable.yml@2ec658b0aa97327546754ada70a44cb05bc3ac3d # v3.39.136
     # GH#20976: `secrets: inherit` only works within the same GitHub account/org.
     # The optional read token fetches the scanner from a private framework mirror.
     secrets:
       AIDEVOPS_READ_TOKEN: ${{ secrets.AIDEVOPS_READ_TOKEN }}
     with:
       # Keep this equal to the ref on `uses:` so the scanner is pinned with the reusable YAML.
-      aidevops_ref: 356ba8bdfe60476dbc12758de99b875648e07f9a
+      aidevops_ref: 2ec658b0aa97327546754ada70a44cb05bc3ac3d
