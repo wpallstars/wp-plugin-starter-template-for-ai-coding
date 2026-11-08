@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1000" height="520" viewBox="0 0 1000 520" role="img" aria-labelledby="title desc">
   <title id="title">wpallstars/wp-plugin-starter-template-for-ai-coding star history</title>
-  <desc id="desc">wpallstars/wp-plugin-starter-template-for-ai-coding grew from its first recorded star on 2025-04-17 to 16 stars on 2026-09-11.</desc>
+  <desc id="desc">wpallstars/wp-plugin-starter-template-for-ai-coding grew from its first recorded star on 2025-04-17 to 17 stars on 2026-10-28.</desc>
   <style>
     .background { fill: #ffffff; } .heading { fill: #1f2328; } .axis { fill: #59636e; font: 12px -apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif; }
     .grid { stroke: #d8dee4; stroke-width: 1; } .area { fill: #58a6ff; opacity: .12; } .line { fill: none; stroke: #238636; stroke-width: 4; stroke-linecap: round; stroke-linejoin: round; }
@@ -9,7 +9,7 @@
   </style>
   <rect class="background" width="1000" height="520" rx="12"/>
   <text class="heading" x="78" y="42" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif" font-size="24" font-weight="600">wpallstars/wp-plugin-starter-template-for-ai-coding</text>
-  <text class="axis" x="78" y="68">16 stars · 17 Apr 2025 – 11 Sep 2026</text>
+  <text class="axis" x="78" y="68">17 stars · 17 Apr 2025 – 28 Oct 2026</text>
   <line class="grid" x1="78" y1="454.0" x2="966" y2="454.0"/>
   <text class="axis" x="64" y="459.0" text-anchor="end">0</text>
   <line class="grid" x1="78" y1="363.5" x2="966" y2="363.5"/>
@@ -21,12 +21,12 @@
   <line class="grid" x1="78" y1="92.0" x2="966" y2="92.0"/>
   <text class="axis" x="64" y="97.0" text-anchor="end">20</text>
   <text class="axis" x="78.0" y="486" text-anchor="middle">Apr 2025</text>
-  <text class="axis" x="254.9" y="486" text-anchor="middle">Jul 2025</text>
-  <text class="axis" x="433.5" y="486" text-anchor="middle">Nov 2025</text>
-  <text class="axis" x="610.5" y="486" text-anchor="middle">Feb 2026</text>
-  <text class="axis" x="789.1" y="486" text-anchor="middle">Jun 2026</text>
-  <text class="axis" x="966.0" y="486" text-anchor="middle">Sep 2026</text>
-  <polygon class="area" points="78,454 78.0,435.9 81.5,399.7 83.2,381.6 88.4,363.5 90.1,345.4 91.9,327.3 117.9,309.2 130.0,291.1 147.4,273.0 202.9,254.9 333.0,236.8 450.9,218.7 615.7,200.6 678.1,182.5 966.0,164.4 966,454"/>
-  <polyline class="line" points="78.0,435.9 81.5,399.7 83.2,381.6 88.4,363.5 90.1,345.4 91.9,327.3 117.9,309.2 130.0,291.1 147.4,273.0 202.9,254.9 333.0,236.8 450.9,218.7 615.7,200.6 678.1,182.5 966.0,164.4"/>
-  <circle class="point" cx="966.0" cy="164.4" r="6"/>
+  <text class="axis" x="255.9" y="486" text-anchor="middle">Aug 2025</text>
+  <text class="axis" x="433.8" y="486" text-anchor="middle">Nov 2025</text>
+  <text class="axis" x="610.2" y="486" text-anchor="middle">Mar 2026</text>
+  <text class="axis" x="788.1" y="486" text-anchor="middle">Jul 2026</text>
+  <text class="axis" x="966.0" y="486" text-anchor="middle">Oct 2026</text>
+  <polygon class="area" points="78,454 78.0,435.9 81.2,399.7 82.8,381.6 87.5,363.5 89.1,345.4 90.7,327.3 114.5,309.2 125.7,291.1 141.5,273.0 192.4,254.9 311.5,236.8 419.5,218.7 570.5,200.6 627.6,182.5 891.3,164.4 966.0,146.3 966,454"/>
+  <polyline class="line" points="78.0,435.9 81.2,399.7 82.8,381.6 87.5,363.5 89.1,345.4 90.7,327.3 114.5,309.2 125.7,291.1 141.5,273.0 192.4,254.9 311.5,236.8 419.5,218.7 570.5,200.6 627.6,182.5 891.3,164.4 966.0,146.3"/>
+  <circle class="point" cx="966.0" cy="146.3" r="6"/>
 </svg>
