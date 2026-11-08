@@ -147,8 +147,8 @@ expected in the GitHub zip too.
     Cloudflare: a Cache Rule that caches HTML keeps the pre-deploy pages for up
     to the edge TTL (2 hours by default), while the home fetch's unique query
     string never sees them. Add `--cloudflare-token-env NAME`, naming an
-    environment variable that holds an API token limited to Zone → Cache Purge,
-    and the script purges each updated site's zone from your computer (the
+    environment variable that holds an API token limited to Zone → Zone Read
+    (to find the zone) and Zone → Cache Purge, and the script purges each updated site's zone from your computer (the
     token never reaches the host and is never printed): it finds the zone from
     the site's host name, trying its parent domains, and sends
     `purge_everything` once per zone per run. The install line shows

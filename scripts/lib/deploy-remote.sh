@@ -771,7 +771,9 @@ home_check() {
 			port="${host##*:}"
 			host="${host%:*}"
 		fi
-		pin=(--resolve "${host}:${port}:${ip}")
+		# Both web ports too, so a redirect to the other scheme on the same
+		# host (http to https) still reaches the origin.
+		pin=(--resolve "${host}:${port}:${ip}" --resolve "${host}:80:${ip}" --resolve "${host}:443:${ip}")
 		HOME_PINNED=1
 	fi
 	result="$(curl -s -o /dev/null -L -D "$headers" -w '%{http_code} %{url_effective}' --max-time 30 \
@@ -806,6 +808,14 @@ home_check() {
 		final_host="${final_host%%/*}"
 		final_host="${final_host##*@}"
 		HOME_CACHE="redirected:${final_host:-unknown}"
+	fi
+	# A redirect to another host was fetched through DNS, not the origin.
+	if [[ -n "$HOME_PINNED" && -n "$host" ]]; then
+		final_host="${final_url#*://}"
+		final_host="${final_host%%/*}"
+		final_host="${final_host##*@}"
+		final_host="${final_host%%:*}"
+		[[ "$final_host" == "$host" ]] || HOME_PINNED=""
 	fi
 	rm -f "$headers"
 	return 0

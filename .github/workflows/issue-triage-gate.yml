@@ -21,7 +21,7 @@ on:
 
 jobs:
   triage:
-    uses: marcusquinn/aidevops/.github/workflows/issue-triage-gate-reusable.yml@2ec658b0aa97327546754ada70a44cb05bc3ac3d
+    uses: marcusquinn/aidevops/.github/workflows/issue-triage-gate-reusable.yml@2ec658b0aa97327546754ada70a44cb05bc3ac3d # v3.39.136
     # GH#20976: `secrets: inherit` only works within the same GitHub account/org.
     # The optional read token fetches the scanner from a private framework mirror.
     secrets:

@@ -409,8 +409,9 @@ swaps the plugin folder with two `rename()` calls inside
 `wp-content/plugins/`: the verified zip is unpacked into a hidden
 `.wp-plugin-starter-template-new-<stamp>` folder, the live folder moves to
 `.wp-plugin-starter-template-old-<stamp>`, the new one moves in, then both hidden folders
-are removed. Running jobs (imports, Action Scheduler, CLI cron) never find
-the folder missing. The tar backup and restore line are unchanged. If the
+are removed. The folder is missing only between the two renames, not while
+the zip unpacks, so running jobs (imports, Action Scheduler, CLI cron) are
+very unlikely to find it gone. The tar backup and restore line are unchanged. If the
 swap cannot start (no `unzip`, unexpected zip layout), the live folder is
 untouched and the deploy falls back to `wp plugin install --force`.
 
