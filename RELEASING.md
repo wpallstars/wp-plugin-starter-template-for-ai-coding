@@ -179,11 +179,15 @@ expected in the GitHub zip too.
    the same due event, whichever runs it second logs `Cron reschedule event
    error for hook: HOOK, Error code: could_not_set` (or `unschedule`),
    followed on WordPress 6.1 and later by `, Error message: …, Data: …`
-   (#1349). For a hook the check
+   (#1349), in the site's language: only the hook and the code stay in
+   English (Dutch: `Cron ongepland event fout voor hook: HOOK, foutcode:
+   could_not_set, …`), so the check matches that shape, not the words. For a
+   hook the check
    just ran to completion, this message shows as `WARN cron race HOOK` and
    is not counted in `new_log_lines`; the warning does not confirm a race, as
    a cron-storage failure can log the same message. The same line for any other
-   hook, and every other new line, still fails.
+   hook is cron-save contention, which warns only when every new line is one;
+   every other new line still fails.
    Every site that is not archived, deleted or spam gets a guarded full load
    for its settings upgrade, a page cache purge and a home fetch with a query
    string unique to that fetch, pinned to the origin (`home=200 pinned`) when LiteSpeed
