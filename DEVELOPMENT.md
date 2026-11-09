@@ -415,6 +415,14 @@ very unlikely to find it gone. The tar backup and restore line are unchanged. If
 swap cannot start (no `unzip`, unexpected zip layout), the live folder is
 untouched and the deploy falls back to `wp plugin install --force`.
 
+`scripts/check-deploy-log.sh` checks the web PHP log classifier
+(`classify_new_log()` in `scripts/lib/deploy-remote.sh`): WordPress's cron
+`could_not_set` notice in several languages and log formats warns, and look-alike
+plugin lines, PHP notices and errors fail. Run it after any change to the
+classifier and after `scripts/sync-core.sh`; `--awk PATH` uses another awk
+(the host's may be mawk or GNU Awk). It prints `ok` or `FAIL` per case and
+exits 1 on any mismatch.
+
 ### Starter sync
 
 `.github/workflows/starter-sync.yml` runs every day (and from the
