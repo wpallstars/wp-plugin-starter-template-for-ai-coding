@@ -433,14 +433,16 @@ log_start() {
 }
 
 # Every line the web logs gained since log_files; a truncated or rotated log
-# contributes all of its current lines.
+# contributes all of its current lines. awk ends each log's last line with a
+# newline, so a log without one cannot join its last line to the next log's
+# first (an error read as part of a cron notice).
 new_log_all() {
 	local index=0
 	local file start
 	for file in ${LOG_FILES[@]+"${LOG_FILES[@]}"}; do
 		if [[ -f "$file" ]]; then
 			start="$(log_start "$file" "${LOG_BEFORE[index]}" "${LOG_FIRST[index]}" "${LOG_INODE[index]}")"
-			tail -n +"$start" "$file"
+			tail -n +"$start" "$file" | awk '{ print }'
 		fi
 		index=$((index + 1))
 	done
@@ -448,36 +450,36 @@ new_log_all() {
 }
 
 # Reads log lines on stdin; HOOKS is the space-separated hooks this run
-# executed. Prints "race HOOK" once per hook for WordPress's could_not_set
-# reschedule/unschedule error on one of them (our forced run and the site's
-# own cron runner handled the same event at once), and "line" for every other
-# line, which still counts as new. wp-cron.php (WordPress 6.1 and later)
-# goes on after the code with ", Error message: ..., Data: {...}" (the
-# event as JSON); until #1349 only the bare form matched, so no real race
-# line was ever let through and network deploys failed on them.
+# executed. WordPress's cron reschedule/unschedule error with code
+# could_not_set means two cron runners saved the cron option at once. For one
+# of HOOKS (our forced run and the site's own cron runner handled the same
+# event) it prints "race HOOK" once per hook; for any other hook,
+# "contention". Every other line prints "line", which still counts as new.
+# WordPress logs the error in the site's language ("Cron unschedule event
+# error for hook: HOOK, Error code: could_not_set, Error message: ..., Data:
+# {...}"; in Dutch "Cron ongepland event fout voor hook: HOOK, foutcode:
+# could_not_set, foutmelding: ..., gegevens: {...}"), so only its shape is
+# matched: message text with no colon after the timestamp, then ": HOOK, ",
+# a label, ": could_not_set" and a comma or the end of the line. Until
+# then only the English text matched, and translated lines failed installs.
 classify_log() {
 	local hooks=" $1 "
 	awk -v hooks="$hooks" '
 		{
-			if (match($0, /Cron (reschedule|unschedule) event error for hook: [^,]+, Error code: could_not_set/) \
-				&& substr($0, 1, RSTART - 1) ~ /^(\[[^]]*\][[:space:]]*)*(PHP [A-Za-z ]+:[[:space:]]*)?$/ \
-				&& substr($0, RSTART + RLENGTH) ~ /^([[:space:]]*,[[:space:]]*Error message:.*)?[[:space:]]*$/) {
+			if (match($0, /:[[:space:]]*[^[:space:],:]+,[^:,]*:[[:space:]]*could_not_set([[:space:]]*,|[[:space:]]*$)/) \
+				&& substr($0, 1, RSTART - 1) ~ /^(\[[^]]*\][[:space:]]*)*(PHP [A-Za-z ]+:[[:space:]]*)?[^]:[]*$/) {
 				text = substr($0, RSTART, RLENGTH)
-				sub(/^Cron (reschedule|unschedule) event error for hook: /, "", text)
-				sub(/, Error code: could_not_set$/, "", text)
-				if (index(hooks, " " text " ") > 0) {
-					if (!(text in seen)) {
-						seen[text] = 1
-						print "race " text
-					}
-					next
+				sub(/^:[[:space:]]*/, "", text)
+				sub(/,.*$/, "", text)
+				if (index(hooks, " " text " ") == 0) {
+					print "contention"
+				} else if (!(text in seen)) {
+					seen[text] = 1
+					print "race " text
 				}
+				next
 			}
-			if ($0 ~ /hook: [^[:space:]:]+: could_not_set, /) {
-				print "contention"
-			} else {
-				print "line"
-			}
+			print "line"
 		}
 	'
 	return 0
@@ -503,7 +505,7 @@ classify_new_log() {
 			case "$entry" in
 			line) LOG_NEW_LINES=$((LOG_NEW_LINES + 1)) ;;
 			contention)
-				# Matches the untranslated error code (hook: NAME: could_not_set, ).
+				# The same cron error, for a hook this run did not execute.
 				LOG_NEW_LINES=$((LOG_NEW_LINES + 1))
 				contention=$((contention + 1))
 				;;
