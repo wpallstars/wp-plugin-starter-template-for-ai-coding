@@ -2,7 +2,7 @@
 
 Every change to WP Plugin Starter. readme.txt lists the latest version in short.
 
-= Unreleased =
+= 1.0.54 =
 * Developers: scripts/plugin-check.sh makes a new random database and admin password for its disposable WordPress on each run, as the smoke, update and test-site scripts do, instead of keeping one fixed password in the script. Secret scanners (SonarQube Cloud's secrets:S2068, which failed the starter's quality gate) no longer flag it. Its checks and output are unchanged. Plugins get it with scripts/sync-core.sh (GH#663).
 
 = 1.0.53 =
