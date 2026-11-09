@@ -180,7 +180,7 @@ expected in the GitHub zip too.
    the same due event, whichever runs it second logs `Cron reschedule event
    error for hook: HOOK, Error code: could_not_set` (or `unschedule`),
    followed on WordPress 6.1 and later by `, Error message: …, Data: …`
-   (#1349), in the site's language: only the hook and the code stay in
+   in the site's language: only the hook and the code stay in
    English (Dutch: `Cron ongepland event fout voor hook: HOOK, foutcode:
    could_not_set, …`), so the check matches that shape, not the words: after
    the `[…]` timestamp, text with no `PHP …:` prefix (core writes it with
