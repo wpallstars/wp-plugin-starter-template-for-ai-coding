@@ -242,18 +242,24 @@ resolve_repo() {
 # The folder holding the repositories: the parent of the main checkout, so a
 # linked worktree finds the starter beside the main checkout, not in its own folder.
 default_starter_parent() {
-	local top="$1" main_wt
+	local top="$1" main_wt="" candidate
 	# The first entry of `git worktree list` is the main checkout, whatever the
 	# Git directory is named or located (no --path-format, so old Git works too).
 	# A bare main repository is no checkout: its entry has a "bare" line, so
-	# the first linked worktree is used instead.
-	main_wt="$(git worktree list --porcelain 2>/dev/null | awk '
+	# the first linked worktree whose folder still exists is used instead (a
+	# removed one stays listed, marked "prunable" by newer Git, until pruned).
+	while IFS= read -r candidate; do
+		if [[ -n "$candidate" && -d "$candidate" ]]; then
+			main_wt="$candidate"
+			break
+		fi
+	done < <(git worktree list --porcelain 2>/dev/null | awk '
 		/^worktree / { path = substr($0, 10); next }
-		$0 == "bare" { path = ""; next }
-		$0 == "" && path != "" { print path; found = 1; exit }
-		END { if (!found && path != "") print path }
-	')" || main_wt=""
-	if [[ -n "$main_wt" && -d "$main_wt" ]]; then
+		$0 == "bare" || /^prunable( |$)/ { path = ""; next }
+		$0 == "" { if (path != "") print path; path = ""; next }
+		END { if (path != "") print path }
+	')
+	if [[ -n "$main_wt" ]]; then
 		top="$main_wt"
 	fi
 	dirname "$top"

@@ -182,10 +182,15 @@ expected in the GitHub zip too.
    followed on WordPress 6.1 and later by `, Error message: …, Data: …`
    (#1349), in the site's language: only the hook and the code stay in
    English (Dutch: `Cron ongepland event fout voor hook: HOOK, foutcode:
-   could_not_set, …`), so the check matches that shape, not the words. For a
-   hook the check
-   just ran to completion, this message shows as `WARN cron race HOOK` and
-   is not counted in `new_log_lines`; the warning does not confirm a race, as
+   could_not_set, …`), so the check matches that shape, not the words: after
+   the `[…]` timestamp, text with no `PHP …:` prefix (core writes it with
+   `error_log()`) and no colon, comma or digit, then `: HOOK, `, a label,
+   `: could_not_set, `, a label and the message, and a last label with the
+   event's JSON (`: {…}`) ending the line (or before Apache's
+   `, referer: URL`). A plugin's own line that only starts the same way
+   (`Payment task failed for hook: HOOK, status: could_not_set`) still
+   fails. For a hook the check just ran to completion, this message shows
+   as `WARN cron race HOOK` and is not counted in `new_log_lines`; the warning does not confirm a race, as
    a cron-storage failure can log the same message. The same line for any other
    hook is cron-save contention, which warns only when every new line is one;
    every other new line still fails.
