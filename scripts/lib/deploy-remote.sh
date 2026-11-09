@@ -433,14 +433,16 @@ log_start() {
 }
 
 # Every line the web logs gained since log_files; a truncated or rotated log
-# contributes all of its current lines.
+# contributes all of its current lines. awk ends each log's last line with a
+# newline, so a log without one cannot join its last line to the next log's
+# first (an error read as part of a cron notice).
 new_log_all() {
 	local index=0
 	local file start
 	for file in ${LOG_FILES[@]+"${LOG_FILES[@]}"}; do
 		if [[ -f "$file" ]]; then
 			start="$(log_start "$file" "${LOG_BEFORE[index]}" "${LOG_FIRST[index]}" "${LOG_INODE[index]}")"
-			tail -n +"$start" "$file"
+			tail -n +"$start" "$file" | awk '{ print }'
 		fi
 		index=$((index + 1))
 	done

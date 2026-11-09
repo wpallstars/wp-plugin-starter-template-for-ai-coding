@@ -9,7 +9,8 @@
 #                    (scripts/preflight-release.sh warns).
 #   --from DIR       A checkout of the starter (default: <PREFIX>_STARTER_DIR,
 #                    then <STARTER_REPO_DIR> next to the main checkout, not a
-#                    linked worktree).
+#                    linked worktree; with a bare main repository, next to
+#                    its first linked worktree).
 #   --ref REF        Starter commit, branch or tag to copy from (default: HEAD
 #                    of that checkout; use origin/main after a git fetch there).
 #   --repo OWNER/REPO  This plugin's GitHub repository, for the links in core
@@ -115,7 +116,7 @@ same_mode() {
 }
 
 usage() {
-	sed -n '2,37p' "$0" | sed -e 's/^# \{0,1\}//' -e "s/<STARTER_REPO_DIR>/$STARTER_REPO_DIR/"
+	sed -n '2,38p' "$0" | sed -e 's/^# \{0,1\}//' -e "s/<STARTER_REPO_DIR>/$STARTER_REPO_DIR/"
 	return 0
 }
 
@@ -244,7 +245,14 @@ default_starter_parent() {
 	local top="$1" main_wt
 	# The first entry of `git worktree list` is the main checkout, whatever the
 	# Git directory is named or located (no --path-format, so old Git works too).
-	main_wt="$(git worktree list --porcelain 2>/dev/null | sed -n '1s/^worktree //p')" || main_wt=""
+	# A bare main repository is no checkout: its entry has a "bare" line, so
+	# the first linked worktree is used instead.
+	main_wt="$(git worktree list --porcelain 2>/dev/null | awk '
+		/^worktree / { path = substr($0, 10); next }
+		$0 == "bare" { path = ""; next }
+		$0 == "" && path != "" { print path; found = 1; exit }
+		END { if (!found && path != "") print path }
+	')" || main_wt=""
 	if [[ -n "$main_wt" && -d "$main_wt" ]]; then
 		top="$main_wt"
 	fi
