@@ -2,6 +2,10 @@
 
 Every change to WP Plugin Starter. readme.txt lists the latest version in short.
 
+= Unreleased =
+* Developers: scripts/deploy-sites.sh --apply treats only WordPress's own cron could_not_set notice as a cron race or cron-save contention. Since 1.0.53 any line of its start's shape matched, so a plugin's own log line such as "Payment task failed for hook: HOOK, status: could_not_set" for a hook the deploy ran was a warning, not a failure. classify_log() in scripts/lib/deploy-remote.sh now also requires what wp-cron.php always writes (WordPress 6.1 and later): no PHP prefix (it uses error_log()), no comma or digit before ": HOOK, ", then ": could_not_set, ", the error message and the event's JSON (: {...}) ending the line, or before Apache's ", referer: URL". English, Dutch, French and German notices still warn; that plugin line, PHP notices quoting the text and lines without the message or JSON fail. Checked with macOS awk, mawk and GNU Awk 5.2.1. Plugins get it with scripts/sync-core.sh (GH#666).
+* Developers: scripts/sync-core.sh with a bare main repository skips linked worktrees whose folder is gone (marked prunable, or missing on older Git) and looks for the starter beside the first one that exists. Before, a removed first worktree made it look beside the current worktree and stop with "no starter checkout" although the starter was beside a later one. Plugins get it with scripts/sync-core.sh (GH#666).
+
 = 1.0.54 =
 * Developers: scripts/plugin-check.sh makes a new random database and admin password for its disposable WordPress on each run, as the smoke, update and test-site scripts do, instead of keeping one fixed password in the script. Secret scanners (SonarQube Cloud's secrets:S2068, which failed the starter's quality gate) no longer flag it. Its checks and output are unchanged. Plugins get it with scripts/sync-core.sh (GH#663).
 
