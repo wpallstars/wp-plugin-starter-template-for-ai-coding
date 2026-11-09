@@ -480,12 +480,10 @@ classify_new_log() {
 			esac
 		done <<<"$classified"
 	fi
-	if [[ "$LOG_NEW_LINES" -gt 0 ]]; then
-		if [[ "$contention" -eq "$LOG_NEW_LINES" ]]; then
-			# Two cron runners saved the cron option at once: not a failure.
-			LOG_WARN+="cron save contention ($contention lines), "
-			LOG_FAIL=0
-		fi
+	if [[ "$LOG_NEW_LINES" -gt 0 && "$contention" -eq "$LOG_NEW_LINES" ]]; then
+		# Two cron runners saved the cron option at once: not a failure.
+		LOG_WARN+="cron save contention ($contention lines), "
+		LOG_FAIL=0
 	fi
 	return 0
 }
