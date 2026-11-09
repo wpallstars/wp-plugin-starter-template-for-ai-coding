@@ -300,6 +300,42 @@ active_guard() {
 	return "$status"
 }
 
+# TEXT with every FIND replaced by WITH, taken literally: ${var//find/with}
+# reads & in WITH as the match in bash 5.2 and later, and quoting WITH to stop
+# that keeps the quotes in bash 3.2.
+replace_text() {
+	local text="$1"
+	local find="$2"
+	local with="$3"
+	local out=""
+	while [[ "$text" == *"$find"* ]]; do
+		out+="${text%%"$find"*}$with"
+		text="${text#*"$find"}"
+	done
+	printf '%s' "$out$text"
+	return 0
+}
+
+# The web PHP log of one install, from WEB_ERROR_LOG: {name} becomes the
+# install's name (install_name) and {name_} the same with each . as _, so
+# hosts with one log per site (~/.logs/error_log_example_com) need one run. A
+# leading ~/ is the home folder; another relative path is from the install.
+web_error_log_path() {
+	local root="$1"
+	local path="$WEB_ERROR_LOG"
+	local name
+	name="$(install_name "$root")"
+	path="$(replace_text "$path" '{name_}' "${name//./_}")"
+	path="$(replace_text "$path" '{name}' "$name")"
+	if [[ "$path" == \~/* ]]; then
+		path="$HOME/${path#\~/}"
+	elif [[ "$path" != /* ]]; then
+		path="$root/$path"
+	fi
+	printf '%s' "$path"
+	return 0
+}
+
 # Discover log files before installation, then print the lines each one gained.
 log_files() {
 	local root="$1"
@@ -312,11 +348,7 @@ log_files() {
 	php_error="$(wp_bare "$root" eval 'echo ini_get("error_log");')" || return 1
 	candidates+=("$root/error_log" "$root/wp-content/debug.log")
 	if [[ -n "$WEB_ERROR_LOG" ]]; then
-		if [[ "$WEB_ERROR_LOG" == /* ]]; then
-			path="$WEB_ERROR_LOG"
-		else
-			path="$root/$WEB_ERROR_LOG"
-		fi
+		path="$(web_error_log_path "$root")"
 		folder="$(dirname "$path")"
 		if [[ ! -d "$folder" ]]; then
 			say "deploy-remote: the web PHP log's folder does not exist: $folder"

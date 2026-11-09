@@ -18,7 +18,10 @@
 #                      else the folder's own name) or its full path. Repeatable.
 #   --wp-cli COMMAND   WP-CLI on the host (default: wp).
 #   --web-error-log PATH  Verified web PHP log file, required for --apply;
-#                      absolute, or relative to each WordPress folder.
+#                      absolute, ~/ for the host's home folder, or relative
+#                      to each WordPress folder. {name} is each install's name
+#                      (as for --skip) and {name_} the same with . as _, for
+#                      hosts with one log per site: '~/.logs/error_log_{name_}'.
 #   --dry-run          List the installs found, with their version and whether
 #                      each is a multisite network, and change nothing (the
 #                      default).
@@ -36,8 +39,10 @@
 #                      computer (the token never reaches the host); the dry run
 #                      lists the zones and purges nothing.
 #
-# The zip ({slug}-X.Y.Z.zip) is downloaded with gh and must match the asset's
-# SHA-256 on GitHub and its provenance bundle, if any (gh attestation verify).
+# The zip ({slug}-X.Y.Z.zip) is downloaded with gh (a failed download is tried
+# again up to 4 times over about 5 minutes: GitHub sometimes answers "release
+# not found" for a while) and must match the asset's SHA-256 on GitHub and its
+# provenance bundle, if any (gh attestation verify).
 # With --apply it is copied to a private folder on the host
 # (~/.{slug}-deploy/<tag>-<time>, mode 700, files 600) and checked again.
 # Then, for each install that already has wp-content/plugins/{slug}/{slug}.php
@@ -213,6 +218,24 @@ parse_args() {
 	return 0
 }
 
+# Downloads one asset of the release into TMP_DIR. GitHub sometimes answers
+# "release not found" for a published release for a few minutes, so a failed
+# download is tried again after 30, 60, 120 and 120 seconds (5 tries).
+download_asset() {
+	local pattern="$1"
+	local wait
+	for wait in 30 60 120 120 0; do
+		rm -f "$TMP_DIR/$pattern"
+		if gh release download "$TAG" --repo "$REPO" --pattern "$pattern" --dir "$TMP_DIR"; then
+			return 0
+		fi
+		[[ "$wait" -gt 0 ]] || break
+		printf '  release download failed, retrying in %s s\n' "$wait" >&2
+		sleep "$wait"
+	done
+	return 1
+}
+
 # The release's zip, checked against GitHub's SHA-256 of the asset and, when
 # the release has one, its provenance bundle. At least one check must apply.
 download_zip() {
@@ -220,8 +243,7 @@ download_zip() {
 	local bundle="provenance-$SLUG-$VERSION.sigstore.json"
 	local assets digest checked=0
 	printf 'Release %s of %s\n' "$TAG" "$REPO"
-	gh release download "$TAG" --repo "$REPO" --pattern "$name" --dir "$TMP_DIR" ||
-		die "cannot download $name from $TAG (is gh signed in?)"
+	download_asset "$name" || die "cannot download $name from $TAG (is gh signed in?)"
 	ZIP="$TMP_DIR/$name"
 	SHA="$(sha256_of "$ZIP")"
 	# Name and digest of each asset, one per line, compared outside jq.
@@ -234,8 +256,7 @@ download_zip() {
 		checked=1
 	fi
 	if awk -F '\t' -v n="$bundle" '$1 == n { found = 1 } END { exit !found }' <<<"$assets"; then
-		gh release download "$TAG" --repo "$REPO" --pattern "$bundle" --dir "$TMP_DIR" ||
-			die "cannot download $bundle"
+		download_asset "$bundle" || die "cannot download $bundle"
 		gh attestation verify "$ZIP" --bundle "$TMP_DIR/$bundle" --repo "$REPO" \
 			--signer-workflow "$REPO/.github/workflows/release.yml" --source-ref "refs/tags/$TAG" >/dev/null ||
 			die "the provenance of $name does not verify (gh attestation verify)"
