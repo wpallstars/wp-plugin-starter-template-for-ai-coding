@@ -5,7 +5,7 @@ Tags: starter, boilerplate, settings, developer, template
 Requires at least: 6.2
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 1.0.54
+Stable tag: 1.0.55
 License: GPLv3 or later
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 
@@ -63,8 +63,8 @@ GitHub releases are the stable beta channel: each version comes out there first.
 
 == Changelog ==
 
-= 1.0.54 =
-* Developers: the Plugin Check script makes a new random password for its disposable WordPress on each run instead of keeping a fixed one in the script.
+= 1.0.55 =
+* Developers: a deploy treats only WordPress's own cron could_not_set notice as a cron race, so a plugin's own log line that only looks like it fails the install; the starter sync skips removed worktrees when the plugin's main repository is bare.
 
 Every change: changelog.txt.
 
