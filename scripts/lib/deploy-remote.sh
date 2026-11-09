@@ -300,6 +300,22 @@ active_guard() {
 	return "$status"
 }
 
+# TEXT with every FIND replaced by WITH, taken literally: ${var//find/with}
+# reads & in WITH as the match in bash 5.2 and later, and quoting WITH to stop
+# that keeps the quotes in bash 3.2.
+replace_text() {
+	local text="$1"
+	local find="$2"
+	local with="$3"
+	local out=""
+	while [[ "$text" == *"$find"* ]]; do
+		out+="${text%%"$find"*}$with"
+		text="${text#*"$find"}"
+	done
+	printf '%s' "$out$text"
+	return 0
+}
+
 # The web PHP log of one install, from WEB_ERROR_LOG: {name} becomes the
 # install's name (install_name) and {name_} the same with each . as _, so
 # hosts with one log per site (~/.logs/error_log_example_com) need one run. A
@@ -309,8 +325,8 @@ web_error_log_path() {
 	local path="$WEB_ERROR_LOG"
 	local name
 	name="$(install_name "$root")"
-	path="${path//\{name_\}/${name//./_}}"
-	path="${path//\{name\}/$name}"
+	path="$(replace_text "$path" '{name_}' "${name//./_}")"
+	path="$(replace_text "$path" '{name}' "$name")"
 	if [[ "$path" == \~/* ]]; then
 		path="$HOME/${path#\~/}"
 	elif [[ "$path" != /* ]]; then
