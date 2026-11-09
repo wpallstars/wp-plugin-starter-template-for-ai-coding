@@ -35,7 +35,8 @@ MAIN_FILE=""
 UPDATER_FILES=""
 CLI_IMAGE=""
 DB_IMAGE=""
-readonly DB_PASSWORD="plugincheck"
+DB_PASSWORD=""
+ADMIN_PASSWORD=""
 
 NAME=""
 TMP_DIR=""
@@ -90,6 +91,9 @@ start_site() {
 	pull_image "$DB_IMAGE" || die "could not pull $DB_IMAGE after 3 attempts"
 	pull_image "$CLI_IMAGE" || die "could not pull $CLI_IMAGE after 3 attempts"
 	STARTED=1
+	# A new password for each run, as the other disposable sites have.
+	DB_PASSWORD="$(random_password)"
+	ADMIN_PASSWORD="$(random_password)"
 	docker network create ${DOCKER_LABELS[@]+"${DOCKER_LABELS[@]}"} "$NAME" >/dev/null
 	docker volume create ${DOCKER_LABELS[@]+"${DOCKER_LABELS[@]}"} "$NAME-wp" >/dev/null
 	docker volume create ${DOCKER_LABELS[@]+"${DOCKER_LABELS[@]}"} "$NAME-db" >/dev/null
@@ -110,7 +114,7 @@ start_site() {
 
 	wp_cli core download --quiet
 	wp_cli config create --dbname=wordpress --dbuser=root --dbpass="$DB_PASSWORD" --dbhost="$NAME-db" --skip-check --quiet
-	wp_cli core install --url=http://localhost --title=PluginCheck --admin_user=admin --admin_password="$DB_PASSWORD" \
+	wp_cli core install --url=http://localhost --title=PluginCheck --admin_user=admin --admin_password="$ADMIN_PASSWORD" \
 		--admin_email=admin@example.com --skip-email --quiet
 	wp_cli plugin install plugin-check --activate --quiet
 	printf 'WordPress %s, Plugin Check %s\n' "$(wp_cli core version)" "$(wp_cli plugin get plugin-check --field=version)"
