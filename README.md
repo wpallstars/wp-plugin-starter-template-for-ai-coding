@@ -10,7 +10,7 @@
 [![CodeFactor](https://www.codefactor.io/repository/github/wpallstars/wp-plugin-starter-template-for-ai-coding/badge)](https://www.codefactor.io/repository/github/wpallstars/wp-plugin-starter-template-for-ai-coding)
 [![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/wpallstars/wp-plugin-starter-template-for-ai-coding/badge)](https://scorecard.dev/viewer/?uri=github.com/wpallstars/wp-plugin-starter-template-for-ai-coding)
 [![License: GPL v3 or later](https://img.shields.io/badge/License-GPL%20v3%20or%20later-blue.svg)](LICENSE)
-[![Latest release](https://img.shields.io/badge/release-v1.0.52-blue.svg)](https://github.com/wpallstars/wp-plugin-starter-template-for-ai-coding/releases)
+[![Latest release](https://img.shields.io/badge/release-v1.0.53-blue.svg)](https://github.com/wpallstars/wp-plugin-starter-template-for-ai-coding/releases)
 
 [![Requires WordPress](https://img.shields.io/badge/WordPress-6.2%2B-21759B.svg?logo=wordpress)](readme.txt)
 [![Tested up to](https://img.shields.io/badge/tested%20up%20to-7.1-21759B.svg?logo=wordpress)](readme.txt)
@@ -27,7 +27,7 @@ WP Plugin Starter is what wpallstars plugins are made from. It has no features o
 
 If this saves you time, headaches and costs, feel free to [buy me a coffee](https://buymeacoffee.com/marcusquinn), or whatever you like, to invest in making more things open-source.
 
-Version: 1.0.52
+Version: 1.0.53
 
 <!-- github-only:start -->
 ## Screenshots
@@ -168,6 +168,14 @@ Read a setting with `WPStarter_Settings::get( 'key' )`, never the option itself:
 Deleting the plugin removes its settings (on multisite, every site's and the network's), its cached data, its problem reports (other plugins' and themes' stay), who hid lines of the Plugins screen notice about replaced plugins, and the cached GitHub releases.
 
 ## Changelog
+
+### 1.0.53
+
+- Developers: `scripts/deploy-sites.sh` gets the deploy fixes SEO Pro Stack had made in its copy, merged with the starter's own (wpallstars/seoprostack#1290). `--cloudflare-token-env NAME` purges each updated site's Cloudflare zone from your computer (the token never reaches the host; `cdn=` on the install line); without it, a Cloudflare HIT older than the install warns. The home fetch is pinned to the origin (`home=200 pinned`) when LiteSpeed Cache's Server IP or the plugin's stored origin address is known. After a successful `--apply` the plugin's older run folders on the host are removed, keeping the newest 3 tags (`--keep-releases N`). A cron event the site's own cron ran meanwhile is a note, not a failure. The workflow pins move to newer ones. Plugins get it with `scripts/sync-core.sh`.
+- Developers: `scripts/deploy-sites.sh --web-error-log` takes `{name}` (each install's name) and `{name_}` (the same with each `.` as `_`), and a leading `~/` for the host's home folder, so on hosts with one web PHP log per site (Hostinger: `--web-error-log '~/.logs/error_log_{name_}'`) one `--apply` run checks each install's own log. A path without them works as before. Plugins get it with `scripts/sync-core.sh` (GH#653).
+- Developers: `scripts/deploy-sites.sh` tries a failed download of the release zip or its provenance bundle again after 30, 60, 120 and 120 seconds before stopping, as GitHub sometimes answers "release not found" for a published release for a few minutes. Plugins get it with `scripts/sync-core.sh` (GH#655).
+- Developers: `scripts/deploy-sites.sh --apply` no longer fails an install on WordPress's cron `could_not_set` notice when the site's language is not English: the check matches the notice's shape, not its words, so a race on a hook the deploy ran warns `cron race HOOK` and the same notice for another hook counts as cron-save contention. The old contention rule matched no line WordPress writes. PHP errors still fail. Plugins get it with `scripts/sync-core.sh` (GH#658).
+- Developers: `scripts/deploy-sites.sh --apply` keeps each log's lines apart, so a log without a final newline cannot join its last line to the next log's first, and `scripts/sync-core.sh` with a bare main repository looks for the starter beside the first linked worktree. Plugins get it with `scripts/sync-core.sh` (GH#657).
 
 ### 1.0.52
 
