@@ -212,7 +212,10 @@ set_opening() {
 	local main_file="$1"
 	local opening="$TO_NAME is what wpallstars plugins are ""made from."
 	local text field=Description
-	text="$TO_NAME: $(plugin_header_field "$(head -c 8192 "$main_file")" "$field")"
+	local desc
+	desc="$(plugin_header_field "$(head -c 8192 "$main_file")" "$field")"
+	text="$TO_NAME"
+	[[ -z "$desc" ]] || text="$TO_NAME: $desc"
 	set_paragraph README.md "$opening" "$text"
 	set_paragraph readme.txt "$opening" "$text"
 	set_paragraph readme.txt "Start a plugin from it" ""
