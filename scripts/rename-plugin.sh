@@ -8,7 +8,7 @@
 #                                 [--description TEXT] [--author NAME]
 #                                 [--author-uri URL] [--plugin-uri URL]
 #                                 [--contributors USERS] [--donate URL|none]
-#                                 [--version X.Y.Z]
+#                                 [--version X.Y.Z] [--public|--private]
 #   --slug    Plugin folder, main file and text domain (my-plugin).
 #   --name    Plugin Name (My Plugin).
 #   --prefix  Class prefix (MyPlugin: MyPlugin_Settings).
@@ -19,6 +19,8 @@
 #   --repo    GitHub repository, owner/repo (default: wpallstars/SLUG).
 #   --version The new plugin's first version (default: 0.1.0). The changelogs
 #             in README.md, readme.txt and changelog.txt start again with it.
+#   --public, --private  The repository's visibility, written to LAUNCH.md
+#             (default: asked of GitHub with gh; private when that fails).
 # The rest are the maker's details; each one left out keeps the starter's:
 #   --description   One line, up to 150 characters: the Description header,
 #                   the readme.txt short description and the line under
@@ -68,7 +70,7 @@ cleanup() {
 }
 
 usage() {
-	sed -n '2,35p' "$0" | sed 's/^# \{0,1\}//'
+	sed -n '2,37p' "$0" | sed 's/^# \{0,1\}//'
 	return 0
 }
 
@@ -184,6 +186,42 @@ set_section() {
 	return 0
 }
 
+# Replace the paragraph whose first line starts with START by BODY; with no
+# BODY, drop it and the blank line after it.
+set_paragraph() {
+	local file="$1"
+	local start="$2"
+	local body="$3"
+	[[ -f "$file" ]] || return 0
+	START="$start" PARA="$body" awk '
+		skip { if ($0 == "") { skip = 0; if (ENVIRON["PARA"] != "") print "" } ; next }
+		!done && index($0, ENVIRON["START"]) == 1 {
+			done = 1
+			skip = 1
+			if (ENVIRON["PARA"] != "") print ENVIRON["PARA"]
+			next
+		}
+		{ print }' "$file" >"$TMP_FILE"
+	replace_with_tmp "$file" || true
+	return 0
+}
+
+# The starter's own opening says what the starter is; this plugin opens with
+# its name and Description header, and has no "start a plugin from it" line.
+set_opening() {
+	local main_file="$1"
+	local opening="$TO_NAME is what wpallstars plugins are ""made from."
+	local text field=Description
+	local desc
+	desc="$(plugin_header_field "$(head -c 8192 "$main_file")" "$field")"
+	text="$TO_NAME"
+	[[ -z "$desc" ]] || text="$TO_NAME: $desc"
+	set_paragraph README.md "$opening" "$text"
+	set_paragraph readme.txt "$opening" "$text"
+	set_paragraph readme.txt "Start a plugin from it" ""
+	return 0
+}
+
 # Start the new plugin at its own version, with a changelog of its own.
 set_version() {
 	local main_file="$1"
@@ -226,23 +264,58 @@ Every change: changelog.txt."
 	return 0
 }
 
+# Whether the repository is public: --public or --private, else asked of
+# GitHub; private when that cannot be told.
+repo_is_public() {
+	local private
+	case "$VISIBILITY" in
+	public) return 0 ;;
+	private) return 1 ;;
+	*) ;;
+	esac
+	command -v gh >/dev/null 2>&1 || return 1
+	private="$(gh api "repos/$TO_REPO" --jq .private 2>/dev/null)" || return 1
+	[[ "$private" = false ]]
+}
+
 # Launch state belongs to this plugin, not the repository it was copied from.
 set_launch() {
-	cat >"$TMP_FILE" <<EOF
-# $TO_NAME launch state
+	local state visibility_section launch_section
+	if repo_is_public; then
+		state="In development; no release yet. The repository is public since $(date +%Y-%m-%d)."
+		visibility_section="## Public launch checks
 
-Version: $VERSION
+Follow \`DEVELOPMENT.md\` → At public launch: full sweep. Connect Codacy,
+CodeFactor and SonarCloud (\`DEVELOPMENT.md\` → Services setup), then turn on
+branch protection, CodeQL, secret scanning and Scorecard. \`SYNC_PAT\` is
+needed once \`main\` is protected (Services setup, step 4)."
+		launch_section="## At public launch
 
-In development; no release yet. The repository is private. Making it public
-needs the owner's say.
-
-## While private
+Done: the repository is public. Update this file with the checks above as they
+are completed."
+	else
+		state="In development; no release yet. The repository is private. Making it public
+needs the owner's say."
+		visibility_section="## While private
 
 Follow \`DEVELOPMENT.md\` → While private. No branch protection or repository
 rules, CodeQL, secret scanning or Scorecard are on: they need a public
 repository or a paid GitHub plan. Connect Codacy, CodeFactor and SonarCloud
 at public launch. \`SYNC_PAT\` is needed only once \`main\` is protected
-(\`DEVELOPMENT.md\` → Services setup, step 4).
+(\`DEVELOPMENT.md\` → Services setup, step 4)."
+		launch_section="## At public launch
+
+First follow \`DEVELOPMENT.md\` → Secrets in history, then
+\`DEVELOPMENT.md\` → At public launch. Update this file with what is on."
+	fi
+	cat >"$TMP_FILE" <<EOF
+# $TO_NAME launch state
+
+Version: $VERSION
+
+$state
+
+$visibility_section
 
 ## Before 1.0
 
@@ -281,10 +354,7 @@ leftovers lists what is still the starter's).
   plugin's slug in the submission notes.
 - [ ] After the release: \`scripts/update-test.sh\`.
 
-## At public launch
-
-First follow \`DEVELOPMENT.md\` → Secrets in history, then
-\`DEVELOPMENT.md\` → At public launch. Update this file with what is on.
+$launch_section
 
 ## WordPress.org
 
@@ -461,6 +531,7 @@ PLUGIN_URI=""
 CONTRIBUTORS=""
 DONATE=""
 VERSION="0.1.0"
+VISIBILITY=""
 
 check_identity() {
 	local url='^https?://[^[:space:]<>"'\''\\]+$'
@@ -537,6 +608,8 @@ main() {
 			esac
 			shift
 			;;
+		--public) VISIBILITY=public ;;
+		--private) VISIBILITY=private ;;
 		-h | --help)
 			usage
 			return 0
@@ -596,6 +669,7 @@ main() {
 	old_description="$(plugin_header_field "$(head -c 8192 "$slug.php")" "Description")"
 	starter_version="$(plugin_header_field "$(head -c 8192 "$slug.php")" "Version")"
 	set_identity "$slug.php" "includes/class-$TO_PREFIX-setup.php" "$old_description"
+	set_opening "$slug.php"
 	set_version "$slug.php" "$starter_version"
 	set_agents
 	set_badges "$repo"
