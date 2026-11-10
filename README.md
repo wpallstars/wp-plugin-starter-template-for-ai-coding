@@ -171,7 +171,7 @@ Deleting the plugin removes its settings (on multisite, every site's and the net
 
 ### 1.0.56
 
-- Developers: `scripts/deploy-sites.sh --cloudflare-token-env` purges only the host names of each updated install's sites, one `{"hosts":[...]}` request per zone (30 hosts each), so other sites sharing the zone keep their cached pages; the install line shows `cdn=purged(N hosts)`. `--cloudflare-purge zone` keeps the old `purge_everything` per zone, for pages on hosts the script does not see (GH#675).
+- Developers: `scripts/deploy-sites.sh --cloudflare-token-env` purges only the host names of each updated install's sites, one `{"hosts":[...]}` request per zone (30 hosts each), so sites on the zone's other host names keep their cached pages (a host purge still clears every path on that host, other sites in a subdirectory network included); the install line shows `cdn=purged(N hosts)`. `--cloudflare-purge zone` keeps the old `purge_everything` per zone, for pages on hosts the script does not see (GH#675).
 - Developers: `scripts/deploy-sites.sh` and `scripts/update-test.sh` retry a GitHub release read that `gh` defers or GitHub rate limits, up to 3 tries 60 seconds apart (`GH_READ_RETRY_SECONDS`); other failures still stop at once (#678).
 - Developers: `scripts/check-deploy-log.sh` checks the deploy log classifier (`classify_log()` and `classify_new_log()` in `scripts/lib/deploy-remote.sh`) on sample web PHP log lines, one ok/FAIL line per case, exit 1 on any mismatch; `--awk PATH` runs it with another awk. Plugins re-run the cases after `scripts/sync-core.sh` (GH#669).
 - Developers: `RELEASING.md` drops a reference to another repository's issue from the deploy cron check paragraph (GH#670).

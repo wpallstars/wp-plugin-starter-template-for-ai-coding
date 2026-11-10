@@ -64,7 +64,7 @@ GitHub releases are the stable beta channel: each version comes out there first.
 == Changelog ==
 
 = 1.0.56 =
-* Developers: a deploy's Cloudflare purge clears only the updated sites' host names, so other sites in the zone keep their cache; deploys and the update test retry GitHub reads deferred by quota pacing; a new check for the deploy log classifier.
+* Developers: a deploy's Cloudflare purge clears only the updated sites' host names, so sites on other host names in the zone keep their cache; deploys and the update test retry GitHub reads deferred by quota pacing; a new check for the deploy log classifier.
 
 Every change: changelog.txt.
 
