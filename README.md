@@ -169,6 +169,10 @@ Deleting the plugin removes its settings (on multisite, every site's and the net
 
 ## Changelog
 
+### Unreleased
+
+- Developers: `RELEASING.md` adds release coordination (hold merges to `main` until the release PR merges, rebase rule, one roll-out owner per release, `readme.txt` byte budget note), and the new `scripts/release-bump.sh X.Y.Z` sets the version everywhere and renames each Unreleased block, safe to run again after a rebase. Plugins get both with `scripts/sync-core.sh` (GH#683).
+
 ### 1.0.56
 
 - Developers: `scripts/deploy-sites.sh --cloudflare-token-env` purges only the host names of each updated install's sites, one `{"hosts":[...]}` request per zone (30 hosts each), so sites on the zone's other host names keep their cached pages (a host purge still clears every path on that host, other sites in a subdirectory network included); the install line shows `cdn=purged(N hosts)`. `--cloudflare-purge zone` keeps the old `purge_everything` per zone, for pages on hosts the script does not see (GH#675).

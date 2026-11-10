@@ -65,16 +65,35 @@ expected in the GitHub zip too.
 
 ## GitHub release
 
+Before step 1, list the open pull requests (`gh pr list --state open`) and
+ask whoever is merging (people, other sessions, automatic merges) to hold
+merges to `main` until the release PR merges. Each merge during the release
+PR's CI adds a line under `= Unreleased =`, which conflicts with the release
+PR's rename of that heading and forces a rebase. Everything merged
+before the release PR's merge commit is in the release, because the tag goes
+on that commit.
+
 1. In a pull request, set the version in `{slug}.php` (`Version:` and
    `{PREFIX}_VERSION`), `readme.txt` (`Stable tag:`) and `README.md` (the
    `Version:` line under the intro, which GitHub shows as written), run
    `scripts/readme-badges.sh` (the release badge shows `Stable tag:`), rename the
    changelog's Unreleased section to the version in `readme.txt`,
    `changelog.txt` and `README.md`, and add an upgrade notice if people need
-   to act. `readme.txt` keeps only the newest version, in short, and must stay
-   under 10 KB; `changelog.txt` keeps every version in full.
+   to act. `scripts/release-bump.sh X.Y.Z` does all of this except the upgrade
+   notice and the short `readme.txt` lines, and prints `readme.txt`'s byte
+   budget; running it again changes nothing more. `readme.txt` keeps only the
+   newest version, in short, and must stay under 10 KB; when it is within about
+   100 bytes of the limit, combine the version's lines into one line per type
+   (`Added`, `Faster`, `Fixed`). `changelog.txt` keeps every version in full.
    Numbers only (`1.2.3`): sites still on Git Updater offer a `Version:` on
    `main` to every site, and the shared updater skips tags with letters.
+
+   If `main` moves while the release PR waits, rebase. Resolve a conflict in
+   `changelog.txt`, `readme.txt` or `README.md` by taking `main`'s file (its
+   new entries sit under `Unreleased`). First save any release-branch
+   entries absent from `main` and restore them under `Unreleased`. Then run
+   `scripts/release-bump.sh X.Y.Z`, write the new entries' short
+   `readme.txt` lines, and run the preflight.
 2. On the pull request's branch: `scripts/preflight-release.sh` (no errors) and
    `scripts/plugin-check.sh` (no errors).
    <!-- wps-own:start -->
@@ -128,7 +147,12 @@ expected in the GitHub zip too.
    for the address the site reads to name it, and checks a missing offer 3
    more times, 20 seconds apart. Without Docker, check the same by hand on a
    test site.
-5. Roll the release out to the owner's own sites, one SSH host at a time:
+5. Roll the release out to the owner's own sites, one SSH host at a time.
+   Name one roll-out owner per release. When that is not the session that
+   released, the releaser passes on the tag, the Release run and the
+   `update-test.sh` result; the owner runs `deploy-sites.sh` and reports back.
+   The deploy lock is per SSH account, not per person or session, so only one
+   owner rolls out to a host at a time:
 
    ```bash
    scripts/deploy-sites.sh --host <ssh-host> --tag vX.Y.Z            # lists the installs; changes nothing

@@ -112,7 +112,7 @@ plugin_identity() {
 	PLUGIN_REQUIRES="$(plugin_header_field "${text:0:8192}" "Requires Plugins")"
 	PLUGIN_SELF_UPDATING=0
 	if [[ -n "$PLUGIN_UPDATE_URI" ]] && [[ -z "$PLUGIN_REPO" ]]; then PLUGIN_SELF_UPDATING=1; fi
-	PLUGIN_CSS="$(git show "$ref:admin/includes/class-admin-manager.php" 2>/dev/null | sed -nE 's/.*class="wrap ([a-z0-9]+)-wrap.*/\1/p' | head -n 1)"
+	PLUGIN_CSS="$(git show "$ref:admin/includes/class-admin-manager.php" 2>/dev/null | sed -nE 's/.*class="wrap ([a-z0-9]+)-wrap.*/\1/p' | head -n 1 || true)"
 	if [[ -z "$PLUGIN_CSS" ]]; then
 		text="$(git show "$ref:scripts/core-public-classes.txt" 2>/dev/null || true)"
 		PLUGIN_CSS="$(sed -nE '/^[[:space:]]*[a-z0-9]+-wrap[[:space:]]*$/{s/^[[:space:]]*([a-z0-9]+)-wrap.*/\1/p;q;}' <<<"$text")"
