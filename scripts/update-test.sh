@@ -240,13 +240,36 @@ wait_for_release() {
 	return 0
 }
 
+# Runs a gh read and prints its output. When GitHub defers or rate limits the
+# read (quota pacing), it is tried again, up to 3 tries 60 s apart
+# (GH_READ_RETRY_SECONDS). Any other failure stops at once with gh's message.
+gh_read() {
+	local out try err
+	err="$(mktemp "${TMPDIR:-/tmp}/gh-read.XXXXXX")" || return 1
+	for try in 1 2 3; do
+		if out="$("$@" 2>"$err")"; then
+			rm -f "$err"
+			printf '%s\n' "$out"
+			return 0
+		fi
+		if ! grep -Eiq 'github-api-read-deferred|rate limit|HTTP (403|429)' "$err" || [[ "$try" -eq 3 ]]; then
+			break
+		fi
+		printf 'GitHub deferred the read (try %s of 3), retrying in %s s\n' "$try" "${GH_READ_RETRY_SECONDS:-60}" >&2
+		sleep "${GH_READ_RETRY_SECONDS:-60}"
+	done
+	cat "$err" >&2
+	rm -f "$err"
+	return 1
+}
+
 # The new release must carry exactly the asset the shared updater takes,
 # plus, from the release workflow in a public repository, its provenance
 # bundle (a name that does not start with the slug, so Git Updater never
 # takes it for the plugin), which must verify against the zip.
 check_assets() {
 	local assets bundle="provenance-$SLUG-$TO.sigstore.json"
-	assets="$(gh release view "v$TO" --repo "$REPO" --json assets --jq '.assets[].name')" ||
+	assets="$(gh_read gh release view "v$TO" --repo "$REPO" --json assets --jq '.assets[].name')" ||
 		die "cannot read the assets of v$TO in $REPO"
 	assets="$(LC_ALL=C sort <<<"$assets")"
 	if [[ "$assets" == "$SLUG-$TO.zip" ]]; then
@@ -258,7 +281,7 @@ check_assets() {
 		fail "v$TO assets are not exactly $SLUG-$TO.zip (and $bundle): $(printf '%s' "$assets" | tr '\n' ' ')"
 	fi
 	# The name goes to jq as data (env), not joined into the filter.
-	ASSET_API="$(ASSET_NAME="$SLUG-$TO.zip" gh release view "v$TO" --repo "$REPO" --json assets \
+	ASSET_API="$(ASSET_NAME="$SLUG-$TO.zip" gh_read gh release view "v$TO" --repo "$REPO" --json assets \
 		--jq '.assets[] | select(.name == env.ASSET_NAME) | .apiUrl')" ||
 		die "cannot read the assets of v$TO in $REPO"
 	gh release download "v$FROM" --repo "$REPO" --pattern "$SLUG-$FROM.zip" --dir "$TMP_DIR/zips" ||

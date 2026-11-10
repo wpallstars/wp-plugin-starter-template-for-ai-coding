@@ -236,6 +236,30 @@ download_asset() {
 	return 1
 }
 
+# Runs a gh read and prints its output. When GitHub defers or rate limits the
+# read (quota pacing), it is tried again, up to 3 tries 60 s apart
+# (GH_READ_RETRY_SECONDS). Any other failure, such as a missing release or bad
+# auth, stops at once with gh's own message.
+gh_read() {
+	local out try err
+	err="$(mktemp "${TMPDIR:-/tmp}/gh-read.XXXXXX")" || return 1
+	for try in 1 2 3; do
+		if out="$("$@" 2>"$err")"; then
+			rm -f "$err"
+			printf '%s\n' "$out"
+			return 0
+		fi
+		if ! grep -Eiq 'github-api-read-deferred|rate limit|HTTP (403|429)' "$err" || [[ "$try" -eq 3 ]]; then
+			break
+		fi
+		printf '  GitHub deferred the read (try %s of 3), retrying in %s s\n' "$try" "${GH_READ_RETRY_SECONDS:-60}" >&2
+		sleep "${GH_READ_RETRY_SECONDS:-60}"
+	done
+	cat "$err" >&2
+	rm -f "$err"
+	return 1
+}
+
 # The release's zip, checked against GitHub's SHA-256 of the asset and, when
 # the release has one, its provenance bundle. At least one check must apply.
 download_zip() {
@@ -247,7 +271,7 @@ download_zip() {
 	ZIP="$TMP_DIR/$name"
 	SHA="$(sha256_of "$ZIP")"
 	# Name and digest of each asset, one per line, compared outside jq.
-	assets="$(gh api "repos/$REPO/releases/tags/$TAG" --jq '.assets[] | [.name, (.digest // "")] | @tsv')" ||
+	assets="$(gh_read gh api "repos/$REPO/releases/tags/$TAG" --jq '.assets[] | [.name, (.digest // "")] | @tsv')" ||
 		die "cannot read the assets of $TAG"
 	digest="$(awk -F '\t' -v n="$name" '$1 == n { print $2 }' <<<"$assets")"
 	if [[ -n "$digest" ]]; then
