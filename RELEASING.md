@@ -90,9 +90,10 @@ on that commit.
 
    If `main` moves while the release PR waits, rebase. Resolve a conflict in
    `changelog.txt`, `readme.txt` or `README.md` by taking `main`'s file (its
-   new entries sit under `Unreleased`), run `scripts/release-bump.sh X.Y.Z`
-   again, write the new entries' short `readme.txt` lines, and run the
-   preflight again.
+   new entries sit under `Unreleased`). First save any release-branch
+   entries absent from `main` and restore them under `Unreleased`. Then run
+   `scripts/release-bump.sh X.Y.Z`, write the new entries' short
+   `readme.txt` lines, and run the preflight.
 2. On the pull request's branch: `scripts/preflight-release.sh` (no errors) and
    `scripts/plugin-check.sh` (no errors).
    <!-- wps-own:start -->

@@ -98,7 +98,7 @@ main() {
 	local root
 	root="$(git rev-parse --show-toplevel)" || die "not in a Git repository"
 	cd "$root"
-	plugin_identity HEAD
+	plugin_identity HEAD || die "cannot tell which plugin this is"
 	[[ -n "$PLUGIN_MAIN_FILE" ]] || die "no main plugin file found"
 	[[ -n "$PLUGIN_CONST" ]] || die "no VERSION constant found"
 	local f
