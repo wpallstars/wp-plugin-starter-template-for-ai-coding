@@ -35,9 +35,13 @@
 #   --cloudflare-token-env NAME  The environment variable that holds a
 #                      Cloudflare API token limited to Zone > Zone Read and
 #                      Zone > Cache Purge (Read finds the zone). With
-#                      it, each updated site's zone is purged from this
-#                      computer (the token never reaches the host); the dry run
-#                      lists the zones and purges nothing.
+#                      it, the host names of each updated install's sites are
+#                      purged at Cloudflare from this computer (the token never
+#                      reaches the host); the dry run names the hosts per zone
+#                      and purges nothing.
+#   --cloudflare-purge hosts|zone  hosts (default): purge only those host
+#                      names. zone: purge each whole zone (once per install),
+#                      for pages on hosts this script does not see.
 #
 # The zip ({slug}-X.Y.Z.zip) is downloaded with gh (a failed download is tried
 # again up to 4 times over about 5 minutes: GitHub sometimes answers "release
@@ -61,9 +65,11 @@
 # timeout); a timeout only warns. Networks skip archived, deleted and spam
 # sites. Each fetch uses a unique query string: WARN cached means a cache
 # ignored it, so PHP did not run; WARN purge failed means visitors may still
-# get the old CSS and JS. With --cloudflare-token-env the zone of each site
-# (looked up by host name, then its parent domains) is purged once per run
-# (cdn=purged, cdn=failed MESSAGE; cdn=- without a token). Without the token,
+# get the old CSS and JS. With --cloudflare-token-env the host names of each
+# install's sites are purged at their zone (looked up by host name, then its
+# parent domains; one request per zone and 30 hosts; --cloudflare-purge zone
+# purges the whole zone once per install) (cdn=purged(N hosts), cdn=failed
+# MESSAGE; cdn=- without a token). Without the token,
 # the plain home address is fetched once: WARN Cloudflare keeps pages from
 # before the deploy means Cloudflare answered HIT with a page older than the
 # install. Each install line gives old -> new version, status,
@@ -114,6 +120,14 @@ CF_PURGED=0
 CF_FAILED=0
 # Site addresses whose zone could not be found (no zone to count as failed).
 CF_LOOKUP_FAILED=0
+# What a purge covers: the updated sites' host names (hosts) or the whole zone.
+CF_MODE_HOSTS="hosts"
+CF_PURGE="$CF_MODE_HOSTS"
+# Host names to purge, "ZONE_ID<TAB>ZONE<TAB>HOST" per line: for one install in
+# an apply, for the whole dry run.
+CF_PLAN=""
+CF_HOSTS_PURGED=0
+CF_HOSTS_FAILED=""
 DOWNGRADE_ARGS=()
 SKIPS=()
 TMP_DIR=""
@@ -171,7 +185,7 @@ parse_args() {
 		local arg="$1"
 		local value="${2:-}"
 		case "$arg" in
-		--host | --tag | --parent | --skip | --wp-cli | --web-error-log | --cloudflare-token-env | --keep-releases)
+		--host | --tag | --parent | --skip | --wp-cli | --web-error-log | --cloudflare-token-env | --cloudflare-purge | --keep-releases)
 			[[ $# -ge 2 ]] || die "$arg needs a value"
 			[[ "$value" != -* ]] || die "$arg needs a value, not an option: $value"
 			case "$arg" in
@@ -182,6 +196,7 @@ parse_args() {
 			--wp-cli) WP_CLI="$value" ;;
 			--web-error-log) WEB_ERROR_LOG="$value" ;;
 			--cloudflare-token-env) CF_TOKEN_ENV="$value" ;;
+			--cloudflare-purge) CF_PURGE="$value" ;;
 			--keep-releases) KEEP_RELEASES="$value" ;;
 			*) ;; # The outer pattern lists every option that takes a value.
 			esac
@@ -204,6 +219,7 @@ parse_args() {
 	VERSION="${TAG#v}"
 	[[ -n "$PARENT" ]] || die "--parent cannot be empty"
 	[[ "$KEEP_RELEASES" =~ ^[0-9]+$ ]] || die "--keep-releases takes a whole number, not '$KEEP_RELEASES'"
+	[[ "$CF_PURGE" == "$CF_MODE_HOSTS" || "$CF_PURGE" == "zone" ]] || die "--cloudflare-purge takes hosts or zone, not '$CF_PURGE'"
 	if [[ -n "$CF_TOKEN_ENV" ]]; then
 		[[ "$CF_TOKEN_ENV" =~ ^[A-Za-z_][A-Za-z0-9_]*$ ]] || die "--cloudflare-token-env takes the NAME of an environment variable, not a token"
 		CF_TOKEN="${!CF_TOKEN_ENV:-}"
@@ -355,9 +371,11 @@ cdn_zone() {
 	return 1
 }
 
-# Purges (or, in a dry run, only names) the Cloudflare zone of one site
-# address, once per zone in a run. Sets CDN_STATUS to purged, would-purge or
-# "failed MESSAGE".
+# Looks up the zone of one site address. By default (--cloudflare-purge
+# hosts) it adds the host to CF_PLAN ("ZONE_ID<TAB>ZONE<TAB>HOST" lines, no
+# duplicates) for cdn_purge_hosts or cdn_list_hosts. With --cloudflare-purge
+# zone it purges (or, in a dry run, only names) the whole zone, once per zone
+# in a run. Sets CDN_STATUS to planned, purged, would-purge or "failed MESSAGE".
 cdn_site() {
 	local url="$1"
 	local host body known
@@ -371,6 +389,13 @@ cdn_site() {
 	if [[ -n "$CDN_STATUS" ]]; then
 		CF_LOOKUP_FAILED=$((CF_LOOKUP_FAILED + 1))
 		[[ "$APPLY" -eq 1 ]] || printf '  Cloudflare: %s: %s\n' "$url" "$CDN_STATUS" >&2
+		return 0
+	fi
+	if [[ "$CF_PURGE" == "$CF_MODE_HOSTS" ]]; then
+		if ! printf '%s' "$CF_PLAN" | awk -F '\t' -v z="$CF_ZONE_ID" -v h="$host" '$1 == z && $3 == h { found = 1 } END { exit !found }'; then
+			CF_PLAN+="$CF_ZONE_ID"$'\t'"$CF_ZONE_NAME"$'\t'"$host"$'\n'
+		fi
+		CDN_STATUS="planned"
 		return 0
 	fi
 	known="$(awk -F '\t' -v z="$CF_ZONE_ID" '$1 == z { print $2; exit }' <<<"$CF_DONE")"
@@ -393,14 +418,74 @@ cdn_site() {
 	return 0
 }
 
+# One purge request for up to 30 host names (Cloudflare's limit) of a zone.
+# Adds to CF_HOSTS_PURGED, or sets CF_HOSTS_FAILED to the first failure.
+cdn_post_hosts() {
+	local zone_id="$1"
+	local json="$2"
+	local count="$3"
+	local body=""
+	if body="$(cf_api POST "/zones/$zone_id/purge_cache" "{\"hosts\":[$json]}")" && [[ "$body" == *'"success":true'* ]]; then
+		CF_PURGED=$((CF_PURGED + 1))
+		CF_HOSTS_PURGED=$((CF_HOSTS_PURGED + count))
+	else
+		CF_FAILED=$((CF_FAILED + 1))
+		[[ -n "$CF_HOSTS_FAILED" ]] || CF_HOSTS_FAILED="failed $([[ -n "$body" ]] && cf_message "$body" || printf 'cannot reach the Cloudflare API')"
+	fi
+	return 0
+}
+
+# Purges the hosts in CF_PLAN, one request per zone and 30 hosts, then empties
+# it. Sets CDN_STATUS to purged(N hosts) or the first failure.
+cdn_purge_hosts() {
+	local zone_id zone_name host json count
+	CF_HOSTS_PURGED=0
+	CF_HOSTS_FAILED=""
+	while IFS=$'\t' read -r zone_id zone_name; do
+		[[ -n "$zone_id" ]] || continue
+		json="" count=0
+		while IFS= read -r host; do
+			json+="${json:+,}\"$host\""
+			count=$((count + 1))
+			if [[ "$count" -eq 30 ]]; then
+				cdn_post_hosts "$zone_id" "$json" "$count"
+				json="" count=0
+			fi
+		done < <(awk -F '\t' -v z="$zone_id" '$1 == z { print $3 }' <<<"$CF_PLAN")
+		[[ "$count" -eq 0 ]] || cdn_post_hosts "$zone_id" "$json" "$count"
+	done < <(awk -F '\t' '!seen[$1]++ { print $1 "\t" $2 }' <<<"$CF_PLAN")
+	CF_PLAN=""
+	if [[ -n "$CF_HOSTS_FAILED" ]]; then
+		CDN_STATUS="$CF_HOSTS_FAILED"
+	else
+		CDN_STATUS="purged($CF_HOSTS_PURGED host$([[ "$CF_HOSTS_PURGED" -eq 1 ]] || printf s))"
+	fi
+	return 0
+}
+
+# Dry run: names the hosts it would purge, per zone.
+cdn_list_hosts() {
+	local zone_id zone_name hosts
+	while IFS=$'\t' read -r zone_id zone_name; do
+		[[ -n "$zone_id" ]] || continue
+		hosts="$(awk -F '\t' -v z="$zone_id" '$1 == z { printf "%s%s", sep, $3; sep = " " }' <<<"$CF_PLAN")"
+		printf '  Cloudflare: zone %s: --apply would purge %s host(s) only: %s\n' "$zone_name" "$(wc -w <<<"$hosts" | tr -d ' ')" "$hosts"
+	done < <(awk -F '\t' '!seen[$1]++ { print $1 "\t" $2 }' <<<"$CF_PLAN")
+	return 0
+}
+
 # The cdn= value for the addresses of one install (one per line): purged, or
-# the first failure. Every address is tried, even after a failure, and each
-# zone once per install.
+# the first failure. Every address is tried, even after a failure. By default
+# the install's hosts are purged together, one request per zone and 30 hosts;
+# with --cloudflare-purge zone each zone is purged once per install.
 cdn_result() {
 	local urls="$1"
 	local url
 	CDN_RESULT="-"
-	[[ "$APPLY" -ne 1 ]] || CF_DONE=""
+	if [[ "$APPLY" -eq 1 ]]; then
+		CF_DONE=""
+		CF_PLAN=""
+	fi
 	while IFS= read -r url; do
 		[[ -n "$url" ]] || continue
 		cdn_site "$url"
@@ -410,6 +495,14 @@ cdn_result() {
 			CDN_RESULT="purged"
 		fi
 	done <<<"$urls"
+	if [[ "$CF_PURGE" == "$CF_MODE_HOSTS" && "$APPLY" -eq 1 && -n "$CF_PLAN" ]]; then
+		cdn_purge_hosts
+		if [[ "$CDN_STATUS" == failed* ]]; then
+			[[ "$CDN_RESULT" == failed* ]] || CDN_RESULT="$CDN_STATUS"
+		elif [[ "$CDN_RESULT" != failed* ]]; then
+			CDN_RESULT="$CDN_STATUS"
+		fi
+	fi
 	return 0
 }
 
@@ -441,8 +534,11 @@ stream_filter() {
 		esac
 	done
 	if [[ "$APPLY" -eq 1 ]]; then
-		printf '\nCloudflare: %s zone purge(s), %s failed; %s site(s) with no zone found.\n' "$CF_PURGED" "$CF_FAILED" "$CF_LOOKUP_FAILED"
-	elif [[ "$CF_LOOKUP_FAILED" -gt 0 ]]; then
+		printf '\nCloudflare: %s purge request(s) (%s), %s failed; %s site(s) with no zone found.\n' "$CF_PURGED" "$CF_PURGE" "$CF_FAILED" "$CF_LOOKUP_FAILED"
+	else
+		[[ "$CF_PURGE" != "$CF_MODE_HOSTS" ]] || cdn_list_hosts
+	fi
+	if [[ "$APPLY" -ne 1 && "$CF_LOOKUP_FAILED" -gt 0 ]]; then
 		printf '\nCloudflare: %s site(s) with no zone found (named above); --apply would not purge them.\n' "$CF_LOOKUP_FAILED" >&2
 	fi
 	return 0
