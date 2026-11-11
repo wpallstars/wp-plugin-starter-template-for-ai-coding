@@ -10,7 +10,7 @@
 [![CodeFactor](https://www.codefactor.io/repository/github/wpallstars/wp-plugin-starter-template-for-ai-coding/badge)](https://www.codefactor.io/repository/github/wpallstars/wp-plugin-starter-template-for-ai-coding)
 [![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/wpallstars/wp-plugin-starter-template-for-ai-coding/badge)](https://scorecard.dev/viewer/?uri=github.com/wpallstars/wp-plugin-starter-template-for-ai-coding)
 [![License: GPL v3 or later](https://img.shields.io/badge/License-GPL%20v3%20or%20later-blue.svg)](LICENSE)
-[![Latest release](https://img.shields.io/badge/release-v1.0.56-blue.svg)](https://github.com/wpallstars/wp-plugin-starter-template-for-ai-coding/releases)
+[![Latest release](https://img.shields.io/badge/release-v1.0.57-blue.svg)](https://github.com/wpallstars/wp-plugin-starter-template-for-ai-coding/releases)
 
 [![Requires WordPress](https://img.shields.io/badge/WordPress-6.2%2B-21759B.svg?logo=wordpress)](readme.txt)
 [![Tested up to](https://img.shields.io/badge/tested%20up%20to-7.1-21759B.svg?logo=wordpress)](readme.txt)
@@ -27,7 +27,7 @@ WP Plugin Starter is what wpallstars plugins are made from. It has no features o
 
 If this saves you time, headaches and costs, feel free to [buy me a coffee](https://buymeacoffee.com/marcusquinn), or whatever you like, to invest in making more things open-source.
 
-Version: 1.0.56
+Version: 1.0.57
 
 <!-- github-only:start -->
 ## Screenshots
@@ -169,10 +169,12 @@ Deleting the plugin removes its settings (on multisite, every site's and the net
 
 ## Changelog
 
-### Unreleased
+### 1.0.57
 
 - Developers: settings schema key `secret` (text settings), for API tokens and keys: the panel shows a password field that never holds the saved value and says whether one is saved. Typing a new value replaces it, a space removes it, and clearing the field keeps it. Plugins get it with `scripts/sync-core.sh` (GH#688).
 - Developers: `RELEASING.md` adds release coordination (hold merges to `main` until the release PR merges, rebase rule, one roll-out owner per release, `readme.txt` byte budget note), and the new `scripts/release-bump.sh X.Y.Z` sets the version everywhere and renames each Unreleased block, safe to run again after a rebase. Plugins get both with `scripts/sync-core.sh` (GH#683).
+- Developers: `scripts/smoke-test.sh` (check functions, and check calls before the uninstall check), `.github/ISSUE_TEMPLATE/config.yml` and `CONTRIBUTING.md` have empty own blocks, so a plugin's own checks, contact links and pull request steps no longer stop its Starter sync (GH#686).
+- Developers: `scripts/rename-plugin.sh` writes `LAUNCH.md` for the new repository's real visibility (public or private), and gives `README.md` and `readme.txt` an opening built from the plugin's own description instead of renaming the starter's (GH#682).
 
 ### 1.0.56
 
@@ -180,7 +182,6 @@ Deleting the plugin removes its settings (on multisite, every site's and the net
 - Developers: `scripts/deploy-sites.sh` and `scripts/update-test.sh` retry a GitHub release read that `gh` defers or GitHub rate limits, up to 3 tries 60 seconds apart (`GH_READ_RETRY_SECONDS`); other failures still stop at once (#678).
 - Developers: `scripts/check-deploy-log.sh` checks the deploy log classifier (`classify_log()` and `classify_new_log()` in `scripts/lib/deploy-remote.sh`) on sample web PHP log lines, one ok/FAIL line per case, exit 1 on any mismatch; `--awk PATH` runs it with another awk. Plugins re-run the cases after `scripts/sync-core.sh` (GH#669).
 - Developers: `RELEASING.md` drops a reference to another repository's issue from the deploy cron check paragraph (GH#670).
-- Developers: `scripts/smoke-test.sh` (check functions, and check calls before the uninstall check), `.github/ISSUE_TEMPLATE/config.yml` and `CONTRIBUTING.md` have empty own blocks, so a plugin's own checks, contact links and pull request steps no longer stop its Starter sync (GH#686).
 
 ### 1.0.55
 
