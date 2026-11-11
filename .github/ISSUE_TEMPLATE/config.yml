@@ -3,3 +3,7 @@ contact_links:
   - name: Security problem
     url: https://github.com/wpallstars/wp-plugin-starter-template-for-ai-coding/blob/main/SECURITY.md
     about: Report security problems privately, never in a public issue.
+  # A plugin's own contact links go between these markers; a Starter sync
+  # keeps them (DEVELOPMENT.md → Starter sync).
+  # wps-own:start
+  # wps-own:end

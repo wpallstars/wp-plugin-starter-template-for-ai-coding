@@ -179,6 +179,7 @@ Deleting the plugin removes its settings (on multisite, every site's and the net
 - Developers: `scripts/deploy-sites.sh` and `scripts/update-test.sh` retry a GitHub release read that `gh` defers or GitHub rate limits, up to 3 tries 60 seconds apart (`GH_READ_RETRY_SECONDS`); other failures still stop at once (#678).
 - Developers: `scripts/check-deploy-log.sh` checks the deploy log classifier (`classify_log()` and `classify_new_log()` in `scripts/lib/deploy-remote.sh`) on sample web PHP log lines, one ok/FAIL line per case, exit 1 on any mismatch; `--awk PATH` runs it with another awk. Plugins re-run the cases after `scripts/sync-core.sh` (GH#669).
 - Developers: `RELEASING.md` drops a reference to another repository's issue from the deploy cron check paragraph (GH#670).
+- Developers: `scripts/smoke-test.sh` (check functions, and check calls before the uninstall check), `.github/ISSUE_TEMPLATE/config.yml` and `CONTRIBUTING.md` have empty own blocks, so a plugin's own checks, contact links and pull request steps no longer stop its Starter sync (GH#686).
 
 ### 1.0.55
 

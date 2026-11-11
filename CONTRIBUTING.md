@@ -27,6 +27,8 @@ place: say what the feature does on its own and what problem it solves.
    front-end styles.
 5. Add a line to the changelogs: `README.md` (details), `changelog.txt`
    (for users) and `readme.txt` (one short line).
+<!-- wps-own:start -->
+<!-- wps-own:end -->
 
 CI runs the checks on every pull request. Write the pull request description
 so a reviewer knows what changed, why, and how you tested it.

@@ -566,6 +566,11 @@ parse_args() {
 	return 0
 }
 
+# A plugin's own check functions go between these markers; a Starter sync
+# keeps them (DEVELOPMENT.md → Starter sync).
+# wps-own:start
+# wps-own:end
+
 main() {
 	parse_args "$@"
 	local ref="$REF"
@@ -631,6 +636,11 @@ main() {
 		check_network
 		check_queries
 	fi
+
+	# A plugin's own check calls go between these markers (a Starter sync
+	# keeps them); they run before the uninstall check.
+	# wps-own:start
+	# wps-own:end
 
 	printf '\nUninstall:\n'
 	check_uninstall
