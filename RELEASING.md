@@ -211,8 +211,8 @@ on that commit.
    English (Dutch: `Cron ongepland event fout voor hook: HOOK, foutcode:
    could_not_set, …`), so the check matches that shape, not the words: after
    the `[…]` timestamp, text with no `PHP …:` prefix (core writes it with
-   `error_log()`) and no colon, comma or digit, then `: HOOK, `, a label,
-   `: could_not_set, `, a label and the message, and a last label with the
+   `error_log()`) and no colon, comma or digit, then `: HOOK,` and a space, a
+   label, `: could_not_set,` and a space, a label and the message, and a last label with the
    event's JSON (`: {…}`) ending the line (or before Apache's
    `, referer: URL`). A plugin's own line that only starts the same way
    (`Payment task failed for hook: HOOK, status: could_not_set`) still
