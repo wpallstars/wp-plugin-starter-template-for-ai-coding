@@ -191,11 +191,12 @@ Every pull request and every push to `main` runs these in GitHub Actions
 | Coding standards | `scripts/lint.sh phpcs` | WordPress Coding Standards: escaping, sanitising, nonces, prepared SQL, i18n, PHP 7.4 and WordPress 6.2 compatibility; slow and unlimited queries, `ORDER BY RAND()`, short cache times and long remote timeouts (`phpcs.xml.dist`). |
 | Static analysis | `scripts/lint.sh phpstan` | Unknown functions, classes and methods, wrong argument counts and types, dead code, `false` and `null` results used as values (PHPStan level 8 without the `missingType.*` checks, `phpstan.neon.dist`). |
 | JavaScript build | `scripts/lint.sh build` | Plugins with a build only: the `check` script's findings (types, lint), and built files in `assets/build/` that differ from a fresh build. |
+| Changelog | `scripts/lint.sh changelog` | A pull request's `changelog.txt` and `README.md` lines under a released version instead of `Unreleased` (a merge conflict with the release PR's rename can leave them there). |
 | Release build | `scripts/preflight-release.sh --offline` | Versions, headers, `readme.txt`, presets (where the plugin has them) and the contents of both zips. |
 | Plugin Check | `scripts/plugin-check.sh` | The WordPress.org review tool, on both zips. |
 | Smoke test | `scripts/smoke-test.sh --wp 6.2 --php 7.4`, `scripts/smoke-test.sh` and `scripts/smoke-test.sh --multisite` | Installs the GitHub zip on a site with 10,000 posts, loads the site and admin screens with default settings and with every feature on, runs cron, uninstalls. Lists each page's queries. Fails on any PHP message, a failed page, a full table scan or large sort in the plugin's own queries, or leftover options, cron events or tables (`{prefix}_*`). On a network, also applies a setting to every site and checks the other site picks it up. |
 
-`scripts/lint.sh` with no arguments runs the first seven.
+`scripts/lint.sh` with no arguments runs every check of `scripts/lint.sh`.
 
 Release preflight also compares core files with a local starter checkout.
 If it is not next to the plugin (for example, in a linked worktree), use
