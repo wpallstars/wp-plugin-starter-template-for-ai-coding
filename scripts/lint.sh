@@ -214,7 +214,7 @@ heading_above() {
 		hash && /^### / { head = $0; next }
 		!hash && /^= .+ =[[:space:]]*$/ { head = $0 }
 		END {
-			if (hash && !inlog) head = ""
+			if (hash && !inlog) head = "(outside the changelog)"
 			print head
 		}
 	' "$file"
@@ -223,10 +223,15 @@ heading_above() {
 
 # The Version: of the plugin's main file (the PHP file in the root with one).
 main_file_version() {
+	local ref="${1:-}"
 	local file version
 	while IFS= read -r file; do
 		[[ "$file" == */* ]] && continue
-		version="$(sed -n 's/^[[:space:]*]*Version:[[:space:]]*//p' "$ROOT/$file" | head -n 1 | tr -d '[:space:]')"
+		if [[ -n "$ref" ]]; then
+			version="$(git -C "$ROOT" show "$ref:$file" 2>/dev/null | sed -n 's/^[[:space:]*]*Version:[[:space:]]*//p' | head -n 1 | tr -d '[:space:]')"
+		else
+			version="$(sed -n 's/^[[:space:]*]*Version:[[:space:]]*//p' "$ROOT/$file" | head -n 1 | tr -d '[:space:]')"
+		fi
 		if [[ -n "$version" ]]; then
 			printf '%s' "$version"
 			return 0
@@ -247,16 +252,17 @@ changelog_file() {
 	diff="$(git diff --unified=0 "$base"...HEAD -- "$file")"
 	[[ -n "$diff" ]] || return 0
 	# A release PR renames the Unreleased heading to the new version.
-	if [[ -n "$version" ]]; then
+	if [[ -n "$version" && "$version" != "$(main_file_version "$base")" ]]; then
 		escaped="${version//./\\.}"
-		if printf '%s\n' "$diff" | grep -Eq '^-(= *Unreleased *=|### *Unreleased)[[:space:]]*$' &&
-			printf '%s\n' "$diff" | grep -Eq "^\\+(= *v?${escaped} *=|### *v?${escaped})[[:space:]]*\$"; then
+		if grep -Eq '^-(= *Unreleased *=|### *Unreleased)[[:space:]]*$' <<<"$diff" &&
+			grep -Eq "^\\+(= *v?${escaped} *=|### *v?${escaped})[[:space:]]*\$" <<<"$diff"; then
 			return 0
 		fi
 	fi
 	while IFS= read -r number; do
 		[[ -n "$number" ]] || continue
 		heading="$(heading_above "$file" "$number" "$style")"
+		[[ "$heading" == "(outside the changelog)" ]] && continue
 		if [[ "$heading" != "$unreleased" ]]; then
 			printf '%s:%s: changelog line is under "%s"; move it under "%s"\n' \
 				"$file" "$number" "${heading:-no heading}" "$unreleased"
