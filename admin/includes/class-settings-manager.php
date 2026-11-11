@@ -859,7 +859,10 @@ class WPStarter_Settings_Manager { // NOSONAR: keep the cohesive settings view a
     }
 
     /**
-     * Render a text control (also any type without its own control).
+     * Render a text control (also any type without its own control). A
+     * `secret` field (an API token) never puts its saved value in the
+     * page: it shows empty, saying whether one is saved; typing a new one
+     * replaces it, and a space removes it.
      *
      * @param string $key   Setting key.
      * @param array  $field Schema entry.
@@ -867,6 +870,14 @@ class WPStarter_Settings_Manager { // NOSONAR: keep the cohesive settings view a
      * @param string $attrs Escaped id, data-wps-setting and aria-describedby.
      */
     private static function render_text($key, array $field, $value, $attrs) {
+        if (!empty($field['secret'])) {
+            printf(
+                '<input type="password" class="regular-text code" %1$s value="" placeholder="%2$s" autocomplete="new-password" spellcheck="false" />',
+                $attrs, // phpcs:ignore WordPress.Security.EscapeOutput -- escaped in render_field().
+                '' !== (string) $value ? esc_attr__('Saved (hidden). Type a new one to replace it, or a space to remove it.', 'wp-plugin-starter-template') : self::placeholder($field) // phpcs:ignore WordPress.Security.EscapeOutput -- escaped here or in placeholder().
+            );
+            return;
+        }
         printf(
             '<input type="text" class="regular-text" %1$s value="%2$s" placeholder="%3$s" />',
             $attrs, // phpcs:ignore WordPress.Security.EscapeOutput -- escaped in render_field().
