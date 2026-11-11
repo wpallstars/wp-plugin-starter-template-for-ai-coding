@@ -41,8 +41,11 @@ jobs:
     outputs:
       draft: ${{ steps.draft.outputs.draft }}
     steps:
+      # The whole history and its tags: the hooks check compares
+      # docs/HOOKS.md with the latest release's (scripts/check-hooks.js).
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
+          fetch-depth: 0
           persist-credentials: false
 
       - uses: shivammathur/setup-php@eb7c497e18156a6bbabfef1d3a82760b9eda3962 # 2.40.0
@@ -104,8 +107,8 @@ jobs:
           fi
           shellcheck --version
 
-      - name: PHP syntax (7.4), JavaScript syntax, ShellCheck, PHPCS, PHPStan
-        run: scripts/lint.sh php js shell phpcs phpstan
+      - name: PHP syntax (7.4), JavaScript syntax, ShellCheck, PHPCS, PHPStan, hooks
+        run: scripts/lint.sh php js shell phpcs phpstan hooks
 
       # Plugins with a JavaScript build only (DEVELOPMENT.md → JavaScript
       # builds): types and lint, then a fresh build must match assets/build/.

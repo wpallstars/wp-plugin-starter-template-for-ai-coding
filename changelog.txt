@@ -2,6 +2,9 @@
 
 Every change to WP Plugin Starter. readme.txt lists the latest version in short.
 
+= Unreleased =
+* Developers: hooks are a contract with site code (STANDARDS.md → Code rules). docs/HOOKS.md lists every wpstarter_* filter and action as supported (for site code) or internal (may change); wpstarter_admin_theme_screens and wpstarter_replaces_link are internal, the other 18 supported. A supported hook is kept, or kept working through apply_filters_deprecated() / do_action_deprecated(), for at least two minor releases before it goes, and the changelog names it. The new scripts/check-hooks.js (scripts/lint.sh hooks, run by CI) fails when the code calls a hook with no row, a row's hook has gone, or a hook supported at the latest release tag has gone without that deprecation; plugins without docs/HOOKS.md are skipped. Plugins get the rule, the check and the CI step with scripts/sync-core.sh, then copy the starter's docs/HOOKS.md (Since set to their own first version that has each hook), add rows for their own hooks and name it in AGENTS.md; scripts/rename-plugin.sh does this for a new plugin (from SEO Pro Stack, wpallstars/seoprostack#1489; GH#691).
+
 = 1.0.57 =
 * Developers: settings schema key `secret` (text settings): the panel shows a password field that never holds the saved value, saying whether one is saved; typing a new value replaces it, a space removes it, and clearing the field keeps it. For API tokens and keys. Plugins get it with scripts/sync-core.sh (from SEO Pro Stack's Cloudflare token setting, wpallstars/seoprostack#1461; GH#688).
 * Developers: RELEASING.md adds release coordination (hold merges to main until the release PR merges, rebase rule, one roll-out owner per release, readme.txt byte budget note), and the new scripts/release-bump.sh X.Y.Z sets the version everywhere and renames each Unreleased block, safe to run again after a rebase. Plugins get both with scripts/sync-core.sh (GH#683).

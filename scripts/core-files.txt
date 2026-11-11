@@ -41,6 +41,7 @@ admin/js/wpstarter-theme.js
 scripts/build-banner.sh
 scripts/build-release.sh
 scripts/check-deploy-log.sh
+scripts/check-hooks.js
 scripts/ci-docker-login.sh
 scripts/ci-docker-mirror.sh
 scripts/core-files.txt

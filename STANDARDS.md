@@ -355,6 +355,15 @@ it reads it. A small plugin has only `AGENTS.md`; a large one adds docs.
   `plugin_updater_detected` as an error, and WordPress.org asks plugins not
   to interfere with the updater. Such a change goes in the shared updater,
   so it reaches GitHub builds only.
+- Hooks are a contract with site code. Every `{prefix}_*` filter and action
+  is listed in `docs/HOOKS.md` as supported (for site code) or internal (may
+  change). A supported hook is kept, or kept working through
+  `apply_filters_deprecated()` / `do_action_deprecated()`, for at least two
+  minor releases before it is removed, and the changelog names it. CI fails
+  when a hook in the code is not listed, or a supported one has gone
+  (`scripts/check-hooks.js`, run by `scripts/lint.sh hooks`). The list
+  starts as the starter's, which has the core files' hooks; a plugin keeps
+  those rows and adds its own.
 - Leave no PHP errors, warnings, notices or deprecations behind. Fix any the
   plugin causes, including ones in other plugins that happen only because of
   this one, in the same change when small or as a tracked issue. Messages
