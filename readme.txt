@@ -5,7 +5,7 @@ Tags: starter, boilerplate, settings, developer, template
 Requires at least: 6.2
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 1.0.56
+Stable tag: 1.0.57
 License: GPLv3 or later
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 
@@ -63,8 +63,8 @@ GitHub releases are the stable beta channel: each version comes out there first.
 
 == Changelog ==
 
-= 1.0.56 =
-* Developers: a deploy's Cloudflare purge clears only the updated sites' host names, so sites on other host names in the zone keep their cache; deploys and the update test retry GitHub reads deferred by quota pacing; a new check for the deploy log classifier.
+= 1.0.57 =
+* Developers: settings key `secret` for API tokens (a password field that never shows the saved value); release coordination and scripts/release-bump.sh; own blocks in the smoke test, issue template config and CONTRIBUTING.md; rename-plugin.sh writes the real repository visibility and the plugin's own opening.
 
 Every change: changelog.txt.
 
