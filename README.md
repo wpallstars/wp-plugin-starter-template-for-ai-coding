@@ -171,6 +171,10 @@ Deleting the plugin removes its settings (on multisite, every site's and the net
 
 ## Changelog
 
+### Unreleased
+
+- Developers: `RELEASING.md` describes the cron race check's line shape without trailing spaces inside code spans (markdownlint MD038). Plugins get it with `scripts/sync-core.sh` (GH#692).
+
 ### 1.0.58
 
 - Developers: hooks are a contract with site code (`STANDARDS.md` → Code rules). `docs/HOOKS.md` lists every `wpstarter_*` filter and action as supported (for site code) or internal (may change). A supported hook is kept, or kept working through `apply_filters_deprecated()` / `do_action_deprecated()`, for at least two minor releases before it goes. The new `scripts/check-hooks.js` (`scripts/lint.sh hooks`, run by CI) fails when the list and the code disagree. Plugins get the rule and the check with `scripts/sync-core.sh`, then copy the starter's `docs/HOOKS.md` and add their own hooks (GH#691).
@@ -191,7 +195,7 @@ Deleting the plugin removes its settings (on multisite, every site's and the net
 
 ### 1.0.55
 
-- Developers: `scripts/deploy-sites.sh --apply` treats only WordPress's own cron `could_not_set` notice as a cron race or cron-save contention: the line must have core's full shape (no `PHP …:` prefix, `: could_not_set, `, the error message and the event's JSON at the end). A plugin's own line that only starts the same way (`Payment task failed for hook: HOOK, status: could_not_set`) now fails the install instead of warning. Plugins get it with `scripts/sync-core.sh` (GH#666).
+- Developers: `scripts/deploy-sites.sh --apply` treats only WordPress's own cron `could_not_set` notice as a cron race or cron-save contention: the line must have core's full shape (no `PHP …:` prefix, `: could_not_set,` and a space, the error message and the event's JSON at the end). A plugin's own line that only starts the same way (`Payment task failed for hook: HOOK, status: could_not_set`) now fails the install instead of warning. Plugins get it with `scripts/sync-core.sh` (GH#666).
 - Developers: `scripts/sync-core.sh` with a bare main repository skips linked worktrees whose folder is gone and looks for the starter beside the first one that exists, instead of stopping with "no starter checkout". Plugins get it with `scripts/sync-core.sh` (GH#666).
 
 ### 1.0.54
