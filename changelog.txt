@@ -3,7 +3,7 @@
 Every change to WP Plugin Starter. readme.txt lists the latest version in short.
 
 = Unreleased =
-* Developers: settings schema key `secret` (text settings): the panel shows a password field that never holds the saved value, saying whether one is saved; typing a new value replaces it and a space removes it. For API tokens and keys. Plugins get it with scripts/sync-core.sh (from SEO Pro Stack's Cloudflare token setting, wpallstars/seoprostack#1461).
+* Developers: settings schema key `secret` (text settings): the panel shows a password field that never holds the saved value, saying whether one is saved; typing a new value replaces it, a space removes it, and clearing the field keeps it. For API tokens and keys. Plugins get it with scripts/sync-core.sh (from SEO Pro Stack's Cloudflare token setting, wpallstars/seoprostack#1461; GH#688).
 * Developers: RELEASING.md adds release coordination (hold merges to main until the release PR merges, rebase rule, one roll-out owner per release, readme.txt byte budget note), and the new scripts/release-bump.sh X.Y.Z sets the version everywhere and renames each Unreleased block, safe to run again after a rebase. Plugins get both with scripts/sync-core.sh (GH#683).
 
 = 1.0.56 =

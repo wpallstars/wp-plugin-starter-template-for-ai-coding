@@ -88,6 +88,11 @@
 
 		init: function () {
 			$(document).on('change', '[data-wps-setting]', function () {
+				// A secret field (password) left empty keeps the saved value:
+				// only a space removes it, so clearing the field loses nothing.
+				if (this.type === 'password' && this.value === '') {
+					return;
+				}
 				Settings.save($(this));
 			});
 			// "Select all" and "Clear" for long checkbox lists: one save for the lot.

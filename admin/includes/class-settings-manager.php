@@ -862,7 +862,8 @@ class WPStarter_Settings_Manager { // NOSONAR: keep the cohesive settings view a
      * Render a text control (also any type without its own control). A
      * `secret` field (an API token) never puts its saved value in the
      * page: it shows empty, saying whether one is saved; typing a new one
-     * replaces it, and a space removes it.
+     * replaces it, and a space removes it. Left empty, the admin JS saves
+     * nothing, so clearing the field keeps the saved value.
      *
      * @param string $key   Setting key.
      * @param array  $field Schema entry.

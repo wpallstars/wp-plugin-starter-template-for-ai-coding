@@ -170,7 +170,8 @@ class WPStarter_Settings {
      *                saved message then asks to reload the page
      * - secret:      text only; true for an API token or key: the panel
      *                never shows the saved value (a password field that
-     *                says whether one is saved; a space removes it)
+     *                says whether one is saved; a space removes it, and
+     *                the admin JS saves nothing when it is left empty)
      * - label, description, placeholder, min, max, unit, tokens, rows: UI metadata
      *
      * Types also include `url` (one URL or site path), `lines` (one entry
