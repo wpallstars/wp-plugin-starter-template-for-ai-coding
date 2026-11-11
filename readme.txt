@@ -5,7 +5,7 @@ Tags: starter, boilerplate, settings, developer, template
 Requires at least: 6.2
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 1.0.57
+Stable tag: 1.0.58
 License: GPLv3 or later
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 
@@ -63,8 +63,8 @@ GitHub releases are the stable beta channel: each version comes out there first.
 
 == Changelog ==
 
-= 1.0.57 =
-* Developers: settings key `secret` for API tokens (a password field that never shows the saved value); release coordination and scripts/release-bump.sh; own blocks in the smoke test, issue template config and CONTRIBUTING.md; rename-plugin.sh writes the real repository visibility and the plugin's own opening.
+= 1.0.58 =
+* Developers: hooks are a contract with site code: docs/HOOKS.md lists every hook as supported or internal, supported hooks are deprecated for two minor releases before they go, and CI checks the list against the code (scripts/check-hooks.js).
 
 Every change: changelog.txt.
 
