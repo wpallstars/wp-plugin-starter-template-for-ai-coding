@@ -11,6 +11,9 @@
 #              compatibility (phpcs.xml.dist).
 #   phpstan    Static analysis (phpstan.neon.dist): no new findings beyond
 #              phpstan-baseline.neon.
+#   hooks      docs/HOOKS.md lists every {prefix}_* hook the code calls, and
+#              no supported hook has gone (scripts/check-hooks.js; skipped
+#              when there is no docs/HOOKS.md).
 #   build      Plugins with a JavaScript build (a "build" script in
 #              package.json): its "check" script (types, lint) if any, then a
 #              fresh build, which must match the built files in assets/build/.
@@ -25,7 +28,7 @@
 
 set -euo pipefail
 
-readonly ALL_CHECKS="php js shell workflows phpcs phpstan build"
+readonly ALL_CHECKS="php js shell workflows phpcs phpstan hooks build"
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 readonly ROOT
 # Built JavaScript and CSS that ship (release zips are made from Git, with
@@ -34,7 +37,7 @@ readonly BUILD_DIR="assets/build"
 FAILED=""
 
 usage() {
-	sed -n '2,20p' "$0" | sed 's/^# \{0,1\}//'
+	sed -n '2,23p' "$0" | sed 's/^# \{0,1\}//'
 	return 0
 }
 
@@ -105,6 +108,12 @@ check_phpcs() {
 check_phpstan() {
 	need_vendor phpstan || return 1
 	vendor/bin/phpstan analyse --memory-limit=4G --no-progress
+	return $?
+}
+
+# STANDARDS.md → Code rules: hooks are a contract with site code.
+check_hooks() {
+	node "$ROOT/scripts/check-hooks.js"
 	return $?
 }
 

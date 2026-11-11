@@ -161,6 +161,8 @@ Actions:
 - `wpstarter_setting_panel`: print status at the top of a setting’s options panel (setting key, schema entry); wrap it in `<div class="wps-panel-note">`. On the network screen, `wpstarter_network_setting_panel` fires instead, for notes about the whole network.
 - `wpstarter_settings_tab_after`: print a section after a settings tab’s cards (tab slug). On the network screen, `wpstarter_network_settings_tab_after` fires instead.
 
+`docs/HOOKS.md` lists every `wpstarter_*` hook with its arguments and whether site code may rely on it (supported: kept, or deprecated for two minor releases before it goes) or not (internal: may change).
+
 Read a setting with `WPStarter_Settings::get( 'key' )`, never the option itself: on multisite it includes the settings the network applies to every site. Code that runs before the plugin loads (a must-use file) reads the network option's `enforced` values (`wpstarter_network`: card => setting => value) over the site's own, as `WPStarter_Settings::all()` does.
 
 ## Uninstall
@@ -168,6 +170,10 @@ Read a setting with `WPStarter_Settings::get( 'key' )`, never the option itself:
 Deleting the plugin removes its settings (on multisite, every site's and the network's), its cached data, its problem reports (other plugins' and themes' stay), who hid lines of the Plugins screen notice about replaced plugins, and the cached GitHub releases.
 
 ## Changelog
+
+### Unreleased
+
+- Developers: hooks are a contract with site code (`STANDARDS.md` → Code rules). `docs/HOOKS.md` lists every `wpstarter_*` filter and action as supported (for site code) or internal (may change). A supported hook is kept, or kept working through `apply_filters_deprecated()` / `do_action_deprecated()`, for at least two minor releases before it goes. The new `scripts/check-hooks.js` (`scripts/lint.sh hooks`, run by CI) fails when the list and the code disagree. Plugins get the rule and the check with `scripts/sync-core.sh`, then copy the starter's `docs/HOOKS.md` and add their own hooks (GH#691).
 
 ### 1.0.57
 

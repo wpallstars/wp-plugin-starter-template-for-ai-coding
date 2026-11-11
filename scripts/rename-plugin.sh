@@ -260,7 +260,26 @@ Every change: changelog.txt."
 	set_section README.md "## Changelog" '^## ' "### $VERSION
 
 - $first"
+	set_hooks_since
 	set_launch
+	return 0
+}
+
+# docs/HOOKS.md: every hook the copy has came with its first version, so the
+# Since column (the fifth cell of each hook row) starts again with it.
+set_hooks_since() {
+	local file="docs/HOOKS.md"
+	[[ -f "$file" ]] || return 0
+	SINCE="$VERSION" awk '
+		BEGIN { since = ENVIRON["SINCE"] }
+		/^\| `/ && (n = split($0, cell, "|")) >= 7 {
+			line = cell[1]
+			for (i = 2; i <= n; i++) line = line "|" (i == 5 ? " " since " " : cell[i])
+			print line
+			next
+		}
+		{ print }' "$file" >"$TMP_FILE"
+	replace_with_tmp "$file" || true
 	return 0
 }
 
@@ -403,7 +422,8 @@ own. \`CLAUDE.md\` only points here.
 
 User docs: \`README.md\` (developers, and the Read Me tab) and \`readme.txt\`.
 Keep this file a short map: guidance for one kind of task goes in \`docs/\`
-(\`STANDARDS.md\` → Agent docs); there is none yet.
+(\`STANDARDS.md\` → Agent docs). Adding, changing or removing a
+\`${TO_PREFIX}_*\` hook: read \`docs/HOOKS.md\` first.
 
 ## What belongs here
 

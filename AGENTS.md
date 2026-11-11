@@ -32,7 +32,8 @@ own. `CLAUDE.md` only points here.
 
 User docs: `README.md` (developers, and the Read Me tab) and `readme.txt`.
 Keep this file a short map: guidance for one kind of task goes in `docs/`
-(`STANDARDS.md` → Agent docs); the starter has none yet.
+(`STANDARDS.md` → Agent docs). Adding, changing or removing a `wpstarter_*`
+hook: read `docs/HOOKS.md` first.
 
 ## What belongs here
 
