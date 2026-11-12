@@ -466,6 +466,16 @@ the usual checks) only for that issue shape, and only while the pull
 request changes nothing outside `scripts/core-files.txt` and
 `changelog.txt`; anything else waits for a person.
 
+So that aidevops merges those pull requests by itself even when they add
+a new core file or change the plugin's own files (step 4), set the
+secret `STARTER_SYNC_TOKEN` (an organization secret covers every plugin):
+a fine-grained personal access token of a maintainer, with **Issues: Read
+and write** on the plugin repositories and nothing else. The workflow
+then writes the issue as that maintainer, so aidevops treats it as the
+maintainer's brief. The workflow runs only on its schedule and
+**Run workflow**, never on pull requests or comments, so no outside code
+can use the token. Without the secret it uses its own token as before.
+
 To sync by hand, with the starter cloned next to the plugin (the issue
 gives its folder name):
 

@@ -72,7 +72,12 @@ jobs:
         if: steps.starter.outputs.skip == 'false'
         working-directory: plugin
         env:
-          GH_TOKEN: ${{ github.token }}
+          # STARTER_SYNC_TOKEN (optional secret): a maintainer's fine-grained
+          # token with Issues read and write. The issue's author is then the
+          # maintainer, so aidevops merges a worker's pull request for it
+          # after the usual checks, whatever plugin files step 4 needed.
+          # Without it the issue comes from github-actions[bot].
+          GH_TOKEN: ${{ secrets.STARTER_SYNC_TOKEN || github.token }}
           STARTER_REPO: ${{ steps.starter.outputs.repo }}
           # The issue is a worker-ready brief: aidevops Pulse dispatches it
           # to a worker by this label. The repository variable
