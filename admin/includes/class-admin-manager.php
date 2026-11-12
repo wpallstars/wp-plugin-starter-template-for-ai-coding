@@ -417,6 +417,7 @@ class WPStarter_Admin_Manager {
                 'saving'      => __('Saving…', 'wp-plugin-starter-template'),
                 'saved'       => __('Saved', 'wp-plugin-starter-template'),
                 'saveFailed'  => __('Could not save. Please try again.', 'wp-plugin-starter-template'),
+                'secretSaved' => __('Saved (hidden). Type a new one to replace it, or a space to remove it.', 'wp-plugin-starter-template'),
                 'chooseImage' => __('Choose a picture', 'wp-plugin-starter-template'),
                 'useImage'    => __('Use this picture', 'wp-plugin-starter-template'),
                 'copyConfirm' => __('Copy these settings into every site’s own settings? Each site can change them again afterwards, unless they are applied to every site.', 'wp-plugin-starter-template'),

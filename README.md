@@ -173,6 +173,7 @@ Deleting the plugin removes its settings (on multisite, every site's and the net
 
 ### Unreleased
 
+- Fix: a secret settings field shows the right placeholder after an AJAX save: "Saved (hidden)…" after saving one, the field's own placeholder after removing it with a space, and a save still pending never replaces text typed since. Plugins get it with `scripts/sync-core.sh` (GH#716).
 - Developers: `scripts/lint.sh changelog` allows a release PR's renamed heading only for lines under that heading, not anywhere in the file, and reads headings from HEAD to match the diff. The Starter sync issue's Files Scope lists the plugin's own files step 4 may change. Plugins get the lint change with `scripts/sync-core.sh` (GH#715).
 
 ### 1.0.62
