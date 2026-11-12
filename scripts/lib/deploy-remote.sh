@@ -293,8 +293,7 @@ active_check() {
 }
 
 # Even when the command fails, check for damage before stopping the install.
-# Sets GUARD_ACTIVE_OK:
-# GUARD_ACTIVE_OK (1 only when the activation lists were checked and are as
+# Sets GUARD_ACTIVE_OK (1 only when the activation lists were checked and are as
 # they should be; a retry is safe only then).
 active_guard() {
 	local root="$1" add="$2" remove="$3"
