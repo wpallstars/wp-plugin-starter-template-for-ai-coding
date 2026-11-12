@@ -193,12 +193,15 @@
 			} else if ($input.is(':checkbox')) {
 				$input.data('wps-saved', saved ? '1' : '0');
 			} else if ($input.is('input[type="password"][data-wps-empty-placeholder]')) {
-				// A secret field: change it only if untouched since this save
-				// started. The stored value decides: a space (or only spaces)
-				// is stored as nothing, which removes the secret.
+				// A secret field: the placeholder always says what the server
+				// stored, even when the field was cleared during the save
+				// (clearing starts no save). The stored value decides: a space
+				// (or only spaces) is stored as nothing, which removes the
+				// secret. The field is emptied only if untouched since this
+				// save started, so newer typing is kept.
+				var removed = saved === undefined || saved === null || String(saved) === '';
+				$input.attr('placeholder', removed ? $input.attr('data-wps-empty-placeholder') : i18n.secretSaved);
 				if ($input.val() === value) {
-					var removed = saved === undefined || saved === null || String(saved) === '';
-					$input.attr('placeholder', removed ? $input.attr('data-wps-empty-placeholder') : i18n.secretSaved);
 					$input.val('');
 				}
 			} else if (saved !== undefined && String(saved) !== String($input.val())) {

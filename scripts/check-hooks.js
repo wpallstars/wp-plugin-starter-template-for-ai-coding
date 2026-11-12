@@ -161,8 +161,10 @@ function joinedRest(text, from) {
 
 // The hooks called in PHP (working tree, as committed or not): live names,
 // names only called through a _deprecated function, and run-time patterns
-// ({ match, kinds, loose, label }); deprecatedPatterns holds the run-time
-// patterns called through a _deprecated function. kinds: name => Set of
+// ({ match, kinds, loose, label }); deprecatedPatterns holds the precise
+// run-time patterns called through a _deprecated function: a loose one fits
+// every name with its first literal, so it proves no hook's deprecation in
+// the release check (GH#758). kinds: name => Set of
 // "filter"/"action", as the code calls it. A joined name is read to the end
 // of its argument, so 'p_' . $s . '_label' and 'p_' . $s . '_saved' are two
 // patterns; one whose rest cannot be read is loose: it fits every name that
@@ -185,7 +187,7 @@ function hooksIn(text) {
 				found.patterns.set(key, { match: namePattern(loose ? name : key, loose), kinds: new Set(), loose, label: loose ? `${name}…` : key });
 			}
 			found.patterns.get(key).kinds.add(kind);
-			if (m[2] === '_deprecated') {
+			if (m[2] === '_deprecated' && !loose) {
 				found.deprecatedPatterns.push(found.patterns.get(key).match);
 			}
 			continue;
