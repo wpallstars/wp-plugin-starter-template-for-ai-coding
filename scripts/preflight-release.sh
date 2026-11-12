@@ -219,9 +219,9 @@ check_versions() {
 
 	local version constant stable
 	version="$(field "$plugin_header" "Version")"
-	# A here-string, not a pipe: sed quitting at the first match would end
-	# printf with SIGPIPE on a large file (pipefail, set -e).
-	constant="$(sed -nE "/define\([[:space:]]*['\"]${VERSION_CONSTANT}['\"]/{s/.*,[[:space:]]*['\"]([^'\"]+)['\"].*/\1/p;q;}" <<<"$main_php")"
+	# The define may be spread over lines (plugin_version_define).
+	constant="$(plugin_version_define "$main_php" "$PLUGIN_CONST")"
+	constant="${constant#*$'\t'}"
 	stable="$(field "$readme" "Stable tag")"
 
 	if grep -Eq '^[0-9]+\.[0-9]+(\.[0-9]+)?$' <<<"$version"; then

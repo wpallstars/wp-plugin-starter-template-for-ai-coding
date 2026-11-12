@@ -232,18 +232,9 @@ set_version() {
 		set_field "$file" "Version" "$VERSION"
 	done
 	set_field readme.txt "Stable tag" "$VERSION"
-	# The define() forms scripts/lib/plugin.sh reads: either quote, spaces
-	# allowed. What follows the old value (its quote, ");", a comment) stays.
-	if CONST="${TO_CONST}_VERSION" VALUE="$VERSION" awk '
-		!done && match($0, "^[ \t]*define\\([ \t]*[\047\"]" ENVIRON["CONST"] "[\047\"][ \t]*,[ \t]*[\047\"]") {
-			done = 1
-			quote = substr($0, RLENGTH, 1)
-			rest = substr($0, RLENGTH + 1)
-			print substr($0, 1, RLENGTH) ENVIRON["VALUE"] substr(rest, index(rest, quote))
-			next
-		}
-		{ print }
-		END { if (!done) exit 3 }' "$main_file" >"$TMP_FILE"; then
+	# The define scripts/lib/plugin.sh reads, on one line or over several:
+	# only its value changes.
+	if plugin_version_set "$main_file" "$TO_CONST" "$VERSION" >"$TMP_FILE"; then
 		replace_with_tmp "$main_file" || true
 	else
 		printf 'rename-plugin: no define of %s_VERSION in %s; set it to %s by hand\n' "$TO_CONST" "$main_file" "$VERSION" >&2

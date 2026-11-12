@@ -67,6 +67,85 @@ plugin_header_field() {
 	return 0
 }
 
+# The main file's define('<CONST>_VERSION', 'X.Y.Z'), however it is spread
+# over lines, as scripts/check-hooks.js reads it: the first one outside PHP
+# comments (//, # and /* */, with strings skipped), after a character that
+# cannot end a name. awk variables: want (CONST, or empty for any), mode
+# (get: print "CONST<TAB>VALUE", VALUE empty when it is not a quoted string;
+# set: print the text with VALUE replaced by ver, exit 3 when there is none).
+# Comments are blanked to spaces, so offsets in the code are the text's.
+# shellcheck disable=SC2016 # awk program, not shell
+PLUGIN_VERSION_AWK='
+function spaces(n,   s) { s = ""; while (n-- > 0) s = s " "; return s }
+# The line with its comments blanked; st carries a block comment or a
+# string across lines.
+function code_of(line,   out, i, n, c, j) {
+	out = ""; n = length(line); i = 1
+	while (i <= n) {
+		c = substr(line, i, 1)
+		if (st == "block") {
+			j = index(substr(line, i), "*/")
+			if (j == 0) { out = out spaces(n - i + 1); break }
+			out = out spaces(j + 1); i += j + 1; st = ""; continue
+		}
+		if (st == "q") {
+			out = out c
+			if (c == "\\" && i < n) { out = out substr(line, i + 1, 1); i += 2; continue }
+			if (c == quote) st = ""
+			i++; continue
+		}
+		if (c == "\047" || c == "\"") { st = "q"; quote = c; out = out c; i++; continue }
+		if (c == "#" && substr(line, i + 1, 1) != "[" || c == "/" && substr(line, i + 1, 1) == "/") {
+			out = out spaces(n - i + 1); break
+		}
+		if (c == "/" && substr(line, i + 1, 1) == "*") { st = "block"; out = out "  "; i += 2; continue }
+		out = out c; i++
+	}
+	return out
+}
+{ text = text $0 "\n"; code = code code_of($0) "\n" }
+END {
+	name = (want == "") ? "[A-Z0-9_]+" : want
+	pat = "define[[:space:]]*[(][[:space:]]*[\047\"]" name "_VERSION[\047\"]"
+	pos = 0; found = 0
+	while (match(substr(code, pos + 1), pat)) {
+		at = pos + RSTART; len = RLENGTH
+		if (at == 1 || substr(code, at - 1, 1) !~ /[A-Za-z0-9_$>:\\]/) { found = 1; break }
+		pos = at
+	}
+	if (!found) { if (mode == "set") exit 3; exit 0 }
+	m = substr(code, at, len)
+	match(m, /[\047"][A-Z0-9_]+_VERSION/)
+	const = substr(m, RSTART + 1, RLENGTH - 9)
+	value = ""; vstart = 0
+	rest = substr(code, at + len)
+	if (match(rest, /^[[:space:]]*,[[:space:]]*[\047"]/)) {
+		q = substr(rest, RLENGTH, 1)
+		vstart = at + len + RLENGTH
+		vlen = index(substr(text, vstart), q) - 1
+		if (vlen >= 0) value = substr(text, vstart, vlen); else vstart = 0
+	}
+	if (mode != "set") { printf "%s\t%s\n", const, value; exit 0 }
+	if (!vstart) exit 3
+	printf "%s", substr(text, 1, vstart - 1) ver substr(text, vstart + vlen)
+}'
+
+# "CONST<TAB>VALUE" of the version define in the PHP text $1 (the first
+# one, or the one for CONST $2); nothing when there is none.
+plugin_version_define() {
+	local text="$1" want="${2:-}"
+	awk -v want="$want" -v mode=get -v ver="" "$PLUGIN_VERSION_AWK" <<<"$text"
+	return 0
+}
+
+# The PHP file $1 with the value of its define('$2_VERSION', ...) set to $3,
+# on stdout; returns 1 when it has no such define with a quoted value.
+plugin_version_set() {
+	local file="$1" const="$2" version="$3"
+	awk -v want="$const" -v mode=set -v ver="$version" "$PLUGIN_VERSION_AWK" "$file" || return 1
+	return 0
+}
+
 plugin_identity() {
 	local ref="${1:-HEAD}"
 	local file text found=""
@@ -97,7 +176,8 @@ plugin_identity() {
 	# Here-strings, not pipes: sed quitting at the first match would end
 	# printf with SIGPIPE on a large file (pipefail).
 	PLUGIN_PACKAGE="$(sed -nE '/^[[:space:]*]*@package[[:space:]]+[A-Za-z0-9_]+/{s/^[[:space:]*]*@package[[:space:]]+([A-Za-z0-9_]+).*/\1/p;q;}' <<<"$text")"
-	PLUGIN_CONST="$(sed -nE "/define\([[:space:]]*['\"][A-Z0-9_]+_VERSION['\"]/{s/.*define\([[:space:]]*['\"]([A-Z0-9_]+)_VERSION['\"].*/\1/p;q;}" <<<"$text")"
+	PLUGIN_CONST="$(plugin_version_define "$text")"
+	PLUGIN_CONST="${PLUGIN_CONST%%$'\t'*}"
 	if [[ -z "$PLUGIN_PACKAGE" ]]; then
 		printf 'plugin: %s has no @package tag (the class prefix)\n' "$found" >&2
 		return 1
