@@ -171,6 +171,10 @@ Deleting the plugin removes its settings (on multisite, every site's and the net
 
 ## Changelog
 
+### Unreleased
+
+- Developers: `scripts/deploy-sites.sh` no longer retries a site's load check when the activation lists failed their check after a bare SIGKILL, so the install stays FAIL as the restore message says (since 1.0.61 the retry ran). Its cron listing retry after a bare SIGKILL now tests WP-CLI's own stderr, so a listing killed after printing a hook is retried too. Plugins get it with `scripts/sync-core.sh` (GH#718).
+
 ### 1.0.61
 
 - Developers: the minified `.min` copies in release builds start with their file's opening comment (licence, copyright and Provenance lines), which `ATTRIBUTION.txt` asks every copy to keep; the minifier had dropped it. `scripts/preflight-release.sh` fails a `.min` copy without its file's Provenance line. Plugins get it with `scripts/sync-core.sh` (GH#711).
