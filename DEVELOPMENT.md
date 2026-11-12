@@ -432,6 +432,20 @@ install while the account runs too many processes, set
 counts more; unset means no wait). Set both settings on the computer that runs
 `scripts/deploy-sites.sh`; it passes them to the host.
 
+When the retry of a site's load check or cron list is killed too (with the
+activation lists intact and nothing else wrong with the site), the site is
+not failed: its install line waits for a recheck at the end of the run. The
+recheck starts `DEPLOY_LOAD_RETRY_DELAY` seconds after the last install, and
+each held-back install waits for `DEPLOY_MAX_ACCOUNT_PROCS` first; then the
+killed step runs once more, with its own retry (the load also runs the
+page-cache purge and the cron events). A pass gives
+`WARN rechecked after host kill (137)`. Killed again, the site is
+`UNVERIFIED: host killed WP-CLI (137) twice`, with a `recheck:` line (the
+same guarded load, by hand) and no restore command, and the run exits 4 when
+nothing failed. Any other failure, in the first pass or the recheck, is still
+a FAIL with the restore command (exit 1). The held-back install's Cloudflare
+purge waits for the recheck too, so it follows the page-cache purge.
+
 Every `ssh` the script runs sends a keep-alive every 30 seconds
 (`ServerAliveInterval=30`, `ServerAliveCountMax=4`, over `~/.ssh/config`), so a
 connection that dies without a close fails in about 2 minutes instead of

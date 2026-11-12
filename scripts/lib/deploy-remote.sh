@@ -77,6 +77,17 @@ HOME_RETRY_DELAY="${DEPLOY_HOME_RETRY_DELAY:-5}"
 # limit; the limit clears in tens of seconds, so the load check waits longer.
 LOAD_RETRY_DELAY="${DEPLOY_LOAD_RETRY_DELAY:-30}"
 [[ "$LOAD_RETRY_DELAY" =~ ^[0-9]+$ ]] || LOAD_RETRY_DELAY=30
+readonly CRON_LIST_FAILED="cron list failed; "
+# A site whose load check or cron list the host killed (137) on its retry
+# too, with nothing else wrong, is not a FAIL: it is checked again at the
+# end of the run, and stays UNVERIFIED (exit 4, no restore) if killed again.
+readonly KILLED_TEXT="host killed WP-CLI (137) twice"
+readonly RECHECKED_TEXT="rechecked after host kill (137)"
+# Installs held back for that recheck: install_state of each.
+DEFERRED=()
+INSTALLS_OK=0
+INSTALLS_UNVERIFIED=0
+UNVERIFIED_SITES=0
 SKIPS=()
 LOG_FILES=()
 LOG_BEFORE=()
@@ -766,15 +777,17 @@ cron_lone_oneoffs() {
 # no limit); one that times out is a warning, not a failure. A single event
 # the site's own cron ran between the list and its run here (WP-CLI: Invalid
 # cron event) is a note, not a failure, and not counted as run here (GH#1369).
-# Sets CRON_RUN, CRON_TOTAL, CRON_FAILURE and CRON_WARN for the site.
+# Sets CRON_RUN, CRON_TOTAL, CRON_FAILURE and CRON_WARN for the site, and
+# CRON_LIST_KILLED to 1 when the list was killed (137, nothing on stderr) on
+# its retry too: then CRON_FAILURE is just CRON_LIST_FAILED.
 run_site_cron() {
 	local root="$1"
 	shift
 	local hooks hook out status limit="${DEPLOY_CRON_TIMEOUT:-120}" detail
 	local cmd=()
-	CRON_RUN=0 CRON_TOTAL=0 CRON_FAILURE="" CRON_WARN=""
+	CRON_RUN=0 CRON_TOTAL=0 CRON_FAILURE="" CRON_WARN="" CRON_LIST_KILLED=0
 	[[ "$limit" =~ ^[0-9]+$ ]] || limit=120
-	local list_code list_out list_err list_status=0 retried="" list_failed="cron list failed; "
+	local list_code list_out list_err list_status=0 retried="" list_failed="$CRON_LIST_FAILED"
 	list_code="$(cron_list_code)"
 	list_out="$(mktemp)" || {
 		CRON_FAILURE="$list_failed"
@@ -801,6 +814,9 @@ run_site_cron() {
 		[[ ! -s "$list_err" ]] || cat "$list_err" >&2
 		rm -f "$list_err"
 		CRON_FAILURE="$list_failed"
+		# Killed again, as bare as the first time: the host's limit, not the
+		# plugin (GH#750).
+		[[ -z "$retried" || "$list_status" -ne 137 || "$WP_STDERR_EMPTY" -ne 1 ]] || CRON_LIST_KILLED=1
 		return 0
 	fi
 	rm -f "$list_err"
@@ -1012,7 +1028,7 @@ cron_step() {
 		run_site_cron "$root" "$@"
 		active_check "$root" "$cron_before" "" "" || CRON_FAILURE+="activation lists changed during cron; "
 	else
-		CRON_RUN=0 CRON_TOTAL=0 CRON_WARN=""
+		CRON_RUN=0 CRON_TOTAL=0 CRON_WARN="" CRON_LIST_KILLED=0
 		CRON_FAILURE="cron skipped: activation snapshot failed; "
 	fi
 	CRON_SUM_RUN=$((CRON_SUM_RUN + CRON_RUN))
@@ -1086,59 +1102,147 @@ load_check() {
 	return 0
 }
 
+# The plugin's own scheduled events on one site, after a good load (cron_step).
+# Adds to STEP_REASON and STEP_WARN; sets STEP_CRON (cron=N/M) and STEP_KILLED
+# to cron when only the cron list was killed twice (GH#750).
+site_cron() {
+	local root="$1"
+	shift
+	cron_step "$root" "$@"
+	STEP_CRON="cron=${CRON_RUN}/${CRON_TOTAL}"
+	if [[ "$CRON_LIST_KILLED" -eq 1 && "$CRON_FAILURE" == "$CRON_LIST_FAILED" ]]; then
+		STEP_KILLED="cron"
+	else
+		STEP_REASON+="$CRON_FAILURE"
+	fi
+	if [[ -n "$CRON_WARN" ]]; then
+		STEP_WARN+="$CRON_WARN"
+		CRON_WARNED+="$CRON_WARN"
+	fi
+	return 0
+}
+
+# The guarded full load of one site (load_check), then, after a good load, the
+# plugin's own scheduled events (site_cron): $1 root, $2 stderr file, rest
+# WP-CLI args. Sets STEP_REASON (failures, with "; "), STEP_WARN (with ", "),
+# STEP_PURGED, STEP_CRON, STEP_LOAD_RETRIED and STEP_KILLED (load when the
+# load was killed twice with the activation lists intact, cron as above, else
+# empty), and adds to SITES_PURGED and PURGE_FAILED.
+site_load() {
+	local root="$1" errors="$2"
+	shift 2
+	local summary
+	STEP_REASON="" STEP_WARN="" STEP_PURGED="no" STEP_CRON="cron=0/0" STEP_LOAD_RETRIED="" STEP_KILLED=""
+	CRON_RUN=0 CRON_TOTAL=0
+	load_check "$root" "$errors" "$@"
+	if [[ "$LOAD_STATUS" -eq 0 ]]; then
+		STEP_LOAD_RETRIED="$LOAD_RETRIED"
+		[[ -z "$LOAD_RETRIED" ]] || STEP_WARN+="load retried ($LOAD_RETRIED), "
+		case "$LOAD_OUT" in
+		*purged=yes*)
+			STEP_PURGED="yes"
+			SITES_PURGED=$((SITES_PURGED + 1))
+			;;
+		*purged=failed*)
+			STEP_PURGED="failed" STEP_WARN+="purge failed, "
+			PURGE_FAILED=$((PURGE_FAILED + 1))
+			;;
+		*) ;;
+		esac
+		# A cron callback must not change the activation lists either.
+		site_cron "$root" "$@"
+	elif [[ "$LOAD_STATUS" -eq 137 && "$LOAD_RETRIED" == 137 && "$GUARD_ACTIVE_OK" -eq 1 ]]; then
+		# Killed on the retry too, activation lists intact both times: the
+		# host's process or memory limit, not the release (GH#750).
+		STEP_KILLED="load"
+	else
+		# Keep the full diagnostics on stderr, but one short, printable
+		# line on the report (also when WP-CLI itself printed no error).
+		summary="$(tail -n 3 "$errors" | LC_ALL=C tr '\t\r\n' '   ' | LC_ALL=C tr -cd '[:print:]')"
+		STEP_REASON="WordPress load failed (exit $LOAD_STATUS"
+		[[ -z "$summary" ]] || STEP_REASON+=": ${summary:0:300}"
+		STEP_REASON+="); "
+	fi
+	return 0
+}
+
+# The FAIL reason for a killed step ($1: load or cron) on a site that also
+# failed another check: then it is a FAIL like before, not UNVERIFIED.
+killed_reason() {
+	local killed="$1"
+	if [[ "$killed" == load ]]; then
+		printf 'WordPress load failed (exit 137); '
+	else
+		printf '%s' "$CRON_LIST_FAILED"
+	fi
+	return 0
+}
+
+# A site's result for a step killed twice ($1: load or cron).
+killed_result() {
+	local killed="$1"
+	printf 'UNVERIFIED: %s' "$KILLED_TEXT"
+	[[ "$killed" != cron ]] || printf ' (cron list)'
+	return 0
+}
+
+# A result with warnings ($1, each ending in ", ").
+warn_result() {
+	local warn="$1"
+	printf 'WARN %s' "${warn%, }"
+	return 0
+}
+
+# One network site row into ROW: $1 url, $2 status, $3 purged, $4 cron note,
+# $5 home, $6 cache, $7 result.
+site_row() {
+	local url="$1" status="$2" purged="$3" cron_note="$4" home="$5" cache="$6" result="$7"
+	printf -v ROW '    site %s\tstatus=%s\tpurged=%s\t%s\thome=%s\tcache=%s\t%s\n' "$url" "${status:-?}" "$purged" "$cron_note" "$home" "$cache" "$result"
+	return 0
+}
+
+# The fields of one unverified site, for the recheck and its recheck hint,
+# separated by the unit separator (none of them holds one): killed step, url,
+# status, home, cache, purged, cron note, the site's warnings so far.
+unverified_record() {
+	local killed="$1" url="$2" status="$3" home="$4" cache="$5" purged="$6" cron_note="$7" warn="$8"
+	local sep=$'\x1f'
+	printf '%s' "$killed$sep$url$sep$status$sep$home$sep$cache$sep$purged$sep$cron_note$sep$warn"
+	return 0
+}
+
 # Called directly: counters, the main row and network lines are results.
+# A site that only had a step killed twice (STEP_KILLED) is UNVERIFIED, not
+# FAIL: it adds to SITES_UNVERIFIED and UNV_RECORDS (one unverified_record a
+# line), for recheck_install.
 check_sites() {
 	local root="$1"
-	local kind urls url status result reason warn load purged line network=0
-	local load_errors load_status load_retried summary first_code cron_note cron_before
+	local kind urls url status result reason warn web_warn purged network=0
+	local load_errors first_code cron_note killed home
 	local check_error="home check failed; "
 	local url_args=() origin
 	CDN_URLS="" MAIN_CF=""
 	SITES_TOTAL=0 SITES_FAILED=0 SITES_PURGED=0 PURGE_FAILED=0 SITE_LINES=""
+	SITES_UNVERIFIED=0 UNV_RECORDS="" NETWORK=0
 	CRON_SUM_RUN=0 CRON_SUM_TOTAL=0 CRON_WARNED="" CRON_HOOKS_RUN=""
 	MAIN_STATUS="?" MAIN_CODE="000" MAIN_CACHE="none" MAIN_REASON="" MAIN_RETRIED="" MAIN_LOAD_RETRIED=""
+	MAIN_UNVERIFIED="" MAIN_RECHECKED=""
 	kind="$(wp_bare "$root" eval 'echo is_multisite() ? "multisite" : "single";')" || return 1
 	case "$kind" in
 	multisite) network=1 ;;
 	single) ;;
 	*) return 1 ;;
 	esac
+	NETWORK="$network"
 	urls="$(site_urls "$root" "$kind")" || return 1
 	load_errors="$(mktemp)" || return 1
 	while IFS= read -r url; do
 		[[ -n "$url" ]] || continue
 		SITES_TOTAL=$((SITES_TOTAL + 1))
 		[[ "$network" -eq 0 ]] || url_args=(--url="$url")
-		reason="" warn="" result="ok" purged="no" cron_note="cron=0/0"
-		load_check "$root" "$load_errors" ${url_args[@]+"${url_args[@]}"}
-		load="$LOAD_OUT" load_status="$LOAD_STATUS" load_retried="$LOAD_RETRIED"
-		if [[ "$load_status" -eq 0 ]]; then
-			[[ -z "$load_retried" ]] || warn+="load retried ($load_retried), "
-			case "$load" in
-			*purged=yes*) purged="yes" SITES_PURGED=$((SITES_PURGED + 1)) ;;
-			*purged=failed*)
-				purged="failed" warn+="purge failed, "
-				PURGE_FAILED=$((PURGE_FAILED + 1))
-				;;
-			*) ;;
-			esac
-			# The plugin's own scheduled events, once, after a good load.
-			# A cron callback must not change the activation lists either.
-			cron_step "$root" ${url_args[@]+"${url_args[@]}"}
-			cron_note="cron=${CRON_RUN}/${CRON_TOTAL}"
-			[[ -z "$CRON_FAILURE" ]] || reason+="$CRON_FAILURE"
-			[[ -z "$CRON_WARN" ]] || {
-				warn+="$CRON_WARN"
-				CRON_WARNED+="$CRON_WARN"
-			}
-		else
-			# Keep the full diagnostics on stderr, but one short, printable
-			# line on the report (also when WP-CLI itself printed no error).
-			summary="$(tail -n 3 "$load_errors" | LC_ALL=C tr '\t\r\n' '   ' | LC_ALL=C tr -cd '[:print:]')"
-			reason="WordPress load failed (exit $load_status"
-			[[ -z "$summary" ]] || reason+=": ${summary:0:300}"
-			reason+="); "
-		fi
+		result="ok" web_warn=""
+		site_load "$root" "$load_errors" ${url_args[@]+"${url_args[@]}"}
+		reason="$STEP_REASON" warn="$STEP_WARN" purged="$STEP_PURGED" cron_note="$STEP_CRON" killed="$STEP_KILLED"
 		cat "$load_errors" >&2
 		if ! status="$(wp_bare "$root" ${url_args[@]+"${url_args[@]}"} plugin list --name="$SLUG" --field=status)" || [[ -z "$status" ]]; then
 			reason+="status read failed; "
@@ -1159,24 +1263,32 @@ check_sites() {
 		if [[ "$HOME_CODE" == 5* || "$HOME_CODE" == "000" ]]; then
 			reason+="home failed${first_code:+ ($first_code, then $HOME_CODE)}; "
 		elif [[ -n "$first_code" ]]; then
-			warn+="home retried ($first_code), "
+			web_warn+="home retried ($first_code), "
 		fi
-		[[ "$HOME_CACHE" != *hit* || "$HOME_CACHE" == redirected:* ]] || warn+="cached, "
+		[[ "$HOME_CACHE" != *hit* || "$HOME_CACHE" == redirected:* ]] || web_warn+="cached, "
 		cdn_step "$url"
-		warn+="$CDN_WARN"
+		web_warn+="$CDN_WARN"
+		warn+="$web_warn"
+		home="${HOME_CODE}${HOME_PINNED:+ pinned}"
 		if [[ -n "$reason" ]]; then
+			[[ -z "$killed" ]] || reason="$(killed_reason "$killed")$reason"
 			result="FAIL: ${reason%; }"
 			SITES_FAILED=$((SITES_FAILED + 1))
+		elif [[ -n "$killed" ]]; then
+			result="$(killed_result "$killed")"
+			SITES_UNVERIFIED=$((SITES_UNVERIFIED + 1))
+			UNV_RECORDS+="$(unverified_record "$killed" "$url" "$status" "$home" "$HOME_CACHE" "$purged" "$cron_note" "$warn")"$'\n'
 		elif [[ -n "$warn" ]]; then
-			result="WARN ${warn%, }"
+			result="$(warn_result "$warn")"
 		fi
 		if [[ "$SITES_TOTAL" -eq 1 ]]; then
-			MAIN_STATUS="$status" MAIN_CODE="${HOME_CODE}${HOME_PINNED:+ pinned}" MAIN_CACHE="$HOME_CACHE"
-			MAIN_REASON="${reason%; }" MAIN_RETRIED="$first_code" MAIN_LOAD_RETRIED="$load_retried"
+			MAIN_STATUS="$status" MAIN_CODE="$home" MAIN_CACHE="$HOME_CACHE"
+			MAIN_REASON="${reason%; }" MAIN_RETRIED="$first_code" MAIN_LOAD_RETRIED="$STEP_LOAD_RETRIED"
+			[[ "$result" != UNVERIFIED* ]] || MAIN_UNVERIFIED="${result#UNVERIFIED: }"
 		fi
 		if [[ "$network" -eq 1 ]]; then
-			printf -v line '    site %s\tstatus=%s\tpurged=%s\t%s\thome=%s\tcache=%s\t%s\n' "$url" "${status:-?}" "$purged" "$cron_note" "${HOME_CODE}${HOME_PINNED:+ pinned}" "$HOME_CACHE" "$result"
-			SITE_LINES+="$line"
+			site_row "$url" "$status" "$purged" "$cron_note" "$home" "$HOME_CACHE" "$result"
+			SITE_LINES+="$ROW"
 		fi
 	done <<<"$urls"
 	rm -f "$load_errors"
@@ -1283,8 +1395,7 @@ apply_one() {
 	local backups="$5"
 	local plugins="$root/wp-content/plugins"
 	local main="$plugins/$SLUG/$SLUG.php"
-	local before after backup new_lines result="ok" warn=""
-	local log_fail=1
+	local before backup
 	local comparison=0
 
 	before="$(plugin_version "$main")"
@@ -1332,13 +1443,41 @@ apply_one() {
 		return 0
 	fi
 
-	after="$(plugin_version "$main")"
+	R_ROOT="$root" R_NAME="$name" R_BEFORE="$before" R_WANT="$want" R_BACKUP="$backup" R_PLUGINS="$plugins"
+	R_AFTER="$(plugin_version "$main")"
 	classify_new_log
-	new_lines="$LOG_NEW_LINES"
-	warn+="$LOG_WARN"
-	log_fail="$LOG_FAIL"
+	R_NEW_LINES="$LOG_NEW_LINES" R_LOG_WARN="$LOG_WARN" R_LOG_FAIL="$LOG_FAIL" R_LOG_TEXT=""
+	# Read now: the next install's log_files replaces the log list.
+	[[ "$R_NEW_LINES" -eq 0 ]] || R_LOG_TEXT="$(new_log_text)"
+	# Nothing failed, but the host killed a check twice: report it after
+	# the recheck at the end of the run (GH#750). Its Cloudflare purge (the
+	# @cdn lines) waits too, so it follows the recheck's page-cache purge.
+	if [[ "$SITES_UNVERIFIED" -gt 0 ]] && ! install_failed; then
+		DEFERRED+=("$(install_state)")
+		printf '    %s: %s on %s site(s); rechecked at the end of the run\n' "$name" "$KILLED_TEXT" "$SITES_UNVERIFIED"
+		return 0
+	fi
+	install_report
+	return 0
+}
 
+# Whether the install in the R_* and check_sites results failed: a version
+# not reached, new log lines that count or a failed site.
+install_failed() {
+	if [[ "$R_AFTER" != "$R_WANT" || ("$R_NEW_LINES" -gt 0 && "$R_LOG_FAIL" -eq 1) || "$SITES_FAILED" -gt 0 ]]; then
+		return 0
+	fi
+	return 1
+}
+
+# The install line from the R_* and check_sites results, then its site rows,
+# recheck hints, new log lines and restore command. FAIL (exit 1) beats
+# UNVERIFIED (exit 4, no restore), which beats WARN and ok.
+install_report() {
+	local result="ok" warn="" record
 	# Single sites have no site row on which to show these warnings.
+	[[ -z "$MAIN_RECHECKED" || -n "$SITE_LINES" ]] || warn+="$MAIN_RECHECKED, "
+	warn+="$R_LOG_WARN"
 	[[ "$PURGE_FAILED" -eq 0 ]] || warn+="purge failed, "
 	[[ -z "$CRON_WARNED" || -n "$SITE_LINES" ]] || warn+="$CRON_WARNED"
 	[[ "$MAIN_CACHE" != *hit* || "$MAIN_CACHE" == redirected:* ]] || warn+="cached, "
@@ -1346,29 +1485,144 @@ apply_one() {
 	[[ -z "$MAIN_RETRIED" ]] || warn+="home retried ($MAIN_RETRIED), "
 	# A network's site rows carry this warning; a single site has no row.
 	[[ -z "$MAIN_CF" || -n "$SITE_LINES" ]] || warn+="$(cf_warning "$MAIN_CF"), "
-	if [[ "$after" != "$want" || ("$new_lines" -gt 0 && "$log_fail" -eq 1) || "$SITES_FAILED" -gt 0 ]]; then
+	if install_failed; then
 		result="FAIL"
 		if [[ -z "$SITE_LINES" && -n "$MAIN_REASON" ]]; then
 			result+=": $MAIN_REASON"
+		elif [[ -z "$SITE_LINES" && -n "$MAIN_UNVERIFIED" ]]; then
+			result+=": $MAIN_UNVERIFIED"
 		fi
 		FAILED=1
-	elif [[ -n "$warn" ]]; then
-		result="WARN ${warn%, }"
+	elif [[ "$SITES_UNVERIFIED" -gt 0 ]]; then
+		result="UNVERIFIED"
+		[[ -n "$SITE_LINES" || -z "$MAIN_UNVERIFIED" ]] || result+=": $MAIN_UNVERIFIED"
+		INSTALLS_UNVERIFIED=$((INSTALLS_UNVERIFIED + 1))
+	else
+		[[ -z "$warn" ]] || result="$(warn_result "$warn")"
+		INSTALLS_OK=$((INSTALLS_OK + 1))
 	fi
+	UNVERIFIED_SITES=$((UNVERIFIED_SITES + SITES_UNVERIFIED))
 	cdn_announce
 	printf '%s\t%s -> %s\tstatus=%s\tpurged=%s/%s\tcron=%s/%s\thome=%s\tcache=%s\tcdn=%s\tnew_log_lines=%s' \
-		"$name" "${before:-?}" "${after:-?}" "$MAIN_STATUS" "$SITES_PURGED" "$SITES_TOTAL" "$CRON_SUM_RUN" "$CRON_SUM_TOTAL" "$MAIN_CODE" "$MAIN_CACHE" "$CDN_FIELD" "$new_lines"
+		"$R_NAME" "${R_BEFORE:-?}" "${R_AFTER:-?}" "$MAIN_STATUS" "$SITES_PURGED" "$SITES_TOTAL" "$CRON_SUM_RUN" "$CRON_SUM_TOTAL" "$MAIN_CODE" "$MAIN_CACHE" "$CDN_FIELD" "$R_NEW_LINES"
 	if [[ -n "$SITE_LINES" ]]; then
-		printf '\tsites=%s/%s' "$((SITES_TOTAL - SITES_FAILED))" "$SITES_TOTAL"
+		printf '\tsites=%s/%s' "$((SITES_TOTAL - SITES_FAILED - SITES_UNVERIFIED))" "$SITES_TOTAL"
 	fi
 	printf '\t%s\n' "$result"
 	printf '%s' "$SITE_LINES"
-	if [[ "$new_lines" -gt 0 ]]; then
-		new_log_text | sed 's/^/    /'
+	while IFS= read -r record; do
+		[[ -z "$record" ]] || recheck_hint "$record"
+	done <<<"$UNV_RECORDS"
+	if [[ "$R_NEW_LINES" -gt 0 ]]; then
+		printf '%s\n' "$R_LOG_TEXT" | sed 's/^/    /'
 	fi
 	if [[ "$result" == FAIL* ]]; then
-		printf '    restore: rm -rf %q && tar -xzf %q -C %q\n' "$plugins/$SLUG" "$backup" "$plugins"
+		printf '    restore: rm -rf %q && tar -xzf %q -C %q\n' "$R_PLUGINS/$SLUG" "$R_BACKUP" "$R_PLUGINS"
 	fi
+	return 0
+}
+
+# One unverified site's recheck command (an unverified_record in $1): the
+# same guarded load, settings upgrade and page-cache purge, by hand, when the
+# host is quieter. Its scheduled events run on the site's own WP-Cron.
+recheck_hint() {
+	local record="$1"
+	local kind url
+	local cmd=("$WP_CLI" --path="$R_ROOT")
+	IFS=$'\x1f' read -r kind url _ <<<"$record"
+	[[ "$NETWORK" -eq 0 ]] || cmd+=(--url="$url")
+	cmd+=(eval "$(load_code)")
+	printf '    recheck:'
+	printf ' %q' "${cmd[@]}"
+	printf '\n'
+	return 0
+}
+
+# The R_* and check_sites results of one install, as assignments for eval.
+install_state() {
+	local var
+	for var in R_ROOT R_NAME R_BEFORE R_AFTER R_WANT R_BACKUP R_PLUGINS R_NEW_LINES R_LOG_TEXT R_LOG_WARN R_LOG_FAIL \
+		NETWORK SITES_TOTAL SITES_FAILED SITES_PURGED PURGE_FAILED SITES_UNVERIFIED SITE_LINES UNV_RECORDS \
+		CRON_SUM_RUN CRON_SUM_TOTAL CRON_WARNED CRON_HOOKS_RUN MAIN_STATUS MAIN_CODE MAIN_CACHE MAIN_REASON \
+		MAIN_RETRIED MAIN_LOAD_RETRIED MAIN_CF MAIN_UNVERIFIED MAIN_RECHECKED CDN_URLS; do
+		printf '%s=%q\n' "$var" "${!var}"
+	done
+	return 0
+}
+
+# Rechecks one held-back install (its install_state in $1), then reports it.
+# Each site the host killed twice gets its killed step once more, with its
+# own retry: the load (site_load, then its cron step) or the cron step alone
+# (site_cron). A pass is WARN rechecked after host kill (137); killed again
+# stays UNVERIFIED; any other failure is a FAIL, with the restore command.
+recheck_install() {
+	local state="$1"
+	local record kind url status home cache purged cron_note warn result old_row old_result records="" errors
+	local url_args=()
+	eval "$state"
+	errors="$(mktemp)" || errors=/dev/null
+	wait_for_account_load
+	while IFS= read -r record; do
+		[[ -n "$record" ]] || continue
+		IFS=$'\x1f' read -r kind url status home cache purged cron_note warn <<<"$record"
+		url_args=()
+		[[ "$NETWORK" -eq 0 ]] || url_args=(--url="$url")
+		old_result="$(killed_result "$kind")"
+		site_row "$url" "$status" "$purged" "$cron_note" "$home" "$cache" "$old_result"
+		old_row="$ROW"
+		SITES_UNVERIFIED=$((SITES_UNVERIFIED - 1))
+		STEP_REASON="" STEP_WARN="" STEP_KILLED="" STEP_LOAD_RETRIED="" STEP_CRON="$cron_note"
+		if [[ "$kind" == load ]]; then
+			site_load "$R_ROOT" "$errors" ${url_args[@]+"${url_args[@]}"}
+			purged="$STEP_PURGED"
+			cat "$errors" >&2
+		else
+			site_cron "$R_ROOT" ${url_args[@]+"${url_args[@]}"}
+		fi
+		cron_note="$STEP_CRON"
+		warn+="$STEP_WARN"
+		if [[ -n "$STEP_REASON" ]]; then
+			result="FAIL: ${STEP_REASON%; }"
+			SITES_FAILED=$((SITES_FAILED + 1))
+			[[ "$NETWORK" -eq 1 ]] || MAIN_REASON="${STEP_REASON%; }"
+		elif [[ -n "$STEP_KILLED" ]]; then
+			result="$(killed_result "$STEP_KILLED")"
+			SITES_UNVERIFIED=$((SITES_UNVERIFIED + 1))
+			records+="$(unverified_record "$STEP_KILLED" "$url" "$status" "$home" "$cache" "$purged" "$cron_note" "$warn")"$'\n'
+			[[ "$NETWORK" -eq 1 ]] || MAIN_UNVERIFIED="${result#UNVERIFIED: }"
+		else
+			warn="$RECHECKED_TEXT, $warn"
+			result="$(warn_result "$warn")"
+			[[ "$NETWORK" -eq 1 ]] || MAIN_RECHECKED="$RECHECKED_TEXT" MAIN_UNVERIFIED=""
+		fi
+		[[ "$NETWORK" -eq 1 || -z "$STEP_LOAD_RETRIED" ]] || MAIN_LOAD_RETRIED="$STEP_LOAD_RETRIED"
+		if [[ "$NETWORK" -eq 1 ]]; then
+			site_row "$url" "$status" "$purged" "$cron_note" "$home" "$cache" "$result"
+			# The x keeps the rows' last newline through $(...).
+			SITE_LINES="$(
+				replace_text "$SITE_LINES" "$old_row" "$ROW"
+				printf x
+			)"
+			SITE_LINES="${SITE_LINES%x}"
+		fi
+	done <<<"$UNV_RECORDS"
+	UNV_RECORDS="$records"
+	[[ "$errors" == /dev/null ]] || rm -f "$errors"
+	install_report
+	return 0
+}
+
+# The end-of-run recheck of every held-back install (GH#750): after
+# LOAD_RETRY_DELAY seconds, and before each install the account-load wait
+# (DEPLOY_MAX_ACCOUNT_PROCS), so the host's limit has had time to clear.
+recheck_deferred() {
+	local state
+	[[ "${#DEFERRED[@]}" -gt 0 ]] || return 0
+	printf '\nRechecking %s install(s) where the %s, after %ss:\n' "${#DEFERRED[@]}" "$KILLED_TEXT" "$LOAD_RETRY_DELAY"
+	sleep "$LOAD_RETRY_DELAY"
+	for state in "${DEFERRED[@]}"; do
+		recheck_install "$state"
+	done
 	return 0
 }
 
@@ -1645,9 +1899,14 @@ main() {
 		return "$apply"
 	fi
 	if [[ "$apply" -eq 1 ]]; then
+		recheck_deferred
+		printf '\n%s install(s): %s ok or WARN, %s FAIL, %s UNVERIFIED; %s site(s) UNVERIFIED (%s).\n' \
+			"$count" "$INSTALLS_OK" "$((count - INSTALLS_OK - INSTALLS_UNVERIFIED))" "$INSTALLS_UNVERIFIED" "$UNVERIFIED_SITES" "$KILLED_TEXT"
 		say "Backups: $backups"
 	fi
 	[[ "$FAILED" -eq 0 ]] || return 1
+	# Nothing failed, but a site could not be checked: no restore (GH#750).
+	[[ "$UNVERIFIED_SITES" -eq 0 ]] || return 4
 	return 0
 }
 
