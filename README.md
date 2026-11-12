@@ -173,6 +173,7 @@ Deleting the plugin removes its settings (on multisite, every site's and the net
 
 ### Unreleased
 
+- Developers: the Starter sync workflow's issue is a worker-ready brief labelled `auto-dispatch` as well as `starter-sync`, with Files Scope and acceptance criteria, so aidevops Pulse gives it to a worker; each daily update adds the label again unless the issue has `no-auto-dispatch`. The repository variable `STARTER_SYNC_DISPATCH_LABEL` sets another label, or `none` for no label. Plugins get it with `scripts/sync-core.sh` (GH#702).
 - Developers: `scripts/lint.sh changelog` (run by CI) fails a pull request that adds a `changelog.txt` line under a released version heading, or a `README.md` Changelog line outside `### Unreleased`; a release PR's heading rename passes. A merge conflict with the release PR's rename can leave a line there. Plugins get it with `scripts/sync-core.sh` (GH#696).
 - Developers: `RELEASING.md` describes the cron race check's line shape without trailing spaces inside code spans (markdownlint MD038). Plugins get it with `scripts/sync-core.sh` (GH#692).
 

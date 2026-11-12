@@ -49,9 +49,10 @@ How changes are made and checked: `DEVELOPMENT.md`. Releases: `RELEASING.md`.
   in its own `scripts/core-skip.txt` (`DEVELOPMENT.md` → Starter sync).
 - Every plugin keeps up with the starter: the daily Starter sync workflow
   keeps one `starter-sync` issue open while core files differ
-  (`DEVELOPMENT.md` → Starter sync). Work it like any issue: sync, check the
-  starter's changelog for changes the plugin's own files need, lint, smoke
-  test, pull request.
+  (`DEVELOPMENT.md` → Starter sync), labelled `auto-dispatch` so an aidevops
+  worker takes it. Work it like any issue: sync, check the starter's
+  changelog for changes the plugin's own files need, lint, smoke test, pull
+  request.
 - One class per feature in `includes/features/`, extending `{Prefix}_Feature`,
   registered in `{Prefix}_Setup::FEATURES`. Features some builds leave out
   go in `{Prefix}_Setup::OPTIONAL_FEATURES` and load only when present.
