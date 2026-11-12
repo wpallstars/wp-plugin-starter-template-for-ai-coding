@@ -349,10 +349,30 @@ web_error_log_path() {
 	return 0
 }
 
+# The web PHP log's own checks (its folder exists; the file, if there, is a
+# readable regular file), without WP-CLI: cheap enough to run before the
+# account-load wait, so a wrong path fails at once.
+web_log_usable() {
+	local root="$1"
+	local path folder
+	[[ -n "$WEB_ERROR_LOG" ]] || return 0
+	path="$(web_error_log_path "$root")"
+	folder="$(dirname "$path")"
+	if [[ ! -d "$folder" ]]; then
+		say "deploy-remote: the web PHP log's folder does not exist: $folder"
+		return 1
+	fi
+	if [[ -e "$path" && ( ! -f "$path" || ! -r "$path" ) ]]; then
+		say "deploy-remote: web PHP log is not a readable regular file: $path"
+		return 1
+	fi
+	return 0
+}
+
 # Discover log files before installation, then print the lines each one gained.
 log_files() {
 	local root="$1"
-	local wp_debug php_error path folder candidate existing duplicate
+	local wp_debug php_error path candidate existing duplicate
 	local candidates=()
 	local unique=()
 	wp_debug="$(wp_bare "$root" eval 'echo defined("WP_DEBUG_LOG") && is_string(WP_DEBUG_LOG) && !in_array(strtolower(WP_DEBUG_LOG), array("1", "true"), true) ? WP_DEBUG_LOG : (defined("WP_DEBUG_LOG") && WP_DEBUG_LOG ? WP_CONTENT_DIR . "/debug.log" : "");')" || return 1
@@ -361,16 +381,8 @@ log_files() {
 	php_error="$(wp_bare "$root" eval 'echo ini_get("error_log");')" || return 1
 	candidates+=("$root/error_log" "$root/wp-content/debug.log")
 	if [[ -n "$WEB_ERROR_LOG" ]]; then
+		web_log_usable "$root" || return 1
 		path="$(web_error_log_path "$root")"
-		folder="$(dirname "$path")"
-		if [[ ! -d "$folder" ]]; then
-			say "deploy-remote: the web PHP log's folder does not exist: $folder"
-			return 1
-		fi
-		if [[ -e "$path" && ( ! -f "$path" || ! -r "$path" ) ]]; then
-			say "deploy-remote: web PHP log is not a readable regular file: $path"
-			return 1
-		fi
 		if [[ ! -e "$path" ]]; then
 			say "web PHP log $path: not there yet (counted if the install creates it)"
 		fi
@@ -1299,13 +1311,15 @@ apply_one() {
 		return 0
 	fi
 	chmod 600 "$backup"
-	if ! log_files "$root"; then
+	# A wrong web PHP log path fails before the account-load wait. The log
+	# baseline is taken after it, just before the install, so lines the site
+	# logs during the wait are not counted as the install's.
+	if ! web_log_usable "$root" || ! wait_for_account_load || ! log_files "$root"; then
 		printf '%s\tFAIL: cannot check the web PHP log; not installed\n' "$name"
 		FAILED=1
 		return 0
 	fi
 
-	wait_for_account_load
 	INSTALL_START="$(date +%s)"
 	if ! install_build "$root" "$name" "$zip" "$plugins" "$backup"; then
 		FAILED=1
