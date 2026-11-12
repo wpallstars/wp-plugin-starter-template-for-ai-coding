@@ -725,6 +725,26 @@ PHP
 	return 0
 }
 
+# Prints the site's hooks that have exactly one event, a one-off: the only
+# hooks a killed run may retry. WP-CLI shows a one-off's recurrence as
+# "Non-repeating". A hook with two events is left out: the list shows hooks,
+# not events, so it cannot tell which one was killed. Returns 1, printing
+# nothing, when the list cannot be read, so no killed hook is retried. Read,
+# then filter: as a library, pipefail may be off.
+cron_lone_oneoffs() {
+	local root="$1"
+	shift
+	local events
+	events="$("$WP_CLI" --path="$root" "$@" cron event list --fields=hook,recurrence --format=csv 2>/dev/null)" || return 1
+	printf '%s\n' "$events" | awk '
+		NR > 1 && split($0, field, ",") >= 2 && field[1] != "" {
+			n[field[1]]++
+			if (field[2] != "Non-repeating") repeats[field[1]] = 1
+		}
+		END { for (h in n) if (n[h] == 1 && !(h in repeats)) print h }'
+	return 0
+}
+
 # Runs the plugin's own scheduled events once on one site, each in its own
 # WP-CLI process (a fatal error ends one process, not the count). A fatal
 # error that only a cron callback reaches never shows in the full load, the
@@ -783,24 +803,32 @@ run_site_cron() {
 		CRON_FAILURE="cron events not run: timeout is not installed on this host (set DEPLOY_CRON_TIMEOUT=0 for no limit); "
 		return 0
 	fi
+	# Read before the first run: a run changes the list.
+	local retryable=""
+	retryable="$(cron_lone_oneoffs "$root" "$@")" || retryable=""
 	while IFS= read -r hook; do
 		[[ -n "$hook" ]] || continue
 		CRON_TOTAL=$((CRON_TOTAL + 1))
 		status=0
 		out="$("${cmd[@]+"${cmd[@]}"}" "$WP_CLI" --path="$root" "$@" cron event run "$hook" 2>&1)" || status=$?
-		# A killed event (137) is run again, up to 3 tries in all. One no longer
-		# listed after a kill (a one-off it took) is done, when the list worked.
+		# A killed event (137) is run again, up to 3 tries in all, but only a
+		# hook's lone one-off still listed: WP-CLI removes a one-off before
+		# its callback and reschedules a recurring event before it, so a
+		# retry of either runs the next occurrence early or a callback twice.
+		# Any other final 137 stays a failure, even for a one-off no longer
+		# listed.
 		local tries=1 still=""
 		while [[ "$status" -eq 137 && "$tries" -lt 3 ]]; do
+			printf '%s\n' "$retryable" | grep -qxF "$hook" || break
+			still="$("$WP_CLI" --path="$root" "$@" cron event list --field=hook 2>/dev/null)" || break
+			printf '%s\n' "$still" | grep -qxF "$hook" || break
 			tries=$((tries + 1))
 			sleep "$LOAD_RETRY_DELAY"
 			status=0
 			out="$("${cmd[@]+"${cmd[@]}"}" "$WP_CLI" --path="$root" "$@" cron event run "$hook" 2>&1)" || status=$?
 		done
-		if [[ "$status" -eq 137 ]]; then
-			if still="$("$WP_CLI" --path="$root" "$@" cron event list --field=hook 2>/dev/null)" && ! printf '%s\n' "$still" | grep -qxF "$hook"; then
-				status=0 out=""
-			fi
+		if [[ "$status" -eq 137 && -z "$out" ]]; then
+			out="cron $hook killed (137)"
 		fi
 		[[ "$tries" -eq 1 ]] || CRON_WARN+="cron $hook retried (137), "
 		if [[ "$status" -eq 124 && "${#cmd[@]}" -gt 0 ]]; then

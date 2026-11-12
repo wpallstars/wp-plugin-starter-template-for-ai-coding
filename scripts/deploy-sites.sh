@@ -174,9 +174,15 @@ remote_words() {
 	return 0
 }
 
+# Every ssh this script runs. The keep-alive ends a connection that died
+# without a close (NAT timeout, a host killing the session under load) in
+# about 2 minutes, with ssh's exit 255, instead of the operating system's
+# TCP keep-alive about 2 hours later. The host answers keep-alives while a
+# command runs silently, so long cron runs are not cut short. Options given
+# with -o win over ~/.ssh/config, so this is the same on every computer.
 remote() {
 	local command="$1"
-	ssh -o BatchMode=yes "$HOST" "$command" || return $?
+	ssh -o BatchMode=yes -o ServerAliveInterval=30 -o ServerAliveCountMax=4 "$HOST" "$command" || return $?
 	return 0
 }
 
@@ -610,6 +616,21 @@ prune_host() {
 	return 0
 }
 
+# ssh exit 255 during apply: the connection died, but the host may have gone
+# on and finished. Names the last install the host reported (install lines
+# start with the install's name and a tab), so the operator checks the sites
+# instead of running again blind. Running again is safe: an install already
+# on the tag gets the same files again, and the lock reports a run still going.
+connection_lost() {
+	local out="$1"
+	local last
+	last="$(awk -F '\t' 'NF > 1 && $1 != "" && $1 !~ /^[@ ]/ { name = $1 } END { print name }' "$out" 2>/dev/null || true)"
+	printf '\nConnection to %s lost (ssh exit 255) while installing %s; the host may have finished.\n' "$HOST" "$TAG" >&2
+	printf 'Check each install not reported above (last reported: %s): its version, home page and PHP log.\n' "${last:-none}" >&2
+	printf 'Running again is safe: an install already on %s gets the same files again.\n' "$TAG" >&2
+	return 0
+}
+
 apply() {
 	local stamp base run dir command status=0
 	stamp="$(date -u +%Y%m%dT%H%M%SZ)"
@@ -624,12 +645,16 @@ apply() {
 	remote "umask 077; cat >$(remote_words "$dir/deploy-remote.sh")" <"$REMOTE_PART" || die "cannot copy the remote part to $HOST"
 	remote "chmod 600 $(remote_words "$dir/$SLUG-$VERSION.zip" "$dir/deploy-remote.sh")" || die "cannot set the files' mode on $HOST"
 	printf '\nInstalling %s on %s (folder %s):\n' "$TAG" "$HOST" "$dir"
-	command="$(remote_words env "DEPLOY_WP_CLI=$WP_CLI" "DEPLOY_WEB_ERROR_LOG=$WEB_ERROR_LOG" "DEPLOY_CRON_TIMEOUT=${DEPLOY_CRON_TIMEOUT:-120}" "DEPLOY_CDN_PURGE=$([[ -n "$CF_TOKEN" ]] && printf 1 || printf 0)" bash "$dir/deploy-remote.sh" apply "$SLUG" "$PARENT" \
+	command="$(remote_words env "DEPLOY_WP_CLI=$WP_CLI" "DEPLOY_WEB_ERROR_LOG=$WEB_ERROR_LOG" "DEPLOY_CRON_TIMEOUT=${DEPLOY_CRON_TIMEOUT:-120}" "DEPLOY_MAX_ACCOUNT_PROCS=${DEPLOY_MAX_ACCOUNT_PROCS:-}" "DEPLOY_LOAD_RETRY_DELAY=${DEPLOY_LOAD_RETRY_DELAY:-30}" "DEPLOY_CDN_PURGE=$([[ -n "$CF_TOKEN" ]] && printf 1 || printf 0)" bash "$dir/deploy-remote.sh" apply "$SLUG" "$PARENT" \
 		"$VERSION" "$dir/$SLUG-$VERSION.zip" "$SHA" "$dir/backups" ${DOWNGRADE_ARGS[@]+"${DOWNGRADE_ARGS[@]}"} ${SKIPS[@]+"${SKIPS[@]}"})"
 	set +e
-	remote "$command" | stream_filter
+	remote "$command" | tee "$TMP_DIR/apply.out" | stream_filter
 	status="${PIPESTATUS[0]}"
 	set -e
+	if [[ "$status" -eq 255 ]]; then
+		connection_lost "$TMP_DIR/apply.out"
+		return 1
+	fi
 	if [[ "$status" -eq 3 ]]; then
 		printf '\nAnother deploy of %s is running on %s (named above), so nothing was installed. Wait for it to finish, then run again.\n' "$SLUG" "$HOST" >&2
 		exit 3
