@@ -2,6 +2,9 @@
 
 Every change to WP Plugin Starter. readme.txt lists the latest version in short.
 
+= Unreleased =
+* Developers: CI's Release build and smoke test jobs set up Node 22 before they build the zips, and the Release workflow sets it up before Preflight, which builds them too: the minifier in scripts/build-release.sh runs on Node, and a runner named by the CI_RUNNER variable may not have it (build-release: needs npx). Plugins get it with scripts/sync-core.sh (GH#706).
+
 = 1.0.59 =
 * Developers: the Starter sync workflow (.github/workflows/starter-sync.yml) files its "Core files differ from the starter" issue as a worker-ready brief: labelled auto-dispatch as well as starter-sync, with a Files Scope section (the files that differ, and changelog.txt), acceptance criteria and checks, and a note that the version stays unchanged, so aidevops Pulse gives it to a worker. Each daily update of an open issue adds the label again unless the issue has no-auto-dispatch (a person's hold). The repository variable STARTER_SYNC_DISPATCH_LABEL sets another label, or none for no label (a repository that does not use aidevops). The title and starter-sync label are unchanged. Plugins get it with scripts/sync-core.sh (GH#702).
 * Developers: scripts/lint.sh changelog (run by CI) fails a pull request that adds a changelog.txt line under a released version heading, or a README.md Changelog line outside "### Unreleased"; a release PR's heading rename passes. A merge conflict with the release PR's rename can leave a line there. Plugins get it with scripts/sync-core.sh (GH#696).

@@ -74,13 +74,14 @@ jobs:
             echo "version=${TAG#v}"
           } >>"$GITHUB_OUTPUT"
 
-      - name: Preflight
-        run: scripts/preflight-release.sh --ref "$TAG" --offline --no-docker
-
-      # Node runs the pinned minifier (scripts/build-release.sh).
+      # Node runs the pinned minifier (scripts/build-release.sh), which
+      # Preflight runs too: set it up before both.
       - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
         with:
           node-version: 22
+
+      - name: Preflight
+        run: scripts/preflight-release.sh --ref "$TAG" --offline --no-docker
 
       - name: Build both zips
         run: scripts/build-release.sh --ref "$TAG" --out dist

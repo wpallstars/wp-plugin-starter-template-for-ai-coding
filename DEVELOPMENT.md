@@ -578,7 +578,9 @@ without its secret, and nothing fails.
    a self-hosted runner label (such as `4cpu-8gb`); private repositories
    pay for GitHub-hosted minutes. Set it per repository:
    `gh variable set CI_RUNNER --repo {owner}/{repo} --body 4cpu-8gb`, and
-   add the repository to the runner group. An organization variable does
+   add the repository to the runner group. Jobs that build the zips set up
+   Node 22 themselves (`actions/setup-node`, for the minifier), so the
+   runner needs no Node of its own. An organization variable does
    not reach private repositories on GitHub's Free plan. Never set it in a
    public repository, or in a private one that runs workflows from fork
    pull requests (Settings → Actions → General): a pull request from a

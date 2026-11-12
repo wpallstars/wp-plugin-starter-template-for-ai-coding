@@ -171,6 +171,10 @@ Deleting the plugin removes its settings (on multisite, every site's and the net
 
 ## Changelog
 
+### Unreleased
+
+- Developers: CI's Release build and smoke test jobs set up Node 22 before they build the zips, and the Release workflow sets it up before Preflight, which builds them too: the minifier in `scripts/build-release.sh` runs on Node, and a runner named by the `CI_RUNNER` variable may not have it (`build-release: needs npx`). Plugins get it with `scripts/sync-core.sh` (GH#706).
+
 ### 1.0.59
 
 - Developers: the Starter sync workflow's issue is a worker-ready brief labelled `auto-dispatch` as well as `starter-sync`, with Files Scope and acceptance criteria, so aidevops Pulse gives it to a worker; each daily update adds the label again unless the issue has `no-auto-dispatch`. The repository variable `STARTER_SYNC_DISPATCH_LABEL` sets another label, or `none` for no label. Plugins get it with `scripts/sync-core.sh` (GH#702).

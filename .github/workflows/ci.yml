@@ -191,6 +191,12 @@ jobs:
           coverage: none
           tools: none
 
+      # Node runs the pinned minifier (scripts/build-release.sh), which
+      # Preflight and the build run. A CI_RUNNER image may not have it.
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 22
+
       - name: Preflight
         run: scripts/preflight-release.sh --offline --no-docker
 
@@ -258,6 +264,11 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
+
+      # The smoke test builds the zip, which runs the minifier on Node.
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 22
 
       - name: Docker Hub mirror
         if: runner.environment == 'github-hosted'
