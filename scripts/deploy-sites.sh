@@ -76,6 +76,13 @@
 # purged=N/SITES, cron=N/M, home HTTP code, cache= headers, cdn= and new log lines;
 # networks add sites=PASSED/TOTAL and a line per site. Exits 1 on a failed
 # site, a version not reached or new log lines, with the restore command.
+# A site whose load check or cron list the host killed (exit 137) on its
+# retry too, with nothing else wrong, is not a failure: its install is
+# reported after a recheck at the end of the run (after
+# DEPLOY_LOAD_RETRY_DELAY and the DEPLOY_MAX_ACCOUNT_PROCS wait). A pass
+# there is WARN rechecked after host kill (137); killed again, the site is
+# UNVERIFIED with a recheck command and no restore, and the run exits 4 when
+# nothing failed.
 # Host names, folders and backups stay out of the repository: only arguments.
 #
 # --apply holds a per-plugin lock on the host (~/.{slug}-deploy/.lock, made
@@ -659,6 +666,12 @@ apply() {
 		printf '\nAnother deploy of %s is running on %s (named above), so nothing was installed. Wait for it to finish, then run again.\n' "$SLUG" "$HOST" >&2
 		exit 3
 	fi
+	if [[ "$status" -eq 4 ]]; then
+		printf '\nDeployed %s on %s, but %s site(s) are UNVERIFIED: the host killed WP-CLI (exit 137) on the retry and again at the end-of-run recheck. Nothing failed and no restore is needed: when the host is quieter, run each recheck command above.\n' \
+			"$TAG" "$HOST" "$(grep -c '^    recheck: ' "$TMP_DIR/apply.out" || true)"
+		prune_host "$TAG-$stamp"
+		return 4
+	fi
 	if [[ "$status" -ne 0 ]]; then
 		printf '\nDeploy of %s on %s failed (exit %s): see the FAIL lines and their restore commands above.\n' "$TAG" "$HOST" "$status"
 		return 1
@@ -685,7 +698,9 @@ main() {
 	TMP_DIR="$(mktemp -d "${TMPDIR:-/tmp}/$SLUG-deploy.XXXXXX")"
 	download_zip
 	if [[ "$APPLY" -eq 1 ]]; then
-		apply || return 1
+		local status=0
+		apply || status=$?
+		return "$status"
 	else
 		dry_run
 	fi
