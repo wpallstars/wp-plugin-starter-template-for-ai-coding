@@ -166,8 +166,13 @@ jobs:
           if [[ -n "$number" ]]; then
             gh issue edit "$number" --body-file "$body"
             # Dispatch the open issue again, unless a person put a hold on it.
-            if [[ -n "$dispatch" ]] && ! gh issue view "$number" --json labels --jq '.labels[].name' | grep -qxF "no-auto-dispatch"; then
-              gh issue edit "$number" --add-label "$dispatch"
+            # If the labels cannot be read, leave them alone.
+            if [[ -n "$dispatch" ]]; then
+              if ! labels="$(gh issue view "$number" --json labels --jq '.labels[].name')"; then
+                echo "::warning::Could not read #$number's labels; $dispatch not added."
+              elif ! grep -qxF "no-auto-dispatch" <<<"$labels"; then
+                gh issue edit "$number" --add-label "$dispatch"
+              fi
             fi
           elif [[ -n "$dispatch" ]]; then
             gh issue create --title "Core files differ from the starter" --label "$label" --label "$dispatch" --body-file "$body"
