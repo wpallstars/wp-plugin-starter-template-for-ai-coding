@@ -3,22 +3,22 @@
   <style>.bg{fill:#ffffff}.track{fill:#eaecef}.lbl{fill:#24292f}.pct{fill:#57606a}@media (prefers-color-scheme: dark){.bg{fill:#0d1117}.track{fill:#30363d}.lbl{fill:#e6edf3}.pct{fill:#8b949e}}</style>
   <rect class="bg" width="520" height="96"/>
   <rect class="track" x="20" y="10" width="480" height="14" rx="3"/>
-  <rect x="20" y="10" width="191" height="14" fill="#89e051"/>
-  <rect x="211" y="10" width="144" height="14" fill="#4F5D95"/>
-  <rect x="355" y="10" width="59" height="14" fill="#083fa1"/>
-  <rect x="414" y="10" width="37" height="14" fill="#6e7781"/>
-  <rect x="451" y="10" width="29" height="14" fill="#563d7c"/>
-  <rect x="480" y="10" width="20" height="14" fill="#f1e05a"/>
+  <rect x="20" y="10" width="192" height="14" fill="#89e051"/>
+  <rect x="212" y="10" width="139" height="14" fill="#4F5D95"/>
+  <rect x="351" y="10" width="61" height="14" fill="#083fa1"/>
+  <rect x="412" y="10" width="36" height="14" fill="#6e7781"/>
+  <rect x="448" y="10" width="28" height="14" fill="#563d7c"/>
+  <rect x="476" y="10" width="24" height="14" fill="#f1e05a"/>
   <rect x="20" y="34" width="10" height="10" rx="2" fill="#89e051"/>
-  <text x="34" y="44" font-family="Verdana,Geneva,DejaVu Sans,sans-serif" font-size="11" class="lbl">Shell <tspan class="pct">38.4%</tspan></text>
+  <text x="34" y="44" font-family="Verdana,Geneva,DejaVu Sans,sans-serif" font-size="11" class="lbl">Shell <tspan class="pct">38.6%</tspan></text>
   <rect x="270" y="34" width="10" height="10" rx="2" fill="#4F5D95"/>
-  <text x="284" y="44" font-family="Verdana,Geneva,DejaVu Sans,sans-serif" font-size="11" class="lbl">PHP <tspan class="pct">28.8%</tspan></text>
+  <text x="284" y="44" font-family="Verdana,Geneva,DejaVu Sans,sans-serif" font-size="11" class="lbl">PHP <tspan class="pct">28.0%</tspan></text>
   <rect x="20" y="50" width="10" height="10" rx="2" fill="#083fa1"/>
-  <text x="34" y="60" font-family="Verdana,Geneva,DejaVu Sans,sans-serif" font-size="11" class="lbl">Markdown <tspan class="pct">12.0%</tspan></text>
+  <text x="34" y="60" font-family="Verdana,Geneva,DejaVu Sans,sans-serif" font-size="11" class="lbl">Markdown <tspan class="pct">12.3%</tspan></text>
   <rect x="270" y="50" width="10" height="10" rx="2" fill="#6e7781"/>
-  <text x="284" y="60" font-family="Verdana,Geneva,DejaVu Sans,sans-serif" font-size="11" class="lbl">SVG <tspan class="pct">7.6%</tspan></text>
+  <text x="284" y="60" font-family="Verdana,Geneva,DejaVu Sans,sans-serif" font-size="11" class="lbl">SVG <tspan class="pct">7.3%</tspan></text>
   <rect x="20" y="66" width="10" height="10" rx="2" fill="#563d7c"/>
-  <text x="34" y="76" font-family="Verdana,Geneva,DejaVu Sans,sans-serif" font-size="11" class="lbl">CSS <tspan class="pct">5.8%</tspan></text>
+  <text x="34" y="76" font-family="Verdana,Geneva,DejaVu Sans,sans-serif" font-size="11" class="lbl">CSS <tspan class="pct">5.6%</tspan></text>
   <rect x="270" y="66" width="10" height="10" rx="2" fill="#f1e05a"/>
-  <text x="284" y="76" font-family="Verdana,Geneva,DejaVu Sans,sans-serif" font-size="11" class="lbl">JavaScript <tspan class="pct">3.5%</tspan></text>
+  <text x="284" y="76" font-family="Verdana,Geneva,DejaVu Sans,sans-serif" font-size="11" class="lbl">JavaScript <tspan class="pct">4.3%</tspan></text>
 </svg>
