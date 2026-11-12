@@ -953,6 +953,22 @@ cdn_announce() {
 	return 0
 }
 
+# The load check: $1 root, $2 stderr file, rest WP-CLI args. Sets LOAD_OUT,
+# LOAD_STATUS and LOAD_RETRIED. Only a SIGKILL (137) with nothing on stderr
+# is retried, once, after LOAD_RETRY_DELAY.
+load_check() {
+	local root="$1" errors="$2"
+	shift 2
+	LOAD_STATUS=0 LOAD_RETRIED="" LOAD_OUT=""
+	LOAD_OUT="$(active_guard "$root" "" "" "$@" eval "$(load_code)" 2>"$errors")" || LOAD_STATUS=$?
+	if [[ "$LOAD_STATUS" -eq 137 && ! -s "$errors" ]]; then
+		LOAD_RETRIED=137 LOAD_STATUS=0
+		sleep "$LOAD_RETRY_DELAY"
+		LOAD_OUT="$(active_guard "$root" "" "" "$@" eval "$(load_code)" 2>"$errors")" || LOAD_STATUS=$?
+	fi
+	return 0
+}
+
 # Called directly: counters, the main row and network lines are results.
 check_sites() {
 	local root="$1"
@@ -977,20 +993,14 @@ check_sites() {
 		SITES_TOTAL=$((SITES_TOTAL + 1))
 		[[ "$network" -eq 0 ]] || url_args=(--url="$url")
 		reason="" warn="" result="ok" purged="no" cron_note="cron=0/0"
-		load_status=0 load_retried=""
-		load="$(active_guard "$root" "" "" ${url_args[@]+"${url_args[@]}"} eval "$(load_code)" 2>"$load_errors")" || load_status=$?
-		# Only a SIGKILL with nothing on stderr is retried, once.
-		if [[ "$load_status" -eq 137 && ! -s "$load_errors" ]]; then
-			load_retried=137 load_status=0
-			sleep "$LOAD_RETRY_DELAY"
-			load="$(active_guard "$root" "" "" ${url_args[@]+"${url_args[@]}"} eval "$(load_code)" 2>"$load_errors")" || load_status=$?
-		fi
+		load_check "$root" "$load_errors" ${url_args[@]+"${url_args[@]}"}
+		load="$LOAD_OUT" load_status="$LOAD_STATUS" load_retried="$LOAD_RETRIED"
 		if [[ "$load_status" -eq 0 ]]; then
 			[[ -z "$load_retried" ]] || warn+="load retried ($load_retried), "
 			case "$load" in
 			*purged=yes*) purged="yes" SITES_PURGED=$((SITES_PURGED + 1)) ;;
 			*purged=failed*)
-				purged="failed" warn="purge failed, "
+				purged="failed" warn+="purge failed, "
 				PURGE_FAILED=$((PURGE_FAILED + 1))
 				;;
 			*) ;;
