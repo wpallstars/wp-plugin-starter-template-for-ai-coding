@@ -108,7 +108,8 @@ final class WPStarter {
      * off, else the readable file, so a Git checkout works unchanged.
      *
      * @param string $path Path from the plugin folder, such as assets/x.js.
-     * @return string
+     * @return non-empty-string Never empty (the plugin's URL comes first), as
+     *                          wp_register_script() and wp_register_style() need.
      */
     public static function asset_url($path) {
         $path = ltrim((string) $path, '/');
