@@ -78,7 +78,8 @@ find_main() {
 	SLUG="${found%.php}"
 	text="$(cat "$found")"
 	REPO="$(plugin_header_field "${text:0:8192}" "GitHub Plugin URI")"
-	const="$(sed -nE "/define\([[:space:]]*['\"][A-Z0-9_]+_VERSION['\"]/{s/.*define\([[:space:]]*['\"]([A-Z0-9_]+)_VERSION['\"].*/\1/p;q;}" <<<"$text")"
+	const="$(plugin_version_define "$text")"
+	const="${const%%$'\t'*}"
 	[[ -n "$const" ]] || die "$found does not define a <PREFIX>_VERSION constant"
 	PREFIX="$(printf '%s' "$const" | tr '[:upper:]' '[:lower:]')"
 	return 0

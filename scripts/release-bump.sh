@@ -62,27 +62,15 @@ replace_line() {
 }
 
 # Set the version in the main file's define('{PREFIX}_VERSION', 'X.Y.Z'),
-# keeping its spacing and quotes: the forms plugin_identity() accepts
-# (define( '…', '…' ); and double quotes too). Only the version changes.
+# keeping its spacing and quotes, on one line or over several: the define
+# plugin_identity() reads (plugin_version_set). Only the version changes.
 replace_define() {
 	local file="$1"
 	local const="$2"
 	local version="$3"
-	local pattern="^[[:space:]]*define[(][[:space:]]*['\"]${const}_VERSION['\"][[:space:]]*,[[:space:]]*['\"][^'\"]*['\"]"
-	grep -Eq "$pattern" "$file" || die "$file has no define('${const}_VERSION', 'X.Y.Z') line"
 	TMP_FILE="$(mktemp)"
-	# The match ends at the version's closing quote; keep everything up to
-	# its opening quote, then the new version and the rest of the line.
-	awk -v pat="$pattern" -v ver="$version" -v sq="'" '
-		!done && match($0, pat) {
-			m = substr($0, RSTART, RLENGTH)
-			n = length(m) - 1
-			while (n > 0 && substr(m, n, 1) != sq && substr(m, n, 1) != "\"") n--
-			print substr($0, 1, RSTART - 1) substr(m, 1, n) ver substr(m, length(m)) substr($0, RSTART + RLENGTH)
-			done = 1
-			next
-		}
-		{ print }' "$file" >"$TMP_FILE"
+	plugin_version_set "$file" "$const" "$version" >"$TMP_FILE" ||
+		die "$file has no define('${const}_VERSION', 'X.Y.Z')"
 	cat "$TMP_FILE" >"$file"
 	rm -f "$TMP_FILE"
 	TMP_FILE=""
