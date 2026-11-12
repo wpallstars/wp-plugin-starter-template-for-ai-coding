@@ -786,8 +786,10 @@ run_site_cron() {
 	# Hooks that repeat, read before the first run (a run changes the list).
 	# WP-CLI shows a one-off's recurrence as "Non-repeating". If the read
 	# fails, no hook is known to be a one-off, so no killed hook is retried.
+	# Read, then filter: as a library, pipefail may be off.
 	local recurrences="" recurrences_known=1
-	recurrences="$("$WP_CLI" --path="$root" "$@" cron event list --fields=hook,recurrence --format=csv 2>/dev/null | awk -F, 'NR > 1 && $2 != "" && $2 != "Non-repeating" { print $1 }')" || recurrences_known=0
+	recurrences="$("$WP_CLI" --path="$root" "$@" cron event list --fields=hook,recurrence --format=csv 2>/dev/null)" || recurrences_known=0
+	recurrences="$(printf '%s\n' "$recurrences" | awk -F, 'NR > 1 && $2 != "" && $2 != "Non-repeating" { print $1 }')"
 	while IFS= read -r hook; do
 		[[ -n "$hook" ]] || continue
 		CRON_TOTAL=$((CRON_TOTAL + 1))
