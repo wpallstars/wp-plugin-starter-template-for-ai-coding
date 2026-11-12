@@ -150,6 +150,11 @@ jobs:
           ### Files Scope
 
           $scope- \`changelog.txt\`
+          - \`README.md\` (only if step 4 calls for it)
+          - \`readme.txt\` (only if step 4 calls for it)
+          - \`phpstan-plugin.neon\` (only if step 4 calls for it)
+          - \`.distignore\` (only if step 4 calls for it)
+          - \`includes/class-*-setup.php\` (only if step 4 calls for it)
 
           ## Acceptance criteria
 
