@@ -982,12 +982,21 @@ load_check() {
 	local root="$1" errors="$2"
 	shift 2
 	LOAD_STATUS=0 LOAD_RETRIED="" LOAD_OUT="" GUARD_WP_STDERR_EMPTY=0
-	LOAD_OUT="$(active_guard "$root" "" "" "$@" eval "$(load_code)" 2>"$errors")" || LOAD_STATUS=$?
+	local out_file
+	out_file="$(mktemp)" || {
+		LOAD_STATUS=1
+		return 0
+	}
+	# active_guard runs in this shell, not in $(...), so GUARD_WP_STDERR_EMPTY
+	# reaches the retry test below; stdout goes through a private file.
+	active_guard "$root" "" "" "$@" eval "$(load_code)" >"$out_file" 2>"$errors" || LOAD_STATUS=$?
 	if [[ "$LOAD_STATUS" -eq 137 && "$GUARD_WP_STDERR_EMPTY" -eq 1 ]]; then
 		LOAD_RETRIED=137 LOAD_STATUS=0
 		sleep "$LOAD_RETRY_DELAY"
-		LOAD_OUT="$(active_guard "$root" "" "" "$@" eval "$(load_code)" 2>"$errors")" || LOAD_STATUS=$?
+		active_guard "$root" "" "" "$@" eval "$(load_code)" >"$out_file" 2>"$errors" || LOAD_STATUS=$?
 	fi
+	LOAD_OUT="$(cat "$out_file")"
+	rm -f "$out_file"
 	return 0
 }
 

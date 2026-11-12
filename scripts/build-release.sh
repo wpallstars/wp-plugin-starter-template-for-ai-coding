@@ -224,9 +224,20 @@ build_addon_zip() {
 	return 0
 }
 
+# The file's opening /* ... */ comment as it is (its licence, copyright and
+# Provenance lines), or nothing when the file does not start with one. The
+# minifier drops ordinary comments, and ATTRIBUTION.txt asks every copy, even
+# of part, to keep those lines.
+leading_comment() {
+	local file="$1"
+	awk 'NR == 1 && !/^[[:space:]]*\/\*/ { exit } { print } /\*\// { exit }' "$file"
+	return 0
+}
+
 # Write name.min.js / name.min.css beside every front-end file under assets/
-# of a build that is not already minified. The readable file stays. Fails
-# when the minifier is missing or errors; no half-made set is shipped.
+# of a build that is not already minified, starting with the file's opening
+# comment. The readable file stays. Fails when the minifier is missing or
+# errors; no half-made set is shipped.
 minify_assets() {
 	local dir="$1"
 	[[ -d "$dir/assets" ]] || return 0
@@ -245,7 +256,12 @@ minify_assets() {
 			die "minifying ${file#"$dir"/} with $MINIFIER failed"
 		}
 		[[ -s "$base.min.$ext.partial" ]] || die "minifying ${file#"$dir"/} gave an empty file"
-		mv "$base.min.$ext.partial" "$base.min.$ext"
+		{
+			leading_comment "$file"
+			cat "$base.min.$ext.partial"
+		} >"$base.min.$ext.whole" || die "writing the minified copy of ${file#"$dir"/} failed"
+		rm -f "$base.min.$ext.partial"
+		mv "$base.min.$ext.whole" "$base.min.$ext"
 	done
 	return 0
 }

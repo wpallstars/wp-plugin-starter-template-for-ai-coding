@@ -578,8 +578,8 @@ check_syntax() {
 	return 0
 }
 
-# Every assets/**/*.js|css of a build has its .min sibling, and the minified
-# JavaScript parses.
+# Every assets/**/*.js|css of a build has its .min sibling, which keeps the
+# file's Provenance line (ATTRIBUTION.txt), and the minified JavaScript parses.
 check_min_assets() {
 	local dir="$1"
 	local label="$2"
@@ -591,6 +591,9 @@ check_min_assets() {
 		count=$((count + 1))
 		if [[ ! -s "$min" ]]; then
 			err "$label: ${file#"$dir"/} has no minified copy"
+			bad=1
+		elif grep -q 'Provenance:' "$file" && ! grep -q 'Provenance:' "$min"; then
+			err "$label: ${min#"$dir"/} lost the file's licence and Provenance lines (ATTRIBUTION.txt)"
 			bad=1
 		elif [[ "$ext" = "js" ]] && command -v node >/dev/null 2>&1 && ! node --check "$min" >/dev/null 2>&1; then
 			err "$label: ${min#"$dir"/} does not parse"
