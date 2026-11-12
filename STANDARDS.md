@@ -616,7 +616,12 @@ Two release channels, at the owner's decision:
   changes that are not on GitHub.
 - Say which channel a site is on in `README.md` → Updates and releases and
   in `readme.txt` (FAQ), and mark security releases in the changelog
-  ("Security:") so the exception is clear.
+     ("Security:") so the exception is clear.
+- Release builds carry a minified `.min` copy beside each `assets/**/*.js|css`
+  file (`scripts/build-release.sh`, pinned esbuild, needs Node). Enqueue
+  assets with `{Prefix}::asset_url('assets/x.js')`: it returns the `.min` copy
+  when it exists and `SCRIPT_DEBUG` is off, else the readable file, so a Git
+  checkout works unchanged.
 
 Sites install the latest GitHub release whose tag is a plain version and the
 asset named exactly `{folder}-X.Y.Z.zip` (the shared updater; Git Updater,

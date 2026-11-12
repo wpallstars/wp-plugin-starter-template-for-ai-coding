@@ -578,6 +578,29 @@ check_syntax() {
 	return 0
 }
 
+# Every assets/**/*.js|css of a build has its .min sibling, and the minified
+# JavaScript parses.
+check_min_assets() {
+	local dir="$1"
+	local label="$2"
+	[[ -d "$dir/assets" ]] || return 0
+	local file ext min bad=0 count=0
+	while IFS= read -r -d '' file; do
+		ext="${file##*.}"
+		min="${file%.*}.min.$ext"
+		count=$((count + 1))
+		if [[ ! -s "$min" ]]; then
+			err "$label: ${file#"$dir"/} has no minified copy"
+			bad=1
+		elif [[ "$ext" = "js" ]] && command -v node >/dev/null 2>&1 && ! node --check "$min" >/dev/null 2>&1; then
+			err "$label: ${min#"$dir"/} does not parse"
+			bad=1
+		fi
+	done < <(find "$dir/assets" -type f \( -name '*.js' -o -name '*.css' \) ! -name '*.min.js' ! -name '*.min.css' -print0)
+	if [[ "$count" -gt 0 ]] && [[ "$bad" -eq 0 ]]; then ok "$label: $count front-end file(s) have minified copies"; fi
+	return 0
+}
+
 # Shared checks for a release zip; prints its unpacked folder in UNPACKED.
 check_zip() {
 	local zip_path="$1"
@@ -597,6 +620,7 @@ check_zip() {
 	mkdir -p "$dir"
 	unzip -q "$zip_path" -d "$dir"
 	check_syntax "$dir" "$label"
+	check_min_assets "$dir/$SLUG" "$label"
 	UNPACKED="$dir/$SLUG"
 	return 0
 }

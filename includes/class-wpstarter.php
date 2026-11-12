@@ -103,7 +103,26 @@ final class WPStarter {
     }
 
     /**
-     * List the plugin for problem reports (wpallstars_report_products):
+     * URL of a file under the plugin's assets/ folder: its .min sibling
+     * (made by scripts/build-release.sh) when that exists and SCRIPT_DEBUG is
+     * off, else the readable file, so a Git checkout works unchanged.
+     *
+     * @param string $path Path from the plugin folder, such as assets/x.js.
+     * @return string
+     */
+    public static function asset_url($path) {
+        $path = ltrim((string) $path, '/');
+        if (!(defined('SCRIPT_DEBUG') && SCRIPT_DEBUG) && preg_match('/^(.+)\.(js|css)$/', $path, $m) && !preg_match('/\.min$/', $m[1])) {
+            $min = $m[1] . '.min.' . $m[2];
+            if (is_readable(WPSTARTER_DIR . $min)) {
+                $path = $min;
+            }
+        }
+        return WPSTARTER_URL . $path;
+    }
+
+    /**
+     * List the plugin for problem reports (wpallstars_report_products): 
      * reports go where WPStarter_Setup::header_links()['support'] points, a
      * GitHub issues address (public) or mailto:address (private, by email).
      *

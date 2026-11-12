@@ -57,6 +57,10 @@ readonly WPORG_SCREENSHOTS='/admin/images/screenshot-*'
 # The GitHub updater's View details banner (rsync pattern); left out of the WordPress.org build.
 readonly WPORG_DETAILS_BANNER='/admin/images/banner-details.svg'
 
+# Pinned minifier for the front-end files under assets/ (same ref and same
+# version give the same zip).
+readonly MINIFIER="esbuild@0.25.12"
+
 TMP_DIR=""
 SLUG=""
 MAIN_FILE=""
@@ -220,6 +224,32 @@ build_addon_zip() {
 	return 0
 }
 
+# Write name.min.js / name.min.css beside every front-end file under assets/
+# of a build that is not already minified. The readable file stays. Fails
+# when the minifier is missing or errors; no half-made set is shipped.
+minify_assets() {
+	local dir="$1"
+	[[ -d "$dir/assets" ]] || return 0
+	local file base ext
+	local -a files=()
+	while IFS= read -r -d '' file; do
+		files+=("$file")
+	done < <(find "$dir/assets" -type f \( -name '*.js' -o -name '*.css' \) ! -name '*.min.js' ! -name '*.min.css' -print0 | LC_ALL=C sort -z)
+	[[ ${#files[@]} -gt 0 ]] || return 0
+	need npx
+	for file in "${files[@]}"; do
+		ext="${file##*.}"
+		base="${file%.*}"
+		npx --yes "$MINIFIER" --minify --loader="$ext" <"$file" >"$base.min.$ext.partial" || {
+			rm -f "$base.min.$ext.partial"
+			die "minifying ${file#"$dir"/} with $MINIFIER failed"
+		}
+		[[ -s "$base.min.$ext.partial" ]] || die "minifying ${file#"$dir"/} gave an empty file"
+		mv "$base.min.$ext.partial" "$base.min.$ext"
+	done
+	return 0
+}
+
 # Make the WordPress.org build folder from the GitHub one at a commit.
 prepare_wporg_build() {
 	local sha="$1"
@@ -301,6 +331,7 @@ main() {
 	git show "$sha:.distignore" >"$TMP_DIR/distignore" || die ".distignore missing at $ref"
 	rsync -a --exclude-from="$TMP_DIR/distignore" "$TMP_DIR/src/" "$TMP_DIR/github/$SLUG/"
 	[[ -f "$TMP_DIR/github/$SLUG/$MAIN_FILE" ]] || die "$MAIN_FILE is not in the build; check .distignore"
+	minify_assets "$TMP_DIR/github/$SLUG"
 
 	local github_zip="$out/$SLUG-$version.zip"
 	local wporg_zip="$out/wordpress-org-$SLUG-$version.zip"
