@@ -10,7 +10,7 @@
 [![CodeFactor](https://www.codefactor.io/repository/github/wpallstars/wp-plugin-starter-template-for-ai-coding/badge)](https://www.codefactor.io/repository/github/wpallstars/wp-plugin-starter-template-for-ai-coding)
 [![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/wpallstars/wp-plugin-starter-template-for-ai-coding/badge)](https://scorecard.dev/viewer/?uri=github.com/wpallstars/wp-plugin-starter-template-for-ai-coding)
 [![License: GPL v3 or later](https://img.shields.io/badge/License-GPL%20v3%20or%20later-blue.svg)](LICENSE)
-[![Latest release](https://img.shields.io/badge/release-v1.0.63-blue.svg)](https://github.com/wpallstars/wp-plugin-starter-template-for-ai-coding/releases)
+[![Latest release](https://img.shields.io/badge/release-v1.0.64-blue.svg)](https://github.com/wpallstars/wp-plugin-starter-template-for-ai-coding/releases)
 
 [![Requires WordPress](https://img.shields.io/badge/WordPress-6.2%2B-21759B.svg?logo=wordpress)](readme.txt)
 [![Tested up to](https://img.shields.io/badge/tested%20up%20to-7.1-21759B.svg?logo=wordpress)](readme.txt)
@@ -27,7 +27,7 @@ WP Plugin Starter is what wpallstars plugins are made from. It has no features o
 
 If this saves you time, headaches and costs, feel free to [buy me a coffee](https://buymeacoffee.com/marcusquinn), or whatever you like, to invest in making more things open-source.
 
-Version: 1.0.63
+Version: 1.0.64
 
 <!-- github-only:start -->
 ## Screenshots
@@ -171,7 +171,7 @@ Deleting the plugin removes its settings (on multisite, every site's and the net
 
 ## Changelog
 
-### Unreleased
+### 1.0.64
 
 - Fix: a secret settings field shows the right placeholder after an AJAX save: "Saved (hidden)…" after saving one, the field's own placeholder after removing it with a space, and a save still pending never replaces text typed since. Plugins get it with `scripts/sync-core.sh` (GH#716).
 - Developers: the deploy cron check no longer runs a killed (exit 137) recurring hook again early, or counts a killed one-off that is no longer listed as done: only a hook's lone one-off still listed is retried, any other final 137 is a failure. `scripts/deploy-sites.sh` now forwards `DEPLOY_MAX_ACCOUNT_PROCS` and `DEPLOY_LOAD_RETRY_DELAY` to the host. Plugins get it with `scripts/sync-core.sh` (GH#729).
