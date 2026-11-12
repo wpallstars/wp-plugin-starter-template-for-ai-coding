@@ -78,6 +78,7 @@ jobs:
           # after the usual checks, whatever plugin files step 4 needed.
           # Without it the issue comes from github-actions[bot].
           GH_TOKEN: ${{ secrets.STARTER_SYNC_TOKEN || github.token }}
+          HAS_SYNC_TOKEN: ${{ secrets.STARTER_SYNC_TOKEN != '' }}
           STARTER_REPO: ${{ steps.starter.outputs.repo }}
           # The issue is a worker-ready brief: aidevops Pulse dispatches it
           # to a worker by this label. The repository variable
@@ -173,6 +174,20 @@ jobs:
           - \`scripts/lint.sh\` and \`scripts/smoke-test.sh\` pass.
           EOF
 
+          # Editing an issue keeps its author. With STARTER_SYNC_TOKEN, an
+          # open issue the workflow's own token wrote is replaced once by one
+          # the maintainer writes, so aidevops trusts it. Only that exact
+          # login: an App token's issues are bots too and are kept.
+          old=""
+          if [[ -n "$number" && "$HAS_SYNC_TOKEN" == "true" ]]; then
+            if ! author="$(gh issue view "$number" --json author --jq '.author.login')"; then
+              echo "::warning::Could not read #$number's author; it is kept."
+            elif [[ "$author" == "app/github-actions" ]]; then
+              old="$number"
+              number=""
+            fi
+          fi
+
           if [[ -n "$number" ]]; then
             gh issue edit "$number" --body-file "$body"
             # Dispatch the open issue again, unless a person put a hold on it.
@@ -185,7 +200,10 @@ jobs:
               fi
             fi
           elif [[ -n "$dispatch" ]]; then
-            gh issue create --title "Core files differ from the starter" --label "$label" --label "$dispatch" --body-file "$body"
+            url="$(gh issue create --title "Core files differ from the starter" --label "$label" --label "$dispatch" --body-file "$body")"
           else
-            gh issue create --title "Core files differ from the starter" --label "$label" --body-file "$body"
+            url="$(gh issue create --title "Core files differ from the starter" --label "$label" --body-file "$body")"
+          fi
+          if [[ -n "$old" ]]; then
+            gh issue close "$old" --reason "not planned" --comment "Replaced by $url, written with STARTER_SYNC_TOKEN. An open pull request for this issue: link it to the new one instead."
           fi

@@ -2,6 +2,9 @@
 
 Every change to WP Plugin Starter. readme.txt lists the latest version in short.
 
+= Unreleased =
+* Developers: with STARTER_SYNC_TOKEN set, the Starter sync workflow closes an open issue its own token wrote (github-actions[bot]) and opens the maintainer's in its place, since editing an issue keeps its author and aidevops trusts the author; the closing comment links the new issue. Without the secret nothing changes. Plugins get it with scripts/sync-core.sh (marcusquinn/aidevops#37882; GH#734).
+
 = 1.0.63 =
 * Developers: scripts/deploy-sites.sh runs the post-install load check again once after a SIGKILL (exit 137) whatever the killed process printed, still only when the activation lists are intact, and runs each killed cron event up to 3 times; an event gone from the list after a kill counts as done. Retried checks report WARN ... retried (137). DEPLOY_MAX_ACCOUNT_PROCS makes each install wait, at most 10 minutes, while the account runs more processes. Plugins get it with scripts/sync-core.sh (GH#710).
 * Developers: scripts/lint.sh changelog allows a release PR's renamed heading only for lines under that heading, not anywhere in the file, and reads headings from HEAD to match the diff. The Starter sync issue's Files Scope lists the plugin's own files step 4 may change. Plugins get the lint change with scripts/sync-core.sh (GH#715).
