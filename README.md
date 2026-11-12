@@ -173,6 +173,12 @@ Deleting the plugin removes its settings (on multisite, every site's and the net
 
 ### 1.0.63
 
+### Unreleased
+
+- Developers: `scripts/check-hooks.js` builds no file path, no `RegExp` and no placeholder text from the code it checks, so Codacy reports nothing on it in a Starter sync pull request. Output and exit codes are unchanged. Plugins get it with `scripts/sync-core.sh` (GH#728).
+
+### 1.0.63
+
 - Developers: `scripts/deploy-sites.sh` runs the post-install load check again once after a SIGKILL (exit 137) whatever the killed process printed, still only when the activation lists are intact, and runs each killed cron event up to 3 times. `DEPLOY_MAX_ACCOUNT_PROCS` makes each install wait while the account runs too many processes. Plugins get it with `scripts/sync-core.sh` (GH#710).
 - Developers: `scripts/lint.sh changelog` allows a release PR's renamed heading only for lines under that heading, not anywhere in the file, and reads headings from HEAD to match the diff. The Starter sync issue's Files Scope lists the plugin's own files step 4 may change. Plugins get the lint change with `scripts/sync-core.sh` (GH#715).
 - Developers: `WPStarter::asset_url()` is documented as returning a non-empty string, so `wp_register_script()` with its address passes PHPStan. Plugins get it with `scripts/sync-core.sh` (GH#725).
