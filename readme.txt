@@ -5,7 +5,7 @@ Tags: starter, boilerplate, settings, developer, template
 Requires at least: 6.2
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 1.0.59
+Stable tag: 1.0.60
 License: GPLv3 or later
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 
@@ -63,9 +63,8 @@ GitHub releases are the stable beta channel: each version comes out there first.
 
 == Changelog ==
 
-= 1.0.59 =
-* Developers: release builds ship minified .min copies of assets/ scripts and styles, used unless SCRIPT_DEBUG is on (asset_url()).
-* Developers: the daily Starter sync issue is labelled auto-dispatch, so an aidevops worker syncs the plugin; CI fails changelog lines left under a released version.
+= 1.0.60 =
+* Developers: CI and release jobs set up Node before they build the zips, so a self-hosted runner without Node can build them.
 
 Every change: changelog.txt.
 
