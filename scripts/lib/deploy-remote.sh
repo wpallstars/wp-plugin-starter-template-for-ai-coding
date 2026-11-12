@@ -155,6 +155,10 @@ wp_checked() {
 	output="$("$WP_CLI" --path="$root" "$@" 2>"$err_file")" || status=$?
 	errors="$(cat "$err_file")"
 	rm -f "$err_file"
+	# Whether WP-CLI itself wrote nothing to stderr (callers may retry a
+	# bare SIGKILL; the copy of stdout below must not hide that).
+	WP_STDERR_EMPTY=0
+	[[ -n "$errors" ]] || WP_STDERR_EMPTY=1
 	if [[ "$status" -ne 0 || "$output$errors" == *"$DB_CONNECT_ERROR"* || "$output$errors" == *"$DB_QUERY_ERROR"* ]]; then
 		[[ -z "$output" ]] || printf '%s\n' "$output" >&2
 		[[ -z "$errors" ]] || printf '%s\n' "$errors" >&2
@@ -298,6 +302,7 @@ active_guard() {
 	FLEET_BEFORE="$before" wp_checked "$root" --skip-plugins --skip-themes eval \
 		'if (!is_array(json_decode(getenv("FLEET_BEFORE"), true))) { WP_CLI::error("Invalid activation snapshot output"); }' >/dev/null || return 1
 	wp_checked "$root" "$@" || status=$?
+	GUARD_WP_STDERR_EMPTY="$WP_STDERR_EMPTY"
 	if ! active_check "$root" "$before" "$add" "$remove"; then
 		[[ "$status" -ne 0 ]] || status=1
 	fi
@@ -959,9 +964,9 @@ cdn_announce() {
 load_check() {
 	local root="$1" errors="$2"
 	shift 2
-	LOAD_STATUS=0 LOAD_RETRIED="" LOAD_OUT=""
+	LOAD_STATUS=0 LOAD_RETRIED="" LOAD_OUT="" GUARD_WP_STDERR_EMPTY=0
 	LOAD_OUT="$(active_guard "$root" "" "" "$@" eval "$(load_code)" 2>"$errors")" || LOAD_STATUS=$?
-	if [[ "$LOAD_STATUS" -eq 137 && ! -s "$errors" ]]; then
+	if [[ "$LOAD_STATUS" -eq 137 && "$GUARD_WP_STDERR_EMPTY" -eq 1 ]]; then
 		LOAD_RETRIED=137 LOAD_STATUS=0
 		sleep "$LOAD_RETRY_DELAY"
 		LOAD_OUT="$(active_guard "$root" "" "" "$@" eval "$(load_code)" 2>"$errors")" || LOAD_STATUS=$?
@@ -979,7 +984,7 @@ check_sites() {
 	CDN_URLS="" MAIN_CF=""
 	SITES_TOTAL=0 SITES_FAILED=0 SITES_PURGED=0 PURGE_FAILED=0 SITE_LINES=""
 	CRON_SUM_RUN=0 CRON_SUM_TOTAL=0 CRON_WARNED="" CRON_HOOKS_RUN=""
-	MAIN_STATUS="?" MAIN_CODE="000" MAIN_CACHE="none" MAIN_REASON="" MAIN_RETRIED=""
+	MAIN_STATUS="?" MAIN_CODE="000" MAIN_CACHE="none" MAIN_REASON="" MAIN_RETRIED="" MAIN_LOAD_RETRIED=""
 	kind="$(wp_bare "$root" eval 'echo is_multisite() ? "multisite" : "single";')" || return 1
 	case "$kind" in
 	multisite) network=1 ;;
@@ -1055,7 +1060,7 @@ check_sites() {
 		fi
 		if [[ "$SITES_TOTAL" -eq 1 ]]; then
 			MAIN_STATUS="$status" MAIN_CODE="${HOME_CODE}${HOME_PINNED:+ pinned}" MAIN_CACHE="$HOME_CACHE"
-			MAIN_REASON="${reason%; }" MAIN_RETRIED="$first_code"
+			MAIN_REASON="${reason%; }" MAIN_RETRIED="$first_code" MAIN_LOAD_RETRIED="$load_retried"
 		fi
 		if [[ "$network" -eq 1 ]]; then
 			printf -v line '    site %s\tstatus=%s\tpurged=%s\t%s\thome=%s\tcache=%s\t%s\n' "$url" "${status:-?}" "$purged" "$cron_note" "${HOME_CODE}${HOME_PINNED:+ pinned}" "$HOME_CACHE" "$result"
@@ -1222,6 +1227,7 @@ apply_one() {
 	[[ "$PURGE_FAILED" -eq 0 ]] || warn+="purge failed, "
 	[[ -z "$CRON_WARNED" || -n "$SITE_LINES" ]] || warn+="$CRON_WARNED"
 	[[ "$MAIN_CACHE" != *hit* || "$MAIN_CACHE" == redirected:* ]] || warn+="cached, "
+	[[ -z "$MAIN_LOAD_RETRIED" || -n "$SITE_LINES" ]] || warn+="load retried ($MAIN_LOAD_RETRIED), "
 	[[ -z "$MAIN_RETRIED" ]] || warn+="home retried ($MAIN_RETRIED), "
 	# A network's site rows carry this warning; a single site has no row.
 	[[ -z "$MAIN_CF" || -n "$SITE_LINES" ]] || warn+="$(cf_warning "$MAIN_CF"), "
