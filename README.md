@@ -10,7 +10,7 @@
 [![CodeFactor](https://www.codefactor.io/repository/github/wpallstars/wp-plugin-starter-template-for-ai-coding/badge)](https://www.codefactor.io/repository/github/wpallstars/wp-plugin-starter-template-for-ai-coding)
 [![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/wpallstars/wp-plugin-starter-template-for-ai-coding/badge)](https://scorecard.dev/viewer/?uri=github.com/wpallstars/wp-plugin-starter-template-for-ai-coding)
 [![License: GPL v3 or later](https://img.shields.io/badge/License-GPL%20v3%20or%20later-blue.svg)](LICENSE)
-[![Latest release](https://img.shields.io/badge/release-v1.0.62-blue.svg)](https://github.com/wpallstars/wp-plugin-starter-template-for-ai-coding/releases)
+[![Latest release](https://img.shields.io/badge/release-v1.0.63-blue.svg)](https://github.com/wpallstars/wp-plugin-starter-template-for-ai-coding/releases)
 
 [![Requires WordPress](https://img.shields.io/badge/WordPress-6.2%2B-21759B.svg?logo=wordpress)](readme.txt)
 [![Tested up to](https://img.shields.io/badge/tested%20up%20to-7.1-21759B.svg?logo=wordpress)](readme.txt)
@@ -27,7 +27,7 @@ WP Plugin Starter is what wpallstars plugins are made from. It has no features o
 
 If this saves you time, headaches and costs, feel free to [buy me a coffee](https://buymeacoffee.com/marcusquinn), or whatever you like, to invest in making more things open-source.
 
-Version: 1.0.62
+Version: 1.0.63
 
 <!-- github-only:start -->
 ## Screenshots
@@ -171,10 +171,12 @@ Deleting the plugin removes its settings (on multisite, every site's and the net
 
 ## Changelog
 
-### Unreleased
+### 1.0.63
 
+- Developers: `scripts/deploy-sites.sh` runs the post-install load check again once after a SIGKILL (exit 137) whatever the killed process printed, still only when the activation lists are intact, and runs each killed cron event up to 3 times. `DEPLOY_MAX_ACCOUNT_PROCS` makes each install wait while the account runs too many processes. Plugins get it with `scripts/sync-core.sh` (GH#710).
 - Developers: `scripts/lint.sh changelog` allows a release PR's renamed heading only for lines under that heading, not anywhere in the file, and reads headings from HEAD to match the diff. The Starter sync issue's Files Scope lists the plugin's own files step 4 may change. Plugins get the lint change with `scripts/sync-core.sh` (GH#715).
 - Developers: `WPStarter::asset_url()` is documented as returning a non-empty string, so `wp_register_script()` with its address passes PHPStan. Plugins get it with `scripts/sync-core.sh` (GH#725).
+- Developers: the Starter sync workflow writes its issue with the optional secret `STARTER_SYNC_TOKEN` (a maintainer's fine-grained token, Issues read and write) when it is set, so aidevops merges a worker's sync pull request after the usual checks without a per-issue approval (DEVELOPMENT.md → Starter sync). Plugins get it with `scripts/sync-core.sh` (GH#731).
 
 ### 1.0.62
 
