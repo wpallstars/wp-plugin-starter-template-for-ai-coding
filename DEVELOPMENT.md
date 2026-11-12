@@ -437,6 +437,18 @@ workflow's own token reads the public starter and writes the issue. To
 follow another starter (a fork), set the repository variable
 `STARTER_REPO` to its `owner/repo`. In the starter itself it does nothing.
 
+The issue is a worker-ready brief (What, How, Files Scope, Acceptance
+criteria, Verification) labelled `auto-dispatch` as well, so aidevops Pulse
+gives it to a worker, who syncs and opens the pull request; each daily
+update adds the label again unless the issue has `no-auto-dispatch` (a
+person's hold). The repository variable `STARTER_SYNC_DISPATCH_LABEL` sets
+another label, or `none` for no label (a repository that does not use
+aidevops). Keep the issue's title and `starter-sync` label as they are:
+aidevops merges a worker's pull request for this issue by itself (after
+the usual checks) only for that issue shape, and only while the pull
+request changes nothing outside `scripts/core-files.txt` and
+`changelog.txt`; anything else waits for a person.
+
 To sync by hand, with the starter cloned next to the plugin (the issue
 gives its folder name):
 
