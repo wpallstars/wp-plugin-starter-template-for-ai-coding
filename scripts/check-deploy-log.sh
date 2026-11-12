@@ -3,7 +3,8 @@
 # scripts/lib/deploy-remote.sh on sample web PHP log lines and compares the
 # result with what scripts/deploy-sites.sh must do with them. WordPress's own
 # cron could_not_set notice (any language, PHP or Apache log format) is a
-# warning; every other line, including look-alikes, fails an install.
+# warning, as is a line with a --ignore-log-line string; every other line,
+# including look-alikes, fails an install.
 #
 # Usage: scripts/check-deploy-log.sh [--awk PATH]
 #   --awk PATH  Run with this awk (mawk, gawk, ...) first on PATH, as the
@@ -81,12 +82,14 @@ readonly FAIL="fail"
 CASES=0
 MISMATCHES=0
 
-# check_case LABEL EXPECTED LINE: EXPECTED is "fail" (the install fails) or
-# the exact warning text (the install only warns).
+# check_case LABEL EXPECTED LINE [IGNORE]: EXPECTED is "fail" (the install
+# fails) or the exact warning text (the install only warns). IGNORE: the
+# --ignore-log-line strings, one per line (default none).
 # shellcheck disable=SC2034 # the globals set here are read by the sourced library
 check_case() {
-	local label="$1" expected="$2" line="$3"
+	local label="$1" expected="$2" line="$3" ignore="${4:-}"
 	local fails=0 got
+	IGNORE_LOG_LINES="$ignore"
 	printf '%s\n' "$line" >"$CASE_LOG"
 	LOG_FILES=("$CASE_LOG")
 	LOG_BEFORE=(0)
@@ -138,6 +141,21 @@ check_case "fail: could_not_set_x" "$FAIL" "${TS}Cron reschedule event error for
 check_case "fail: no message or JSON" "$FAIL" "${TS}Cron reschedule event error for hook: $OWN, Error code: could_not_set"
 check_case "fail: text after the JSON" "$FAIL" "$TS$ENGLISH_RESCHEDULE and more text"
 check_case "fail: plain PHP warning" "$FAIL" "${TS}PHP Warning:  Undefined variable \$value in /var/www/html/wp-content/plugins/example/example.php on line 12"
+
+# --ignore-log-line (GH#756): the fourth argument, one string per line.
+readonly IGNORED="ignored log lines (1), "
+readonly OWN_LINE="psd-rehearsal: outbound mail suppressed"
+readonly PHP_WARNING="${TS}PHP Warning:  Undefined variable \$value in /var/www/html/wp-content/plugins/example/example.php on line 12"
+check_case "warn: ignored line" "$IGNORED" "$TS$OWN_LINE" "$OWN_LINE"
+check_case "warn: ignored line, Apache format" "$IGNORED" "[Thu Nov 12 21:29:29.123456 2026] [php:notice] [pid 1234] $OWN_LINE" "$OWN_LINE"
+check_case "fail: ignored line and another line" "$FAIL" "$TS$OWN_LINE"$'\n'"$PHP_WARNING" "$OWN_LINE"
+check_case "fail: ignore string that does not match" "$FAIL" "${TS}psd-rehearsal: outbound mail sent" "$OWN_LINE"
+check_case "warn: cron notice with an ignore string stays a race" "$RACE" "$TS$ENGLISH_RESCHEDULE" "$MSG"
+check_case "warn: second of two ignore strings" "$IGNORED" "$TS$OWN_LINE" "other text"$'\n'"$OWN_LINE"
+check_case "warn: regex characters match literally" "$IGNORED" "${TS}cache [*.tmp] ok." "cache [*.tmp] ok."
+check_case "fail: regex characters are not a pattern" "$FAIL" "${TS}abc" "a.c"
+check_case "warn: backslash matches literally" "$IGNORED" "${TS}path C:\\new" 'C:\new'
+check_case "fail: ignore string only in the timestamp" "$FAIL" "$PHP_WARNING" "09-Nov-2026"
 
 if [[ "$MISMATCHES" -gt 0 ]]; then
 	printf '%d of %d cases failed.\n' "$MISMATCHES" "$CASES" >&2

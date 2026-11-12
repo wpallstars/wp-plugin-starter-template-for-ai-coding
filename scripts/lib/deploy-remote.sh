@@ -51,6 +51,14 @@ fi
 
 WP_CLI="${DEPLOY_WP_CLI:-wp}"
 WEB_ERROR_LOG="${DEPLOY_WEB_ERROR_LOG:-}"
+# Fixed strings, one per line, from deploy-sites.sh --ignore-log-line (a file
+# it copies here, so no remote quoting): a new log line that contains one is
+# a warning, not a failure (GH#756). An unreadable file ignores nothing.
+IGNORE_LOG_LINES=""
+if [[ -n "${DEPLOY_IGNORE_LOG_FILE:-}" ]]; then
+	IGNORE_LOG_LINES="$(cat "$DEPLOY_IGNORE_LOG_FILE" 2>/dev/null)" || IGNORE_LOG_LINES=""
+fi
+LOG_IGNORED=0
 SLUG=""
 FAILED=0
 ALLOW_DOWNGRADE=0
@@ -504,9 +512,13 @@ new_log_all() {
 # ": {...}" and the end of the line (or Apache's ", referer: URL"). A
 # plugin's own line of a similar start ("Payment task failed for hook: HOOK,
 # status: could_not_set") is not WordPress's and still fails the install.
+# Any other line that contains one of IGNORE_LOG_LINES (a fixed string, not a
+# pattern) after its leading [...] blocks (timestamp, Apache prefix) prints
+# "ignored" (GH#756). Read through ENVIRON: awk -v would process backslashes.
 classify_log() {
 	local hooks=" $1 "
-	awk -v hooks="$hooks" '
+	IGNORE="$IGNORE_LOG_LINES" awk -v hooks="$hooks" '
+		BEGIN { ignores = split(ENVIRON["IGNORE"], ignore, "\n") }
 		{
 			if (match($0, /:[[:space:]]*[^[:space:],:]+,[^:,]*:[[:space:]]*could_not_set[[:space:]]*,[^:,]*:.*,[^:,]*:[[:space:]]*[{].*[}][[:space:]]*(,[[:space:]]*referer:[[:space:]]*[^[:space:]]*[[:space:]]*)?$/) \
 				&& substr($0, 1, RSTART - 1) ~ /^(\[[^]]*\][[:space:]]*)*[^]:[,0-9]*$/) {
@@ -520,6 +532,14 @@ classify_log() {
 					print "race " text
 				}
 				next
+			}
+			rest = $0
+			sub(/^(\[[^]]*\][[:space:]]*)+/, "", rest)
+			for (i = 1; i <= ignores; i++) {
+				if (ignore[i] != "" && index(rest, ignore[i]) > 0) {
+					print "ignored"
+					next
+				}
 			}
 			print "line"
 		}
@@ -535,11 +555,12 @@ new_log_text() {
 
 # Classifies the new log lines from one snapshot, so a line arriving mid-check
 # cannot hide an error. Cron race lines for hooks this run executed are
-# warnings, not new lines. Sets LOG_NEW_LINES (lines that count), LOG_WARN
+# warnings, not new lines, as are lines the operator ignored. Sets
+# LOG_NEW_LINES (lines that count), LOG_IGNORED (ignored lines), LOG_WARN
 # (warning text) and LOG_FAIL (1 when the new lines fail the install).
 classify_new_log() {
 	local snapshot classified entry contention=0
-	LOG_NEW_LINES=0 LOG_WARN="" LOG_FAIL=1
+	LOG_NEW_LINES=0 LOG_IGNORED=0 LOG_WARN="" LOG_FAIL=1
 	snapshot="$(new_log_all)"
 	if [[ -n "$snapshot" ]]; then
 		classified="$(printf '%s\n' "$snapshot" | classify_log "$CRON_HOOKS_RUN")"
@@ -552,10 +573,12 @@ classify_new_log() {
 				contention=$((contention + 1))
 				;;
 			"race "*) LOG_WARN+="cron race ${entry#race }, " ;;
+			ignored) LOG_IGNORED=$((LOG_IGNORED + 1)) ;;
 			*) ;;
 			esac
 		done <<<"$classified"
 	fi
+	[[ "$LOG_IGNORED" -eq 0 ]] || LOG_WARN+="ignored log lines ($LOG_IGNORED), "
 	if [[ "$LOG_NEW_LINES" -gt 0 && "$contention" -eq "$LOG_NEW_LINES" ]]; then
 		# Two cron runners saved the cron option at once: not a failure.
 		LOG_WARN+="cron save contention ($contention lines), "
@@ -1468,8 +1491,9 @@ apply_one() {
 	R_AFTER="$(plugin_version "$main")"
 	classify_new_log
 	R_NEW_LINES="$LOG_NEW_LINES" R_LOG_WARN="$LOG_WARN" R_LOG_FAIL="$LOG_FAIL" R_LOG_TEXT=""
-	# Read now: the next install's log_files replaces the log list.
-	[[ "$R_NEW_LINES" -eq 0 ]] || R_LOG_TEXT="$(new_log_text)"
+	# Read now: the next install's log_files replaces the log list. Ignored
+	# lines are shown too, so nothing is hidden.
+	[[ "$R_NEW_LINES" -eq 0 && "$LOG_IGNORED" -eq 0 ]] || R_LOG_TEXT="$(new_log_text)"
 	# Nothing failed, but the host killed a check twice: report it after
 	# the recheck at the end of the run (GH#750). Its Cloudflare purge (the
 	# @cdn lines) waits too, so it follows the recheck's page-cache purge.
@@ -1534,7 +1558,7 @@ install_report() {
 	while IFS= read -r record; do
 		[[ -z "$record" ]] || recheck_hint "$record"
 	done <<<"$UNV_RECORDS"
-	if [[ "$R_NEW_LINES" -gt 0 ]]; then
+	if [[ -n "$R_LOG_TEXT" ]]; then
 		printf '%s\n' "$R_LOG_TEXT" | sed 's/^/    /'
 	fi
 	if [[ "$result" == FAIL* ]]; then
@@ -1649,14 +1673,15 @@ recheck_install() {
 
 # Adds the lines the logs gained during the recheck to the install's R_LOG_*.
 # A held-back install had no new lines that fail it, so lines that fail it
-# now (any but cron-save contention) decide R_LOG_FAIL.
+# now (any but cron-save contention) decide R_LOG_FAIL. Ignored lines are
+# shown but leave R_LOG_FAIL alone.
 recheck_log() {
 	local text
 	classify_new_log
 	R_LOG_WARN+="$LOG_WARN"
-	[[ "$LOG_NEW_LINES" -gt 0 ]] || return 0
+	[[ "$LOG_NEW_LINES" -gt 0 || "$LOG_IGNORED" -gt 0 ]] || return 0
 	R_NEW_LINES=$((R_NEW_LINES + LOG_NEW_LINES))
-	R_LOG_FAIL="$LOG_FAIL"
+	[[ "$LOG_NEW_LINES" -eq 0 ]] || R_LOG_FAIL="$LOG_FAIL"
 	text="$(new_log_text)"
 	if [[ -n "$R_LOG_TEXT" ]]; then
 		R_LOG_TEXT+=$'\n'"$text"

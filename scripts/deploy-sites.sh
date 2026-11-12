@@ -27,6 +27,12 @@
 #                      default).
 #   --apply            Install the release on each of them.
 #   --allow-downgrade  Allow installing a release older than the installed version.
+#   --ignore-log-line TEXT  A new web PHP log line that contains TEXT (a fixed
+#                      string, not a pattern; after the line's leading [...]
+#                      timestamp or Apache prefix) only warns, ignored log
+#                      lines (N), and is still printed. For a site's own known
+#                      harmless lines. Repeatable. Any other new line still
+#                      fails the install.
 #   --keep-releases N  After a successful --apply, remove this plugin's older run
 #                      folders on the host (v<version>-<time> in ~/.{slug}-deploy),
 #                      keeping the current run and every run of the newest N tags
@@ -137,6 +143,8 @@ CF_HOSTS_PURGED=0
 CF_HOSTS_FAILED=""
 DOWNGRADE_ARGS=()
 SKIPS=()
+# --ignore-log-line strings (GH#756).
+IGNORES=()
 TMP_DIR=""
 ZIP=""
 SHA=""
@@ -198,7 +206,7 @@ parse_args() {
 		local arg="$1"
 		local value="${2:-}"
 		case "$arg" in
-		--host | --tag | --parent | --skip | --wp-cli | --web-error-log | --cloudflare-token-env | --cloudflare-purge | --keep-releases)
+		--host | --tag | --parent | --skip | --wp-cli | --web-error-log | --cloudflare-token-env | --cloudflare-purge | --keep-releases | --ignore-log-line)
 			[[ $# -ge 2 ]] || die "$arg needs a value"
 			[[ "$value" != -* ]] || die "$arg needs a value, not an option: $value"
 			case "$arg" in
@@ -211,6 +219,13 @@ parse_args() {
 			--cloudflare-token-env) CF_TOKEN_ENV="$value" ;;
 			--cloudflare-purge) CF_PURGE="$value" ;;
 			--keep-releases) KEEP_RELEASES="$value" ;;
+			--ignore-log-line)
+				# One line of a log: never empty (it would match every line)
+				# and no line break or other control character.
+				[[ -n "$value" ]] || die "--ignore-log-line cannot be empty"
+				[[ ! "$value" =~ [[:cntrl:]] ]] || die "--ignore-log-line takes text from one log line, without control characters"
+				IGNORES+=("$value")
+				;;
 			*) ;; # The outer pattern lists every option that takes a value.
 			esac
 			shift
@@ -651,8 +666,15 @@ apply() {
 	remote "umask 077; cat >$(remote_words "$dir/$SLUG-$VERSION.zip")" <"$ZIP" || die "cannot copy the zip to $HOST"
 	remote "umask 077; cat >$(remote_words "$dir/deploy-remote.sh")" <"$REMOTE_PART" || die "cannot copy the remote part to $HOST"
 	remote "chmod 600 $(remote_words "$dir/$SLUG-$VERSION.zip" "$dir/deploy-remote.sh")" || die "cannot set the files' mode on $HOST"
+	# The ignore strings go as a file, one per line, so any text reaches the
+	# remote part unchanged, with no quoting for the host's shell.
+	local ignore_file=""
+	if [[ "${#IGNORES[@]}" -gt 0 ]]; then
+		ignore_file="$dir/ignore-log-lines"
+		printf '%s\n' "${IGNORES[@]}" | remote "umask 077; cat >$(remote_words "$ignore_file")" || die "cannot copy the ignored log lines to $HOST"
+	fi
 	printf '\nInstalling %s on %s (folder %s):\n' "$TAG" "$HOST" "$dir"
-	command="$(remote_words env "DEPLOY_WP_CLI=$WP_CLI" "DEPLOY_WEB_ERROR_LOG=$WEB_ERROR_LOG" "DEPLOY_CRON_TIMEOUT=${DEPLOY_CRON_TIMEOUT:-120}" "DEPLOY_MAX_ACCOUNT_PROCS=${DEPLOY_MAX_ACCOUNT_PROCS:-}" "DEPLOY_LOAD_RETRY_DELAY=${DEPLOY_LOAD_RETRY_DELAY:-30}" "DEPLOY_CDN_PURGE=$([[ -n "$CF_TOKEN" ]] && printf 1 || printf 0)" bash "$dir/deploy-remote.sh" apply "$SLUG" "$PARENT" \
+	command="$(remote_words env "DEPLOY_WP_CLI=$WP_CLI" "DEPLOY_WEB_ERROR_LOG=$WEB_ERROR_LOG" "DEPLOY_IGNORE_LOG_FILE=$ignore_file" "DEPLOY_CRON_TIMEOUT=${DEPLOY_CRON_TIMEOUT:-120}" "DEPLOY_MAX_ACCOUNT_PROCS=${DEPLOY_MAX_ACCOUNT_PROCS:-}" "DEPLOY_LOAD_RETRY_DELAY=${DEPLOY_LOAD_RETRY_DELAY:-30}" "DEPLOY_CDN_PURGE=$([[ -n "$CF_TOKEN" ]] && printf 1 || printf 0)" bash "$dir/deploy-remote.sh" apply "$SLUG" "$PARENT" \
 		"$VERSION" "$dir/$SLUG-$VERSION.zip" "$SHA" "$dir/backups" ${DOWNGRADE_ARGS[@]+"${DOWNGRADE_ARGS[@]}"} ${SKIPS[@]+"${SKIPS[@]}"})"
 	set +e
 	remote "$command" | tee "$TMP_DIR/apply.out" | stream_filter
