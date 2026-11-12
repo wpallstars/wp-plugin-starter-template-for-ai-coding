@@ -209,6 +209,8 @@ jobs:
               fi
             fi
           elif [[ "$hold" == "true" ]]; then
+            # Never --force: an existing label keeps its own colour and description.
+            gh label create "no-auto-dispatch" --color B60205 --description "A person's hold: starter sync does not dispatch this issue" 2>/dev/null || true
             url="$(gh issue create --title "Core files differ from the starter" --label "$label" --label "no-auto-dispatch" --body-file "$body")"
           elif [[ -n "$dispatch" ]]; then
             url="$(gh issue create --title "Core files differ from the starter" --label "$label" --label "$dispatch" --body-file "$body")"
