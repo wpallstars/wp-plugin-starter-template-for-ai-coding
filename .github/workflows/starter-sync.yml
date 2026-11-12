@@ -178,11 +178,20 @@ jobs:
           # open issue the workflow's own token wrote is replaced once by one
           # the maintainer writes, so aidevops trusts it. Only that exact
           # login: an App token's issues are bots too and are kept.
+          # The replacement keeps a no-auto-dispatch hold; if the old issue's
+          # labels cannot be read, the hold is assumed.
           old=""
+          hold=""
           if [[ -n "$number" && "$HAS_SYNC_TOKEN" == "true" ]]; then
             if ! author="$(gh issue view "$number" --json author --jq '.author.login')"; then
               echo "::warning::Could not read #$number's author; it is kept."
             elif [[ "$author" == "app/github-actions" ]]; then
+              if ! old_labels="$(gh issue view "$number" --json labels --jq '.labels[].name')"; then
+                echo "::warning::Could not read #$number's labels; the replacement is held."
+                hold="true"
+              elif grep -qxF "no-auto-dispatch" <<<"$old_labels"; then
+                hold="true"
+              fi
               old="$number"
               number=""
             fi
@@ -199,11 +208,17 @@ jobs:
                 gh issue edit "$number" --add-label "$dispatch"
               fi
             fi
+          elif [[ "$hold" == "true" ]]; then
+            url="$(gh issue create --title "Core files differ from the starter" --label "$label" --label "no-auto-dispatch" --body-file "$body")"
           elif [[ -n "$dispatch" ]]; then
             url="$(gh issue create --title "Core files differ from the starter" --label "$label" --label "$dispatch" --body-file "$body")"
           else
             url="$(gh issue create --title "Core files differ from the starter" --label "$label" --body-file "$body")"
           fi
           if [[ -n "$old" ]]; then
-            gh issue close "$old" --reason "not planned" --comment "Replaced by $url, written with STARTER_SYNC_TOKEN. An open pull request for this issue: link it to the new one instead."
+            note=""
+            if [[ "$hold" == "true" ]]; then
+              note=" The no-auto-dispatch hold is kept on the new issue."
+            fi
+            gh issue close "$old" --reason "not planned" --comment "Replaced by $url, written with STARTER_SYNC_TOKEN.$note An open pull request for this issue: link it to the new one instead."
           fi
