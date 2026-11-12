@@ -17,7 +17,7 @@
  * A call inside a PHP comment does not count.
  *
  * {prefix} is the main file's define('<PREFIX>_VERSION', ...) in lower case,
- * as scripts/lib/plugin.sh reads it (also when the define spans lines). A
+ * as scripts/lib/plugin.sh reads it; here the define may also span lines. A
  * hook name built at run time ("{prefix}_{$id}_items", or
  * '{prefix}_' . $id . '_items') counts when at least one listed hook fits it.
  * PHP in scripts/ (test helpers, not shipped) is not searched. The release
