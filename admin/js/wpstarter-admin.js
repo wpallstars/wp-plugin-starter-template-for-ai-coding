@@ -212,6 +212,12 @@
 					});
 				} else if ($input.is(':checkbox')) {
 					$input.data('wps-saved', saved ? '1' : '0');
+				} else if ($input.is('input[type="password"][data-wps-empty-placeholder]')) {
+					// A secret field: change it only if untouched since this save started.
+					if ($input.val() === value) {
+						$input.attr('placeholder', value === ' ' ? $input.attr('data-wps-empty-placeholder') : i18n.secretSaved);
+						$input.val('');
+					}
 				} else if (saved !== undefined && String(saved) !== String($input.val())) {
 					$input.val(saved); // Show the sanitized value.
 				}

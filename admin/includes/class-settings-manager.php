@@ -873,9 +873,10 @@ class WPStarter_Settings_Manager { // NOSONAR: keep the cohesive settings view a
     private static function render_text($key, array $field, $value, $attrs) {
         if (!empty($field['secret'])) {
             printf(
-                '<input type="password" class="regular-text code" %1$s value="" placeholder="%2$s" autocomplete="new-password" spellcheck="false" />',
+                '<input type="password" class="regular-text code" %1$s value="" placeholder="%2$s" data-wps-empty-placeholder="%3$s" autocomplete="new-password" spellcheck="false" />',
                 $attrs, // phpcs:ignore WordPress.Security.EscapeOutput -- escaped in render_field().
-                '' !== (string) $value ? esc_attr__('Saved (hidden). Type a new one to replace it, or a space to remove it.', 'wp-plugin-starter-template') : self::placeholder($field) // phpcs:ignore WordPress.Security.EscapeOutput -- escaped here or in placeholder().
+                '' !== (string) $value ? esc_attr__('Saved (hidden). Type a new one to replace it, or a space to remove it.', 'wp-plugin-starter-template') : self::placeholder($field), // phpcs:ignore WordPress.Security.EscapeOutput -- escaped here or in placeholder().
+                self::placeholder($field) // phpcs:ignore WordPress.Security.EscapeOutput -- escaped in placeholder().
             );
             return;
         }
