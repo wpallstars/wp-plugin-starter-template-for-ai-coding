@@ -475,6 +475,9 @@ then writes the issue as that maintainer, so aidevops treats it as the
 maintainer's brief. The workflow runs only on its schedule and
 **Run workflow**, never on pull requests or comments, so no outside code
 can use the token. Without the secret it uses its own token as before.
+Editing an issue keeps its author, so with the secret set, the next run
+closes an open issue that its own token wrote and opens the maintainer's
+in its place; link an open pull request for the old issue to the new one.
 
 To sync by hand, with the starter cloned next to the plugin (the issue
 gives its folder name):
