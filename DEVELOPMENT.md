@@ -466,7 +466,12 @@ only the main host was purged. Such callers must purge every network host
 `scripts/check-deploy-log.sh` checks the web PHP log classifier
 (`classify_new_log()` in `scripts/lib/deploy-remote.sh`): WordPress's cron
 `could_not_set` notice in several languages and log formats warns, and look-alike
-plugin lines, PHP notices and errors fail. Run it after any change to the
+plugin lines, PHP notices and errors fail. Its `--ignore-log-line` cases
+(`scripts/deploy-sites.sh --ignore-log-line TEXT`, sent to the host as a file
+in `DEPLOY_IGNORE_LOG_FILE`) check that a line with an ignore string warns
+(`ignored log lines (N)`), that it fails beside any other new line, and that
+the string matches literally (regex characters, backslashes) and never in the
+timestamp. Run it after any change to the
 classifier and after `scripts/sync-core.sh`; `--awk PATH` uses another awk
 (the host's may be mawk or GNU Awk). It prints `ok` or `FAIL` per case and
 exits 1 on any mismatch.
