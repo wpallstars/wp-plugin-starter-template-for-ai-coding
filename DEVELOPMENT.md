@@ -417,16 +417,26 @@ swap cannot start (no `unzip`, unexpected zip layout), the live folder is
 untouched and the deploy falls back to `wp plugin install --force`.
 
 A host at its process or memory limit (CloudLinux LVE) kills WP-CLI with
-exit 137. The post-install load check is run again once, and each killed cron
+exit 137. The post-install load check is run again once, and a killed cron
 event up to 3 tries in all, `DEPLOY_LOAD_RETRY_DELAY` seconds apart (default
 30), whatever the killed process printed; every other exit code fails at once.
-An event gone from `wp cron event list` after a kill (a one-off it took) counts
-as done, only when the list command succeeded. Retried checks report
+Only a one-off event still in `wp cron event list` is retried (WP-CLI had not
+yet taken it). A recurring event is not run again (WP-CLI reschedules it before
+its callback), and a one-off gone from the list was killed during its callback:
+both fail as `cron HOOK killed (137)`. Retried checks report
 `WARN ... retried (137)`, not FAIL. Events already run one per process, so a
 killed backlog is not run again as one `--due-now` call. To wait before each
 install while the account runs too many processes, set
 `DEPLOY_MAX_ACCOUNT_PROCS` (waits up to 10 minutes while `pgrep -u "$(id -u)"`
-counts more; unset means no wait).
+counts more; unset means no wait). Set both settings on the computer that runs
+`scripts/deploy-sites.sh`; it passes them to the host.
+
+Every `ssh` the script runs sends a keep-alive every 30 seconds
+(`ServerAliveInterval=30`, `ServerAliveCountMax=4`, over `~/.ssh/config`), so a
+connection that dies without a close fails in about 2 minutes instead of
+hanging for hours. The host may have finished by then: the script names the
+last install it reported, so check the installs after it rather than run
+again blind (running again is safe: an install already on the tag is skipped).
 
 When purging Cloudflare by host (no `--cloudflare-token-env`), the WARN
 `Cloudflare keeps pages from before the deploy` on multisite subsites means
