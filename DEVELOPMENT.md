@@ -438,11 +438,13 @@ not failed: its install line waits for a recheck at the end of the run. The
 recheck starts `DEPLOY_LOAD_RETRY_DELAY` seconds after the last install, and
 each held-back install waits for `DEPLOY_MAX_ACCOUNT_PROCS` first; then the
 killed step runs once more, with its own retry (the load also runs the
-page-cache purge and the cron events). A pass gives
+page-cache purge and the cron events), and the PHP logs get a new baseline
+first, so lines the recheck logs count as the install's. A pass gives
 `WARN rechecked after host kill (137)`. Killed again, the site is
-`UNVERIFIED: host killed WP-CLI (137) twice`, with a `recheck:` line (the
-same guarded load, by hand) and no restore command, and the run exits 4 when
-nothing failed. Any other failure, in the first pass or the recheck, is still
+`UNVERIFIED: host killed WP-CLI (137) twice`, with a `recheck:` line to run
+by hand (a plain full load, or the cron list when that was killed) and no
+restore command, and the run exits 4 when nothing failed; old run folders are
+still pruned. Any other failure, in the first pass or the recheck, is still
 a FAIL with the restore command (exit 1). The held-back install's Cloudflare
 purge waits for the recheck too, so it follows the page-cache purge.
 

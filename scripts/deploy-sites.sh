@@ -669,6 +669,7 @@ apply() {
 	if [[ "$status" -eq 4 ]]; then
 		printf '\nDeployed %s on %s, but %s site(s) are UNVERIFIED: the host killed WP-CLI (exit 137) on the retry and again at the end-of-run recheck. Nothing failed and no restore is needed: when the host is quieter, run each recheck command above.\n' \
 			"$TAG" "$HOST" "$(grep -c '^    recheck: ' "$TMP_DIR/apply.out" || true)"
+		prune_host "$TAG-$stamp"
 		return 4
 	fi
 	if [[ "$status" -ne 0 ]]; then

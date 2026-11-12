@@ -26,7 +26,8 @@
 # deploy-sites.sh to fill after purging Cloudflare; with 0 each site's plain
 # home address is fetched once and WARN Cloudflare keeps pages from before
 # the deploy means a cf-cache-status HIT older than the install. apply exits 1 on a failed
-# site, a version not reached or new log lines.
+# site, a version not reached or new log lines, and 4 when nothing failed but
+# a site stays UNVERIFIED (the host killed WP-CLI, 137, at the recheck too).
 #
 # apply holds a per-plugin lock on the host, ~/.SLUG-deploy/.lock (mkdir,
 # with an owner file: PID, tag, start time, parent), from before the first
@@ -1522,16 +1523,21 @@ install_report() {
 	return 0
 }
 
-# One unverified site's recheck command (an unverified_record in $1): the
-# same guarded load, settings upgrade and page-cache purge, by hand, when the
-# host is quieter. Its scheduled events run on the site's own WP-Cron.
+# One unverified site's recheck command (an unverified_record in $1), to run
+# by hand when the host is quieter: for a killed load, a plain full load
+# (which runs the settings upgrade; not the activation guard); for a killed
+# cron list, the list. Its scheduled events run on the site's own WP-Cron.
 recheck_hint() {
 	local record="$1"
 	local kind url
 	local cmd=("$WP_CLI" --path="$R_ROOT")
 	IFS=$'\x1f' read -r kind url _ <<<"$record"
 	[[ "$NETWORK" -eq 0 ]] || cmd+=(--url="$url")
-	cmd+=(eval "$(load_code)")
+	if [[ "$kind" == cron ]]; then
+		cmd+=(cron event list)
+	else
+		cmd+=(eval "$(load_code)")
+	fi
 	printf '    recheck:'
 	printf ' %q' "${cmd[@]}"
 	printf '\n'
@@ -1560,8 +1566,16 @@ recheck_install() {
 	local record kind url status home cache purged cron_note warn result old_row old_result records="" errors
 	local url_args=()
 	eval "$state"
-	errors="$(mktemp)" || errors=/dev/null
 	wait_for_account_load
+	# The recheck's load and cron run can log too: a new baseline, as the
+	# install's own (a shared --web-error-log has other installs' lines since).
+	# Without one nothing is rechecked, so the sites stay UNVERIFIED.
+	if ! log_files "$R_ROOT"; then
+		printf '    %s: cannot read the PHP logs for the recheck; not rechecked\n' "$R_NAME"
+		install_report
+		return 0
+	fi
+	errors="$(mktemp)" || errors=/dev/null
 	while IFS= read -r record; do
 		[[ -n "$record" ]] || continue
 		IFS=$'\x1f' read -r kind url status home cache purged cron_note warn <<<"$record"
@@ -1608,7 +1622,27 @@ recheck_install() {
 	done <<<"$UNV_RECORDS"
 	UNV_RECORDS="$records"
 	[[ "$errors" == /dev/null ]] || rm -f "$errors"
+	recheck_log
 	install_report
+	return 0
+}
+
+# Adds the lines the logs gained during the recheck to the install's R_LOG_*.
+# A held-back install had no new lines that fail it, so lines that fail it
+# now (any but cron-save contention) decide R_LOG_FAIL.
+recheck_log() {
+	local text
+	classify_new_log
+	R_LOG_WARN+="$LOG_WARN"
+	[[ "$LOG_NEW_LINES" -gt 0 ]] || return 0
+	R_NEW_LINES=$((R_NEW_LINES + LOG_NEW_LINES))
+	R_LOG_FAIL="$LOG_FAIL"
+	text="$(new_log_text)"
+	if [[ -n "$R_LOG_TEXT" ]]; then
+		R_LOG_TEXT+=$'\n'"$text"
+	else
+		R_LOG_TEXT="$text"
+	fi
 	return 0
 }
 
