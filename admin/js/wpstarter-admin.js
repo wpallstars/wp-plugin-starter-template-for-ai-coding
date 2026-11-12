@@ -183,6 +183,26 @@
 			}
 		},
 
+		// Show what the server stored in the field that was saved.
+		reflect: function ($input, value, saved) {
+			if ($input.is('[data-wps-multi]')) {
+				var chosen = $.map(saved || [], String);
+				$input.find(':checkbox').each(function () {
+					this.checked = this.hasAttribute('data-wps-locked') || $.inArray(this.value, chosen) !== -1;
+				});
+			} else if ($input.is(':checkbox')) {
+				$input.data('wps-saved', saved ? '1' : '0');
+			} else if ($input.is('input[type="password"][data-wps-empty-placeholder]')) {
+				// A secret field: change it only if untouched since this save started.
+				if ($input.val() === value) {
+					$input.attr('placeholder', value === ' ' ? $input.attr('data-wps-empty-placeholder') : i18n.secretSaved);
+					$input.val('');
+				}
+			} else if (saved !== undefined && String(saved) !== String($input.val())) {
+				$input.val(saved); // Show the sanitized value.
+			}
+		},
+
 		save: function ($input) {
 			var key = $input.data('wps-setting');
 			var value = this.valueOf($input);
@@ -205,22 +225,7 @@
 					return;
 				}
 				var saved = response.data.value;
-				if ($input.is('[data-wps-multi]')) {
-					var chosen = $.map(saved || [], String);
-					$input.find(':checkbox').each(function () {
-						this.checked = this.hasAttribute('data-wps-locked') || $.inArray(this.value, chosen) !== -1;
-					});
-				} else if ($input.is(':checkbox')) {
-					$input.data('wps-saved', saved ? '1' : '0');
-				} else if ($input.is('input[type="password"][data-wps-empty-placeholder]')) {
-					// A secret field: change it only if untouched since this save started.
-					if ($input.val() === value) {
-						$input.attr('placeholder', value === ' ' ? $input.attr('data-wps-empty-placeholder') : i18n.secretSaved);
-						$input.val('');
-					}
-				} else if (saved !== undefined && String(saved) !== String($input.val())) {
-					$input.val(saved); // Show the sanitized value.
-				}
+				Settings.reflect($input, value, saved);
 				if (!$input.is(':checkbox')) {
 					$input.data('wps-saved', $input.val());
 				}
