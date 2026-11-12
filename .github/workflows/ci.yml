@@ -107,6 +107,12 @@ jobs:
           fi
           shellcheck --version
 
+      # The js and hooks checks run Node; a self-hosted runner (CI_RUNNER)
+      # may have none (DEVELOPMENT.md → Self-hosted runners).
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 22
+
       - name: PHP syntax (7.4), JavaScript syntax, ShellCheck, PHPCS, PHPStan, hooks, changelog
         run: scripts/lint.sh php js shell phpcs phpstan hooks changelog
 

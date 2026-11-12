@@ -175,6 +175,9 @@ Deleting the plugin removes its settings (on multisite, every site's and the net
 
 - Developers: the deploy cron check no longer runs a killed (exit 137) recurring hook again early, or counts a killed one-off that is no longer listed as done: only a hook's lone one-off still listed is retried, any other final 137 is a failure. `scripts/deploy-sites.sh` now forwards `DEPLOY_MAX_ACCOUNT_PROCS` and `DEPLOY_LOAD_RETRY_DELAY` to the host. Plugins get it with `scripts/sync-core.sh` (GH#729).
 - Developers: `scripts/deploy-sites.sh` sends an ssh keep-alive every 30 seconds, so a connection that dies without a close fails in about 2 minutes instead of hanging the roll-out for hours, and then names the last install the host reported so the rest can be checked. Plugins get it with `scripts/sync-core.sh` (GH#738).
+- Developers: `scripts/release-bump.sh` stops, changing nothing, when `README.md` has no `### Unreleased` (or `### X.Y.Z`) section, which the Release workflow takes the notes from, and updates every `define()` form of the version constant that `plugin_identity()` accepts. The Starter sync issue asks for the `README.md` Unreleased line too; `RELEASING.md` keeps the release's upgrade notice through a rebase. Plugins get it with `scripts/sync-core.sh` (GH#720).
+- Developers: `scripts/build-release.sh` copies only a file's opening comment above its `.min` copy when code follows the closing `*/` on the same line, so that code is not repeated. Plugins get it with `scripts/sync-core.sh` (GH#722).
+- Developers: CI's lint job sets up Node 22 before the lint step, for runners without Node, and `scripts/lint.sh changelog` catches an indented bullet added under a released heading. Plugins get it with `scripts/sync-core.sh` (GH#730).
 
 ### 1.0.63
 

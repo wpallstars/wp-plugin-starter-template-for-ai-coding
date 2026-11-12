@@ -92,9 +92,14 @@ on that commit.
    If `main` moves while the release PR waits, rebase. Resolve a conflict in
    `changelog.txt`, `readme.txt` or `README.md` by taking `main`'s file (its
    new entries sit under `Unreleased`). First save any release-branch
-   entries absent from `main` and restore them under `Unreleased`. Then run
-   `scripts/release-bump.sh X.Y.Z`, write the new entries' short
-   `readme.txt` lines, and run the preflight.
+   entries absent from `main` and restore them under `Unreleased`, and copy
+   the release's upgrade notice entry (its `= X.Y.Z =` under
+   `== Upgrade Notice ==` in `readme.txt`, outside the Unreleased block), if
+   it added one. Then run `scripts/release-bump.sh X.Y.Z`, put the upgrade
+   notice entry back, write the new entries' short `readme.txt` lines, and
+   run the preflight. The bump stops, changing nothing, while `README.md`
+   has no `### Unreleased` (or `### X.Y.Z`) section: the Release workflow
+   takes the release notes from it.
 2. On the pull request's branch: `scripts/preflight-release.sh` (no errors) and
    `scripts/plugin-check.sh` (no errors).
    <!-- wps-own:start -->
