@@ -2,6 +2,9 @@
 
 Every change to WP Plugin Starter. readme.txt lists the latest version in short.
 
+= Unreleased =
+* Developers: when the Starter sync workflow replaces an issue its own token wrote, the new issue keeps a no-auto-dispatch hold (and gets it if the old issue's labels cannot be read), instead of being dispatched to a worker; the closing comment says so. Without the hold, or without STARTER_SYNC_TOKEN, nothing changes. Plugins get it with scripts/sync-core.sh (GH#744).
+
 = 1.0.64 =
 * Fix: a secret settings field shows the right placeholder after an AJAX save: "Saved (hidden)…" after saving one, the field's own placeholder after removing it with a space, and a save still pending never replaces text typed since. Plugins get it with scripts/sync-core.sh (GH#716).
 * Developers: the deploy cron check no longer runs a killed (exit 137) recurring hook again early, or counts a killed one-off that is no longer listed as done: only a hook's lone one-off still listed is retried, any other final 137 is a failure (cron HOOK killed (137)). scripts/deploy-sites.sh now forwards DEPLOY_MAX_ACCOUNT_PROCS and DEPLOY_LOAD_RETRY_DELAY to the host. Plugins get it with scripts/sync-core.sh (GH#729).
