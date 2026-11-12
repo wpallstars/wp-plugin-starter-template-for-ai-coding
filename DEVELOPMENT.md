@@ -416,6 +416,23 @@ very unlikely to find it gone. The tar backup and restore line are unchanged. If
 swap cannot start (no `unzip`, unexpected zip layout), the live folder is
 untouched and the deploy falls back to `wp plugin install --force`.
 
+A host at its process or memory limit (CloudLinux LVE) kills WP-CLI with
+exit 137. The post-install load check is run again once, and each killed cron
+event up to 3 tries in all, `DEPLOY_LOAD_RETRY_DELAY` seconds apart (default
+30), whatever the killed process printed; every other exit code fails at once.
+An event gone from `wp cron event list` after a kill (a one-off it took) counts
+as done, only when the list command succeeded. Retried checks report
+`WARN ... retried (137)`, not FAIL. Events already run one per process, so a
+killed backlog is not run again as one `--due-now` call. To wait before each
+install while the account runs too many processes, set
+`DEPLOY_MAX_ACCOUNT_PROCS` (waits up to 10 minutes while `pgrep -u "$(id -u)"`
+counts more; unset means no wait).
+
+When purging Cloudflare by host (no `--cloudflare-token-env`), the WARN
+`Cloudflare keeps pages from before the deploy` on multisite subsites means
+only the main host was purged. Such callers must purge every network host
+(`wp site list --field=url`).
+
 `scripts/check-deploy-log.sh` checks the web PHP log classifier
 (`classify_new_log()` in `scripts/lib/deploy-remote.sh`): WordPress's cron
 `could_not_set` notice in several languages and log formats warns, and look-alike
