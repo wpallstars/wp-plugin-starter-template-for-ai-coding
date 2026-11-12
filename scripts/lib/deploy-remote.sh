@@ -738,10 +738,27 @@ run_site_cron() {
 	local cmd=()
 	CRON_RUN=0 CRON_TOTAL=0 CRON_FAILURE="" CRON_WARN=""
 	[[ "$limit" =~ ^[0-9]+$ ]] || limit=120
-	hooks="$(DEPLOY_SLUG="$SLUG" wp_checked "$root" "$@" eval "$(cron_list_code)")" || {
+	local list_code list_err list_status=0 retried=""
+	list_code="$(cron_list_code)"
+	list_err="$(mktemp)" || {
 		CRON_FAILURE="cron list failed; "
 		return 0
 	}
+	hooks="$(DEPLOY_SLUG="$SLUG" wp_checked "$root" "$@" eval "$list_code" 2>"$list_err")" || list_status=$?
+	# A bare SIGKILL (137, nothing on stderr) is retried once, as the load check is.
+	if [[ "$list_status" -eq 137 && ! -s "$list_err" ]]; then
+		retried=137 list_status=0
+		sleep "$LOAD_RETRY_DELAY"
+		hooks="$(DEPLOY_SLUG="$SLUG" wp_checked "$root" "$@" eval "$list_code" 2>"$list_err")" || list_status=$?
+	fi
+	if [[ "$list_status" -ne 0 ]]; then
+		[[ ! -s "$list_err" ]] || cat "$list_err" >&2
+		rm -f "$list_err"
+		CRON_FAILURE="cron list failed; "
+		return 0
+	fi
+	rm -f "$list_err"
+	[[ -z "$retried" ]] || CRON_WARN+="cron list retried ($retried), "
 	hooks="$(printf '%s\n' "$hooks" | sed -n 's/^cronhook://p')"
 	# The time limit needs timeout, but only when there is an event to run.
 	[[ -n "$hooks" ]] || return 0
