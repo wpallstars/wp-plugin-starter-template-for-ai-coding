@@ -293,17 +293,23 @@ active_check() {
 }
 
 # Even when the command fails, check for damage before stopping the install.
+# Sets GUARD_WP_STDERR_EMPTY (WP-CLI itself wrote nothing to stderr) and
+# GUARD_ACTIVE_OK (1 only when the activation lists were checked and are as
+# they should be; a retry is safe only then).
 active_guard() {
 	local root="$1" add="$2" remove="$3"
 	shift 3
 	local before status=0
+	GUARD_WP_STDERR_EMPTY=0 GUARD_ACTIVE_OK=0
 	before="$(active_snapshot "$root")" || return 1
 	# Validate the machine-readable snapshot before ANY mutation.
 	FLEET_BEFORE="$before" wp_checked "$root" --skip-plugins --skip-themes eval \
 		'if (!is_array(json_decode(getenv("FLEET_BEFORE"), true))) { WP_CLI::error("Invalid activation snapshot output"); }' >/dev/null || return 1
 	wp_checked "$root" "$@" || status=$?
 	GUARD_WP_STDERR_EMPTY="$WP_STDERR_EMPTY"
-	if ! active_check "$root" "$before" "$add" "$remove"; then
+	if active_check "$root" "$before" "$add" "$remove"; then
+		GUARD_ACTIVE_OK=1
+	else
 		[[ "$status" -ne 0 ]] || status=1
 	fi
 	return "$status"
@@ -738,23 +744,33 @@ run_site_cron() {
 	local cmd=()
 	CRON_RUN=0 CRON_TOTAL=0 CRON_FAILURE="" CRON_WARN=""
 	[[ "$limit" =~ ^[0-9]+$ ]] || limit=120
-	local list_code list_err list_status=0 retried=""
+	local list_code list_out list_err list_status=0 retried="" list_failed="cron list failed; "
 	list_code="$(cron_list_code)"
-	list_err="$(mktemp)" || {
-		CRON_FAILURE="cron list failed; "
+	list_out="$(mktemp)" || {
+		CRON_FAILURE="$list_failed"
 		return 0
 	}
-	hooks="$(DEPLOY_SLUG="$SLUG" wp_checked "$root" "$@" eval "$list_code" 2>"$list_err")" || list_status=$?
+	list_err="$(mktemp)" || {
+		rm -f "$list_out"
+		CRON_FAILURE="$list_failed"
+		return 0
+	}
+	# In this shell, not in $(...), so WP_STDERR_EMPTY reaches the retry
+	# test: on failure wp_checked copies stdout to stderr, so a non-empty
+	# list_err does not mean WP-CLI wrote to stderr.
+	DEPLOY_SLUG="$SLUG" wp_checked "$root" "$@" eval "$list_code" >"$list_out" 2>"$list_err" || list_status=$?
 	# A bare SIGKILL (137, nothing on stderr) is retried once, as the load check is.
-	if [[ "$list_status" -eq 137 && ! -s "$list_err" ]]; then
+	if [[ "$list_status" -eq 137 && "$WP_STDERR_EMPTY" -eq 1 ]]; then
 		retried=137 list_status=0
 		sleep "$LOAD_RETRY_DELAY"
-		hooks="$(DEPLOY_SLUG="$SLUG" wp_checked "$root" "$@" eval "$list_code" 2>"$list_err")" || list_status=$?
+		DEPLOY_SLUG="$SLUG" wp_checked "$root" "$@" eval "$list_code" >"$list_out" 2>"$list_err" || list_status=$?
 	fi
+	hooks="$(cat "$list_out")"
+	rm -f "$list_out"
 	if [[ "$list_status" -ne 0 ]]; then
 		[[ ! -s "$list_err" ]] || cat "$list_err" >&2
 		rm -f "$list_err"
-		CRON_FAILURE="cron list failed; "
+		CRON_FAILURE="$list_failed"
 		return 0
 	fi
 	rm -f "$list_err"
@@ -976,21 +992,22 @@ cdn_announce() {
 }
 
 # The load check: $1 root, $2 stderr file, rest WP-CLI args. Sets LOAD_OUT,
-# LOAD_STATUS and LOAD_RETRIED. Only a SIGKILL (137) with nothing on stderr
-# is retried, once, after LOAD_RETRY_DELAY.
+# LOAD_STATUS and LOAD_RETRIED. Only a SIGKILL (137) with nothing on stderr,
+# after which the activation lists were found intact, is retried, once,
+# after LOAD_RETRY_DELAY: an activation failure stays FAIL.
 load_check() {
 	local root="$1" errors="$2"
 	shift 2
-	LOAD_STATUS=0 LOAD_RETRIED="" LOAD_OUT="" GUARD_WP_STDERR_EMPTY=0
+	LOAD_STATUS=0 LOAD_RETRIED="" LOAD_OUT="" GUARD_WP_STDERR_EMPTY=0 GUARD_ACTIVE_OK=0
 	local out_file
 	out_file="$(mktemp)" || {
 		LOAD_STATUS=1
 		return 0
 	}
-	# active_guard runs in this shell, not in $(...), so GUARD_WP_STDERR_EMPTY
-	# reaches the retry test below; stdout goes through a private file.
+	# active_guard runs in this shell, not in $(...), so its GUARD_* flags
+	# reach the retry test below; stdout goes through a private file.
 	active_guard "$root" "" "" "$@" eval "$(load_code)" >"$out_file" 2>"$errors" || LOAD_STATUS=$?
-	if [[ "$LOAD_STATUS" -eq 137 && "$GUARD_WP_STDERR_EMPTY" -eq 1 ]]; then
+	if [[ "$LOAD_STATUS" -eq 137 && "$GUARD_WP_STDERR_EMPTY" -eq 1 && "$GUARD_ACTIVE_OK" -eq 1 ]]; then
 		LOAD_RETRIED=137 LOAD_STATUS=0
 		sleep "$LOAD_RETRY_DELAY"
 		active_guard "$root" "" "" "$@" eval "$(load_code)" >"$out_file" 2>"$errors" || LOAD_STATUS=$?
