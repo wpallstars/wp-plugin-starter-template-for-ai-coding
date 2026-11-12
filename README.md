@@ -10,7 +10,7 @@
 [![CodeFactor](https://www.codefactor.io/repository/github/wpallstars/wp-plugin-starter-template-for-ai-coding/badge)](https://www.codefactor.io/repository/github/wpallstars/wp-plugin-starter-template-for-ai-coding)
 [![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/wpallstars/wp-plugin-starter-template-for-ai-coding/badge)](https://scorecard.dev/viewer/?uri=github.com/wpallstars/wp-plugin-starter-template-for-ai-coding)
 [![License: GPL v3 or later](https://img.shields.io/badge/License-GPL%20v3%20or%20later-blue.svg)](LICENSE)
-[![Latest release](https://img.shields.io/badge/release-v1.0.58-blue.svg)](https://github.com/wpallstars/wp-plugin-starter-template-for-ai-coding/releases)
+[![Latest release](https://img.shields.io/badge/release-v1.0.59-blue.svg)](https://github.com/wpallstars/wp-plugin-starter-template-for-ai-coding/releases)
 
 [![Requires WordPress](https://img.shields.io/badge/WordPress-6.2%2B-21759B.svg?logo=wordpress)](readme.txt)
 [![Tested up to](https://img.shields.io/badge/tested%20up%20to-7.1-21759B.svg?logo=wordpress)](readme.txt)
@@ -27,7 +27,7 @@ WP Plugin Starter is what wpallstars plugins are made from. It has no features o
 
 If this saves you time, headaches and costs, feel free to [buy me a coffee](https://buymeacoffee.com/marcusquinn), or whatever you like, to invest in making more things open-source.
 
-Version: 1.0.58
+Version: 1.0.59
 
 <!-- github-only:start -->
 ## Screenshots
@@ -171,11 +171,13 @@ Deleting the plugin removes its settings (on multisite, every site's and the net
 
 ## Changelog
 
-### Unreleased
+### 1.0.59
 
 - Developers: the Starter sync workflow's issue is a worker-ready brief labelled `auto-dispatch` as well as `starter-sync`, with Files Scope and acceptance criteria, so aidevops Pulse gives it to a worker; each daily update adds the label again unless the issue has `no-auto-dispatch`. The repository variable `STARTER_SYNC_DISPATCH_LABEL` sets another label, or `none` for no label. Plugins get it with `scripts/sync-core.sh` (GH#702).
 - Developers: `scripts/lint.sh changelog` (run by CI) fails a pull request that adds a `changelog.txt` line under a released version heading, or a `README.md` Changelog line outside `### Unreleased`; a release PR's heading rename passes. A merge conflict with the release PR's rename can leave a line there. Plugins get it with `scripts/sync-core.sh` (GH#696).
 - Developers: `RELEASING.md` describes the cron race check's line shape without trailing spaces inside code spans (markdownlint MD038). Plugins get it with `scripts/sync-core.sh` (GH#692).
+- Developers: release builds carry a minified `.min` copy beside each `assets/**/*.js` and `*.css` file (`scripts/build-release.sh`, pinned esbuild 0.25.12, needs Node; the Release workflow sets up Node 22). `{Prefix}::asset_url('assets/x.js')` returns the `.min` copy when it exists and `SCRIPT_DEBUG` is off, else the readable file, so a Git checkout works unchanged; enqueue front-end assets with it (`STANDARDS.md` → Releases). Plugins without an `assets/` folder build as before. Plugins get it with `scripts/sync-core.sh` (GH#698).
+- Developers: `STANDARDS.md` → Releases and a docblock in the main class lose a stray indent and a trailing space that came in with GH#698. Plugins get them with `scripts/sync-core.sh`.
 
 ### 1.0.58
 
