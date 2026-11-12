@@ -5,7 +5,7 @@ Tags: starter, boilerplate, settings, developer, template
 Requires at least: 6.2
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 1.0.63
+Stable tag: 1.0.64
 License: GPLv3 or later
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 
@@ -63,9 +63,10 @@ GitHub releases are the stable beta channel: each version comes out there first.
 
 == Changelog ==
 
-= 1.0.63 =
-* Developers: deploy checks killed by the host (exit 137) are retried, including cron events; optional wait while the account runs too many processes.
-* Developers: the Starter sync issue can be written with a maintainer token (STARTER_SYNC_TOKEN), and its Files Scope lists the plugin's own files.
+= 1.0.64 =
+* Fix: a secret settings field shows the right placeholder after an AJAX save.
+* Developers: deploy cron checks retry only a killed lone one-off; ssh keep-alive stops a dropped connection hanging the roll-out.
+* Developers: release-bump, build-release, CI lint and the hook check fixed; the Starter sync replaces a bot-written issue when STARTER_SYNC_TOKEN is set.
 
 Every change: changelog.txt.
 
