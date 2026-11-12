@@ -3,7 +3,7 @@
 Every change to WP Plugin Starter. readme.txt lists the latest version in short.
 
 = Unreleased =
-* Developers: the deploy cron check no longer runs a killed (exit 137) recurring hook again early, or counts a killed one-off that is no longer listed as done: only a one-off still listed is retried, any other final 137 is a failure (cron HOOK killed (137)). scripts/deploy-sites.sh now forwards DEPLOY_MAX_ACCOUNT_PROCS and DEPLOY_LOAD_RETRY_DELAY to the host. Plugins get it with scripts/sync-core.sh (GH#729).
+* Developers: the deploy cron check no longer runs a killed (exit 137) recurring hook again early, or counts a killed one-off that is no longer listed as done: only a hook's lone one-off still listed is retried, any other final 137 is a failure (cron HOOK killed (137)). scripts/deploy-sites.sh now forwards DEPLOY_MAX_ACCOUNT_PROCS and DEPLOY_LOAD_RETRY_DELAY to the host. Plugins get it with scripts/sync-core.sh (GH#729).
 * Developers: scripts/deploy-sites.sh runs ssh with ServerAliveInterval=30 and ServerAliveCountMax=4, so a connection that dies without a close fails in about 2 minutes (exit 255) instead of hanging the roll-out for about 2 hours; it then says the host may have finished and names the last install it reported. Plugins get it with scripts/sync-core.sh (GH#738).
 * Developers: with STARTER_SYNC_TOKEN set, the Starter sync workflow closes an open issue its own token wrote (github-actions[bot]) and opens the maintainer's in its place, since editing an issue keeps its author and aidevops trusts the author; the closing comment links the new issue. Without the secret nothing changes. Plugins get it with scripts/sync-core.sh (marcusquinn/aidevops#37882; GH#734).
 

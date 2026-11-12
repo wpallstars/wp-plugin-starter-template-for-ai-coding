@@ -420,10 +420,11 @@ A host at its process or memory limit (CloudLinux LVE) kills WP-CLI with
 exit 137. The post-install load check is run again once, and a killed cron
 event up to 3 tries in all, `DEPLOY_LOAD_RETRY_DELAY` seconds apart (default
 30), whatever the killed process printed; every other exit code fails at once.
-Only a one-off event still in `wp cron event list` is retried (WP-CLI had not
-yet taken it). A recurring event is not run again (WP-CLI reschedules it before
-its callback), and a one-off gone from the list was killed during its callback:
-both fail as `cron HOOK killed (137)`. Retried checks report
+Only a hook's lone one-off event still in `wp cron event list` is retried
+(WP-CLI had not yet taken it). A recurring event is not run again (WP-CLI
+reschedules it before its callback), a one-off gone from the list was killed
+during its callback, and a hook with more than one event cannot show which
+was killed: all fail as `cron HOOK killed (137)`. Retried checks report
 `WARN ... retried (137)`, not FAIL. Events already run one per process, so a
 killed backlog is not run again as one `--due-now` call. To wait before each
 install while the account runs too many processes, set
@@ -436,7 +437,8 @@ Every `ssh` the script runs sends a keep-alive every 30 seconds
 connection that dies without a close fails in about 2 minutes instead of
 hanging for hours. The host may have finished by then: the script names the
 last install it reported, so check the installs after it rather than run
-again blind (running again is safe: an install already on the tag is skipped).
+again blind (running again is safe: an install already on the tag gets the
+same files again).
 
 When purging Cloudflare by host (no `--cloudflare-token-env`), the WARN
 `Cloudflare keeps pages from before the deploy` on multisite subsites means

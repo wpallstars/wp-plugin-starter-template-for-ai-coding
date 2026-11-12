@@ -619,15 +619,15 @@ prune_host() {
 # ssh exit 255 during apply: the connection died, but the host may have gone
 # on and finished. Names the last install the host reported (install lines
 # start with the install's name and a tab), so the operator checks the sites
-# instead of running again blind. Running again is safe: the version check
-# skips an install already on the tag, and the lock reports a run still going.
+# instead of running again blind. Running again is safe: an install already
+# on the tag gets the same files again, and the lock reports a run still going.
 connection_lost() {
 	local out="$1"
 	local last
 	last="$(awk -F '\t' 'NF > 1 && $1 != "" && $1 !~ /^[@ ]/ { name = $1 } END { print name }' "$out" 2>/dev/null || true)"
 	printf '\nConnection to %s lost (ssh exit 255) while installing %s; the host may have finished.\n' "$HOST" "$TAG" >&2
 	printf 'Check each install not reported above (last reported: %s): its version, home page and PHP log.\n' "${last:-none}" >&2
-	printf 'Running again is safe: an install already on %s is skipped.\n' "$TAG" >&2
+	printf 'Running again is safe: an install already on %s gets the same files again.\n' "$TAG" >&2
 	return 0
 }
 
