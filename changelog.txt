@@ -2,6 +2,10 @@
 
 Every change to WP Plugin Starter. readme.txt lists the latest version in short.
 
+= Unreleased =
+* Developers: the minified .min copies in release builds start with their file's opening comment (licence, copyright and Provenance lines), which ATTRIBUTION.txt asks every copy to keep; the minifier had dropped it. scripts/preflight-release.sh fails a .min copy without its file's Provenance line. Plugins get it with scripts/sync-core.sh (GH#711).
+* Developers: scripts/deploy-sites.sh retries a site's load check once after a bare SIGKILL (exit 137, nothing on stderr), as GH#700 meant: the flag it tests was set in a subshell and lost, so the retry never ran. Plugins get it with scripts/sync-core.sh (GH#712).
+
 = 1.0.60 =
 * Developers: CI's Release build and smoke test jobs set up Node 22 before they build the zips, and the Release workflow sets it up before Preflight, which builds them too: the minifier in scripts/build-release.sh runs on Node, and a runner named by the CI_RUNNER variable may not have it (build-release: needs npx). Plugins get it with scripts/sync-core.sh (GH#706).
 
