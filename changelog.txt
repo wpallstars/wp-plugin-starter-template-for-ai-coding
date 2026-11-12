@@ -2,7 +2,7 @@
 
 Every change to WP Plugin Starter. readme.txt lists the latest version in short.
 
-= Unreleased =
+= 1.0.60 =
 * Developers: CI's Release build and smoke test jobs set up Node 22 before they build the zips, and the Release workflow sets it up before Preflight, which builds them too: the minifier in scripts/build-release.sh runs on Node, and a runner named by the CI_RUNNER variable may not have it (build-release: needs npx). Plugins get it with scripts/sync-core.sh (GH#706).
 
 = 1.0.59 =
