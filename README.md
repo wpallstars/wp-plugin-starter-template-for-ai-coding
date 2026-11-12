@@ -174,6 +174,7 @@ Deleting the plugin removes its settings (on multisite, every site's and the net
 ### Unreleased
 
 - Developers: when the Starter sync workflow replaces an issue its own token wrote, the new issue keeps a `no-auto-dispatch` hold (and gets it if the old issue's labels cannot be read), instead of being dispatched to a worker; the closing comment says so. Without the hold, or without `STARTER_SYNC_TOKEN`, nothing changes. Plugins get it with `scripts/sync-core.sh` (GH#744).
+- Developers: `scripts/deploy-sites.sh` takes each install's web PHP log baseline after the wait for the account's load (`DEPLOY_MAX_ACCOUNT_PROCS`), just before the install, so errors the site logs during that wait no longer fail it. Plugins get it with `scripts/sync-core.sh` (GH#745).
 
 ### 1.0.64
 

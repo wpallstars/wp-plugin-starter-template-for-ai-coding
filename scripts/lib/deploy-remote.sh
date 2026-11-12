@@ -1299,13 +1299,15 @@ apply_one() {
 		return 0
 	fi
 	chmod 600 "$backup"
+	# Wait first, so lines the site logs during the wait are not counted as
+	# the install's: the log baseline is taken just before the install.
+	wait_for_account_load
 	if ! log_files "$root"; then
 		printf '%s\tFAIL: cannot check the web PHP log; not installed\n' "$name"
 		FAILED=1
 		return 0
 	fi
 
-	wait_for_account_load
 	INSTALL_START="$(date +%s)"
 	if ! install_build "$root" "$name" "$zip" "$plugins" "$backup"; then
 		FAILED=1
