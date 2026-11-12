@@ -173,6 +173,7 @@ Deleting the plugin removes its settings (on multisite, every site's and the net
 
 ### Unreleased
 
+- Developers: `scripts/lint.sh changelog` (run by CI) fails a pull request that adds a `changelog.txt` line under a released version heading, or a `README.md` Changelog line outside `### Unreleased`; a release PR's heading rename passes. A merge conflict with the release PR's rename can leave a line there. Plugins get it with `scripts/sync-core.sh` (GH#696).
 - Developers: `RELEASING.md` describes the cron race check's line shape without trailing spaces inside code spans (markdownlint MD038). Plugins get it with `scripts/sync-core.sh` (GH#692).
 
 ### 1.0.58

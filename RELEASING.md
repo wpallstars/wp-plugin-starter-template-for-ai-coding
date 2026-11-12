@@ -69,7 +69,8 @@ Before step 1, list the open pull requests (`gh pr list --state open`) and
 ask whoever is merging (people, other sessions, automatic merges) to hold
 merges to `main` until the release PR merges. Each merge during the release
 PR's CI adds a line under `= Unreleased =`, which conflicts with the release
-PR's rename of that heading and forces a rebase. Everything merged
+PR's rename of that heading and forces a rebase; `scripts/lint.sh changelog`
+fails a line left under a released heading. Everything merged
 before the release PR's merge commit is in the release, because the tag goes
 on that commit.
 

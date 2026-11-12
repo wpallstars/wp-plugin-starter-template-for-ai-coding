@@ -17,6 +17,10 @@
 #   build      Plugins with a JavaScript build (a "build" script in
 #              package.json): its "check" script (types, lint) if any, then a
 #              fresh build, which must match the built files in assets/build/.
+#   changelog  A pull request adds changelog lines only under "= Unreleased ="
+#              in changelog.txt and "### Unreleased" in README.md, never under
+#              a released version (base: origin/$GITHUB_BASE_REF, default main;
+#              a release PR that renames the heading passes).
 # With no CHECK, runs them all. phpcs and phpstan need `composer install`.
 #
 # Exit status: 0 when every check passes, 1 when any fails, 2 on bad usage.
@@ -28,7 +32,7 @@
 
 set -euo pipefail
 
-readonly ALL_CHECKS="php js shell workflows phpcs phpstan hooks build"
+readonly ALL_CHECKS="php js shell workflows phpcs phpstan hooks build changelog"
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 readonly ROOT
 # Built JavaScript and CSS that ship (release zips are made from Git, with
@@ -37,7 +41,7 @@ readonly BUILD_DIR="assets/build"
 FAILED=""
 
 usage() {
-	sed -n '2,23p' "$0" | sed 's/^# \{0,1\}//'
+	sed -n '2,27p' "$0" | sed 's/^# \{0,1\}//'
 	return 0
 }
 
@@ -176,6 +180,116 @@ check_build() {
 		return 1
 	fi
 	return 0
+}
+
+# Line numbers (in the new file) of lines a one-file --unified=0 diff on
+# stdin adds that start with PREFIX.
+added_lines() {
+	local prefix="$1"
+	awk -v prefix="$prefix" '
+		/^@@ / {
+			split($3, a, ",")
+			n = substr(a[1], 2) + 0
+			next
+		}
+		/^\+\+\+ / { next }
+		/^\+/ {
+			if (index(substr($0, 2), prefix) == 1) print n
+			n++
+		}
+	'
+	return 0
+}
+
+# The heading above line NUMBER of FILE (style "eq": "= X ="; "hash": the
+# "### X" headings inside README.md's "## Changelog"; empty outside it).
+heading_above() {
+	local file="$1"
+	local number="$2"
+	local style="$3"
+	awk -v number="$number" -v style="$style" '
+		BEGIN { hash = (style == "hash") }
+		NR > number { exit }
+		hash && /^## / { inlog = ($0 == "## Changelog"); head = ""; next }
+		hash && /^### / { head = $0; next }
+		!hash && /^= .+ =[[:space:]]*$/ { head = $0 }
+		END {
+			if (hash && !inlog) head = "(outside the changelog)"
+			print head
+		}
+	' "$file"
+	return 0
+}
+
+# The Version: of the plugin's main file (the PHP file in the root with one).
+main_file_version() {
+	local ref="${1:-}"
+	local file version
+	while IFS= read -r file; do
+		[[ "$file" == */* ]] && continue
+		if [[ -n "$ref" ]]; then
+			version="$(git -C "$ROOT" show "$ref:$file" 2>/dev/null | sed -n 's/^[[:space:]*]*Version:[[:space:]]*//p' | head -n 1 | tr -d '[:space:]')"
+		else
+			version="$(sed -n 's/^[[:space:]*]*Version:[[:space:]]*//p' "$ROOT/$file" | head -n 1 | tr -d '[:space:]')"
+		fi
+		if [[ -n "$version" ]]; then
+			printf '%s' "$version"
+			return 0
+		fi
+	done < <(git -C "$ROOT" ls-files '*.php')
+	return 0
+}
+
+# One file of check_changelog: prints each misplaced line, returns 1 if any.
+changelog_file() {
+	local base="$1"
+	local file="$2"
+	local prefix="$3"
+	local style="$4"
+	local unreleased="$5"
+	local version="$6"
+	local diff number heading escaped status=0
+	diff="$(git diff --unified=0 "$base"...HEAD -- "$file")"
+	[[ -n "$diff" ]] || return 0
+	# A release PR renames the Unreleased heading to the new version.
+	if [[ -n "$version" && "$version" != "$(main_file_version "$base")" ]]; then
+		escaped="${version//./\\.}"
+		if grep -Eq '^-(= *Unreleased *=|### *Unreleased)[[:space:]]*$' <<<"$diff" &&
+			grep -Eq "^\\+(= *v?${escaped} *=|### *v?${escaped})[[:space:]]*\$" <<<"$diff"; then
+			return 0
+		fi
+	fi
+	while IFS= read -r number; do
+		[[ -n "$number" ]] || continue
+		heading="$(heading_above "$file" "$number" "$style")"
+		[[ "$heading" == "(outside the changelog)" ]] && continue
+		if [[ "$heading" != "$unreleased" ]]; then
+			printf '%s:%s: changelog line is under "%s"; move it under "%s"\n' \
+				"$file" "$number" "${heading:-no heading}" "$unreleased"
+			status=1
+		fi
+	done < <(printf '%s\n' "$diff" | added_lines "$prefix")
+	return "$status"
+}
+
+# A pull request's changelog lines belong under Unreleased: a merge conflict
+# with the release PR's heading rename can leave one under the released
+# version (RELEASING.md → GitHub release).
+check_changelog() {
+	local base="origin/${GITHUB_BASE_REF:-main}"
+	local version status=0
+	if ! git rev-parse --verify --quiet "$base" >/dev/null; then
+		printf 'no %s to compare with; skipped (CI fetches it)\n' "$base"
+		return 0
+	fi
+	version="$(main_file_version)"
+	if [[ -f "$ROOT/changelog.txt" ]]; then
+		changelog_file "$base" changelog.txt '* ' eq '= Unreleased =' "$version" || status=1
+	fi
+	if [[ -f "$ROOT/README.md" ]]; then
+		changelog_file "$base" README.md '- ' hash '### Unreleased' "$version" || status=1
+	fi
+	return "$status"
 }
 
 main() {

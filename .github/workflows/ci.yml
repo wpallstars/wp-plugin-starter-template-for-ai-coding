@@ -107,8 +107,8 @@ jobs:
           fi
           shellcheck --version
 
-      - name: PHP syntax (7.4), JavaScript syntax, ShellCheck, PHPCS, PHPStan, hooks
-        run: scripts/lint.sh php js shell phpcs phpstan hooks
+      - name: PHP syntax (7.4), JavaScript syntax, ShellCheck, PHPCS, PHPStan, hooks, changelog
+        run: scripts/lint.sh php js shell phpcs phpstan hooks changelog
 
       # Plugins with a JavaScript build only (DEVELOPMENT.md → JavaScript
       # builds): types and lint, then a fresh build must match assets/build/.
