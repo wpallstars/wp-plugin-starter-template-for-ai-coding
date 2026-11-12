@@ -2,7 +2,7 @@
 
 Every change to WP Plugin Starter. readme.txt lists the latest version in short.
 
-= Unreleased =
+= 1.0.61 =
 * Developers: the minified .min copies in release builds start with their file's opening comment (licence, copyright and Provenance lines), which ATTRIBUTION.txt asks every copy to keep; the minifier had dropped it. scripts/preflight-release.sh fails a .min copy without its file's Provenance line. Plugins get it with scripts/sync-core.sh (GH#711).
 * Developers: scripts/deploy-sites.sh retries a site's load check once after a bare SIGKILL (exit 137, nothing on stderr), as GH#700 meant: the flag it tests was set in a subshell and lost, so the retry never ran. Plugins get it with scripts/sync-core.sh (GH#712).
 

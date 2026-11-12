@@ -5,7 +5,7 @@ Tags: starter, boilerplate, settings, developer, template
 Requires at least: 6.2
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 1.0.60
+Stable tag: 1.0.61
 License: GPLv3 or later
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 
@@ -63,8 +63,9 @@ GitHub releases are the stable beta channel: each version comes out there first.
 
 == Changelog ==
 
-= 1.0.60 =
-* Developers: CI and release jobs set up Node before they build the zips, so a self-hosted runner without Node can build them.
+= 1.0.61 =
+* Developers: minified .min copies in release builds keep their file's licence and Provenance lines.
+* Developers: the deploy load check retries once after a bare SIGKILL, as intended.
 
 Every change: changelog.txt.
 
