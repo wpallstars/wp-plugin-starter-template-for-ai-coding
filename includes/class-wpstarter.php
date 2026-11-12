@@ -122,7 +122,7 @@ final class WPStarter {
     }
 
     /**
-     * List the plugin for problem reports (wpallstars_report_products): 
+     * List the plugin for problem reports (wpallstars_report_products):
      * reports go where WPStarter_Setup::header_links()['support'] points, a
      * GitHub issues address (public) or mailto:address (private, by email).
      *
