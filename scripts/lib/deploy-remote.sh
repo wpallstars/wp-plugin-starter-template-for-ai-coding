@@ -749,24 +749,42 @@ PHP
 	return 0
 }
 
-# Prints the site's hooks that have exactly one event, a one-off: the only
-# hooks a killed run may retry. WP-CLI shows a one-off's recurrence as
-# "Non-repeating". A hook with two events is left out: the list shows hooks,
-# not events, so it cannot tell which one was killed. Returns 1, printing
-# nothing, when the list cannot be read, so no killed hook is retried. Read,
-# then filter: as a library, pipefail may be off.
+# Prints "HOOK<TAB>TIMESTAMP" for each of the site's hooks that has exactly
+# one event, a one-off: the only events a killed run may retry. WP-CLI shows
+# a one-off's recurrence as "Non-repeating", and its timestamp field is the
+# Unix time it is due. A hook with two events is left out: a run takes the
+# hook's next one, so the list cannot tell which one was killed. Returns 1,
+# printing nothing, when the list cannot be read, so no killed hook is
+# retried. Read, then filter: as a library, pipefail may be off.
 cron_lone_oneoffs() {
 	local root="$1"
 	shift
 	local events
-	events="$("$WP_CLI" --path="$root" "$@" cron event list --fields=hook,recurrence --format=csv 2>/dev/null)" || return 1
+	events="$("$WP_CLI" --path="$root" "$@" cron event list --fields=hook,recurrence,timestamp --format=csv 2>/dev/null)" || return 1
 	printf '%s\n' "$events" | awk '
-		NR > 1 && split($0, field, ",") >= 2 && field[1] != "" {
+		NR > 1 && split($0, field, ",") >= 3 && field[1] != "" {
 			n[field[1]]++
-			if (field[2] != "Non-repeating") repeats[field[1]] = 1
+			stamp[field[1]] = field[3]
+			if (field[2] != "Non-repeating" || field[3] !~ /^[0-9]+$/) skip[field[1]] = 1
 		}
-		END { for (h in n) if (n[h] == 1 && !(h in repeats)) print h }'
+		END { for (h in n) if (n[h] == 1 && !(h in skip)) print h "\t" stamp[h] }'
 	return 0
+}
+
+# Whether the site still lists HOOK's event due at TIMESTAMP ($2, $3 after
+# the root): the same one-off, not one its callback scheduled before it was
+# killed. 1 when the list cannot be read.
+cron_event_listed() {
+	local root="$1" hook="$2" stamp="$3"
+	shift 3
+	local events
+	events="$("$WP_CLI" --path="$root" "$@" cron event list --fields=hook,timestamp --format=csv 2>/dev/null)" || return 1
+	if printf '%s\n' "$events" | HOOK="$hook" STAMP="$stamp" awk '
+		NR > 1 && split($0, field, ",") >= 2 && field[1] == ENVIRON["HOOK"] && field[2] == ENVIRON["STAMP"] { found = 1 }
+		END { exit !found }'; then
+		return 0
+	fi
+	return 1
 }
 
 # Runs the plugin's own scheduled events once on one site, each in its own
@@ -841,16 +859,18 @@ run_site_cron() {
 		status=0
 		out="$("${cmd[@]+"${cmd[@]}"}" "$WP_CLI" --path="$root" "$@" cron event run "$hook" 2>&1)" || status=$?
 		# A killed event (137) is run again, up to 3 tries in all, but only a
-		# hook's lone one-off still listed: WP-CLI removes a one-off before
-		# its callback and reschedules a recurring event before it, so a
-		# retry of either runs the next occurrence early or a callback twice.
-		# Any other final 137 stays a failure, even for a one-off no longer
-		# listed.
-		local tries=1 still=""
+		# hook's lone one-off still listed with the same timestamp: WP-CLI
+		# removes a one-off before its callback and reschedules a recurring
+		# event before it, so a retry of either runs the next occurrence early
+		# or a callback twice. The same hook at another time is a successor
+		# the callback scheduled before it was killed (a
+		# wp_schedule_single_event() chain): not retried either. Any other
+		# final 137 stays a failure, even for a one-off no longer listed.
+		local tries=1 stamp=""
+		stamp="$(printf '%s\n' "$retryable" | HOOK="$hook" awk 'split($0, field, "\t") >= 2 && field[1] == ENVIRON["HOOK"] { print field[2]; exit }')"
 		while [[ "$status" -eq 137 && "$tries" -lt 3 ]]; do
-			printf '%s\n' "$retryable" | grep -qxF "$hook" || break
-			still="$("$WP_CLI" --path="$root" "$@" cron event list --field=hook 2>/dev/null)" || break
-			printf '%s\n' "$still" | grep -qxF "$hook" || break
+			[[ -n "$stamp" ]] || break
+			cron_event_listed "$root" "$hook" "$stamp" "$@" || break
 			tries=$((tries + 1))
 			sleep "$LOAD_RETRY_DELAY"
 			status=0
