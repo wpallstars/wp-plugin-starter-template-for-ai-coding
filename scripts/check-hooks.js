@@ -17,8 +17,9 @@
  * A call inside a PHP comment does not count.
  *
  * {prefix} is the main file's define('<PREFIX>_VERSION', ...) in lower case,
- * as scripts/lib/plugin.sh reads it. A hook name built at run time
- * ("{prefix}_{$id}_items") counts when at least one listed hook fits it.
+ * as scripts/lib/plugin.sh reads it (also when the define spans lines). A
+ * hook name built at run time ("{prefix}_{$id}_items", or
+ * '{prefix}_' . $id . '_items') counts when at least one listed hook fits it.
  * PHP in scripts/ (test helpers, not shipped) is not searched. The release
  * check needs the tags and their history; without them (a shallow clone, or
  * a new plugin before its first release) it is skipped with a note. A plugin without docs/HOOKS.md is skipped.
@@ -75,14 +76,16 @@ function git(...args) {
 
 // The hook prefix and the version, from the main file (the PHP file at the
 // top of the repository with a Plugin Name: header): its
-// define('<PREFIX>_VERSION', 'x.y.z'), the prefix in lower case.
+// define('<PREFIX>_VERSION', 'x.y.z'), the prefix in lower case. The whole
+// file is read (through git grep, as the hooks are), comments blanked out,
+// so a define split over lines is found too.
 function mainFile() {
 	const main = (git('grep', '-l', '-I', '-i', '-E', '^[[:space:]/*#@]*Plugin Name:', '--', ':(glob)*.php') || '').split('\n').filter(Boolean);
 	if (main.length !== 1) {
 		fail(main.length ? `more than one main file: ${main.join(', ')}.` : 'no PHP file with a Plugin Name: header at the top of the repository.');
 	}
-	const defined = git('grep', '-h', '-E', "define\\([[:space:]]*['\"][A-Z0-9_]+_VERSION['\"]", '--', main[0]) || '';
-	const constant = /define\(\s*['"]([A-Z0-9_]+)_VERSION['"]\s*,\s*['"]([^'"]*)['"]/.exec(defined);
+	const source = stripComments(git('grep', '-h', '-I', '-E', '^', '--', main[0]) || '');
+	const constant = /define\(\s*['"]([A-Z0-9_]+)_VERSION['"]\s*,\s*['"]([^'"]*)['"]/.exec(source);
 	if (!constant) {
 		fail(`${main[0]} does not define a {PREFIX}_VERSION constant.`);
 	}
@@ -132,11 +135,39 @@ function namePattern(text, joined) {
 	};
 }
 
+// One part of a name joined with "." after its first literal: a quoted
+// literal or a plain variable, then the next "." or the end of the argument
+// ("," or ")").
+const joinRe = /\s*(?:'([a-z0-9_]*)'|"([^"\\\n]*)"|(\$[A-Za-z_]\w*(?:->\w+|\[[^\]}\n]*\])*))\s*([.,)])/y;
+
+// The rest of a joined name ('{prefix}_' . $id . '_items') from `from`, the
+// place after its first ".", written as a built name is ("{$id}_items"); or
+// null when a part is anything else (a function call, a constant), which the
+// check cannot read.
+function joinedRest(text, from) {
+	let rest = '';
+	joinRe.lastIndex = from;
+	for (;;) {
+		const part = joinRe.exec(text);
+		if (!part) {
+			return null;
+		}
+		rest += part[1] ?? part[2] ?? `{${part[3]}}`;
+		if (part[4] !== '.') {
+			return rest;
+		}
+	}
+}
+
 // The hooks called in PHP (working tree, as committed or not): live names,
 // names only called through a _deprecated function, and run-time patterns
-// ({ match, kinds }); deprecatedPatterns holds the run-time patterns called
-// through a _deprecated function. kinds: name => Set of "filter"/"action",
-// as the code calls it.
+// ({ match, kinds, loose, label }); deprecatedPatterns holds the run-time
+// patterns called through a _deprecated function. kinds: name => Set of
+// "filter"/"action", as the code calls it. A joined name is read to the end
+// of its argument, so 'p_' . $s . '_label' and 'p_' . $s . '_saved' are two
+// patterns; one whose rest cannot be read is loose: it fits every name that
+// starts with its first literal and keeps a key of its own, so calls with
+// different endings never share their types.
 function hooksIn(text) {
 	const found = { live: new Set(), deprecated: new Set(), patterns: new Map(), deprecatedPatterns: [], kinds: new Map() };
 	for (const m of text.matchAll(callRe)) {
@@ -147,9 +178,11 @@ function hooksIn(text) {
 		const kind = m[1] === 'apply_filters' ? 'filter' : 'action';
 		const built = m[5] !== undefined || (m[4] !== undefined && name.includes('$'));
 		if (built) {
-			const key = m[5] === undefined ? name : `${name}…`;
+			const rest = m[5] === undefined ? '' : joinedRest(text, m.index + m[0].length);
+			const loose = rest === null;
+			const key = loose ? `${name}…@${m.index}` : name + rest;
 			if (!found.patterns.has(key)) {
-				found.patterns.set(key, { match: namePattern(name, m[5] !== undefined), kinds: new Set() });
+				found.patterns.set(key, { match: namePattern(loose ? name : key, loose), kinds: new Set(), loose, label: loose ? `${name}…` : key });
 			}
 			found.patterns.get(key).kinds.add(kind);
 			if (m[2] === '_deprecated') {
@@ -343,22 +376,30 @@ for (const name of [...new Set([...found.live, ...found.deprecated])].sort((a, b
 		problems.push(`${name} is called in the code but not listed: add its row.`);
 	}
 }
-for (const [built, pattern] of found.patterns) {
-	if (![...listed.keys()].some((name) => pattern.match(name))) {
-		problems.push(`"${built}" builds a hook name at run time, and no listed hook fits it: list each name it makes.`);
+const reported = new Set();
+for (const pattern of found.patterns.values()) {
+	if (!reported.has(pattern.label) && ![...listed.keys()].some((name) => pattern.match(name))) {
+		reported.add(pattern.label);
+		problems.push(`"${pattern.label}" builds a hook name at run time, and no listed hook fits it: list each name it makes.`);
 	}
 }
 // The listed type against the calls: apply_filters*() is a filter,
 // do_action*() an action. A name called both ways is reported for the other.
+// Loose patterns (a joined name the check cannot read) count only for a name
+// no other call fits, and then pass when any of them has the listed type.
 for (const [name, row] of listed) {
 	if (!TYPES.includes(row.type)) {
 		continue;
 	}
 	const kinds = new Set(found.kinds.get(name) || []);
+	const loose = new Set();
 	for (const pattern of found.patterns.values()) {
 		if (pattern.match(name)) {
-			pattern.kinds.forEach((kind) => kinds.add(kind));
+			pattern.kinds.forEach((kind) => (pattern.loose ? loose : kinds).add(kind));
 		}
+	}
+	if (kinds.size === 0 && !loose.has(row.type)) {
+		loose.forEach((kind) => kinds.add(kind));
 	}
 	for (const kind of [...kinds].sort((a, b) => a.localeCompare(b))) {
 		if (kind !== row.type) {

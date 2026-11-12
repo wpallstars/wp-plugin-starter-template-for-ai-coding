@@ -175,6 +175,7 @@ Deleting the plugin removes its settings (on multisite, every site's and the net
 
 - Developers: when the Starter sync workflow replaces an issue its own token wrote, the new issue keeps a `no-auto-dispatch` hold (and gets it if the old issue's labels cannot be read), instead of being dispatched to a worker; the closing comment says so. Without the hold, or without `STARTER_SYNC_TOKEN`, nothing changes. Plugins get it with `scripts/sync-core.sh` (GH#744).
 - Developers: `scripts/deploy-sites.sh` takes each install's web PHP log baseline after the wait for the account's load (`DEPLOY_MAX_ACCOUNT_PROCS`), just before the install, so errors the site logs during that wait no longer fail it; a wrong `--web-error-log` path still fails before the wait. Plugins get it with `scripts/sync-core.sh` (GH#745).
+- Developers: `scripts/check-hooks.js` reads a main file whose `{PREFIX}_VERSION` define spans lines (a commented-out define no longer counts), and reads a hook name joined with `.` to the end of its argument, so `'p_' . $s . '_label'` and `'p_' . $s . '_saved'` are checked as two hooks with their own types; a joined name it cannot read only fails a Type no call of it could have. `scripts/release-bump.sh` stops, changing nothing, when `README.md`'s heading for the version is not exactly `### X.Y.Z` (such as `### vX.Y.Z`), which the Release workflow would not find. Plugins get it with `scripts/sync-core.sh` (GH#747).
 
 ### 1.0.64
 

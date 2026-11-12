@@ -98,8 +98,9 @@ on that commit.
    it added one. Then run `scripts/release-bump.sh X.Y.Z`, put the upgrade
    notice entry back, write the new entries' short `readme.txt` lines, and
    run the preflight. The bump stops, changing nothing, while `README.md`
-   has no `### Unreleased` (or `### X.Y.Z`) section: the Release workflow
-   takes the release notes from it.
+   has no `### Unreleased` (or `### X.Y.Z`) section written exactly so, or
+   has the version's heading in another form (`### vX.Y.Z`): the Release
+   workflow takes the release notes from `### X.Y.Z`.
 2. On the pull request's branch: `scripts/preflight-release.sh` (no errors) and
    `scripts/plugin-check.sh` (no errors).
    <!-- wps-own:start -->
