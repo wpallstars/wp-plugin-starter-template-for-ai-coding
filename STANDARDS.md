@@ -361,8 +361,9 @@ it reads it. A small plugin has only `AGENTS.md`; a large one adds docs.
   change). A supported hook is kept, or kept working through
   `apply_filters_deprecated()` / `do_action_deprecated()`, for at least two
   minor releases before it is removed, and the changelog names it. CI fails
-  when a hook in the code is not listed, or a supported one has gone
-  (`scripts/check-hooks.js`, run by `scripts/lint.sh hooks`). The list
+  when a hook in the code is not listed or not listed as the type the code
+  calls it as, or a supported one has gone (`scripts/check-hooks.js`, run by
+  `scripts/lint.sh hooks`). The list
   starts as the starter's, which has the core files' hooks; a plugin keeps
   those rows and adds its own.
 - Leave no PHP errors, warnings, notices or deprecations behind. Fix any the

@@ -3,8 +3,10 @@
 Every `wpstarter_*` filter and action in the code, and whether site code may
 rely on it (`STANDARDS.md` → Code rules: hooks are a contract with site
 code). `scripts/check-hooks.js` (`scripts/lint.sh hooks`, run by CI) fails
-when this list and the code disagree. `README.md` → Developers describes the
-most used ones in words.
+when this list and the code disagree, including a Type that is not how the
+code calls the hook (`apply_filters*()` is a filter, `do_action*()` an
+action); a call inside a PHP comment does not count. `README.md` →
+Developers describes the most used ones in words.
 
 ## Status
 
@@ -38,14 +40,17 @@ An internal hook may be removed at once, with its row.
 The check keeps this honest. It fails when:
 
 - the code calls a `wpstarter_*` hook that has no row;
+- a row's Type is not how the code calls it;
 - a row's hook is no longer called, directly or through a `_deprecated`
   function;
 - a hook supported at the latest release tag is gone or marked internal,
   unless a release at least two minor versions back already called it
-  through a `_deprecated` function.
+  through a `_deprecated` function. Each major.minor released counts once,
+  across a major version too: before 1.0.0, 0.9 is one back and 0.8 two.
 
-A name built at run time (`"wpstarter_{$id}_items"`) counts when at least
-one row fits it: list each name it makes.
+A call inside a PHP comment does not count. A name built at run time
+(`"wpstarter_{$id}_items"`) counts when at least one row fits it: list each
+name it makes.
 
 ## Adding a hook
 

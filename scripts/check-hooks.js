@@ -4,13 +4,17 @@
  * (STANDARDS.md → Code rules: hooks are a contract with site code):
  *
  *  - every {prefix}_* filter and action the PHP calls is listed, as supported
- *    or internal;
+ *    or internal, with the type the code calls it as (apply_filters*() is a
+ *    filter, do_action*() an action);
  *  - every listed hook is still called, or called through
  *    apply_filters_deprecated() / do_action_deprecated();
  *  - every hook listed as supported at the latest release tag (vX.Y.Z, not
  *    above the main file's version) is still in the code and still
- *    supported, unless a release at least two minor versions back already
- *    called it through a _deprecated function.
+ *    supported, unless a release at least two minor versions back (counting
+ *    each major.minor released, so v0.8 is two before v1.0) already called
+ *    it through a _deprecated function.
+ *
+ * A call inside a PHP comment does not count.
  *
  * {prefix} is the main file's define('<PREFIX>_VERSION', ...) in lower case,
  * as scripts/lib/plugin.sh reads it. A hook name built at run time
@@ -129,40 +133,156 @@ function namePattern(text, joined) {
 }
 
 // The hooks called in PHP (working tree, as committed or not): live names,
-// names only called through a _deprecated function, and run-time patterns.
+// names only called through a _deprecated function, and run-time patterns
+// ({ match, kinds }); deprecatedPatterns holds the run-time patterns called
+// through a _deprecated function. kinds: name => Set of "filter"/"action",
+// as the code calls it.
 function hooksIn(text) {
-	const found = { live: new Set(), deprecated: new Set(), patterns: new Map() };
+	const found = { live: new Set(), deprecated: new Set(), patterns: new Map(), deprecatedPatterns: [], kinds: new Map() };
 	for (const m of text.matchAll(callRe)) {
 		const name = m[3] ?? m[4];
 		if (!name.startsWith(`${prefix}_`)) {
 			continue;
 		}
+		const kind = m[1] === 'apply_filters' ? 'filter' : 'action';
 		const built = m[5] !== undefined || (m[4] !== undefined && name.includes('$'));
 		if (built) {
-			found.patterns.set(m[5] === undefined ? name : `${name}…`, namePattern(name, m[5] !== undefined));
-		} else if (m[2] === '_deprecated') {
-			found.deprecated.add(name);
-		} else {
-			found.live.add(name);
+			const key = m[5] === undefined ? name : `${name}…`;
+			if (!found.patterns.has(key)) {
+				found.patterns.set(key, { match: namePattern(name, m[5] !== undefined), kinds: new Set() });
+			}
+			found.patterns.get(key).kinds.add(kind);
+			if (m[2] === '_deprecated') {
+				found.deprecatedPatterns.push(found.patterns.get(key).match);
+			}
+			continue;
 		}
+		(m[2] === '_deprecated' ? found.deprecated : found.live).add(name);
+		if (!found.kinds.has(name)) {
+			found.kinds.set(name, new Set());
+		}
+		found.kinds.get(name).add(kind);
 	}
 	return found;
 }
 
-// The PHP lines with hook calls, each with the two lines after it, so a call
-// split over lines is seen: in the working tree (new files not yet added
-// included), or at REF. Empty when there are none; null when git grep fails.
+// The end of a heredoc or nowdoc that starts at i (<<<ID, <<<'ID' or
+// <<<"ID"): the index after its closing ID, or -1 when none starts there.
+function heredocEnd(source, i) {
+	const open = /^<<<[ \t]*(['"]?)([A-Za-z_]\w*)\1[ \t]*\r?\n/.exec(source.slice(i, i + 200));
+	if (!open) {
+		return -1;
+	}
+	const id = open[2];
+	let pos = i + open[0].length;
+	while (pos < source.length) {
+		const eol = source.indexOf('\n', pos);
+		const line = source.slice(pos, eol === -1 ? source.length : eol);
+		const body = line.trimStart();
+		if (body.startsWith(id) && !/\w/.test(body.charAt(id.length))) {
+			return pos + (line.length - body.length) + id.length;
+		}
+		if (eol === -1) {
+			break;
+		}
+		pos = eol + 1;
+	}
+	return source.length;
+}
+
+// PHP source with its comments (/* … */, // and # to the end of the line)
+// blanked out, outside quoted strings, heredocs and inline HTML, so a
+// commented-out call is not a call. Newlines stay, so a call split over
+// lines still matches.
+function stripComments(source) {
+	let out = '';
+	let i = 0;
+	let php = false;
+	while (i < source.length) {
+		const c = source[i];
+		const next = source[i + 1];
+		if (!php) {
+			// Inline HTML, copied as it is, up to the next <?php or <?=.
+			const open = source.indexOf('<?', i);
+			const stop = open === -1 ? source.length : open + 2;
+			out += source.slice(i, stop);
+			i = stop;
+			php = open !== -1;
+			continue;
+		}
+		const heredoc = c === '<' ? heredocEnd(source, i) : -1;
+		if (heredoc !== -1) {
+			out += source.slice(i, heredoc);
+			i = heredoc;
+		} else if (c === '?' && next === '>') {
+			out += '?>';
+			i += 2;
+			php = false;
+		} else if (c === "'" || c === '"') {
+			let j = i + 1;
+			while (j < source.length && source[j] !== c) {
+				j += source[j] === '\\' ? 2 : 1;
+			}
+			out += source.slice(i, j + 1);
+			i = j + 1;
+		} else if (c === '/' && next === '*') {
+			const end = source.indexOf('*/', i + 2);
+			const stop = end === -1 ? source.length : end + 2;
+			out += source.slice(i, stop).replace(/[^\n]/g, ' ');
+			i = stop;
+		} else if ((c === '/' && next === '/') || (c === '#' && next !== '[')) {
+			let j = i;
+			while (j < source.length && source[j] !== '\n' && !source.startsWith('?>', j)) {
+				j++;
+			}
+			out += ' '.repeat(j - i);
+			i = j;
+		} else {
+			out += c;
+			i++;
+		}
+	}
+	return out;
+}
+
+// The text of each PHP file that calls a hook, comments blanked out: in the
+// working tree (new files not yet added included), or at REF. Whole files,
+// read through git grep (no file is opened by a built path), so a block
+// comment that starts lines before a call is seen. Empty when there are
+// none; null when git grep fails.
 function phpCalls(ref) {
-	const args = ['grep', ...(ref ? [] : ['--untracked']), '-h', '-A2', '-E', '(apply_filters|do_action)'];
+	const args = ['grep', ...(ref ? [] : ['--untracked']), '-I', '--null', '-E', '^'];
 	if (ref) {
 		args.push(ref);
 	}
 	args.push('--', '*.php', ':(exclude)scripts/');
+	let output;
 	try {
-		return execFileSync(gitBin, args, { encoding: 'utf8', maxBuffer: 64 * 1024 * 1024, stdio: ['ignore', 'pipe', 'ignore'] });
+		output = execFileSync(gitBin, args, { encoding: 'utf8', maxBuffer: 256 * 1024 * 1024, stdio: ['ignore', 'pipe', 'ignore'] });
 	} catch (error) {
 		return error.status === 1 ? '' : null;
 	}
+	// Each line is "path\0text" ("REF:path\0text" at a ref).
+	const files = new Map();
+	for (const line of output.split('\n')) {
+		const cut = line.indexOf('\0');
+		if (cut === -1) {
+			continue;
+		}
+		const file = line.slice(0, cut);
+		if (!files.has(file)) {
+			files.set(file, []);
+		}
+		files.get(file).push(line.slice(cut + 1));
+	}
+	let text = '';
+	for (const lines of files.values()) {
+		const source = lines.join('\n');
+		if (source.includes('apply_filters') || source.includes('do_action')) {
+			text += `${stripComments(source)}\n`;
+		}
+	}
+	return text;
 }
 
 // The rows of a hooks list: name => { type, status }.
@@ -204,17 +324,35 @@ if (code === null) {
 }
 const found = hooksIn(code);
 const listed = readList(fs.readFileSync(DOC, 'utf8'), problems);
-const fits = (name) => [...found.patterns.values()].some((re) => re(name));
+const fits = (name) => [...found.patterns.values()].some((pattern) => pattern.match(name));
 const inCode = (name) => found.live.has(name) || found.deprecated.has(name) || fits(name);
 
-for (const name of [...found.live, ...found.deprecated].sort((a, b) => a.localeCompare(b))) {
+for (const name of [...new Set([...found.live, ...found.deprecated])].sort((a, b) => a.localeCompare(b))) {
 	if (!listed.has(name)) {
 		problems.push(`${name} is called in the code but not listed: add its row.`);
 	}
 }
-for (const [built, re] of found.patterns) {
-	if (![...listed.keys()].some((name) => re(name))) {
+for (const [built, pattern] of found.patterns) {
+	if (![...listed.keys()].some((name) => pattern.match(name))) {
 		problems.push(`"${built}" builds a hook name at run time, and no listed hook fits it: list each name it makes.`);
+	}
+}
+// The listed type against the calls: apply_filters*() is a filter,
+// do_action*() an action. A name called both ways is reported for the other.
+for (const [name, row] of listed) {
+	if (!TYPES.includes(row.type)) {
+		continue;
+	}
+	const kinds = new Set(found.kinds.get(name) || []);
+	for (const pattern of found.patterns.values()) {
+		if (pattern.match(name)) {
+			pattern.kinds.forEach((kind) => kinds.add(kind));
+		}
+	}
+	for (const kind of [...kinds].sort((a, b) => a.localeCompare(b))) {
+		if (kind !== row.type) {
+			problems.push(`${name}: listed as ${row.type} but the code calls it as ${kind}.`);
+		}
 	}
 }
 for (const [name, row] of listed) {
@@ -236,9 +374,10 @@ function versionParts(text) {
 	const v = /^v?(\d+)\.(\d+)\.(\d+)$/.exec(text);
 	return v ? v.slice(1).map(Number) : null;
 }
+// "major.minor" of a release tag, or null for any other tag.
 function minorKey(tag) {
 	const v = versionParts(tag);
-	return v ? v[0] * 1000 + v[1] : null;
+	return v ? `${v[0]}.${v[1]}` : null;
 }
 function notAbove(tag, ceiling) {
 	const [a, b] = [versionParts(tag), versionParts(ceiling)];
@@ -254,8 +393,13 @@ if (tags.length === 0) {
 	console.log(`check-hooks: no release tags up to ${version} in this history (none yet, or a shallow clone); the release check is skipped.`);
 } else {
 	const latest = tags[0];
-	const old = tags.find((tag) => minorKey(tag) <= minorKey(latest) - 2);
-	const oldDeprecated = old ? hooksIn(phpCalls(old) || '').deprecated : new Set();
+	// Distinct major.minor pairs, newest first (tags are sorted by version):
+	// the old release is the newest one two pairs below the latest, so
+	// v0.9.x is one minor release before v1.0.0 and v0.8.x two.
+	const minors = [...new Set(tags.map(minorKey))];
+	const old = tags.find((tag) => minors.indexOf(minorKey(tag)) >= 2);
+	const oldFound = old ? hooksIn(phpCalls(old) || '') : null;
+	const oldDeprecated = (name) => oldFound !== null && (oldFound.deprecated.has(name) || oldFound.deprecatedPatterns.some((match) => match(name)));
 	const doc = git('show', `${latest}:${DOC}`);
 	const before = readList(doc || '', null);
 	let released = 0;
@@ -266,7 +410,7 @@ if (tags.length === 0) {
 			continue;
 		}
 		released++;
-		if (!inCode(name) && !oldDeprecated.has(name)) {
+		if (!inCode(name) && !oldDeprecated(name)) {
 			const since = old ? `in ${old} or earlier` : 'two minor releases before';
 			problems.push(`${name} was supported in ${latest} and is gone without being deprecated ${since}: restore it, or deprecate it for two minor releases first (${RULE}).`);
 		} else if (listed.has(name) && listed.get(name).status !== 'supported') {

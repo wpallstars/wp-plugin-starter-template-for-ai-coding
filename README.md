@@ -179,11 +179,7 @@ Deleting the plugin removes its settings (on multisite, every site's and the net
 - Developers: `scripts/release-bump.sh` stops, changing nothing, when `README.md` has no `### Unreleased` (or `### X.Y.Z`) section, which the Release workflow takes the notes from, and updates every `define()` form of the version constant that `plugin_identity()` accepts. The Starter sync issue asks for the `README.md` Unreleased line too; `RELEASING.md` keeps the release's upgrade notice through a rebase. Plugins get it with `scripts/sync-core.sh` (GH#720).
 - Developers: `scripts/build-release.sh` copies only a file's opening comment above its `.min` copy when code follows the closing `*/` on the same line, so that code is not repeated. Plugins get it with `scripts/sync-core.sh` (GH#722).
 - Developers: CI's lint job sets up Node 22 before the lint step, for runners without Node, and `scripts/lint.sh changelog` catches an indented bullet added under a released heading. Plugins get it with `scripts/sync-core.sh` (GH#730).
-
-### 1.0.63
-
-### Unreleased
-
+- Developers: `scripts/check-hooks.js` (`scripts/lint.sh hooks`) ignores calls inside PHP comments, fails when a hook's listed type (filter or action) is not how the code calls it, counts "two minor releases back" by each major.minor released (so v0.8 is two before v1.0), and accepts removing a supported hook whose name is built at run time once an old enough release called it through a `_deprecated` function. Plugins get it with `scripts/sync-core.sh` (GH#714).
 - Developers: `scripts/check-hooks.js` builds no file path, no `RegExp` and no placeholder text from the code it checks, so Codacy reports nothing on it in a Starter sync pull request. Output and exit codes are unchanged. Plugins get it with `scripts/sync-core.sh` (GH#728).
 
 ### 1.0.63
