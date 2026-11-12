@@ -264,7 +264,7 @@ changelog_file() {
 		heading="$(heading_above "$file" "$number" "$style")"
 		[[ "$heading" == "(outside the changelog)" ]] && continue
 		heading="${heading%"${heading##*[![:space:]]}"}"
-		if [[ "$release" == 1 && ("$heading" == "= $version =" || "$heading" == "= v$version =" || "$heading" == "### $version" || "$heading" == "### v$version") ]]; then
+		if [[ "$release" == 1 ]] && grep -Eq "^(= *v?${escaped} *=|### *v?${escaped})\$" <<<"$heading"; then
 			continue
 		fi
 		if [[ "$heading" != "$unreleased" ]]; then
