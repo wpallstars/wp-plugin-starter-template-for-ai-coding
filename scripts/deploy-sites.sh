@@ -624,7 +624,7 @@ apply() {
 	remote "umask 077; cat >$(remote_words "$dir/deploy-remote.sh")" <"$REMOTE_PART" || die "cannot copy the remote part to $HOST"
 	remote "chmod 600 $(remote_words "$dir/$SLUG-$VERSION.zip" "$dir/deploy-remote.sh")" || die "cannot set the files' mode on $HOST"
 	printf '\nInstalling %s on %s (folder %s):\n' "$TAG" "$HOST" "$dir"
-	command="$(remote_words env "DEPLOY_WP_CLI=$WP_CLI" "DEPLOY_WEB_ERROR_LOG=$WEB_ERROR_LOG" "DEPLOY_CRON_TIMEOUT=${DEPLOY_CRON_TIMEOUT:-120}" "DEPLOY_CDN_PURGE=$([[ -n "$CF_TOKEN" ]] && printf 1 || printf 0)" bash "$dir/deploy-remote.sh" apply "$SLUG" "$PARENT" \
+	command="$(remote_words env "DEPLOY_WP_CLI=$WP_CLI" "DEPLOY_WEB_ERROR_LOG=$WEB_ERROR_LOG" "DEPLOY_CRON_TIMEOUT=${DEPLOY_CRON_TIMEOUT:-120}" "DEPLOY_MAX_ACCOUNT_PROCS=${DEPLOY_MAX_ACCOUNT_PROCS:-}" "DEPLOY_LOAD_RETRY_DELAY=${DEPLOY_LOAD_RETRY_DELAY:-30}" "DEPLOY_CDN_PURGE=$([[ -n "$CF_TOKEN" ]] && printf 1 || printf 0)" bash "$dir/deploy-remote.sh" apply "$SLUG" "$PARENT" \
 		"$VERSION" "$dir/$SLUG-$VERSION.zip" "$SHA" "$dir/backups" ${DOWNGRADE_ARGS[@]+"${DOWNGRADE_ARGS[@]}"} ${SKIPS[@]+"${SKIPS[@]}"})"
 	set +e
 	remote "$command" | stream_filter

@@ -417,11 +417,14 @@ swap cannot start (no `unzip`, unexpected zip layout), the live folder is
 untouched and the deploy falls back to `wp plugin install --force`.
 
 A host at its process or memory limit (CloudLinux LVE) kills WP-CLI with
-exit 137. The post-install load check is run again once, and each killed cron
+exit 137. The post-install load check is run again once, and a killed cron
 event up to 3 tries in all, `DEPLOY_LOAD_RETRY_DELAY` seconds apart (default
 30), whatever the killed process printed; every other exit code fails at once.
-An event gone from `wp cron event list` after a kill (a one-off it took) counts
-as done, only when the list command succeeded. Retried checks report
+Only a one-off event still in `wp cron event list` is retried (WP-CLI had not
+yet taken it). A recurring event is not run again (WP-CLI reschedules it before
+its callback), and a one-off gone from the list was killed during its callback:
+both fail as `cron HOOK killed (137)`. Both settings here are forwarded to the
+host. Retried checks report
 `WARN ... retried (137)`, not FAIL. Events already run one per process, so a
 killed backlog is not run again as one `--due-now` call. To wait before each
 install while the account runs too many processes, set

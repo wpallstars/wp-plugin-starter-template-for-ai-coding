@@ -783,24 +783,33 @@ run_site_cron() {
 		CRON_FAILURE="cron events not run: timeout is not installed on this host (set DEPLOY_CRON_TIMEOUT=0 for no limit); "
 		return 0
 	fi
+	# Hooks that repeat, read before the first run (a run changes the list).
+	# If the read fails, none is known and a kill is retried only for a hook
+	# still listed.
+	local recurrences
+	recurrences="$("$WP_CLI" --path="$root" "$@" cron event list --fields=hook,recurrence --format=csv 2>/dev/null | awk -F, 'NR>1 && $2!="" && $2!="Non-repeating" {print $1}')" || recurrences=""
 	while IFS= read -r hook; do
 		[[ -n "$hook" ]] || continue
 		CRON_TOTAL=$((CRON_TOTAL + 1))
 		status=0
 		out="$("${cmd[@]+"${cmd[@]}"}" "$WP_CLI" --path="$root" "$@" cron event run "$hook" 2>&1)" || status=$?
-		# A killed event (137) is run again, up to 3 tries in all. One no longer
-		# listed after a kill (a one-off it took) is done, when the list worked.
+		# A killed event (137) is run again, up to 3 tries in all, but only a
+		# one-off still listed: WP-CLI removes a one-off before its callback
+		# and reschedules a recurring event before it, so a retry of either
+		# runs the next occurrence early or a callback twice. Any other final
+		# 137 stays a failure, even for a one-off no longer listed.
 		local tries=1 still=""
 		while [[ "$status" -eq 137 && "$tries" -lt 3 ]]; do
+			printf '%s\n' "$recurrences" | grep -qxF "$hook" && break
+			still="$("$WP_CLI" --path="$root" "$@" cron event list --field=hook 2>/dev/null)" || break
+			printf '%s\n' "$still" | grep -qxF "$hook" || break
 			tries=$((tries + 1))
 			sleep "$LOAD_RETRY_DELAY"
 			status=0
 			out="$("${cmd[@]+"${cmd[@]}"}" "$WP_CLI" --path="$root" "$@" cron event run "$hook" 2>&1)" || status=$?
 		done
-		if [[ "$status" -eq 137 ]]; then
-			if still="$("$WP_CLI" --path="$root" "$@" cron event list --field=hook 2>/dev/null)" && ! printf '%s\n' "$still" | grep -qxF "$hook"; then
-				status=0 out=""
-			fi
+		if [[ "$status" -eq 137 && -z "$out" ]]; then
+			out="cron $hook killed (137)"
 		fi
 		[[ "$tries" -eq 1 ]] || CRON_WARN+="cron $hook retried (137), "
 		if [[ "$status" -eq 124 && "${#cmd[@]}" -gt 0 ]]; then
