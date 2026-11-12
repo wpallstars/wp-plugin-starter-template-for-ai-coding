@@ -73,6 +73,10 @@ INSTALL_START=0
 # Seconds before a home page that gave 5xx or no answer is fetched again.
 HOME_RETRY_DELAY="${DEPLOY_HOME_RETRY_DELAY:-5}"
 [[ "$HOME_RETRY_DELAY" =~ ^[0-9]+$ ]] || HOME_RETRY_DELAY=5
+# The host can kill WP-CLI (exit 137, no output) at its process or memory
+# limit; the limit clears in tens of seconds, so the load check waits longer.
+LOAD_RETRY_DELAY="${DEPLOY_LOAD_RETRY_DELAY:-30}"
+[[ "$LOAD_RETRY_DELAY" =~ ^[0-9]+$ ]] || LOAD_RETRY_DELAY=30
 SKIPS=()
 LOG_FILES=()
 LOG_BEFORE=()
@@ -953,7 +957,7 @@ cdn_announce() {
 check_sites() {
 	local root="$1"
 	local kind urls url status result reason warn load purged line network=0
-	local load_errors load_status summary first_code cron_note cron_before
+	local load_errors load_status load_retried summary first_code cron_note cron_before
 	local check_error="home check failed; "
 	local url_args=() origin
 	CDN_URLS="" MAIN_CF=""
@@ -973,7 +977,16 @@ check_sites() {
 		SITES_TOTAL=$((SITES_TOTAL + 1))
 		[[ "$network" -eq 0 ]] || url_args=(--url="$url")
 		reason="" warn="" result="ok" purged="no" cron_note="cron=0/0"
-		if load="$(active_guard "$root" "" "" ${url_args[@]+"${url_args[@]}"} eval "$(load_code)" 2>"$load_errors")"; then
+		load_status=0 load_retried=""
+		load="$(active_guard "$root" "" "" ${url_args[@]+"${url_args[@]}"} eval "$(load_code)" 2>"$load_errors")" || load_status=$?
+		# Only a SIGKILL with nothing on stderr is retried, once.
+		if [[ "$load_status" -eq 137 && ! -s "$load_errors" ]]; then
+			load_retried=137 load_status=0
+			sleep "$LOAD_RETRY_DELAY"
+			load="$(active_guard "$root" "" "" ${url_args[@]+"${url_args[@]}"} eval "$(load_code)" 2>"$load_errors")" || load_status=$?
+		fi
+		if [[ "$load_status" -eq 0 ]]; then
+			[[ -z "$load_retried" ]] || warn+="load retried ($load_retried), "
 			case "$load" in
 			*purged=yes*) purged="yes" SITES_PURGED=$((SITES_PURGED + 1)) ;;
 			*purged=failed*)
@@ -992,7 +1005,6 @@ check_sites() {
 				CRON_WARNED+="$CRON_WARN"
 			}
 		else
-			load_status=$?
 			# Keep the full diagnostics on stderr, but one short, printable
 			# line on the report (also when WP-CLI itself printed no error).
 			summary="$(tail -n 3 "$load_errors" | LC_ALL=C tr '\t\r\n' '   ' | LC_ALL=C tr -cd '[:print:]')"
