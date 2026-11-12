@@ -9,6 +9,7 @@ Every change to WP Plugin Starter. readme.txt lists the latest version in short.
 * Developers: scripts/deploy-sites.sh no longer retries a site's load check when the activation lists failed their check after a bare SIGKILL, so the install stays FAIL as the restore message says (since 1.0.61 the retry ran). Its cron listing retry after a bare SIGKILL now tests WP-CLI's own stderr, so a listing killed after printing a hook is retried too. Plugins get it with scripts/sync-core.sh (GH#718).
 
 = 1.0.61 =
+* Developers: bad test line
 * Developers: the minified .min copies in release builds start with their file's opening comment (licence, copyright and Provenance lines), which ATTRIBUTION.txt asks every copy to keep; the minifier had dropped it. scripts/preflight-release.sh fails a .min copy without its file's Provenance line. Plugins get it with scripts/sync-core.sh (GH#711).
 * Developers: scripts/deploy-sites.sh retries a site's load check once after a bare SIGKILL (exit 137, nothing on stderr), as GH#700 meant: the flag it tests was set in a subshell and lost, so the retry never ran. Plugins get it with scripts/sync-core.sh (GH#712).
 
