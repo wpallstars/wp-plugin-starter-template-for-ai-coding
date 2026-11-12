@@ -227,10 +227,25 @@ build_addon_zip() {
 # The file's opening /* ... */ comment as it is (its licence, copyright and
 # Provenance lines), or nothing when the file does not start with one. The
 # minifier drops ordinary comments, and ATTRIBUTION.txt asks every copy, even
-# of part, to keep those lines.
+# of part, to keep those lines. On the line that closes it, only the text up
+# to and including the */ is copied: code after it (/* x */ const a = 1;) is
+# in the minified output already, and a second copy would not parse.
 leading_comment() {
 	local file="$1"
-	awk 'NR == 1 && !/^[[:space:]]*\/\*/ { exit } { print } /\*\// { exit }' "$file"
+	awk '
+		NR == 1 {
+			if (!match($0, /^[[:space:]]*\/\*/)) exit
+			start = RSTART + RLENGTH
+			i = index(substr($0, start), "*/")
+			if (i) { print substr($0, 1, start + i); exit }
+			print
+			next
+		}
+		{
+			i = index($0, "*/")
+			if (i) { print substr($0, 1, i + 1); exit }
+			print
+		}' "$file"
 	return 0
 }
 

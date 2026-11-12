@@ -183,7 +183,7 @@ check_build() {
 }
 
 # Line numbers (in the new file) of lines a one-file --unified=0 diff on
-# stdin adds that start with PREFIX.
+# stdin adds that start with PREFIX, after any indent (a sub-bullet).
 added_lines() {
 	local prefix="$1"
 	awk -v prefix="$prefix" '
@@ -194,7 +194,9 @@ added_lines() {
 		}
 		/^\+\+\+ / { next }
 		/^\+/ {
-			if (index(substr($0, 2), prefix) == 1) print n
+			line = substr($0, 2)
+			sub(/^[[:space:]]+/, "", line)
+			if (index(line, prefix) == 1) print n
 			n++
 		}
 	'

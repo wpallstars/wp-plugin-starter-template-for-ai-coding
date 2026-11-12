@@ -475,8 +475,9 @@ another label, or `none` for no label (a repository that does not use
 aidevops). Keep the issue's title and `starter-sync` label as they are:
 aidevops merges a worker's pull request for this issue by itself (after
 the usual checks) only for that issue shape, and only while the pull
-request changes nothing outside `scripts/core-files.txt` and
-`changelog.txt`; anything else waits for a person.
+request changes nothing outside `scripts/core-files.txt`, `changelog.txt`
+and `README.md` (its Unreleased line, which the release notes need);
+anything else waits for a person.
 
 So that aidevops merges those pull requests by itself even when they add
 a new core file or change the plugin's own files (step 4), set the
@@ -620,9 +621,10 @@ without its secret, and nothing fails.
    a self-hosted runner label (such as `4cpu-8gb`); private repositories
    pay for GitHub-hosted minutes. Set it per repository:
    `gh variable set CI_RUNNER --repo {owner}/{repo} --body 4cpu-8gb`, and
-   add the repository to the runner group. Jobs that build the zips set up
-   Node 22 themselves (`actions/setup-node`, for the minifier), so the
-   runner needs no Node of its own. An organization variable does
+   add the repository to the runner group. Every job that runs Node sets
+   it up itself (`actions/setup-node`: the lint job for its JavaScript and
+   hook checks, the zip-building jobs for the minifier), so the runner
+   needs no Node of its own. An organization variable does
    not reach private repositories on GitHub's Free plan. Never set it in a
    public repository, or in a private one that runs workflows from fork
    pull requests (Settings → Actions → General): a pull request from a
