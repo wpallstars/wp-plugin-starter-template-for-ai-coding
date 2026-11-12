@@ -197,52 +197,63 @@ function heredocEnd(source, i) {
 function stripComments(source) {
 	let out = '';
 	let i = 0;
-	let php = false;
 	while (i < source.length) {
-		const c = source[i];
-		const next = source[i + 1];
-		if (!php) {
-			// Inline HTML, copied as it is, up to the next <?php or <?=.
-			const open = source.indexOf('<?', i);
-			const stop = open === -1 ? source.length : open + 2;
-			out += source.slice(i, stop);
-			i = stop;
-			php = open !== -1;
-			continue;
-		}
-		const heredoc = c === '<' ? heredocEnd(source, i) : -1;
-		if (heredoc !== -1) {
-			out += source.slice(i, heredoc);
-			i = heredoc;
-		} else if (c === '?' && next === '>') {
-			out += '?>';
-			i += 2;
-			php = false;
-		} else if (c === "'" || c === '"') {
-			let j = i + 1;
-			while (j < source.length && source[j] !== c) {
-				j += source[j] === '\\' ? 2 : 1;
+		// Inline HTML, copied as it is, up to the next <?php or <?=.
+		const open = source.indexOf('<?', i);
+		const start = open === -1 ? source.length : open + 2;
+		out += source.slice(i, start);
+		i = start;
+		// PHP, token by token, up to ?> or the end of the file.
+		while (i < source.length) {
+			const [end, kind] = phpToken(source, i);
+			const text = source.slice(i, end);
+			out += kind === 'blank' ? text.replace(/[^\n]/g, ' ') : text;
+			i = end;
+			if (kind === 'close') {
+				break;
 			}
-			out += source.slice(i, j + 1);
-			i = j + 1;
-		} else if (c === '/' && next === '*') {
-			const end = source.indexOf('*/', i + 2);
-			const stop = end === -1 ? source.length : end + 2;
-			out += source.slice(i, stop).replace(/[^\n]/g, ' ');
-			i = stop;
-		} else if ((c === '/' && next === '/') || (c === '#' && next !== '[')) {
-			let j = i;
-			while (j < source.length && source[j] !== '\n' && !source.startsWith('?>', j)) {
-				j++;
-			}
-			out += ' '.repeat(j - i);
-			i = j;
-		} else {
-			out += c;
-			i++;
 		}
 	}
 	return out;
+}
+
+// The PHP token that starts at i, as [end, kind]: kind is "close" (?>, back
+// to inline HTML), "blank" (a comment) or "keep" (a string, a heredoc or one
+// character of code).
+function phpToken(source, i) {
+	const two = source.slice(i, i + 2);
+	if (two === '?>') {
+		return [i + 2, 'close'];
+	}
+	if (two === '/*') {
+		const end = source.indexOf('*/', i + 2);
+		return [end === -1 ? source.length : end + 2, 'blank'];
+	}
+	if (two === '//' || (source[i] === '#' && two !== '#[')) {
+		return [lineCommentEnd(source, i), 'blank'];
+	}
+	if (source[i] === "'" || source[i] === '"') {
+		return [stringEnd(source, i), 'keep'];
+	}
+	const heredoc = source[i] === '<' ? heredocEnd(source, i) : -1;
+	return [heredoc === -1 ? i + 1 : heredoc, 'keep'];
+}
+
+// The index after the quoted string that starts at i (backslash escapes
+// skipped), or the end of the file when it does not close.
+function stringEnd(source, i) {
+	let j = i + 1;
+	while (j < source.length && source[j] !== source[i]) {
+		j += source[j] === '\\' ? 2 : 1;
+	}
+	return Math.min(j + 1, source.length);
+}
+
+// Where a // or # comment that starts at i ends: at the end of its line,
+// or before a ?> that closes PHP on that line.
+function lineCommentEnd(source, i) {
+	const ends = [source.indexOf('\n', i), source.indexOf('?>', i)].filter((at) => at !== -1);
+	return ends.length ? Math.min(...ends) : source.length;
 }
 
 // The text of each PHP file that calls a hook, comments blanked out: in the
