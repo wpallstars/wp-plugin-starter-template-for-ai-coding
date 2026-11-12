@@ -2,7 +2,8 @@
 
 Every change to WP Plugin Starter. readme.txt lists the latest version in short.
 
-= Unreleased =
+= 1.0.63 =
+* Developers: scripts/deploy-sites.sh runs the post-install load check again once after a SIGKILL (exit 137) whatever the killed process printed, still only when the activation lists are intact, and runs each killed cron event up to 3 times; an event gone from the list after a kill counts as done. Retried checks report WARN ... retried (137). DEPLOY_MAX_ACCOUNT_PROCS makes each install wait, at most 10 minutes, while the account runs more processes. Plugins get it with scripts/sync-core.sh (GH#710).
 * Developers: scripts/lint.sh changelog allows a release PR's renamed heading only for lines under that heading, not anywhere in the file, and reads headings from HEAD to match the diff. The Starter sync issue's Files Scope lists the plugin's own files step 4 may change. Plugins get the lint change with scripts/sync-core.sh (GH#715).
 * Developers: WPStarter::asset_url() is documented as returning a non-empty string, which it always does, so wp_register_script() with its address passes PHPStan (Parameter #2 $src expects non-empty-string|false); found as SEO Pro Stack adopted it (wpallstars/seoprostack#1531). No code change. Plugins get it with scripts/sync-core.sh (GH#725).
 * Developers: the Starter sync workflow writes its issue with the optional secret STARTER_SYNC_TOKEN (a maintainer's fine-grained token, Issues read and write) when it is set, else its own token as before. The issue's author is then the maintainer, so aidevops merges a worker's sync pull request after the usual checks even when it adds a new core file or changes the plugin's own files (DEVELOPMENT.md → Starter sync). Plugins get it with scripts/sync-core.sh (marcusquinn/aidevops#37882; GH#731).

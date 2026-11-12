@@ -5,7 +5,7 @@ Tags: starter, boilerplate, settings, developer, template
 Requires at least: 6.2
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 1.0.62
+Stable tag: 1.0.63
 License: GPLv3 or later
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 
@@ -63,8 +63,9 @@ GitHub releases are the stable beta channel: each version comes out there first.
 
 == Changelog ==
 
-= 1.0.62 =
-* Developers: the deploy load check is not retried after an activation failure, so the install stays FAIL; the cron listing retry tests WP-CLI's own stderr.
+= 1.0.63 =
+* Developers: deploy checks killed by the host (exit 137) are retried, including cron events; optional wait while the account runs too many processes.
+* Developers: the Starter sync issue can be written with a maintainer token (STARTER_SYNC_TOKEN), and its Files Scope lists the plugin's own files.
 
 Every change: changelog.txt.
 
