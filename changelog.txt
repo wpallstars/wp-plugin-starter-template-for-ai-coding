@@ -2,7 +2,7 @@
 
 Every change to WP Plugin Starter. readme.txt lists the latest version in short.
 
-= Unreleased =
+= 1.0.62 =
 * Developers: scripts/deploy-sites.sh no longer retries a site's load check when the activation lists failed their check after a bare SIGKILL, so the install stays FAIL as the restore message says (since 1.0.61 the retry ran). Its cron listing retry after a bare SIGKILL now tests WP-CLI's own stderr, so a listing killed after printing a hook is retried too. Plugins get it with scripts/sync-core.sh (GH#718).
 
 = 1.0.61 =
