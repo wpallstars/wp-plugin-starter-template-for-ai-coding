@@ -47,10 +47,14 @@ function fail(message) {
 
 // Git from a fixed system folder rather than whatever PATH holds.
 function findGit() {
-	for (const bin of ['/usr/bin/git', '/usr/local/bin/git', '/opt/homebrew/bin/git']) {
-		if (fs.existsSync(bin)) {
-			return bin;
-		}
+	if (fs.existsSync('/usr/bin/git')) {
+		return '/usr/bin/git';
+	}
+	if (fs.existsSync('/usr/local/bin/git')) {
+		return '/usr/local/bin/git';
+	}
+	if (fs.existsSync('/opt/homebrew/bin/git')) {
+		return '/opt/homebrew/bin/git';
 	}
 	return fail('git was not found in /usr/bin, /usr/local/bin or /opt/homebrew/bin.');
 }
@@ -69,14 +73,14 @@ function git(...args) {
 // top of the repository with a Plugin Name: header): its
 // define('<PREFIX>_VERSION', 'x.y.z'), the prefix in lower case.
 function mainFile() {
-	const files = (git('ls-files', '--', ':(glob)*.php') || '').split('\n').filter(Boolean);
-	const main = files.filter((file) => /^[ \t/*#@]*Plugin Name:/im.test(fs.readFileSync(file, 'utf8').slice(0, 8192)));
+	const main = (git('grep', '-l', '-I', '-i', '-E', '^[[:space:]/*#@]*Plugin Name:', '--', ':(glob)*.php') || '').split('\n').filter(Boolean);
 	if (main.length !== 1) {
 		fail(main.length ? `more than one main file: ${main.join(', ')}.` : 'no PHP file with a Plugin Name: header at the top of the repository.');
 	}
-	const constant = /define\(\s*['"]([A-Z0-9_]+)_VERSION['"]\s*,\s*['"]([^'"]*)['"]/.exec(fs.readFileSync(main[0], 'utf8'));
+	const defined = git('grep', '-h', '-E', "define\\([[:space:]]*['\"][A-Z0-9_]+_VERSION['\"]", '--', main[0]) || '';
+	const constant = /define\(\s*['"]([A-Z0-9_]+)_VERSION['"]\s*,\s*['"]([^'"]*)['"]/.exec(defined);
 	if (!constant) {
-		fail(`${main[0]} does not define a <PREFIX>_VERSION constant.`);
+		fail(`${main[0]} does not define a {PREFIX}_VERSION constant.`);
 	}
 	return { prefix: constant[1].toLowerCase(), version: constant[2] };
 }
@@ -87,17 +91,41 @@ if (!fs.existsSync(DOC)) {
 }
 
 const { prefix, version } = mainFile();
-const hookName = new RegExp(`^${prefix}_[a-z0-9_]+$`);
+const SLUG = /^[a-z0-9_]+$/;
+const isHookName = (name) => name.length > prefix.length + 1 && name.startsWith(`${prefix}_`) && SLUG.test(name);
 // The first argument of a hook call: a quoted name, then a "." when the code
 // joins more to it.
 const callRe = /\b(apply_filters|do_action)(_ref_array|_deprecated)?\(\s*(?:'([^'\n]*)'|"([^"\n]*)")(\s*\.)?/g;
 
-// A regular expression for a name built at run time: "{prefix}_{$id}_items"
-// or '{prefix}_' . $id.
+// A matcher for a name built at run time: "{prefix}_{$id}_items" or
+// '{prefix}_' . $id. The literal parts must appear in order, at the start and
+// the end, and each gap between them is one or more of [a-z0-9_]. No
+// RegExp is built from the code being checked.
 function namePattern(text, joined) {
 	const parts = text.split(/\{\$[^}]*\}|\$[A-Za-z_]\w*(?:->\w+|\[[^\]]*\])*/);
-	const body = parts.map((part) => part.replace(/[.*+?^${}()|[\]\\]/g, String.raw`\$&`)).join('[a-z0-9_]+');
-	return new RegExp(`^${body}${joined ? '[a-z0-9_]+' : ''}$`);
+	if (joined) {
+		parts.push('');
+	}
+	const first = parts[0];
+	const last = parts[parts.length - 1];
+	return (candidate) => {
+		if (parts.length === 1) {
+			return candidate === first;
+		}
+		if (!candidate.startsWith(first)) {
+			return false;
+		}
+		let pos = first.length;
+		for (const part of parts.slice(1, -1)) {
+			const at = candidate.indexOf(part, pos + 1);
+			if (at === -1 || !SLUG.test(candidate.slice(pos, at))) {
+				return false;
+			}
+			pos = at + part.length;
+		}
+		const end = candidate.length - last.length;
+		return end > pos && candidate.endsWith(last) && SLUG.test(candidate.slice(pos, end));
+	};
 }
 
 // The hooks called in PHP (working tree, as committed or not): live names,
@@ -151,7 +179,7 @@ function readList(text, problems) {
 			listed.set(name, { type, status });
 			continue;
 		}
-		if (!hookName.test(name)) {
+		if (!isHookName(name)) {
 			problems.push(`${name}: not a ${prefix}_* hook; list only this plugin's own hooks.`);
 			continue;
 		}
@@ -176,7 +204,7 @@ if (code === null) {
 }
 const found = hooksIn(code);
 const listed = readList(fs.readFileSync(DOC, 'utf8'), problems);
-const fits = (name) => [...found.patterns.values()].some((re) => re.test(name));
+const fits = (name) => [...found.patterns.values()].some((re) => re(name));
 const inCode = (name) => found.live.has(name) || found.deprecated.has(name) || fits(name);
 
 for (const name of [...found.live, ...found.deprecated].sort((a, b) => a.localeCompare(b))) {
@@ -185,12 +213,12 @@ for (const name of [...found.live, ...found.deprecated].sort((a, b) => a.localeC
 	}
 }
 for (const [built, re] of found.patterns) {
-	if (![...listed.keys()].some((name) => re.test(name))) {
+	if (![...listed.keys()].some((name) => re(name))) {
 		problems.push(`"${built}" builds a hook name at run time, and no listed hook fits it: list each name it makes.`);
 	}
 }
 for (const [name, row] of listed) {
-	if (!hookName.test(name) || !STATUSES.includes(row.status) || inCode(name)) {
+	if (!isHookName(name) || !STATUSES.includes(row.status) || inCode(name)) {
 		continue;
 	}
 	if (row.status === 'supported') {
@@ -234,7 +262,7 @@ if (tags.length === 0) {
 	// Rows with another prefix (a copy of the starter's tags) are not this
 	// plugin's hooks.
 	for (const [name, row] of before) {
-		if (row.status !== 'supported' || !hookName.test(name)) {
+		if (row.status !== 'supported' || !isHookName(name)) {
 			continue;
 		}
 		released++;
