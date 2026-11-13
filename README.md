@@ -174,6 +174,7 @@ Deleting the plugin removes its settings (on multisite, every site's and the net
 ### Unreleased
 
 - Developers: `scripts/deploy-sites.sh --apply`, when it finds no install of the plugin under `--parent`, says "Nothing installed on HOST: no install of SLUG under PARENT (check --parent)" instead of pointing to FAIL lines and restore commands that are not there; the exit code (1) is unchanged. Plugins get it with `scripts/sync-core.sh` (GH#764).
+- Developers: the Release workflow sets up Node with `actions/setup-node` 7.1.0, as CI does, so a plugin whose Dependabot already raised it there no longer has its `release.yml` reported as changed here by the Starter sync. Plugins get it with `scripts/sync-core.sh`.
 
 ### 1.0.66
 
