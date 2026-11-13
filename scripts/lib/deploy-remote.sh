@@ -1923,6 +1923,36 @@ lock_report() {
 	return 0
 }
 
+# apply's checks before the first install: the web PHP log setting, the
+# zip's SHA-256 on this host, the backup folder, other plugins' deploys
+# (unless --allow-concurrent-plugins), then this plugin's lock. Returns 2 or
+# 3 as main does, with nothing installed.
+apply_start() {
+	local want="$1"
+	local zip="$2"
+	local sha="$3"
+	local backups="$4"
+	local parent="$5"
+	if [[ -z "$WEB_ERROR_LOG" || "$WEB_ERROR_LOG" == "syslog" ]]; then
+		say "deploy-remote: apply requires DEPLOY_WEB_ERROR_LOG, the verified web PHP log file; nothing installed"
+		return 2
+	fi
+	if [[ "$(sha256_of "$zip" || true)" != "$sha" ]]; then
+		say "deploy-remote: the zip's SHA-256 on this host is not $sha; nothing installed"
+		return 2
+	fi
+	say "zip SHA-256 on the host: ok"
+	if ! mkdir -p "$backups" || ! chmod 700 "$backups"; then
+		say "deploy-remote: cannot make the backup folder $backups"
+		return 2
+	fi
+	if [[ "$ALLOW_CONCURRENT" -eq 0 ]]; then
+		other_plugin_deploy || return $?
+	fi
+	lock_take "v$want" "$parent" || return $?
+	return 0
+}
+
 main() {
 	local mode="${1:-}"
 	SLUG="${2:-}"
@@ -1974,23 +2004,7 @@ main() {
 	fi
 
 	if [[ "$apply" -eq 1 ]]; then
-		if [[ -z "$WEB_ERROR_LOG" || "$WEB_ERROR_LOG" == "syslog" ]]; then
-			say "deploy-remote: apply requires DEPLOY_WEB_ERROR_LOG, the verified web PHP log file; nothing installed"
-			return 2
-		fi
-		if [[ "$(sha256_of "$zip" || true)" != "$sha" ]]; then
-			say "deploy-remote: the zip's SHA-256 on this host is not $sha; nothing installed"
-			return 2
-		fi
-		say "zip SHA-256 on the host: ok"
-		if ! mkdir -p "$backups" || ! chmod 700 "$backups"; then
-			say "deploy-remote: cannot make the backup folder $backups"
-			return 2
-		fi
-		if [[ "$ALLOW_CONCURRENT" -eq 0 ]]; then
-			other_plugin_deploy || return $?
-		fi
-		lock_take "v$want" "$parent" || return $?
+		apply_start "$want" "$zip" "$sha" "$backups" "$parent" || return $?
 	else
 		lock_report
 	fi
