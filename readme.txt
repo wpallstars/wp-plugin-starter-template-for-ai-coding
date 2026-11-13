@@ -5,7 +5,7 @@ Tags: starter, boilerplate, settings, developer, template
 Requires at least: 6.2
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 1.0.64
+Stable tag: 1.0.65
 License: GPLv3 or later
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 
@@ -63,10 +63,10 @@ GitHub releases are the stable beta channel: each version comes out there first.
 
 == Changelog ==
 
-= 1.0.64 =
-* Fix: a secret settings field shows the right placeholder after an AJAX save.
-* Developers: deploy cron checks retry only a killed lone one-off; ssh keep-alive stops a dropped connection hanging the roll-out.
-* Developers: release-bump, build-release, CI lint and the hook check fixed; the Starter sync replaces a bot-written issue when STARTER_SYNC_TOKEN is set.
+= 1.0.65 =
+* Fix: a secret settings field cleared during its save shows "Saved (hidden)" afterwards.
+* Developers: deploy-sites reports a host's twice-killed WP-CLI as UNVERIFIED after a recheck, not FAIL; takes the log baseline after the load wait; retries a killed cron one-off only at its own timestamp; --ignore-log-line warns on known harmless log lines.
+* Developers: the scripts and hook check read a version define split over lines; the hook release check ignores unreadable deprecated names; the Starter sync keeps a no-auto-dispatch hold.
 
 Every change: changelog.txt.
 
