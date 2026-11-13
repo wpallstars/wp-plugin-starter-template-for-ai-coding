@@ -707,6 +707,10 @@ apply() {
 		prune_host "$TAG-$stamp"
 		return 4
 	fi
+	if [[ "$status" -eq 1 ]] && grep -q "^No install of $SLUG under " "$TMP_DIR/apply.out"; then
+		printf '\nNothing installed on %s: no install of %s under %s (check --parent). Exit 1.\n' "$HOST" "$SLUG" "$PARENT" >&2
+		return 1
+	fi
 	if [[ "$status" -ne 0 ]]; then
 		printf '\nDeploy of %s on %s failed (exit %s): see the FAIL lines and their restore commands above.\n' "$TAG" "$HOST" "$status"
 		return 1
