@@ -27,6 +27,11 @@
 #                      default).
 #   --apply            Install the release on each of them.
 #   --allow-downgrade  Allow installing a release older than the installed version.
+#   --allow-concurrent-plugins  With --apply, install even while another
+#                      plugin made from the starter is deploying on the host
+#                      (its live ~/.{other}-deploy/.lock), for hosts with room
+#                      for parallel installs. Without it, --apply installs
+#                      nothing while one runs: it names that run and exits 3.
 #   --ignore-log-line TEXT  A new web PHP log line that contains TEXT (a fixed
 #                      string, not a pattern; after the line's leading [...]
 #                      timestamp or Apache prefix) only warns, ignored log
@@ -97,6 +102,11 @@
 # it, --apply installs nothing, names that run (tag, start, parent, PID) and
 # exits 3; a lock left by a run that has ended (kill -9, a restart) is taken
 # over with a warning. The dry run takes no lock and says when one is active.
+# Every plugin made from the starter has such a lock, so --apply also stops
+# the same way (exit 3, nothing installed) while another plugin's live lock
+# is on the host: two roll-outs at once can push a shared account past its
+# process limit. It never removes or takes over another plugin's lock, and
+# ignores a stale one. --allow-concurrent-plugins skips this check.
 #
 # Needs gh (signed in for a private repository), ssh, and bash, WP-CLI, tar
 # and curl on the host; aidevops users can use wp-fleet-helper.sh instead.
@@ -142,6 +152,8 @@ CF_PLAN=""
 CF_HOSTS_PURGED=0
 CF_HOSTS_FAILED=""
 DOWNGRADE_ARGS=()
+# --allow-concurrent-plugins, passed to the remote part's apply (GH#761).
+CONCURRENT_ARGS=()
 SKIPS=()
 # --ignore-log-line strings (GH#756).
 IGNORES=()
@@ -233,6 +245,7 @@ parse_args() {
 		--apply) APPLY=1 ;;
 		--dry-run) APPLY=0 ;;
 		--allow-downgrade) DOWNGRADE_ARGS=(--allow-downgrade) ;;
+		--allow-concurrent-plugins) CONCURRENT_ARGS=(--allow-concurrent-plugins) ;;
 		-h | --help)
 			usage
 			exit 0
@@ -675,7 +688,7 @@ apply() {
 	fi
 	printf '\nInstalling %s on %s (folder %s):\n' "$TAG" "$HOST" "$dir"
 	command="$(remote_words env "DEPLOY_WP_CLI=$WP_CLI" "DEPLOY_WEB_ERROR_LOG=$WEB_ERROR_LOG" "DEPLOY_IGNORE_LOG_FILE=$ignore_file" "DEPLOY_CRON_TIMEOUT=${DEPLOY_CRON_TIMEOUT:-120}" "DEPLOY_MAX_ACCOUNT_PROCS=${DEPLOY_MAX_ACCOUNT_PROCS:-}" "DEPLOY_LOAD_RETRY_DELAY=${DEPLOY_LOAD_RETRY_DELAY:-30}" "DEPLOY_CDN_PURGE=$([[ -n "$CF_TOKEN" ]] && printf 1 || printf 0)" bash "$dir/deploy-remote.sh" apply "$SLUG" "$PARENT" \
-		"$VERSION" "$dir/$SLUG-$VERSION.zip" "$SHA" "$dir/backups" ${DOWNGRADE_ARGS[@]+"${DOWNGRADE_ARGS[@]}"} ${SKIPS[@]+"${SKIPS[@]}"})"
+		"$VERSION" "$dir/$SLUG-$VERSION.zip" "$SHA" "$dir/backups" ${DOWNGRADE_ARGS[@]+"${DOWNGRADE_ARGS[@]}"} ${CONCURRENT_ARGS[@]+"${CONCURRENT_ARGS[@]}"} ${SKIPS[@]+"${SKIPS[@]}"})"
 	set +e
 	remote "$command" | tee "$TMP_DIR/apply.out" | stream_filter
 	status="${PIPESTATUS[0]}"
@@ -685,7 +698,7 @@ apply() {
 		return 1
 	fi
 	if [[ "$status" -eq 3 ]]; then
-		printf '\nAnother deploy of %s is running on %s (named above), so nothing was installed. Wait for it to finish, then run again.\n' "$SLUG" "$HOST" >&2
+		printf '\nAnother deploy (of %s or of another plugin made from the starter) is running on %s (named above), so nothing was installed. Wait for it to finish, then run again.\n' "$SLUG" "$HOST" >&2
 		exit 3
 	fi
 	if [[ "$status" -eq 4 ]]; then

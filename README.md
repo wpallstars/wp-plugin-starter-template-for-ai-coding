@@ -171,6 +171,10 @@ Deleting the plugin removes its settings (on multisite, every site's and the net
 
 ## Changelog
 
+### Unreleased
+
+- Developers: `scripts/deploy-sites.sh --apply` installs nothing while another plugin made from the starter is deploying on the same host: when another plugin's deploy lock (`~/.{other}-deploy/.lock`) is live, it names that run (plugin, tag, start time, PID) and exits 3, as for its own lock, so two roll-outs no longer run at once on one shared account and push it past its process limit. Another plugin's lock is never removed or taken over, and a stale one is ignored. `--allow-concurrent-plugins` skips the check on a host with room for parallel installs; the dry run is unchanged. Plugins get it with `scripts/sync-core.sh` (GH#761).
+
 ### 1.0.65
 
 - Developers: when the Starter sync workflow replaces an issue its own token wrote, the new issue keeps a `no-auto-dispatch` hold (and gets it if the old issue's labels cannot be read), instead of being dispatched to a worker; the closing comment says so. Without the hold, or without `STARTER_SYNC_TOKEN`, nothing changes. Plugins get it with `scripts/sync-core.sh` (GH#744).

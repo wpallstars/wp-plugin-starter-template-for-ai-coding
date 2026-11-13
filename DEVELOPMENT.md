@@ -458,6 +458,20 @@ last install it reported, so check the installs after it rather than run
 again blind (running again is safe: an install already on the tag gets the
 same files again).
 
+Each plugin's `--apply` holds its own lock on the host
+(`~/.{slug}-deploy/.lock`). Before taking it, the run also looks at the other
+`~/.*-deploy/.lock` folders there: while another plugin made from the
+starter has a live one (its PID still runs `deploy-remote`), it installs
+nothing, prints `another plugin's deploy is running on this host (<slug>,
+tag …, started …, parent …, PID …)` and exits 3, as for its own lock. Two
+roll-outs to one shared account at once can push it past its process limit,
+and the host then kills the safety checks of both. Another plugin's lock is
+only read, never removed or taken over: a stale one (its run has gone) is
+ignored. Two runs that start in the same second may both pass; the check
+stops the usual case, one roll-out starting while another is mid-way. On a
+host with room for parallel installs, `--allow-concurrent-plugins` skips
+the check. The dry run is unchanged.
+
 When purging Cloudflare by host (no `--cloudflare-token-env`), the WARN
 `Cloudflare keeps pages from before the deploy` on multisite subsites means
 only the main host was purged. Such callers must purge every network host
