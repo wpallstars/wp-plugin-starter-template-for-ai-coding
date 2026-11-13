@@ -171,6 +171,10 @@ Deleting the plugin removes its settings (on multisite, every site's and the net
 
 ## Changelog
 
+### Unreleased
+
+- Developers: `scripts/deploy-sites.sh --apply`, when it finds no install of the plugin under `--parent`, says "Nothing installed on HOST: no install of SLUG under PARENT (check --parent)" instead of pointing to FAIL lines and restore commands that are not there; the exit code (1) is unchanged. Plugins get it with `scripts/sync-core.sh` (GH#764).
+
 ### 1.0.66
 
 - Developers: `scripts/deploy-sites.sh --apply` installs nothing while another plugin made from the starter is deploying on the same host: when another plugin's deploy lock (`~/.{other}-deploy/.lock`) is live, it names that run (plugin, tag, start time, PID) and exits 3, as for its own lock, so two roll-outs no longer run at once on one shared account and push it past its process limit. Another plugin's lock is never removed or taken over, and a stale one is ignored. `--allow-concurrent-plugins` skips the check on a host with room for parallel installs; the dry run is unchanged. Plugins get it with `scripts/sync-core.sh` (GH#761).
