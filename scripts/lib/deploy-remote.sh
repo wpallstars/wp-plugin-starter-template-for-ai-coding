@@ -4,7 +4,7 @@
 # and for --apply copies it with the zip to a private folder there first.
 #
 # Usage: bash deploy-remote.sh list  SLUG PARENT [--version=X.Y.Z] [--allow-downgrade] [SKIP]...
-#        bash deploy-remote.sh apply SLUG PARENT VERSION ZIP SHA256 BACKUPS [--allow-downgrade] [SKIP]...
+#        bash deploy-remote.sh apply SLUG PARENT VERSION ZIP SHA256 BACKUPS [--allow-downgrade] [--allow-concurrent-plugins] [SKIP]...
 #
 # PARENT is a pattern for the WordPress folders (wp-config.php and the
 # plugin's main file inside); a leading ~/ is the home folder. Only installs
@@ -34,6 +34,11 @@
 # install until it exits. While another run's lock is live it installs
 # nothing, names that run and exits 3; a lock whose run has gone is taken
 # over with a warning. list takes no lock and says when a run is active.
+# Before taking it, apply also stops (exit 3, nothing installed) while
+# another plugin's live lock (~/.OTHER-deploy/.lock) is on the host, so two
+# plugins made from the starter never install at once on one shared account;
+# that lock is never removed or taken over, and a stale one is ignored.
+# --allow-concurrent-plugins skips this check.
 #
 # Bash only, and no process substitution: /dev/fd is missing in some SSH
 # sessions. Never wp plugin update: on hosts with HTTP request limiters
@@ -62,6 +67,8 @@ LOG_IGNORED=0
 SLUG=""
 FAILED=0
 ALLOW_DOWNGRADE=0
+# 1 with --allow-concurrent-plugins: install while another plugin deploys.
+ALLOW_CONCURRENT=0
 RUN_STAMP=""
 LOCK_DIR=""
 FETCHES=0
@@ -1864,6 +1871,34 @@ lock_take() {
 	return 3
 }
 
+# Another plugin's deploy on this host (GH#761). Every plugin made from the
+# starter keeps its lock at ~/.SLUG-deploy/.lock, so without this two
+# plugins' roll-outs could run at once on one shared account and push it past
+# its process limit (the host then kills WP-CLI with 137). Returns 3, naming
+# the first other lock that lock_live finds live. Other plugins' locks are
+# only read: a stale one is ignored, never removed or taken over. Checked
+# before this run takes its own lock, so two runs starting in the same
+# second may both pass; it stops the common case of one roll-out starting
+# while another is mid-way.
+other_plugin_deploy() {
+	local own dir other
+	own="$(lock_path)"
+	for dir in "$HOME"/.*-deploy/.lock; do
+		[[ -d "$dir" && "$dir" != "$own" ]] || continue
+		lock_live "$dir" || continue
+		other="${dir%/.lock}"
+		other="${other##*/.}"
+		other="${other%-deploy}"
+		if [[ -z "$(lock_field "$dir" pid)" ]]; then
+			say "deploy-remote: another plugin's deploy is starting on this host ($other: its lock $dir has no owner yet); nothing installed. Wait for it to finish, then run again."
+		else
+			say "deploy-remote: another plugin's deploy is running on this host ($other, $(lock_holder "$dir")); nothing installed. Wait for it to finish, then run again."
+		fi
+		return 3
+	done
+	return 0
+}
+
 # On exit: remove the lock, but only while it is still this run's.
 lock_release() {
 	if [[ -n "$LOCK_DIR" && "$(lock_field "$LOCK_DIR" pid)" == "$$" ]]; then
@@ -1885,6 +1920,36 @@ lock_report() {
 	else
 		say "A stale deploy lock of $SLUG is on this host ($(lock_holder "$dir")); --apply will take it over."
 	fi
+	return 0
+}
+
+# apply's checks before the first install: the web PHP log setting, the
+# zip's SHA-256 on this host, the backup folder, other plugins' deploys
+# (unless --allow-concurrent-plugins), then this plugin's lock. Returns 2 or
+# 3 as main does, with nothing installed.
+apply_start() {
+	local want="$1"
+	local zip="$2"
+	local sha="$3"
+	local backups="$4"
+	local parent="$5"
+	if [[ -z "$WEB_ERROR_LOG" || "$WEB_ERROR_LOG" == "syslog" ]]; then
+		say "deploy-remote: apply requires DEPLOY_WEB_ERROR_LOG, the verified web PHP log file; nothing installed"
+		return 2
+	fi
+	if [[ "$(sha256_of "$zip" || true)" != "$sha" ]]; then
+		say "deploy-remote: the zip's SHA-256 on this host is not $sha; nothing installed"
+		return 2
+	fi
+	say "zip SHA-256 on the host: ok"
+	if ! mkdir -p "$backups" || ! chmod 700 "$backups"; then
+		say "deploy-remote: cannot make the backup folder $backups"
+		return 2
+	fi
+	if [[ "$ALLOW_CONCURRENT" -eq 0 ]]; then
+		other_plugin_deploy || return $?
+	fi
+	lock_take "v$want" "$parent" || return $?
 	return 0
 }
 
@@ -1920,10 +1985,14 @@ main() {
 		return 2
 		;;
 	esac
-	if [[ "${1:-}" == --allow-downgrade ]]; then
-		ALLOW_DOWNGRADE=1
+	while :; do
+		case "${1:-}" in
+		--allow-downgrade) ALLOW_DOWNGRADE=1 ;;
+		--allow-concurrent-plugins) ALLOW_CONCURRENT=1 ;;
+		*) break ;;
+		esac
 		shift
-	fi
+	done
 	SKIPS=("$@")
 	if [[ ! "$SLUG" =~ ^[a-z0-9-]+$ ]]; then
 		say "deploy-remote: not a plugin slug: $SLUG"
@@ -1935,20 +2004,7 @@ main() {
 	fi
 
 	if [[ "$apply" -eq 1 ]]; then
-		if [[ -z "$WEB_ERROR_LOG" || "$WEB_ERROR_LOG" == "syslog" ]]; then
-			say "deploy-remote: apply requires DEPLOY_WEB_ERROR_LOG, the verified web PHP log file; nothing installed"
-			return 2
-		fi
-		if [[ "$(sha256_of "$zip" || true)" != "$sha" ]]; then
-			say "deploy-remote: the zip's SHA-256 on this host is not $sha; nothing installed"
-			return 2
-		fi
-		say "zip SHA-256 on the host: ok"
-		if ! mkdir -p "$backups" || ! chmod 700 "$backups"; then
-			say "deploy-remote: cannot make the backup folder $backups"
-			return 2
-		fi
-		lock_take "v$want" "$parent" || return $?
+		apply_start "$want" "$zip" "$sha" "$backups" "$parent" || return $?
 	else
 		lock_report
 	fi
