@@ -86,8 +86,11 @@ cron_lone_oneoffs() {
 
 # Whether the site still lists HOOK's event due at TIMESTAMP ($2, $3 after
 # the root): the same one-off, not one its callback scheduled before it was
-# killed, and is the hook's only event (a run takes the next one). 1 when the
-# list cannot be read.
+# killed, and is the hook's only event (a run takes the next one). Called
+# after the retry's wait, right before the run: the site's own cron may have
+# run the one-off meanwhile and scheduled a successor, which the run would
+# run early; only the time between this list and the run stays open. 1 when
+# the list cannot be read.
 cron_event_listed() {
 	local root="$1" hook="$2" stamp="$3"
 	shift 3
@@ -191,18 +194,13 @@ run_site_cron() {
 		while [[ "$status" -eq 137 && "$tries" -lt 3 ]]; do
 			[[ -n "$stamp" ]] || break
 			sleep "$LOAD_RETRY_DELAY"
-			# Checked after the sleep, right before the run: the site's own cron
-			# may have run the one-off meanwhile and scheduled a successor, which
-			# the run (it takes the hook's next event) would run early. Only the
-			# time between this list and the run stays open.
+			# Listed after the sleep, right before the run (a successor may exist).
 			cron_event_listed "$root" "$hook" "$stamp" "$@" || break
 			tries=$((tries + 1))
 			status=0
 			out="$("${cmd[@]+"${cmd[@]}"}" "$WP_CLI" --path="$root" "$@" cron event run "$hook" 2>&1)" || status=$?
 		done
-		if [[ "$status" -eq 137 && -z "$out" ]]; then
-			out="cron $hook killed (137)"
-		fi
+		[[ "$status" -ne 137 || -n "$out" ]] || out="cron $hook killed (137)"
 		[[ "$tries" -eq 1 ]] || CRON_WARN+="cron $hook retried (137), "
 		if [[ "$status" -eq 124 && "${#cmd[@]}" -gt 0 ]]; then
 			CRON_WARN+="cron $hook timed out (${limit}s), "
