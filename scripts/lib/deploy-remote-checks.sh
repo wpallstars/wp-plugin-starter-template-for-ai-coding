@@ -287,13 +287,17 @@ recheck_cron_events() {
 		STEP_REASON+="); "
 		return 0
 	fi
-	events="$("$WP_CLI" --path="$root" "$@" cron event list --fields=hook --format=csv 2>/dev/null)" || status=$?
-	if [[ "$status" -eq 137 ]]; then
+	events="$("$WP_CLI" --path="$root" "$@" cron event list --fields=hook --format=csv 2>"$errors")" || status=$?
+	if [[ "$status" -eq 137 ]] && ! grep -qiE 'fatal error|error establishing a database|database error' "$errors"; then
 		status=0
 		sleep "$LOAD_RETRY_DELAY"
-		events="$("$WP_CLI" --path="$root" "$@" cron event list --fields=hook --format=csv 2>/dev/null)" || status=$?
+		events="$("$WP_CLI" --path="$root" "$@" cron event list --fields=hook --format=csv 2>"$errors")" || status=$?
 	fi
-	if [[ "$status" -eq 137 ]]; then
+	if [[ "$status" -eq 137 ]] && grep -qiE 'fatal error|error establishing a database|database error' "$errors"; then
+		summary="$(tail -n 3 "$errors" | LC_ALL=C tr '\t\r\n' '   ' | LC_ALL=C tr -cd '[:print:]')"
+		STEP_REASON+="cron list failed (exit 137: ${summary:0:300}); "
+		return 0
+	elif [[ "$status" -eq 137 ]]; then
 		STEP_KILLED="$KILLED_EVENT" STEP_HOOKS="$hooks"
 		return 0
 	elif [[ "$status" -ne 0 ]]; then
