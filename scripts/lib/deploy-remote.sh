@@ -101,6 +101,8 @@ readonly CRON_LIST_FAILED="cron list failed; "
 # end of the run, and stays UNVERIFIED (exit 4, no restore) if killed again.
 readonly KILLED_TEXT="host killed WP-CLI (137) twice"
 readonly RECHECKED_TEXT="rechecked after host kill (137)"
+# STEP_KILLED value for plugin cron events the host killed (GH#771).
+readonly KILLED_EVENT="cronevent"
 # Installs held back for that recheck: install_state of each.
 DEFERRED=()
 INSTALLS_OK=0

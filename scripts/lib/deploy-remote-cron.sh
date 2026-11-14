@@ -111,13 +111,16 @@ cron_event_listed() {
 # cron event) is a note, not a failure, and not counted as run here (GH#1369).
 # Sets CRON_RUN, CRON_TOTAL, CRON_FAILURE and CRON_WARN for the site, and
 # CRON_LIST_KILLED to 1 when the list was killed (137, nothing on stderr) on
-# its retry too: then CRON_FAILURE is just CRON_LIST_FAILED.
+# its retry too: then CRON_FAILURE is just CRON_LIST_FAILED. An event killed
+# (137, nothing else printed) on its final try is not a failure: its hook
+# goes into CRON_KILLED ("HOOK HOOK ") for the end-of-run recheck, which
+# never runs it again (GH#771).
 run_site_cron() {
 	local root="$1"
 	shift
 	local hooks hook out status limit="${DEPLOY_CRON_TIMEOUT:-120}" detail
 	local cmd=()
-	CRON_RUN=0 CRON_TOTAL=0 CRON_FAILURE="" CRON_WARN="" CRON_LIST_KILLED=0
+	CRON_RUN=0 CRON_TOTAL=0 CRON_FAILURE="" CRON_WARN="" CRON_LIST_KILLED=0 CRON_KILLED=""
 	[[ "$limit" =~ ^[0-9]+$ ]] || limit=120
 	local list_code list_out list_err list_status=0 retried="" list_failed="$CRON_LIST_FAILED"
 	list_code="$(cron_list_code)"
@@ -198,6 +201,9 @@ run_site_cron() {
 			CRON_RUN=$((CRON_RUN + 1))
 		elif [[ "$status" -ne 0 && "$out" == *"Invalid cron event '$hook'"* && "$out" != *"Fatal error"* && "$out" != *"$DB_QUERY_ERROR"* && "$out" != *"$DB_CONNECT_ERROR"* ]]; then
 			CRON_WARN+="cron $hook ran meanwhile, "
+		elif [[ "$status" -eq 137 && "$out" == "cron $hook killed (137)" ]]; then
+			# The host's process or memory limit, with no other sign of a fault.
+			CRON_KILLED+="$hook "
 		elif [[ "$status" -ne 0 || "$out" == *"PHP Fatal error"* || "$out" == *"Fatal error:"* || "$out" == *"$DB_QUERY_ERROR"* || "$out" == *"$DB_CONNECT_ERROR"* ]]; then
 			detail="$(printf '%s\n' "$out" | tail -n 3 | LC_ALL=C tr '\t\r\n' '   ' | LC_ALL=C tr -cd '[:print:]')"
 			CRON_FAILURE+="cron $hook failed (exit $status: ${detail:0:300}); "

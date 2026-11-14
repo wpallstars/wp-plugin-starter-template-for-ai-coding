@@ -162,7 +162,7 @@ cron_step() {
 		run_site_cron "$root" "$@"
 		active_check "$root" "$cron_before" "" "" || CRON_FAILURE+="activation lists changed during cron; "
 	else
-		CRON_RUN=0 CRON_TOTAL=0 CRON_WARN="" CRON_LIST_KILLED=0
+		CRON_RUN=0 CRON_TOTAL=0 CRON_WARN="" CRON_LIST_KILLED=0 CRON_KILLED=""
 		CRON_FAILURE="cron skipped: activation snapshot failed; "
 	fi
 	CRON_SUM_RUN=$((CRON_SUM_RUN + CRON_RUN))
@@ -238,7 +238,9 @@ load_check() {
 
 # The plugin's own scheduled events on one site, after a good load (cron_step).
 # Adds to STEP_REASON and STEP_WARN; sets STEP_CRON (cron=N/M) and STEP_KILLED
-# to cron when only the cron list was killed twice (GH#750).
+# to cron when only the cron list was killed twice (GH#750), or to cronevent,
+# with STEP_HOOKS the killed hooks, when events were killed (137) and nothing
+# else is wrong (GH#771).
 site_cron() {
 	local root="$1"
 	shift
@@ -248,10 +250,71 @@ site_cron() {
 		STEP_KILLED="cron"
 	else
 		STEP_REASON+="$CRON_FAILURE"
+		if [[ -n "$CRON_KILLED" ]]; then
+			STEP_KILLED="$KILLED_EVENT" STEP_HOOKS="$CRON_KILLED"
+		fi
 	fi
 	if [[ -n "$CRON_WARN" ]]; then
 		STEP_WARN+="$CRON_WARN"
 		CRON_WARNED+="$CRON_WARN"
+	fi
+	return 0
+}
+
+# The end-of-run recheck of a site whose cron events the host killed (137):
+# $1 root, $2 stderr file, $3 the killed hooks ("HOOK HOOK "), rest WP-CLI
+# args. Runs the load check and the cron list only, never the hooks again
+# (a run reschedules a recurring event early). A hook still scheduled is a
+# warning; one no longer listed (a one-off WP-CLI removed before its callback)
+# cannot be confirmed, so it stays killed. Sets STEP_REASON, STEP_WARN,
+# STEP_KILLED and STEP_HOOKS like site_load (GH#771).
+recheck_cron_events() {
+	local root="$1" errors="$2" hooks="$3"
+	shift 3
+	local events="" status=0 hook missing="" summary
+	local hook_list=()
+	STEP_HOOKS=""
+	load_check "$root" "$errors" "$@"
+	if [[ "$LOAD_STATUS" -eq 0 ]]; then
+		[[ -z "$LOAD_RETRIED" ]] || STEP_WARN+="load retried ($LOAD_RETRIED), "
+	elif [[ "$LOAD_STATUS" -eq 137 && "$LOAD_RETRIED" == 137 && "$GUARD_ACTIVE_OK" -eq 1 ]]; then
+		STEP_KILLED="load"
+		return 0
+	else
+		summary="$(tail -n 3 "$errors" | LC_ALL=C tr '\t\r\n' '   ' | LC_ALL=C tr -cd '[:print:]')"
+		STEP_REASON="WordPress load failed (exit $LOAD_STATUS"
+		[[ -z "$summary" ]] || STEP_REASON+=": ${summary:0:300}"
+		STEP_REASON+="); "
+		return 0
+	fi
+	events="$("$WP_CLI" --path="$root" "$@" cron event list --fields=hook --format=csv 2>"$errors")" || status=$?
+	if [[ "$status" -eq 137 ]] && ! grep -qiE 'fatal error|error establishing a database|database error' "$errors"; then
+		status=0
+		sleep "$LOAD_RETRY_DELAY"
+		events="$("$WP_CLI" --path="$root" "$@" cron event list --fields=hook --format=csv 2>"$errors")" || status=$?
+	fi
+	if [[ "$status" -eq 137 ]] && grep -qiE 'fatal error|error establishing a database|database error' "$errors"; then
+		summary="$(tail -n 3 "$errors" | LC_ALL=C tr '\t\r\n' '   ' | LC_ALL=C tr -cd '[:print:]')"
+		STEP_REASON+="cron list failed (exit 137: ${summary:0:300}); "
+		return 0
+	elif [[ "$status" -eq 137 ]]; then
+		STEP_KILLED="$KILLED_EVENT" STEP_HOOKS="$hooks"
+		return 0
+	elif [[ "$status" -ne 0 ]]; then
+		STEP_REASON+="$CRON_LIST_FAILED"
+		return 0
+	fi
+	read -ra hook_list <<<"$hooks"
+	for hook in ${hook_list[@]+"${hook_list[@]}"}; do
+		if printf '%s\n' "$events" | HOOK="$hook" awk 'NR > 1 && $0 == ENVIRON["HOOK"] { found = 1 } END { exit !found }'; then
+			STEP_WARN+="cron $hook killed by host (137), still scheduled, "
+			CRON_WARNED+="cron $hook killed by host (137), still scheduled, "
+		else
+			missing+="$hook "
+		fi
+	done
+	if [[ -n "$missing" ]]; then
+		STEP_KILLED="$KILLED_EVENT" STEP_HOOKS="$missing"
 	fi
 	return 0
 }
@@ -266,7 +329,7 @@ site_load() {
 	local root="$1" errors="$2"
 	shift 2
 	local summary
-	STEP_REASON="" STEP_WARN="" STEP_PURGED="no" STEP_CRON="cron=0/0" STEP_LOAD_RETRIED="" STEP_KILLED=""
+	STEP_REASON="" STEP_WARN="" STEP_PURGED="no" STEP_CRON="cron=0/0" STEP_LOAD_RETRIED="" STEP_KILLED="" STEP_HOOKS=""
 	CRON_RUN=0 CRON_TOTAL=0
 	load_check "$root" "$errors" "$@"
 	if [[ "$LOAD_STATUS" -eq 0 ]]; then

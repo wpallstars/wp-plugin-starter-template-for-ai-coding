@@ -450,6 +450,17 @@ still pruned. Any other failure, in the first pass or the recheck, is still
 a FAIL with the restore command (exit 1). The held-back install's Cloudflare
 purge waits for the recheck too, so it follows the page-cache purge.
 
+A plugin cron event killed (exit 137, nothing else printed) on its final try
+is held back the same way and is never `FAIL` for the kill alone. A killed
+recurring hook is not run again (a run reschedules it early); the recheck
+runs the load check and the cron list only. A killed hook still scheduled
+gives `WARN cron HOOK killed by host (137), still scheduled`; a one-off no
+longer listed (WP-CLI removes it before its callback) cannot be confirmed:
+`UNVERIFIED: host killed cron event (137), not confirmed: HOOK`, with a
+`recheck:` line (`cron event list`), no restore command and exit 4 when
+nothing failed. A hook that prints a PHP fatal error or a database error, or
+exits with anything but 137, is still a FAIL.
+
 Every `ssh` the script runs sends a keep-alive every 30 seconds
 (`ServerAliveInterval=30`, `ServerAliveCountMax=4`, over `~/.ssh/config`), so a
 connection that dies without a close fails in about 2 minutes instead of

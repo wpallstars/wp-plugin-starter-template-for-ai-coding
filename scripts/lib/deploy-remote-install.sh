@@ -247,7 +247,7 @@ recheck_hint() {
 	local cmd=("$WP_CLI" --path="$R_ROOT")
 	IFS=$'\x1f' read -r kind url _ <<<"$record"
 	[[ "$NETWORK" -eq 0 ]] || cmd+=(--url="$url")
-	if [[ "$kind" == cron ]]; then
+	if [[ "$kind" == cron* ]]; then
 		cmd+=(cron event list)
 	else
 		cmd+=(eval "$(load_code)")
@@ -277,7 +277,7 @@ install_state() {
 # stays UNVERIFIED; any other failure is a FAIL, with the restore command.
 recheck_install() {
 	local state="$1"
-	local record kind url status home cache purged cron_note warn result old_row old_result records="" errors
+	local record kind url status home cache purged cron_note warn hooks result old_row old_result records="" errors
 	local url_args=()
 	eval "$state"
 	wait_for_account_load
@@ -292,17 +292,20 @@ recheck_install() {
 	errors="$(mktemp)" || errors=/dev/null
 	while IFS= read -r record; do
 		[[ -n "$record" ]] || continue
-		IFS=$'\x1f' read -r kind url status home cache purged cron_note warn <<<"$record"
+		IFS=$'\x1f' read -r kind url status home cache purged cron_note warn hooks <<<"$record"
 		url_args=()
 		[[ "$NETWORK" -eq 0 ]] || url_args=(--url="$url")
-		old_result="$(killed_result "$kind")"
+		old_result="$(killed_result "$kind" "$hooks")"
 		site_row "$url" "$status" "$purged" "$cron_note" "$home" "$cache" "$old_result"
 		old_row="$ROW"
 		SITES_UNVERIFIED=$((SITES_UNVERIFIED - 1))
-		STEP_REASON="" STEP_WARN="" STEP_KILLED="" STEP_LOAD_RETRIED="" STEP_CRON="$cron_note"
+		STEP_REASON="" STEP_WARN="" STEP_KILLED="" STEP_HOOKS="" STEP_LOAD_RETRIED="" STEP_CRON="$cron_note"
 		if [[ "$kind" == load ]]; then
 			site_load "$R_ROOT" "$errors" ${url_args[@]+"${url_args[@]}"}
 			purged="$STEP_PURGED"
+			cat "$errors" >&2
+		elif [[ "$kind" == cronevent ]]; then
+			recheck_cron_events "$R_ROOT" "$errors" "$hooks" ${url_args[@]+"${url_args[@]}"}
 			cat "$errors" >&2
 		else
 			site_cron "$R_ROOT" ${url_args[@]+"${url_args[@]}"}
@@ -314,9 +317,9 @@ recheck_install() {
 			SITES_FAILED=$((SITES_FAILED + 1))
 			[[ "$NETWORK" -eq 1 ]] || MAIN_REASON="${STEP_REASON%; }"
 		elif [[ -n "$STEP_KILLED" ]]; then
-			result="$(killed_result "$STEP_KILLED")"
+			result="$(killed_result "$STEP_KILLED" "$STEP_HOOKS")"
 			SITES_UNVERIFIED=$((SITES_UNVERIFIED + 1))
-			records+="$(unverified_record "$STEP_KILLED" "$url" "$status" "$home" "$cache" "$purged" "$cron_note" "$warn")"$'\n'
+			records+="$(unverified_record "$STEP_KILLED" "$url" "$status" "$home" "$cache" "$purged" "$cron_note" "$warn" "$STEP_HOOKS")"$'\n'
 			[[ "$NETWORK" -eq 1 ]] || MAIN_UNVERIFIED="${result#UNVERIFIED: }"
 		else
 			warn="$RECHECKED_TEXT, $warn"
