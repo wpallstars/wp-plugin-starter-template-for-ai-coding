@@ -173,6 +173,7 @@ Deleting the plugin removes its settings (on multisite, every site's and the net
 
 ### Unreleased
 
+- Developers: `scripts/deploy-sites.sh --apply` no longer fails an install only because the host killed one of the plugin's cron events (exit 137, nothing else printed). The install is held for the end-of-run recheck, which never runs the hook again: a hook still scheduled is `WARN cron HOOK killed by host (137), still scheduled`; a one-off no longer listed is `UNVERIFIED` with a `recheck:` command and no restore (exit 4). PHP fatal errors, database errors and other exit codes still FAIL with the restore command. Plugins get it with `scripts/sync-core.sh` (GH#771).
 - Developers: `scripts/deploy-sites.sh --apply`, when it finds no install of the plugin under `--parent`, says "Nothing installed on HOST: no install of SLUG under PARENT (check --parent)" instead of pointing to FAIL lines and restore commands that are not there; the exit code (1) is unchanged. Plugins get it with `scripts/sync-core.sh` (GH#764).
 - Developers: the Release workflow sets up Node with `actions/setup-node` 7.1.0, as CI does, so a plugin whose Dependabot already raised it there no longer has its `release.yml` reported as changed here by the Starter sync. Plugins get it with `scripts/sync-core.sh`.
 

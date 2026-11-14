@@ -94,6 +94,13 @@
 # there is WARN rechecked after host kill (137); killed again, the site is
 # UNVERIFIED with a recheck command and no restore, and the run exits 4 when
 # nothing failed.
+# A plugin cron event the host killed (137, nothing else printed) on its
+# final try is held back the same way, and never run again (a run
+# reschedules a recurring event early): the recheck runs the load check and
+# the cron list only. A killed hook still scheduled is WARN cron HOOK killed
+# by host (137), still scheduled; a one-off no longer listed cannot be
+# confirmed: UNVERIFIED with a recheck command and no restore (exit 4). A
+# fatal error, a database error or any other exit code stays a FAIL.
 # Host names, folders and backups stay out of the repository: only arguments.
 #
 # --apply holds a per-plugin lock on the host (~/.{slug}-deploy/.lock, made
@@ -718,7 +725,7 @@ apply() {
 		exit 3
 	fi
 	if [[ "$status" -eq 4 ]]; then
-		printf '\nDeployed %s on %s, but %s site(s) are UNVERIFIED: the host killed WP-CLI (exit 137) on the retry and again at the end-of-run recheck. Nothing failed and no restore is needed: when the host is quieter, run each recheck command above.\n' \
+		printf '\nDeployed %s on %s, but %s site(s) are UNVERIFIED: the host killed WP-CLI (exit 137) on the retry and again at the end-of-run recheck, or killed a cron event that could not be confirmed afterwards. Nothing failed and no restore is needed: when the host is quieter, run each recheck command above.\n' \
 			"$TAG" "$HOST" "$(grep -c '^    recheck: ' "$TMP_DIR/apply.out" || true)"
 		prune_host "$TAG-$stamp"
 		return 4

@@ -13,18 +13,25 @@
 # The FAIL reason for a killed step ($1: load or cron) on a site that also
 # failed another check: then it is a FAIL like before, not UNVERIFIED.
 killed_reason() {
-	local killed="$1"
+	local killed="$1" hooks="${2:-}"
 	if [[ "$killed" == load ]]; then
 		printf 'WordPress load failed (exit 137); '
+	elif [[ "$killed" == cronevent ]]; then
+		printf 'cron %s killed (137); ' "${hooks% }"
 	else
 		printf '%s' "$CRON_LIST_FAILED"
 	fi
 	return 0
 }
 
-# A site's result for a step killed twice ($1: load or cron).
+# A site's result for a step killed twice ($1: load, cron or cronevent; $2 the
+# killed hooks of cronevent, "HOOK HOOK ").
 killed_result() {
-	local killed="$1"
+	local killed="$1" hooks="${2:-}"
+	if [[ "$killed" == cronevent ]]; then
+		printf 'UNVERIFIED: host killed cron event (137), not confirmed: %s' "${hooks% }"
+		return 0
+	fi
 	printf 'UNVERIFIED: %s' "$KILLED_TEXT"
 	[[ "$killed" != cron ]] || printf ' (cron list)'
 	return 0
@@ -47,11 +54,12 @@ site_row() {
 
 # The fields of one unverified site, for the recheck and its recheck hint,
 # separated by the unit separator (none of them holds one): killed step, url,
-# status, home, cache, purged, cron note, the site's warnings so far.
+# status, home, cache, purged, cron note, the site's warnings so far, the
+# killed cron hooks.
 unverified_record() {
-	local killed="$1" url="$2" status="$3" home="$4" cache="$5" purged="$6" cron_note="$7" warn="$8"
+	local killed="$1" url="$2" status="$3" home="$4" cache="$5" purged="$6" cron_note="$7" warn="$8" hooks="${9:-}"
 	local sep=$'\x1f'
-	printf '%s' "$killed$sep$url$sep$status$sep$home$sep$cache$sep$purged$sep$cron_note$sep$warn"
+	printf '%s' "$killed$sep$url$sep$status$sep$home$sep$cache$sep$purged$sep$cron_note$sep$warn$sep$hooks"
 	return 0
 }
 
@@ -62,7 +70,7 @@ unverified_record() {
 check_sites() {
 	local root="$1"
 	local kind urls url status result reason warn web_warn purged network=0
-	local load_errors first_code cron_note killed home
+	local load_errors first_code cron_note killed home hooks
 	local check_error="home check failed; "
 	local url_args=() origin
 	CDN_URLS="" MAIN_CF=""
@@ -86,7 +94,7 @@ check_sites() {
 		[[ "$network" -eq 0 ]] || url_args=(--url="$url")
 		result="ok" web_warn=""
 		site_load "$root" "$load_errors" ${url_args[@]+"${url_args[@]}"}
-		reason="$STEP_REASON" warn="$STEP_WARN" purged="$STEP_PURGED" cron_note="$STEP_CRON" killed="$STEP_KILLED"
+		reason="$STEP_REASON" warn="$STEP_WARN" purged="$STEP_PURGED" cron_note="$STEP_CRON" killed="$STEP_KILLED" hooks="$STEP_HOOKS"
 		cat "$load_errors" >&2
 		if ! status="$(wp_bare "$root" ${url_args[@]+"${url_args[@]}"} plugin list --name="$SLUG" --field=status)" || [[ -z "$status" ]]; then
 			reason+="status read failed; "
@@ -115,13 +123,13 @@ check_sites() {
 		warn+="$web_warn"
 		home="${HOME_CODE}${HOME_PINNED:+ pinned}"
 		if [[ -n "$reason" ]]; then
-			[[ -z "$killed" ]] || reason="$(killed_reason "$killed")$reason"
+			[[ -z "$killed" ]] || reason="$(killed_reason "$killed" "$hooks")$reason"
 			result="FAIL: ${reason%; }"
 			SITES_FAILED=$((SITES_FAILED + 1))
 		elif [[ -n "$killed" ]]; then
-			result="$(killed_result "$killed")"
+			result="$(killed_result "$killed" "$hooks")"
 			SITES_UNVERIFIED=$((SITES_UNVERIFIED + 1))
-			UNV_RECORDS+="$(unverified_record "$killed" "$url" "$status" "$home" "$HOME_CACHE" "$purged" "$cron_note" "$warn")"$'\n'
+			UNV_RECORDS+="$(unverified_record "$killed" "$url" "$status" "$home" "$HOME_CACHE" "$purged" "$cron_note" "$warn" "$hooks")"$'\n'
 		elif [[ -n "$warn" ]]; then
 			result="$(warn_result "$warn")"
 		fi
