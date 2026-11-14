@@ -117,6 +117,45 @@ lock_break() {
 	return 0
 }
 
+# Gives the lock folder this run just made its owner file: written to the
+# private file $2 and linked into the folder (ln fails if the folder already
+# has an owner file), so a run paused since its mkdir, whose lock was taken
+# over as stale meanwhile, cannot overwrite the replacement's owner file.
+# Returns 3 when the lock was lost, 2 when the owner file cannot be written.
+lock_publish_owner() {
+	local dir="$1"
+	local pending="$2"
+	local tag="$3"
+	local parent="$4"
+	rm -f "$pending"
+	if ! printf 'pid=%s\ntag=%s\nstarted=%s\nparent=%s\n' "$$" "$tag" \
+		"$(date -u +%Y-%m-%dT%H:%M:%SZ)" "$(printf '%s' "$parent" | tr '\n' ' ')" >"$pending" 2>/dev/null ||
+		! ln "$pending" "$dir/owner" 2>/dev/null; then
+		rm -f "$pending"
+		# Remove the lock only while its owner file names this run: an
+		# empty or missing one may already be a replacement run's lock
+		# (this run's was taken over as stale while it was paused), so it
+		# is left to be taken over once two minutes old.
+		if [[ "$(lock_field "$dir" pid)" == "$$" ]]; then
+			rm -f "$dir/owner"
+			rmdir "$dir" 2>/dev/null || true
+			say "deploy-remote: cannot write the deploy lock's owner file $dir/owner; nothing installed"
+		elif [[ -n "$(lock_field "$dir" pid)" ]]; then
+			say "deploy-remote: lost the deploy lock $dir while taking it; nothing installed"
+			return 3
+		else
+			say "deploy-remote: cannot write the deploy lock's owner file $dir/owner; nothing installed. The lock is left in place; a run in two minutes takes it over if it is not another run's."
+		fi
+		return 2
+	fi
+	rm -f "$pending"
+	if [[ "$(lock_field "$dir" pid)" != "$$" ]]; then
+		say "deploy-remote: lost the deploy lock $dir while taking it; nothing installed"
+		return 3
+	fi
+	return 0
+}
+
 # Takes the lock for this apply run, or says who holds it. Returns 3 when
 # another run holds it, 2 when the lock cannot be made.
 lock_take() {
@@ -132,36 +171,7 @@ lock_take() {
 	while [[ "$tries" -lt 3 ]]; do
 		tries=$((tries + 1))
 		if mkdir "$dir" 2>/dev/null; then
-			# The owner file is written to a private file and linked into the
-			# lock folder (ln fails if the folder already has an owner file),
-			# so a run paused here, whose lock was taken over as stale
-			# meanwhile, cannot overwrite the replacement's owner file.
-			rm -f "$pending"
-			if ! printf 'pid=%s\ntag=%s\nstarted=%s\nparent=%s\n' "$$" "$tag" \
-				"$(date -u +%Y-%m-%dT%H:%M:%SZ)" "$(printf '%s' "$parent" | tr '\n' ' ')" >"$pending" 2>/dev/null ||
-				! ln "$pending" "$dir/owner" 2>/dev/null; then
-				rm -f "$pending"
-				# Remove the lock only while its owner file names this run: an
-				# empty or missing one may already be a replacement run's lock
-				# (this run's was taken over as stale while it was paused), so it
-				# is left to be taken over once two minutes old.
-				if [[ "$(lock_field "$dir" pid)" == "$$" ]]; then
-					rm -f "$dir/owner"
-					rmdir "$dir" 2>/dev/null || true
-					say "deploy-remote: cannot write the deploy lock's owner file $dir/owner; nothing installed"
-				elif [[ -n "$(lock_field "$dir" pid)" ]]; then
-					say "deploy-remote: lost the deploy lock $dir while taking it; nothing installed"
-					return 3
-				else
-					say "deploy-remote: cannot write the deploy lock's owner file $dir/owner; nothing installed. The lock is left in place; a run in two minutes takes it over if it is not another run's."
-				fi
-				return 2
-			fi
-			rm -f "$pending"
-			if [[ "$(lock_field "$dir" pid)" != "$$" ]]; then
-				say "deploy-remote: lost the deploy lock $dir while taking it; nothing installed"
-				return 3
-			fi
+			lock_publish_owner "$dir" "$pending" "$tag" "$parent" || return $?
 			LOCK_DIR="$dir"
 			trap lock_release EXIT
 			trap 'exit 129' HUP
