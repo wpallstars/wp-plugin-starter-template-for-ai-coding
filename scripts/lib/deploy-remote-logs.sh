@@ -206,6 +206,10 @@ classify_log() {
 				}
 				next
 			}
+			if (index($0, "deploy-remote: cannot read the log ") == 1) {
+				print "line"
+				next
+			}
 			rest = $0
 			sub(/^(\[[^]]*\][[:space:]]*)+/, "", rest)
 			for (i = 1; i <= ignores; i++) {

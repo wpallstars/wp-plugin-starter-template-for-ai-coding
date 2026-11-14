@@ -85,6 +85,7 @@ lock_break() {
 	local guard="$dir.takeover"
 	local moved="$dir.stale.$$"
 	local reclaim="$guard.reclaim.$$"
+	local token="$guard/owner.$$"
 	local tries=0
 	until mkdir "$guard" 2>/dev/null; do
 		tries=$((tries + 1))
@@ -95,7 +96,7 @@ lock_break() {
 			# is young, so it is put back, never removed under its owner.
 			if mv "$guard" "$reclaim" 2>/dev/null; then
 				if [[ -n "$(find "$reclaim" -maxdepth 0 -mmin +1 2>/dev/null)" ]]; then
-					rmdir "$reclaim" 2>/dev/null || true
+					rm -rf "$reclaim"
 				elif [[ -e "$guard" ]] || ! mv "$reclaim" "$guard" 2>/dev/null; then
 					say "deploy-remote: WARN a takeover guard made during a reclaim was moved to $reclaim; remove it once no deploy of $SLUG runs"
 					return 0
@@ -105,15 +106,27 @@ lock_break() {
 			sleep 1
 		fi
 	done
-	if [[ -d "$dir" && "$(lock_field "$dir" pid)" == "$stale_pid" ]] && ! lock_live "$dir" &&
-		mv "$dir" "$moved" 2>/dev/null; then
+	# Mark the guard as this run's: a guard without this token is another
+	# run's (this one was displaced by a reclaim), so nothing is moved or
+	# removed under it; the token is checked again right before the move.
+	if ! : >"$token" 2>/dev/null; then
+		rmdir "$guard" 2>/dev/null || true
+		return 0
+	fi
+	if [[ -f "$token" && -d "$dir" && "$(lock_field "$dir" pid)" == "$stale_pid" ]] && ! lock_live "$dir" &&
+		[[ -f "$token" ]] && mv "$dir" "$moved" 2>/dev/null; then
 		if [[ "$(lock_field "$moved" pid)" == "$stale_pid" ]]; then
 			rm -rf "$moved"
 		elif [[ -e "$dir" ]] || ! mv "$moved" "$dir" 2>/dev/null; then
 			say "deploy-remote: WARN a lock taken during the takeover was moved to $moved; remove it once no deploy of $SLUG runs"
 		fi
 	fi
-	rmdir "$guard" 2>/dev/null || true
+	# Remove the guard only while it holds this run's token (rmdir also
+	# refuses a guard that holds another run's token).
+	if [[ -f "$token" ]]; then
+		rm -f "$token"
+		rmdir "$guard" 2>/dev/null || true
+	fi
 	return 0
 }
 
