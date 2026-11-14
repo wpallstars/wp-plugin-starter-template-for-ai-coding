@@ -10,7 +10,7 @@
 [![CodeFactor](https://www.codefactor.io/repository/github/wpallstars/wp-plugin-starter-template-for-ai-coding/badge)](https://www.codefactor.io/repository/github/wpallstars/wp-plugin-starter-template-for-ai-coding)
 [![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/wpallstars/wp-plugin-starter-template-for-ai-coding/badge)](https://scorecard.dev/viewer/?uri=github.com/wpallstars/wp-plugin-starter-template-for-ai-coding)
 [![License: GPL v3 or later](https://img.shields.io/badge/License-GPL%20v3%20or%20later-blue.svg)](LICENSE)
-[![Latest release](https://img.shields.io/badge/release-v1.0.66-blue.svg)](https://github.com/wpallstars/wp-plugin-starter-template-for-ai-coding/releases)
+[![Latest release](https://img.shields.io/badge/release-v1.0.67-blue.svg)](https://github.com/wpallstars/wp-plugin-starter-template-for-ai-coding/releases)
 
 [![Requires WordPress](https://img.shields.io/badge/WordPress-6.2%2B-21759B.svg?logo=wordpress)](readme.txt)
 [![Tested up to](https://img.shields.io/badge/tested%20up%20to-7.1-21759B.svg?logo=wordpress)](readme.txt)
@@ -27,7 +27,7 @@ WP Plugin Starter is what wpallstars plugins are made from. It has no features o
 
 If this saves you time, headaches and costs, feel free to [buy me a coffee](https://buymeacoffee.com/marcusquinn), or whatever you like, to invest in making more things open-source.
 
-Version: 1.0.66
+Version: 1.0.67
 
 <!-- github-only:start -->
 ## Screenshots
@@ -171,7 +171,7 @@ Deleting the plugin removes its settings (on multisite, every site's and the net
 
 ## Changelog
 
-### Unreleased
+### 1.0.67
 
 - Developers: `scripts/deploy-sites.sh --apply` hardening. A cron retry after a kill (137) runs the killed one-off itself (`wp eval`, bound to its hook and time) and only while it is still listed and the hook's only event, so a successor scheduled during the wait is never run early. An event that times out after printing a PHP fatal error or a database error fails instead of warning. The deploy lock's takeover guard is never removed by age: a run killed during a takeover leaves it, and later runs stop with exit 3 and the `rmdir` command (the dry run reports it). The lock's owner file is written privately and linked into the lock folder. A PHP log that cannot be read, or is not a regular file, fails the install, whatever `--ignore-log-line` says. Backup file names include an 8-digit id of the install's path, so two installs with one short name no longer share a backup. Plugins get it with `scripts/sync-core.sh` (GH#773).
 - Developers: `scripts/deploy-sites.sh --apply` no longer fails an install only because the host killed one of the plugin's cron events (exit 137, nothing else printed). The install is held for the end-of-run recheck, which never runs the hook again: a hook still scheduled is `WARN cron HOOK killed by host (137), still scheduled`; a one-off no longer listed is `UNVERIFIED` with a `recheck:` command and no restore (exit 4). PHP fatal errors, database errors and other exit codes still FAIL with the restore command. Plugins get it with `scripts/sync-core.sh` (GH#771).

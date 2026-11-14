@@ -5,7 +5,7 @@ Tags: starter, boilerplate, settings, developer, template
 Requires at least: 6.2
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 1.0.66
+Stable tag: 1.0.67
 License: GPLv3 or later
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 
@@ -63,8 +63,10 @@ GitHub releases are the stable beta channel: each version comes out there first.
 
 == Changelog ==
 
-= 1.0.66 =
-* Developers: deploy-sites --apply installs nothing while another plugin made from the starter is deploying on the same host (exit 3); --allow-concurrent-plugins skips the check.
+= 1.0.67 =
+* Developers: deploy-sites --apply retries a killed cron one-off only as that same event, fails a timed-out event that printed a fatal or database error, never removes a deploy lock takeover guard by age, fails on unreadable PHP logs, and gives each install's backup its own file name.
+* Developers: deploy-sites --apply no longer fails an install only because the host killed a plugin cron event (exit 137); the end-of-run recheck reports it as WARN or UNVERIFIED (exit 4).
+* Developers: deploy-sites reads the cron list with WP-CLI's time field, and says "Nothing installed" when no install matches --parent.
 
 Every change: changelog.txt.
 
