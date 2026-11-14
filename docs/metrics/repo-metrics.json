@@ -1,7 +1,7 @@
 {
   "schema": "aidevops.repo-metrics.v1",
   "schema_version": 1,
-  "generated_at": "2026-11-13T03:57:06Z",
+  "generated_at": "2026-11-14T12:34:39Z",
   "tool": {
     "name": "aidevops repo-metrics",
     "version": "1.0.0"
@@ -11,21 +11,21 @@
     "slug": "wpallstars/wp-plugin-starter-template-for-ai-coding"
   },
   "summary": {
-    "source_files": 91,
-    "code": 21238,
-    "comments": 6383,
-    "blanks": 2202,
+    "source_files": 99,
+    "code": 21339,
+    "comments": 6502,
+    "blanks": 2209,
     "languages": 9,
     "dependencies": 14
   },
   "languages": [
     {
       "name": "Shell",
-      "files": 22,
-      "code": 8441,
-      "comments": 1859,
-      "blanks": 643,
-      "percentage": 39.74,
+      "files": 30,
+      "code": 8528,
+      "comments": 1978,
+      "blanks": 647,
+      "percentage": 39.96,
       "color": "#89e051"
     },
     {
@@ -34,16 +34,16 @@
       "code": 5661,
       "comments": 4016,
       "blanks": 657,
-      "percentage": 26.66,
+      "percentage": 26.53,
       "color": "#4F5D95"
     },
     {
       "name": "Markdown",
       "files": 14,
-      "code": 2627,
+      "code": 2641,
       "comments": 0,
-      "blanks": 498,
-      "percentage": 12.37,
+      "blanks": 501,
+      "percentage": 12.38,
       "color": "#083fa1"
     },
     {
@@ -52,7 +52,7 @@
       "code": 1486,
       "comments": 43,
       "blanks": 12,
-      "percentage": 7.0,
+      "percentage": 6.96,
       "color": "#6e7781"
     },
     {
@@ -61,7 +61,7 @@
       "code": 1138,
       "comments": 89,
       "blanks": 221,
-      "percentage": 5.36,
+      "percentage": 5.33,
       "color": "#563d7c"
     },
     {
@@ -70,7 +70,7 @@
       "code": 1052,
       "comments": 206,
       "blanks": 83,
-      "percentage": 4.95,
+      "percentage": 4.93,
       "color": "#f1e05a"
     },
     {
@@ -79,7 +79,7 @@
       "code": 733,
       "comments": 167,
       "blanks": 86,
-      "percentage": 3.45,
+      "percentage": 3.44,
       "color": "#cb171e"
     },
     {
