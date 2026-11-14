@@ -134,6 +134,30 @@ cron_output_failed() {
 	return 1
 }
 
+# Retries a killed (137) one-off for run_site_cron, up to 3 tries in all,
+# each after LOAD_RETRY_DELAY seconds, running only the event of hook $2
+# due at $3 (cron_run_one_code). An empty $3 (not a lone one-off) retries
+# nothing. Reads and updates run_site_cron's status, out and tries, and uses
+# its cmd (time limit): bash locals are seen by the functions they call.
+# Stops, keeping the kill, once the event is no longer listed.
+cron_retry_killed() {
+	local root="$1"
+	local hook="$2"
+	local stamp="$3"
+	shift 3
+	local retry_out retry_status
+	while [[ "$status" -eq 137 && "$tries" -lt 3 && -n "$stamp" ]]; do
+		sleep "$LOAD_RETRY_DELAY"
+		retry_status=0
+		retry_out="$(DEPLOY_CRON_HOOK="$hook" DEPLOY_CRON_TIME="$stamp" DEPLOY_CRON_NOT_LISTED="$CRON_NOT_LISTED" \
+			"${cmd[@]+"${cmd[@]}"}" "$WP_CLI" --path="$root" "$@" eval "$(cron_run_one_code)" 2>&1)" || retry_status=$?
+		[[ "$retry_status" -ne 0 || "$retry_out" != *"$CRON_NOT_LISTED"* ]] || break
+		tries=$((tries + 1))
+		status="$retry_status" out="$retry_out"
+	done
+	return 0
+}
+
 # Runs the plugin's own scheduled events once on one site, each in its own
 # WP-CLI process (a fatal error ends one process, not the count). A fatal
 # error that only a cron callback reaches never shows in the full load, the
@@ -219,17 +243,9 @@ run_site_cron() {
 		# another time is a successor that its callback (a
 		# wp_schedule_single_event() chain) or the site's own cron during the
 		# wait scheduled. Then nothing runs and the kill stands.
-		local tries=1 stamp="" retry_out retry_status
+		local tries=1 stamp=""
 		stamp="$(printf '%s\n' "$retryable" | HOOK="$hook" awk 'split($0, field, "\t") >= 2 && field[1] == ENVIRON["HOOK"] { print field[2]; exit }')"
-		while [[ "$status" -eq 137 && "$tries" -lt 3 && -n "$stamp" ]]; do
-			sleep "$LOAD_RETRY_DELAY"
-			retry_status=0
-			retry_out="$(DEPLOY_CRON_HOOK="$hook" DEPLOY_CRON_TIME="$stamp" DEPLOY_CRON_NOT_LISTED="$CRON_NOT_LISTED" \
-				"${cmd[@]+"${cmd[@]}"}" "$WP_CLI" --path="$root" "$@" eval "$(cron_run_one_code)" 2>&1)" || retry_status=$?
-			[[ "$retry_status" -ne 0 || "$retry_out" != *"$CRON_NOT_LISTED"* ]] || break
-			tries=$((tries + 1))
-			status="$retry_status" out="$retry_out"
-		done
+		cron_retry_killed "$root" "$hook" "$stamp" "$@"
 		[[ "$status" -ne 137 || -n "$out" ]] || out="cron $hook killed (137)"
 		[[ "$tries" -eq 1 ]] || CRON_WARN+="cron $hook retried (137), "
 		# A timeout is a warning only when the event printed no fatal or
