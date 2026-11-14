@@ -85,7 +85,7 @@ function mainFile() {
 		fail(main.length ? `more than one main file: ${main.join(', ')}.` : 'no PHP file with a Plugin Name: header at the top of the repository.');
 	}
 	const source = stripComments(git('grep', '-h', '-I', '-E', '^', '--', main[0]) || '');
-	const constant = /define\(\s*['"]([A-Z0-9_]+)_VERSION['"]\s*,\s*['"]([^'"]*)['"]/.exec(source);
+	const constant = /define\s*\(\s*['"]([A-Z0-9_]+)_VERSION['"]\s*,\s*['"]([^'"]*)['"]/.exec(source);
 	if (!constant) {
 		fail(`${main[0]} does not define a {PREFIX}_VERSION constant.`);
 	}

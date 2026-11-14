@@ -421,7 +421,7 @@ exit 137. The post-install load check is run again once, and a killed cron
 event up to 3 tries in all, `DEPLOY_LOAD_RETRY_DELAY` seconds apart (default
 30), whatever the killed process printed; every other exit code fails at once.
 Only a hook's lone one-off event still in `wp cron event list` with the same
-timestamp is retried (WP-CLI had not yet taken it). A recurring event is not
+time is retried (WP-CLI had not yet taken it). A recurring event is not
 run again (WP-CLI reschedules it before its callback), a one-off gone from the
 list was killed during its callback, the same hook at another time is a
 successor the callback scheduled before it was killed (a

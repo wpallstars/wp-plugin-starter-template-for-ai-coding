@@ -270,6 +270,32 @@ install_state() {
 	return 0
 }
 
+# The home fetch of a rechecked site, as check_sites does it (5xx or no answer
+# is fetched once more after HOME_RETRY_DELAY seconds): $1 url, $2 root, rest
+# WP-CLI args. Sets RECHECK_HOME (code, with " pinned"), RECHECK_REASON,
+# RECHECK_WARN and HOME_CACHE.
+recheck_home() {
+	local url="$1" root="$2"
+	shift 2
+	local origin first_code="" check_error="home check failed; "
+	RECHECK_REASON="" RECHECK_WARN=""
+	origin="$(origin_ip "$root" "$@")"
+	home_check "$url" "$origin" || RECHECK_REASON+="$check_error"
+	if [[ "$HOME_CODE" == 5* || "$HOME_CODE" == "000" ]]; then
+		first_code="$HOME_CODE"
+		sleep "$HOME_RETRY_DELAY"
+		home_check "$url" "$origin" || [[ "$RECHECK_REASON" == *"$check_error"* ]] || RECHECK_REASON+="$check_error"
+	fi
+	if [[ "$HOME_CODE" == 5* || "$HOME_CODE" == "000" ]]; then
+		RECHECK_REASON+="home failed${first_code:+ ($first_code, then $HOME_CODE)}; "
+	elif [[ -n "$first_code" ]]; then
+		RECHECK_WARN+="home retried ($first_code), "
+	fi
+	[[ "$HOME_CACHE" != *hit* || "$HOME_CACHE" == redirected:* ]] || RECHECK_WARN+="cached, "
+	RECHECK_HOME="${HOME_CODE}${HOME_PINNED:+ pinned}"
+	return 0
+}
+
 # Rechecks one held-back install (its install_state in $1), then reports it.
 # Each site the host killed twice gets its killed step once more, with its
 # own retry: the load (site_load, then its cron step) or the cron step alone
@@ -312,6 +338,14 @@ recheck_install() {
 		fi
 		cron_note="$STEP_CRON"
 		warn+="$STEP_WARN"
+		# A recovered site's home and cache values are the recheck's, not the
+		# first pass's: fetch again, with check_sites' retry and failure rules.
+		if [[ -z "$STEP_REASON" && -z "$STEP_KILLED" ]]; then
+			recheck_home "$url" "$R_ROOT" ${url_args[@]+"${url_args[@]}"}
+			home="$RECHECK_HOME" cache="$HOME_CACHE"
+			STEP_REASON+="$RECHECK_REASON"
+			warn+="$RECHECK_WARN"
+		fi
 		if [[ -n "$STEP_REASON" ]]; then
 			result="FAIL: ${STEP_REASON%; }"
 			SITES_FAILED=$((SITES_FAILED + 1))

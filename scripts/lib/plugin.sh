@@ -103,14 +103,34 @@ function code_of(line,   out, i, n, c, j) {
 	}
 	return out
 }
-{ text = text $0 "\n"; code = code code_of($0) "\n" }
+# The line as 1 for each character inside a string literal (the opening quote
+# to the closing one) and 0 elsewhere, same length as code_of(): a define(
+# inside a string is text, not the constant. Block comments are blanked by
+# code_of() already, so only quotes matter; comment text is spaces there.
+function mask_of(code, line,   out, i, n, c, in_q) {
+	out = ""; n = length(line); i = 1
+	while (i <= n) {
+		c = substr(line, i, 1)
+		if (ms == "q") {
+			out = out "1"
+			if (c == "\\" && i < n) { out = out "1"; i += 2; continue }
+			if (c == mq) ms = ""
+			i++; continue
+		}
+		if (substr(code, i, 1) == " " && c != " ") { out = out "0"; i++; continue }
+		if (c == "\047" || c == "\"") { ms = "q"; mq = c; out = out "1"; i++; continue }
+		out = out "0"; i++
+	}
+	return out
+}
+{ text = text $0 "\n"; cl = code_of($0); code = code cl "\n"; mask = mask mask_of(cl, $0) "0" }
 END {
 	name = (want == "") ? "[A-Z0-9_]+" : want
 	pat = "define[[:space:]]*[(][[:space:]]*[\047\"]" name "_VERSION[\047\"]"
 	pos = 0; found = 0
 	while (match(substr(code, pos + 1), pat)) {
 		at = pos + RSTART; len = RLENGTH
-		if (at == 1 || substr(code, at - 1, 1) !~ /[A-Za-z0-9_$>:\\]/) { found = 1; break }
+		if (substr(mask, at, 1) == "0" && (at == 1 || substr(code, at - 1, 1) !~ /[A-Za-z0-9_$>:\\]/)) { found = 1; break }
 		pos = at
 	}
 	if (!found) { if (mode == "set") exit 3; exit 0 }
