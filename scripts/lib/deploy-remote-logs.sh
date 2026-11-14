@@ -93,6 +93,16 @@ log_files() {
 		done
 		[[ "$duplicate" -eq 1 ]] || unique+=("$candidate")
 	done
+	# Every log is checked as web_log_usable checks the web log: one that is
+	# there but cannot be read (WP_DEBUG_LOG or error_log owned by another
+	# account) would get an empty baseline, and its new errors would never
+	# fail the install.
+	for path in ${unique[@]+"${unique[@]}"}; do
+		if [[ -e "$path" && ( ! -f "$path" || ! -r "$path" ) ]]; then
+			say "deploy-remote: PHP log is not a readable regular file: $path"
+			return 1
+		fi
+	done
 	LOG_FILES=(${unique[@]+"${unique[@]}"})
 	LOG_BEFORE=()
 	LOG_FIRST=()
@@ -141,14 +151,23 @@ log_start() {
 # Every line the web logs gained since log_files; a truncated or rotated log
 # contributes all of its current lines. awk ends each log's last line with a
 # newline, so a log without one cannot join its last line to the next log's
-# first (an error read as part of a cron notice).
+# first (an error read as part of a cron notice). A log that is there but
+# cannot be read (replaced by an unreadable or non-regular file, or tail
+# fails) is not an empty log: it gives one LOG_UNREADABLE line instead,
+# which classify_log always counts, so the install's log check fails.
 new_log_all() {
 	local index=0
-	local file start
+	local file start tail_status
 	for file in ${LOG_FILES[@]+"${LOG_FILES[@]}"}; do
-		if [[ -f "$file" ]]; then
+		if [[ -e "$file" && ( ! -f "$file" || ! -r "$file" ) ]]; then
+			printf '%s%s; its new lines are unknown\n' "$LOG_UNREADABLE" "$file"
+		elif [[ -f "$file" ]]; then
 			start="$(log_start "$file" "${LOG_BEFORE[index]}" "${LOG_FIRST[index]}" "${LOG_INODE[index]}")"
-			tail -n +"$start" "$file" | awk '{ print }'
+			tail -n +"$start" "$file" 2>/dev/null | awk '{ print }'
+			tail_status="${PIPESTATUS[0]}"
+			if [[ "$tail_status" -ne 0 ]]; then
+				printf '%s%s; its new lines are unknown\n' "$LOG_UNREADABLE" "$file"
+			fi
 		fi
 		index=$((index + 1))
 	done
@@ -176,11 +195,17 @@ new_log_all() {
 # Any other line that contains one of IGNORE_LOG_LINES (a fixed string, not a
 # pattern) after its leading [...] blocks (timestamp, Apache prefix) prints
 # "ignored" (GH#756). Read through ENVIRON: awk -v would process backslashes.
+# A LOG_UNREADABLE line (new_log_all: a log that could not be read) prints
+# "line" before any other test, so no pattern or ignore string can hide it.
 classify_log() {
 	local hooks=" $1 "
-	IGNORE="$IGNORE_LOG_LINES" awk -v hooks="$hooks" '
+	IGNORE="$IGNORE_LOG_LINES" UNREADABLE="$LOG_UNREADABLE" awk -v hooks="$hooks" '
 		BEGIN { ignores = split(ENVIRON["IGNORE"], ignore, "\n") }
 		{
+			if (index($0, ENVIRON["UNREADABLE"]) == 1) {
+				print "line"
+				next
+			}
 			if (match($0, /:[[:space:]]*[^[:space:],:]+,[^:,]*:[[:space:]]*could_not_set[[:space:]]*,[^:,]*:.*,[^:,]*:[[:space:]]*[{].*[}][[:space:]]*(,[[:space:]]*referer:[[:space:]]*[^[:space:]]*[[:space:]]*)?$/) \
 				&& substr($0, 1, RSTART - 1) ~ /^(\[[^]]*\][[:space:]]*)*[^]:[,0-9]*$/) {
 				text = substr($0, RSTART, RLENGTH)

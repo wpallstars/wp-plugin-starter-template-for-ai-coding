@@ -72,28 +72,39 @@ lock_live() {
 }
 
 # Remove a stale lock only if it is still the one judged stale. Takeovers
-# take turns under a second lock (DIR.takeover, made with mkdir), so a run
-# cannot move a lock another takeover has just made. Under it the lock's
-# PID and liveness are read again, the lock is moved aside (atomic) and its
-# PID is compared once more; a lock that is not the stale one is put back.
-# A takeover lock more than a minute old (find -mmin +1; GNU find counts
-# whole minutes, so up to two) is from a run that died during its
-# takeover, which takes a moment, and is removed.
+# take turns under a second lock, the takeover guard (DIR.takeover, made
+# with mkdir), so a run cannot move a lock another takeover has just made.
+# Under it the lock's PID and liveness are read again, the lock is moved
+# aside (atomic) and its PID is compared once more; a lock that is not the
+# stale one is put back. Only the run that made the guard removes it, also
+# on INT, TERM or HUP: a guard is never reclaimed by its age, as a run
+# paused between an age check and the removal would remove a replacement
+# guard another run had made meanwhile, and two takeovers would run at once.
+# So a guard left by a run killed mid-takeover (SIGKILL; it takes a moment)
+# stops later takeovers until it is removed by hand. Returns 1, having said
+# why, when the guard cannot be taken within about 10 seconds.
 lock_break() {
 	local dir="$1"
 	local stale_pid="$2"
 	local guard="$dir.takeover"
 	local moved="$dir.stale.$$"
-	local tries=0
+	local tries=0 prev_traps
 	until mkdir "$guard" 2>/dev/null; do
 		tries=$((tries + 1))
-		[[ "$tries" -le 10 ]] || return 0
-		if [[ -n "$(find "$guard" -maxdepth 0 -mmin +1 2>/dev/null)" ]]; then
-			rmdir "$guard" 2>/dev/null || true
-		else
-			sleep 1
+		if [[ "$tries" -gt 10 ]]; then
+			if [[ -n "$(find "$guard" -maxdepth 0 -mmin +1 2>/dev/null)" ]]; then
+				say "deploy-remote: the deploy lock's takeover guard $guard is more than a minute old: a run stopped during a takeover; nothing installed. Once no deploy of $SLUG runs on this host, remove it (rmdir $(printf '%q' "$guard")) and run again."
+			else
+				say "deploy-remote: another run is taking over the stale deploy lock $dir; nothing installed. Run again in a minute."
+			fi
+			return 1
 		fi
+		sleep 1
 	done
+	# A signal mid-takeover still removes the guard (paths expand when the
+	# trap runs); the caller's handlers come back after.
+	prev_traps="$(trap -p INT TERM HUP)"
+	trap 'rmdir "$guard" 2>/dev/null; exit 143' INT TERM HUP
 	if [[ -d "$dir" && "$(lock_field "$dir" pid)" == "$stale_pid" ]] && ! lock_live "$dir" &&
 		mv "$dir" "$moved" 2>/dev/null; then
 		if [[ "$(lock_field "$moved" pid)" == "$stale_pid" ]]; then
@@ -103,6 +114,48 @@ lock_break() {
 		fi
 	fi
 	rmdir "$guard" 2>/dev/null || true
+	swap_restore_traps "$prev_traps"
+	return 0
+}
+
+# Gives the lock folder this run just made its owner file: written whole to
+# the private file $2 beside it, then hard-linked in as DIR/owner (ln, on GNU
+# and BSD alike, fails when DIR/owner exists). A run paused since its mkdir,
+# whose lock was taken over as stale meanwhile, so cannot overwrite a
+# replacement's owner file: the first link wins, and the run whose link
+# fails has lost the lock. Returns 3 when the lock was lost, 2 when the
+# owner file cannot be written. An ownerless lock is never removed here: it
+# may already be a replacement run's, so it is left to be taken over once
+# two minutes old.
+lock_publish_owner() {
+	local dir="$1"
+	local pending="$2"
+	local tag="$3"
+	local parent="$4"
+	local cannot="deploy-remote: cannot write the deploy lock's owner file $dir/owner; nothing installed. The lock is left in place; a run in two minutes takes it over if it is not another run's."
+	rm -f "$pending"
+	if ! printf 'pid=%s\ntag=%s\nstarted=%s\nparent=%s\n' "$$" "$tag" \
+		"$(date -u +%Y-%m-%dT%H:%M:%SZ)" "$(printf '%s' "$parent" | tr '\n' ' ')" >"$pending" 2>/dev/null; then
+		rm -f "$pending"
+		say "$cannot"
+		return 2
+	fi
+	if ! ln "$pending" "$dir/owner" 2>/dev/null; then
+		rm -f "$pending"
+		# Another run's owner file is there, or the folder is gone (taken
+		# over while this run was paused): lost, as below.
+		if [[ -n "$(lock_field "$dir" pid)" || ! -d "$dir" ]]; then
+			say "deploy-remote: lost the deploy lock $dir while taking it; nothing installed"
+			return 3
+		fi
+		say "$cannot"
+		return 2
+	fi
+	rm -f "$pending"
+	if [[ "$(lock_field "$dir" pid)" != "$$" ]]; then
+		say "deploy-remote: lost the deploy lock $dir while taking it; nothing installed"
+		return 3
+	fi
 	return 0
 }
 
@@ -111,8 +164,9 @@ lock_break() {
 lock_take() {
 	local tag="$1"
 	local parent="$2"
-	local dir pid tries=0
+	local dir pid pending tries=0
 	dir="$(lock_path)"
+	pending="$dir.owner.$$"
 	if ! mkdir -p "$(dirname "$dir")"; then
 		say "deploy-remote: cannot make $(dirname "$dir"); nothing installed"
 		return 2
@@ -120,26 +174,7 @@ lock_take() {
 	while [[ "$tries" -lt 3 ]]; do
 		tries=$((tries + 1))
 		if mkdir "$dir" 2>/dev/null; then
-			if ! printf 'pid=%s\ntag=%s\nstarted=%s\nparent=%s\n' "$$" "$tag" \
-				"$(date -u +%Y-%m-%dT%H:%M:%SZ)" "$(printf '%s' "$parent" | tr '\n' ' ')" >"$dir/owner" 2>/dev/null; then
-				# The redirect may have made a partial owner file (a full disk).
-				# Remove the lock only while its owner file names this run: an
-				# empty or missing one may already be a replacement run's lock
-				# (this run's was taken over as stale while it was paused), so it
-				# is left to be taken over once two minutes old.
-				if [[ "$(lock_field "$dir" pid)" == "$$" ]]; then
-					rm -f "$dir/owner"
-					rmdir "$dir" 2>/dev/null || true
-					say "deploy-remote: cannot write the deploy lock's owner file $dir/owner; nothing installed"
-				else
-					say "deploy-remote: cannot write the deploy lock's owner file $dir/owner; nothing installed. The lock is left in place; a run in two minutes takes it over if it is not another run's."
-				fi
-				return 2
-			fi
-			if [[ "$(lock_field "$dir" pid)" != "$$" ]]; then
-				say "deploy-remote: lost the deploy lock $dir while taking it; nothing installed"
-				return 3
-			fi
+			lock_publish_owner "$dir" "$pending" "$tag" "$parent" || return $?
 			LOCK_DIR="$dir"
 			trap lock_release EXIT
 			trap 'exit 129' HUP
@@ -159,7 +194,7 @@ lock_take() {
 		fi
 		pid="$(lock_field "$dir" pid)"
 		say "deploy-remote: WARN taking over a stale deploy lock ($(lock_holder "$dir")): that run is no longer running"
-		lock_break "$dir" "$pid"
+		lock_break "$dir" "$pid" || return 3
 	done
 	if [[ ! -d "$dir" ]]; then
 		say "deploy-remote: cannot make the deploy lock $dir; nothing installed"
@@ -210,6 +245,9 @@ lock_release() {
 lock_report() {
 	local dir
 	dir="$(lock_path)"
+	if [[ -n "$(find "$dir.takeover" -maxdepth 0 -mmin +1 2>/dev/null)" ]]; then
+		say "A takeover guard of $SLUG's deploy lock more than a minute old is on this host ($dir.takeover): a run stopped during a takeover. --apply stops at a stale lock until it is removed (rmdir)."
+	fi
 	[[ -d "$dir" ]] || return 0
 	if lock_live "$dir" && [[ -z "$(lock_field "$dir" pid)" ]]; then
 		say "A deploy lock of $SLUG with no owner yet is on this host ($dir): another run is taking it, or one could not write its owner file. --apply stops until it is two minutes old, then takes it over."

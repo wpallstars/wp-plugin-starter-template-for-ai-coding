@@ -420,13 +420,18 @@ A host at its process or memory limit (CloudLinux LVE) kills WP-CLI with
 exit 137. The post-install load check is run again once, and a killed cron
 event up to 3 tries in all, `DEPLOY_LOAD_RETRY_DELAY` seconds apart (default
 30), whatever the killed process printed; every other exit code fails at once.
-Only a hook's lone one-off event still in `wp cron event list` with the same
-time is retried (WP-CLI had not yet taken it). A recurring event is not
+Only a hook's lone one-off event is retried, and each retry runs that event
+itself (`wp eval`, bound to its hook and time), not `wp cron event run HOOK`,
+which takes the hook's next event. The retry checks, in the same process as
+the run, that the event is still listed and still the hook's only event;
+otherwise it runs nothing. A recurring event is not
 run again (WP-CLI reschedules it before its callback), a one-off gone from the
 list was killed during its callback, the same hook at another time is a
-successor the callback scheduled before it was killed (a
+successor that its callback or the site's own cron scheduled meanwhile (a
 `wp_schedule_single_event()` chain), and a hook with more than one event
-cannot show which was killed: all fail as `cron HOOK killed (137)`. Retried checks report
+cannot show which was killed: all fail as `cron HOOK killed (137)`. An event
+that times out (`DEPLOY_CRON_TIMEOUT`) is a warning, unless it printed a PHP
+fatal error or a database error first: then it fails. Retried checks report
 `WARN ... retried (137)`, not FAIL. Events already run one per process, so a
 killed backlog is not run again as one `--due-now` call. To wait before each
 install while the account runs too many processes, set
@@ -470,7 +475,17 @@ again blind (running again is safe: an install already on the tag gets the
 same files again).
 
 Each plugin's `--apply` holds its own lock on the host
-(`~/.{slug}-deploy/.lock`). Before taking it, the run also looks at the other
+(`~/.{slug}-deploy/.lock`). A stale lock is taken over under a takeover guard
+(`.lock.takeover`), which is never removed by age: a run killed during a
+takeover leaves it, and then each run stops with exit 3 and prints the
+`rmdir` command to remove it once no deploy of the plugin runs on the host;
+the dry run reports it too. The lock's owner file is written privately and
+linked into the lock folder, so a paused run cannot overwrite the owner of a
+run that replaced it. Each backup's file name has the install's short name and
+an 8-digit id of its path, so two installs with one short name never write
+one backup. A PHP log that is there but cannot be read (or is not a regular
+file) fails the install before it starts, and one that cannot be read
+afterwards fails its log check. Before taking its lock, the run also looks at the other
 `~/.*-deploy/.lock` folders there: while another plugin made from the
 starter has a live one (its PID still runs `deploy-remote`), it installs
 nothing, prints `another plugin's deploy is running on this host (<slug>,

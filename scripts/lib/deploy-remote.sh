@@ -103,6 +103,12 @@ readonly KILLED_TEXT="host killed WP-CLI (137) twice"
 readonly RECHECKED_TEXT="rechecked after host kill (137)"
 # STEP_KILLED value for plugin cron events the host killed (GH#771).
 readonly KILLED_EVENT="cronevent"
+# What the retry of a killed one-off prints, having run nothing, when that
+# event is no longer listed or is no longer its hook's only one (GH#773).
+readonly CRON_NOT_LISTED="deploy-remote: cron event not listed"
+# Start of the line new_log_all gives a log it cannot read, which always
+# counts as a new line, so that install's log check fails (GH#773).
+readonly LOG_UNREADABLE="deploy-remote: cannot read the log "
 # Installs held back for that recheck: install_state of each.
 DEFERRED=()
 INSTALLS_OK=0

@@ -129,7 +129,9 @@ apply_one() {
 			;;
 		esac
 	fi
-	backup="$backups/$SLUG-$name-${before:-unknown}.tar.gz"
+	# The short name is for people; the root's id keeps two installs with
+	# one short name from writing one backup file, the second over the first.
+	backup="$backups/$SLUG-$name-$(root_id "$root")-${before:-unknown}.tar.gz"
 	if ! tar -czf "$backup" -C "$plugins" "$SLUG"; then
 		printf '%s\tFAIL: could not back up %s; not installed\n' "$name" "$plugins/$SLUG"
 		FAILED=1
