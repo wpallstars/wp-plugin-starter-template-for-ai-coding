@@ -287,11 +287,11 @@ recheck_cron_events() {
 		STEP_REASON+="); "
 		return 0
 	fi
-	events="$("$WP_CLI" --path="$root" "$@" cron event list --fields=hook --format=csv 2>"$errors")" || status=$?
+	events="$(wp_checked "$root" "$@" cron event list --fields=hook --format=csv 2>"$errors")" || status=$?
 	if [[ "$status" -eq 137 ]] && ! grep -qiE 'fatal error|error establishing a database|database error' "$errors"; then
 		status=0
 		sleep "$LOAD_RETRY_DELAY"
-		events="$("$WP_CLI" --path="$root" "$@" cron event list --fields=hook --format=csv 2>"$errors")" || status=$?
+		events="$(wp_checked "$root" "$@" cron event list --fields=hook --format=csv 2>"$errors")" || status=$?
 	fi
 	if [[ "$status" -eq 137 ]] && grep -qiE 'fatal error|error establishing a database|database error' "$errors"; then
 		summary="$(tail -n 3 "$errors" | LC_ALL=C tr '\t\r\n' '   ' | LC_ALL=C tr -cd '[:print:]')"

@@ -64,7 +64,7 @@ PHP
 
 # Prints "HOOK<TAB>TIMESTAMP" for each of the site's hooks that has exactly
 # one event, a one-off: the only events a killed run may retry. WP-CLI shows
-# a one-off's recurrence as "Non-repeating", and its timestamp field is the
+# a one-off's recurrence as "Non-repeating", and its time field is the
 # Unix time it is due. A hook with two events is left out: a run takes the
 # hook's next one, so the list cannot tell which one was killed. Returns 1,
 # printing nothing, when the list cannot be read, so no killed hook is
@@ -73,7 +73,7 @@ cron_lone_oneoffs() {
 	local root="$1"
 	shift
 	local events
-	events="$("$WP_CLI" --path="$root" "$@" cron event list --fields=hook,recurrence,timestamp --format=csv 2>/dev/null)" || return 1
+	events="$("$WP_CLI" --path="$root" "$@" cron event list --fields=hook,recurrence,time --format=csv 2>/dev/null)" || return 1
 	printf '%s\n' "$events" | awk '
 		NR > 1 && split($0, field, ",") >= 3 && field[1] != "" {
 			n[field[1]]++
@@ -91,7 +91,7 @@ cron_event_listed() {
 	local root="$1" hook="$2" stamp="$3"
 	shift 3
 	local events
-	events="$("$WP_CLI" --path="$root" "$@" cron event list --fields=hook,timestamp --format=csv 2>/dev/null)" || return 1
+	events="$("$WP_CLI" --path="$root" "$@" cron event list --fields=hook,time --format=csv 2>/dev/null)" || return 1
 	if printf '%s\n' "$events" | HOOK="$hook" STAMP="$stamp" awk '
 		NR > 1 && split($0, field, ",") >= 2 && field[1] == ENVIRON["HOOK"] && field[2] == ENVIRON["STAMP"] { found = 1 }
 		END { exit !found }'; then
@@ -175,7 +175,7 @@ run_site_cron() {
 		status=0
 		out="$("${cmd[@]+"${cmd[@]}"}" "$WP_CLI" --path="$root" "$@" cron event run "$hook" 2>&1)" || status=$?
 		# A killed event (137) is run again, up to 3 tries in all, but only a
-		# hook's lone one-off still listed with the same timestamp: WP-CLI
+		# hook's lone one-off still listed with the same time field: WP-CLI
 		# removes a one-off before its callback and reschedules a recurring
 		# event before it, so a retry of either runs the next occurrence early
 		# or a callback twice. The same hook at another time is a successor
