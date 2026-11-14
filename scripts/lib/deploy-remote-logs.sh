@@ -144,11 +144,23 @@ log_start() {
 # first (an error read as part of a cron notice).
 new_log_all() {
 	local index=0
-	local file start
+	local file start tail_status
 	for file in ${LOG_FILES[@]+"${LOG_FILES[@]}"}; do
 		if [[ -f "$file" ]]; then
-			start="$(log_start "$file" "${LOG_BEFORE[index]}" "${LOG_FIRST[index]}" "${LOG_INODE[index]}")"
-			tail -n +"$start" "$file" | awk '{ print }'
+			# A log that cannot be read is not an empty log: it prints one
+			# line saying so, which counts as a new line and fails the
+			# install's log check (the lines it gained are unknown).
+			if [[ ! -r "$file" ]]; then
+				printf 'deploy-remote: cannot read the log %s; its new lines are unknown\n' "$file"
+			else
+				start="$(log_start "$file" "${LOG_BEFORE[index]}" "${LOG_FIRST[index]}" "${LOG_INODE[index]}")"
+				tail_status=0
+				tail -n +"$start" "$file" 2>/dev/null | awk '{ print }'
+				tail_status="${PIPESTATUS[0]}"
+				if [[ "$tail_status" -ne 0 ]]; then
+					printf 'deploy-remote: cannot read the log %s; its new lines are unknown\n' "$file"
+				fi
+			fi
 		fi
 		index=$((index + 1))
 	done

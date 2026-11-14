@@ -86,15 +86,19 @@ cron_lone_oneoffs() {
 
 # Whether the site still lists HOOK's event due at TIMESTAMP ($2, $3 after
 # the root): the same one-off, not one its callback scheduled before it was
-# killed. 1 when the list cannot be read.
+# killed, and is the hook's only event (a run takes the next one). 1 when the
+# list cannot be read.
 cron_event_listed() {
 	local root="$1" hook="$2" stamp="$3"
 	shift 3
 	local events
 	events="$("$WP_CLI" --path="$root" "$@" cron event list --fields=hook,time --format=csv 2>/dev/null)" || return 1
 	if printf '%s\n' "$events" | HOOK="$hook" STAMP="$stamp" awk '
-		NR > 1 && split($0, field, ",") >= 2 && field[1] == ENVIRON["HOOK"] && field[2] == ENVIRON["STAMP"] { found = 1 }
-		END { exit !found }'; then
+		NR > 1 && split($0, field, ",") >= 2 && field[1] == ENVIRON["HOOK"] {
+			listed++
+			if (field[2] == ENVIRON["STAMP"]) found = 1
+		}
+		END { exit !(found && listed == 1) }'; then
 		return 0
 	fi
 	return 1
@@ -186,9 +190,13 @@ run_site_cron() {
 		stamp="$(printf '%s\n' "$retryable" | HOOK="$hook" awk 'split($0, field, "\t") >= 2 && field[1] == ENVIRON["HOOK"] { print field[2]; exit }')"
 		while [[ "$status" -eq 137 && "$tries" -lt 3 ]]; do
 			[[ -n "$stamp" ]] || break
+			sleep "$LOAD_RETRY_DELAY"
+			# Checked after the sleep, right before the run: the site's own cron
+			# may have run the one-off meanwhile and scheduled a successor, which
+			# the run (it takes the hook's next event) would run early. Only the
+			# time between this list and the run stays open.
 			cron_event_listed "$root" "$hook" "$stamp" "$@" || break
 			tries=$((tries + 1))
-			sleep "$LOAD_RETRY_DELAY"
 			status=0
 			out="$("${cmd[@]+"${cmd[@]}"}" "$WP_CLI" --path="$root" "$@" cron event run "$hook" 2>&1)" || status=$?
 		done
