@@ -213,6 +213,20 @@ remote() {
 	return 0
 }
 
+# The remote part as one stream: DEPLOY_REMOTE_BUNDLED=1, the function
+# modules (deploy-remote-*.sh), then deploy-remote.sh, which runs last. The
+# host gets one file, so deploy-remote.sh does not source the modules there.
+remote_bundle() {
+	local module
+	printf 'DEPLOY_REMOTE_BUNDLED=1\n'
+	for module in "$SCRIPT_DIR"/lib/deploy-remote-*.sh; do
+		cat "$module" || return 1
+		printf '\n'
+	done
+	cat "$REMOTE_PART" || return 1
+	return 0
+}
+
 parse_args() {
 	while [[ $# -gt 0 ]]; do
 		local arg="$1"
@@ -590,8 +604,10 @@ dry_run() {
 	command="$(remote_words env "DEPLOY_WP_CLI=$WP_CLI" "DEPLOY_CDN_PURGE=$([[ -n "$CF_TOKEN" ]] && printf 1 || printf 0)" bash -s -- list "$SLUG" "$PARENT" "--version=$VERSION" ${DOWNGRADE_ARGS[@]+"${DOWNGRADE_ARGS[@]}"} ${SKIPS[@]+"${SKIPS[@]}"})"
 	printf '\nInstalls of %s on %s (name, version, kind, folder):\n' "$SLUG" "$HOST"
 	set +e
-	remote "$command" <"$REMOTE_PART" | stream_filter
-	status="${PIPESTATUS[0]}"
+	remote_bundle | remote "$command" | stream_filter
+	local statuses=("${PIPESTATUS[@]}")
+	status="${statuses[0]}"
+	[[ "$status" -ne 0 ]] || status="${statuses[1]}"
 	set -e
 	[[ "$status" -eq 0 ]] || die "the dry run on $HOST failed"
 	printf '\nDry run: nothing changed. Run again with --apply to install %s.\n' "$TAG"
@@ -677,7 +693,7 @@ apply() {
 		die "cannot make a private folder on $HOST"
 	[[ "$dir" == /* ]] || die "unexpected folder from $HOST: $dir"
 	remote "umask 077; cat >$(remote_words "$dir/$SLUG-$VERSION.zip")" <"$ZIP" || die "cannot copy the zip to $HOST"
-	remote "umask 077; cat >$(remote_words "$dir/deploy-remote.sh")" <"$REMOTE_PART" || die "cannot copy the remote part to $HOST"
+	remote_bundle | remote "umask 077; cat >$(remote_words "$dir/deploy-remote.sh")" || die "cannot copy the remote part to $HOST"
 	remote "chmod 600 $(remote_words "$dir/$SLUG-$VERSION.zip" "$dir/deploy-remote.sh")" || die "cannot set the files' mode on $HOST"
 	# The ignore strings go as a file, one per line, so any text reaches the
 	# remote part unchanged, with no quoting for the host's shell.

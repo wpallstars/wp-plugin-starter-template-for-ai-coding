@@ -48,6 +48,14 @@ scripts/core-files.txt
 scripts/core-public-classes.txt
 scripts/deploy-sites.sh
 scripts/lib/deploy-remote.sh
+scripts/lib/deploy-remote-checks.sh
+scripts/lib/deploy-remote-core.sh
+scripts/lib/deploy-remote-cron.sh
+scripts/lib/deploy-remote-install.sh
+scripts/lib/deploy-remote-installs.sh
+scripts/lib/deploy-remote-lock.sh
+scripts/lib/deploy-remote-logs.sh
+scripts/lib/deploy-remote-results.sh
 scripts/lib/docker-wordpress.sh
 scripts/lib/plugin.sh
 scripts/lint.sh
