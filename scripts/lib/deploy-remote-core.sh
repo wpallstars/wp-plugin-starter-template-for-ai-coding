@@ -33,6 +33,24 @@ install_name() {
 	return 0
 }
 
+# A short id of a docroot's path: the first 8 hex digits of its SHA-256 (or
+# its POSIX cksum where neither sha256sum nor shasum is installed). Two
+# installs can share a short name (/srv/a/wordpress, /srv/b/wordpress), never
+# a path, so their backups get different file names.
+root_id() {
+	local root="$1"
+	local sum
+	if command -v sha256sum >/dev/null 2>&1; then
+		sum="$(printf '%s' "$root" | sha256sum | awk '{print $1}')"
+	elif command -v shasum >/dev/null 2>&1; then
+		sum="$(printf '%s' "$root" | shasum -a 256 | awk '{print $1}')"
+	else
+		sum="$(printf '%s' "$root" | cksum | awk '{print $1}')"
+	fi
+	printf '%s' "${sum:0:8}"
+	return 0
+}
+
 skipped() {
 	local root="$1"
 	local name="$2"

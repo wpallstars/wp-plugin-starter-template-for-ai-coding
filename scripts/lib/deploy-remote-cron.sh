@@ -84,24 +84,51 @@ cron_lone_oneoffs() {
 	return 0
 }
 
-# Whether the site still lists HOOK's event due at TIMESTAMP ($2, $3 after
-# the root): the same one-off, not one its callback scheduled before it was
-# killed, and is the hook's only event (a run takes the next one). Called
-# after the retry's wait, right before the run: the site's own cron may have
-# run the one-off meanwhile and scheduled a successor, which the run would
-# run early; only the time between this list and the run stays open. 1 when
-# the list cannot be read.
-cron_event_listed() {
-	local root="$1" hook="$2" stamp="$3"
-	shift 3
-	local events
-	events="$("$WP_CLI" --path="$root" "$@" cron event list --fields=hook,time --format=csv 2>/dev/null)" || return 1
-	if printf '%s\n' "$events" | HOOK="$hook" STAMP="$stamp" awk '
-		NR > 1 && split($0, field, ",") >= 2 && field[1] == ENVIRON["HOOK"] {
-			listed++
-			if (field[2] == ENVIRON["STAMP"]) found = 1
-		}
-		END { exit !(found && listed == 1) }'; then
+# PHP for wp eval: runs a killed one-off again, bound to that event. It runs
+# DEPLOY_CRON_HOOK's event due at DEPLOY_CRON_TIME only while it is still
+# listed, a one-off, and the hook's only event; otherwise it prints
+# CRON_NOT_LISTED and runs nothing. wp cron event run HOOK takes the hook's
+# next event instead: if the site's own cron ran the one-off during the
+# retry's wait and its callback scheduled a successor, that run would run the
+# successor early. The check and the run are one process with one read of
+# the cron array, so a successor saved by another process is never seen. As
+# wp cron event run does: DOING_CRON, unschedule, then the callbacks.
+cron_run_one_code() {
+	cat <<'PHP'
+$hook = (string) getenv("DEPLOY_CRON_HOOK");
+$time = (int) getenv("DEPLOY_CRON_TIME");
+$listed = 0;
+$event = null;
+foreach ((array) _get_cron_array() as $at => $events) {
+    if (!isset($events[$hook]) || !is_array($events[$hook])) {
+        continue;
+    }
+    foreach ($events[$hook] as $one) {
+        $listed++;
+        if ((int) $at === $time && empty($one["schedule"])) {
+            $event = $one;
+        }
+    }
+}
+if (1 !== $listed || null === $event) {
+    echo getenv("DEPLOY_CRON_NOT_LISTED"), "\n";
+    return;
+}
+if (!defined("DOING_CRON")) {
+    define("DOING_CRON", true);
+}
+$args = (array) ($event["args"] ?? array());
+wp_unschedule_event($time, $hook, $args);
+do_action_ref_array($hook, $args);
+PHP
+	return 0
+}
+
+# Whether a cron event's output ($1) shows a PHP fatal error or a database
+# error, which fails the event whatever its exit code.
+cron_output_failed() {
+	local out="$1"
+	if [[ "$out" == *"PHP Fatal error"* || "$out" == *"Fatal error:"* || "$out" == *"$DB_QUERY_ERROR"* || "$out" == *"$DB_CONNECT_ERROR"* ]]; then
 		return 0
 	fi
 	return 1
@@ -113,7 +140,8 @@ cron_event_listed() {
 # home fetch or the web PHP log: the host's cron job runs WP-Cron from the
 # command line. Running an event early reschedules it, as wp cron event run
 # does by hand. An event gets DEPLOY_CRON_TIMEOUT seconds (default 120, 0 for
-# no limit); one that times out is a warning, not a failure. A single event
+# no limit); one that times out is a warning, not a failure, unless it
+# printed a PHP fatal error or a database error before it hung. A single event
 # the site's own cron ran between the list and its run here (WP-CLI: Invalid
 # cron event) is a note, not a failure, and not counted as run here (GH#1369).
 # Sets CRON_RUN, CRON_TOTAL, CRON_FAILURE and CRON_WARN for the site, and
@@ -182,27 +210,31 @@ run_site_cron() {
 		status=0
 		out="$("${cmd[@]+"${cmd[@]}"}" "$WP_CLI" --path="$root" "$@" cron event run "$hook" 2>&1)" || status=$?
 		# A killed event (137) is run again, up to 3 tries in all, but only a
-		# hook's lone one-off still listed with the same time field: WP-CLI
-		# removes a one-off before its callback and reschedules a recurring
-		# event before it, so a retry of either runs the next occurrence early
-		# or a callback twice. The same hook at another time is a successor
-		# the callback scheduled before it was killed (a
-		# wp_schedule_single_event() chain): not retried either. Any other
-		# final 137 stays a failure, even for a one-off no longer listed.
-		local tries=1 stamp=""
+		# hook's lone one-off (read before the first run): WP-CLI reschedules
+		# a recurring event before its callback, so a retry would run the next
+		# occurrence early. Each retry, after the wait, runs that one event
+		# alone (cron_run_one_code), and only while it is still listed and
+		# still the hook's only event: WP-CLI removes a one-off before its
+		# callback, so one gone was killed during it, and the same hook at
+		# another time is a successor that its callback (a
+		# wp_schedule_single_event() chain) or the site's own cron during the
+		# wait scheduled. Then nothing runs and the kill stands.
+		local tries=1 stamp="" retry_out retry_status
 		stamp="$(printf '%s\n' "$retryable" | HOOK="$hook" awk 'split($0, field, "\t") >= 2 && field[1] == ENVIRON["HOOK"] { print field[2]; exit }')"
-		while [[ "$status" -eq 137 && "$tries" -lt 3 ]]; do
-			[[ -n "$stamp" ]] || break
+		while [[ "$status" -eq 137 && "$tries" -lt 3 && -n "$stamp" ]]; do
 			sleep "$LOAD_RETRY_DELAY"
-			# Listed after the sleep, right before the run (a successor may exist).
-			cron_event_listed "$root" "$hook" "$stamp" "$@" || break
+			retry_status=0
+			retry_out="$(DEPLOY_CRON_HOOK="$hook" DEPLOY_CRON_TIME="$stamp" DEPLOY_CRON_NOT_LISTED="$CRON_NOT_LISTED" \
+				"${cmd[@]+"${cmd[@]}"}" "$WP_CLI" --path="$root" "$@" eval "$(cron_run_one_code)" 2>&1)" || retry_status=$?
+			[[ "$retry_status" -ne 0 || "$retry_out" != *"$CRON_NOT_LISTED"* ]] || break
 			tries=$((tries + 1))
-			status=0
-			out="$("${cmd[@]+"${cmd[@]}"}" "$WP_CLI" --path="$root" "$@" cron event run "$hook" 2>&1)" || status=$?
+			status="$retry_status" out="$retry_out"
 		done
 		[[ "$status" -ne 137 || -n "$out" ]] || out="cron $hook killed (137)"
 		[[ "$tries" -eq 1 ]] || CRON_WARN+="cron $hook retried (137), "
-		if [[ "$status" -eq 124 && "${#cmd[@]}" -gt 0 ]]; then
+		# A timeout is a warning only when the event printed no fatal or
+		# database error first: one that did, then hung, failed.
+		if [[ "$status" -eq 124 && "${#cmd[@]}" -gt 0 ]] && ! cron_output_failed "$out"; then
 			CRON_WARN+="cron $hook timed out (${limit}s), "
 			CRON_RUN=$((CRON_RUN + 1))
 		elif [[ "$status" -ne 0 && "$out" == *"Invalid cron event '$hook'"* && "$out" != *"Fatal error"* && "$out" != *"$DB_QUERY_ERROR"* && "$out" != *"$DB_CONNECT_ERROR"* ]]; then
@@ -210,7 +242,7 @@ run_site_cron() {
 		elif [[ "$status" -eq 137 && "$out" == "cron $hook killed (137)" ]]; then
 			# The host's process or memory limit, with no other sign of a fault.
 			CRON_KILLED+="$hook "
-		elif [[ "$status" -ne 0 || "$out" == *"PHP Fatal error"* || "$out" == *"Fatal error:"* || "$out" == *"$DB_QUERY_ERROR"* || "$out" == *"$DB_CONNECT_ERROR"* ]]; then
+		elif [[ "$status" -ne 0 ]] || cron_output_failed "$out"; then
 			detail="$(printf '%s\n' "$out" | tail -n 3 | LC_ALL=C tr '\t\r\n' '   ' | LC_ALL=C tr -cd '[:print:]')"
 			CRON_FAILURE+="cron $hook failed (exit $status: ${detail:0:300}); "
 		else
