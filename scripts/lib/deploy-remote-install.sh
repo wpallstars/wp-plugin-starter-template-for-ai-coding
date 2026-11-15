@@ -345,6 +345,7 @@ recheck_install() {
 		if [[ -z "$STEP_REASON" && -z "$STEP_KILLED" ]]; then
 			recheck_home "$url" "$R_ROOT" ${url_args[@]+"${url_args[@]}"}
 			home="$RECHECK_HOME" cache="$HOME_CACHE"
+			[[ "$NETWORK" -eq 1 ]] || MAIN_CODE="$home" MAIN_CACHE="$cache"
 			STEP_REASON+="$RECHECK_REASON"
 			warn+="$RECHECK_WARN"
 		fi
