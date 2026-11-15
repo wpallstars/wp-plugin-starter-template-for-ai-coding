@@ -81,8 +81,19 @@ function spaces(n,   s) { s = ""; while (n-- > 0) s = s " "; return s }
 # string across lines.
 function code_of(line,   out, i, n, c, j) {
 	out = ""; n = length(line); i = 1
+	# Inside a heredoc/nowdoc body everything is text up to the closing
+	# label (alone, or followed by a non-name character such as ;).
+	if (hd != "") {
+		if (match(line, "^[ \t]*" hd) && substr(line, RLENGTH + 1, 1) !~ /[A-Za-z0-9_]/) {
+			out = spaces(RLENGTH); i = RLENGTH + 1; hd = ""
+		} else return spaces(n)
+	}
 	while (i <= n) {
 		c = substr(line, i, 1)
+		if (st == "" && c == "<" && substr(line, i, 3) == "<<<" && match(substr(line, i), /^<<<[ \t]*[\047"]?[A-Za-z_][A-Za-z0-9_]*[\047"]?/)) {
+			hd = substr(line, i, RLENGTH); sub(/^<<<[ \t]*[\047"]?/, "", hd); sub(/[\047"]$/, "", hd)
+			out = out substr(line, i, RLENGTH) spaces(n - i + 1 - RLENGTH); break
+		}
 		if (st == "block") {
 			j = index(substr(line, i), "*/")
 			if (j == 0) { out = out spaces(n - i + 1); break }

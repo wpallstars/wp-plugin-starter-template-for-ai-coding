@@ -151,7 +151,7 @@ cron_retry_killed() {
 		retry_status=0
 		retry_out="$(DEPLOY_CRON_HOOK="$hook" DEPLOY_CRON_TIME="$stamp" DEPLOY_CRON_NOT_LISTED="$CRON_NOT_LISTED" \
 			"${cmd[@]+"${cmd[@]}"}" "$WP_CLI" --path="$root" "$@" eval "$(cron_run_one_code)" 2>&1)" || retry_status=$?
-		[[ "$retry_status" -ne 0 || "$retry_out" != *"$CRON_NOT_LISTED"* ]] || break
+		[[ "$retry_status" -ne 0 || "$retry_out" != *"$CRON_NOT_LISTED"* ]] || ! cron_output_failed "$retry_out" || break
 		tries=$((tries + 1))
 		status="$retry_status" out="$retry_out"
 	done

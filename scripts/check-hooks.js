@@ -84,8 +84,21 @@ function mainFile() {
 	if (main.length !== 1) {
 		fail(main.length ? `more than one main file: ${main.join(', ')}.` : 'no PHP file with a Plugin Name: header at the top of the repository.');
 	}
-	const source = stripComments(git('grep', '-h', '-I', '-E', '^', '--', main[0]) || '');
-	const constant = /define\s*\(\s*['"]([A-Z0-9_]+)_VERSION['"]\s*,\s*['"]([^'"]*)['"]/.exec(source);
+	const raw = git('grep', '-h', '-I', '-E', '^', '--', main[0]) || '';
+	const source = stripComments(raw);
+	// Only a define( that starts in PHP code counts: the same text with
+	// strings and heredocs blanked says where code is, so a quoted example
+	// such as "define ('FAKE_VERSION', '0.0.0');" is skipped.
+	const code = stripComments(raw, true);
+	const pattern = /define\s*\(\s*['"]([A-Z0-9_]+)_VERSION['"]\s*,\s*['"]([^'"]*)['"]/y;
+	let constant = null;
+	for (const at of code.matchAll(/define\s*\(/g)) {
+		pattern.lastIndex = at.index;
+		constant = pattern.exec(source);
+		if (constant) {
+			break;
+		}
+	}
 	if (!constant) {
 		fail(`${main[0]} does not define a {PREFIX}_VERSION constant.`);
 	}
@@ -228,8 +241,9 @@ function heredocEnd(source, i) {
 // PHP source with its comments (/* … */, // and # to the end of the line)
 // blanked out, outside quoted strings, heredocs and inline HTML, so a
 // commented-out call is not a call. Newlines stay, so a call split over
-// lines still matches.
-function stripComments(source) {
+// lines still matches. With blankStrings, strings and heredocs are blanked
+// too (same length), to tell code from text.
+function stripComments(source, blankStrings = false) {
 	let out = '';
 	let i = 0;
 	while (i < source.length) {
@@ -242,7 +256,9 @@ function stripComments(source) {
 		while (i < source.length) {
 			const [end, kind] = phpToken(source, i);
 			const text = source.slice(i, end);
-			out += kind === 'blank' ? text.replace(/[^\n]/g, ' ') : text;
+			const text0 = text[0];
+			const isText = kind === 'keep' && (text0 === "'" || text0 === '"' || text.length > 1);
+			out += kind === 'blank' || (blankStrings && isText) ? text.replace(/[^\n]/g, ' ') : text;
 			i = end;
 			if (kind === 'close') {
 				break;
