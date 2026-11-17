@@ -171,6 +171,10 @@ Deleting the plugin removes its settings (on multisite, every site's and the net
 
 ## Changelog
 
+### Unreleased
+
+- Developers: `STANDARDS.md` → Structure adds that installs made before a plugin used its own icon still show the images its update server names (such as a shop product's icon and banner), so those must load from other sites too (a folder hotlink protection allows, such as `hotlink-ok`), checked by the release script with another site's `Referer`. Plugins get it with `scripts/sync-core.sh` (GH#790).
+
 ### 1.0.69
 
 - Developers: `STANDARDS.md` → Structure says every plugin has an icon and ships `admin/images/icon.svg` whatever its update channel, and that any updater (the shared GitHub updater, or a plugin's own, such as a licensed add-on's updates from a shop) gives WordPress the installed plugin's own icon and banner, never images on another site, which shops and CDNs often refuse, leaving a broken image on the Updates screen. `scripts/preflight-release.sh` warns about a missing `.wordpress-org/icon.svg` or `admin/images/icon.svg` for every plugin. Plugins get it with `scripts/sync-core.sh` (GH#787).
