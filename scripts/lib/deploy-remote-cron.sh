@@ -139,7 +139,9 @@ cron_output_failed() {
 # due at $3 (cron_run_one_code). An empty $3 (not a lone one-off) retries
 # nothing. Reads and updates run_site_cron's status, out and tries, and uses
 # its cmd (time limit): bash locals are seen by the functions they call.
-# Stops, keeping the kill, once the event is no longer listed.
+# Stops, keeping the kill, once the event is no longer listed (exit 0 and
+# CRON_NOT_LISTED printed), unless that retry's output also shows a PHP fatal
+# error or a database error: then the retry's output is kept, and fails.
 cron_retry_killed() {
 	local root="$1"
 	local hook="$2"
@@ -151,7 +153,9 @@ cron_retry_killed() {
 		retry_status=0
 		retry_out="$(DEPLOY_CRON_HOOK="$hook" DEPLOY_CRON_TIME="$stamp" DEPLOY_CRON_NOT_LISTED="$CRON_NOT_LISTED" \
 			"${cmd[@]+"${cmd[@]}"}" "$WP_CLI" --path="$root" "$@" eval "$(cron_run_one_code)" 2>&1)" || retry_status=$?
-		[[ "$retry_status" -ne 0 || "$retry_out" != *"$CRON_NOT_LISTED"* ]] || ! cron_output_failed "$retry_out" || break
+		if [[ "$retry_status" -eq 0 && "$retry_out" == *"$CRON_NOT_LISTED"* ]] && ! cron_output_failed "$retry_out"; then
+			break
+		fi
 		tries=$((tries + 1))
 		status="$retry_status" out="$retry_out"
 	done

@@ -171,6 +171,11 @@ Deleting the plugin removes its settings (on multisite, every site's and the net
 
 ## Changelog
 
+### Unreleased
+
+- Developers: `scripts/deploy-sites.sh --apply` keeps a cron event's kill (137) when its retry finds the killed one-off no longer listed, so the hook goes to the end-of-run recheck instead of counting as run; a retry that prints a PHP fatal error or a database error with that note fails the install, where it showed as a bare kill. Plugins get it with `scripts/sync-core.sh` (GH#780).
+- Developers: `scripts/check-hooks.js` reads the `{PREFIX}_VERSION` define only from PHP code, not from a quoted example such as `"define ('FAKE_VERSION', '0.0.0');"`, and the shell version reader in `scripts/lib/plugin.sh` skips heredoc and nowdoc bodies. On a single site, the end-of-run recheck of `scripts/deploy-sites.sh` shows the recheck's home code and cache headers on the install line. Plugins get it with `scripts/sync-core.sh` (GH#778).
+
 ### 1.0.67
 
 - Developers: `scripts/deploy-sites.sh --apply` hardening. A cron retry after a kill (137) runs the killed one-off itself (`wp eval`, bound to its hook and time) and only while it is still listed and the hook's only event, so a successor scheduled during the wait is never run early. An event that times out after printing a PHP fatal error or a database error fails instead of warning. The deploy lock's takeover guard is never removed by age: a run killed during a takeover leaves it, and later runs stop with exit 3 and the `rmdir` command (the dry run reports it). The lock's owner file is written privately and linked into the lock folder. A PHP log that cannot be read, or is not a regular file, fails the install, whatever `--ignore-log-line` says. Backup file names include an 8-digit id of the install's path, so two installs with one short name no longer share a backup. Plugins get it with `scripts/sync-core.sh` (GH#773).
