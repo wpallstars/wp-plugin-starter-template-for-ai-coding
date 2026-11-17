@@ -138,7 +138,13 @@ How changes are made and checked: `DEVELOPMENT.md`. Releases: `RELEASING.md`.
   another site. The site's browser loads them, and shops and CDNs often
   refuse images linked from other sites (hotlink protection): the Updates
   screen then shows a broken image. Check a new update channel's icon on
-  the Updates screen of a site on another domain.
+  the Updates screen of a site on another domain. Installs made before a
+  plugin did this still show the images its update server names (such as
+  a shop product's icon and banner fields), so those must load from other
+  sites too: keep them where hotlink protection allows (on a Hostinger CDN,
+  a folder named `hotlink-ok`), and have the release script fetch them
+  with another site's `Referer` and stop unless each answers 200 with an
+  image.
 - A wpallstars-branded banner keeps the starter's two words layouts, so
   every plugin's banners match. `banner.svg` holds the same four lines on
   the left twice, at sizes 27 (WPALLSTARS), 104 (the name), 72 (the gold

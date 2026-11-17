@@ -2,6 +2,9 @@
 
 Every change to WP Plugin Starter. readme.txt lists the latest version in short.
 
+= Unreleased =
+* Developers: STANDARDS.md → Structure adds that installs made before a plugin used its own icon still show the images its update server names (such as a shop product's icon and banner), so those must load from other sites too (a folder hotlink protection allows, such as hotlink-ok), checked by the release script with another site's Referer. Plugins get it with scripts/sync-core.sh (GH#790).
+
 = 1.0.69 =
 * Developers: STANDARDS.md → Structure says every plugin has an icon and ships admin/images/icon.svg whatever its update channel, and that any updater (the shared GitHub updater, or a plugin's own, such as a licensed add-on's updates from a shop) gives WordPress the installed plugin's own icon and banner, never images on another site: shops and CDNs often refuse images linked from other sites, and the Updates screen then shows a broken image. scripts/preflight-release.sh warns about a missing .wordpress-org/icon.svg or admin/images/icon.svg for every plugin, not only one with .wordpress-org/icon.svg. Plugins get it with scripts/sync-core.sh (GH#787).
 * Developers: .github/workflows/sonarcloud.yml uses SonarSource/sonarqube-scan-action v8.5.0 (pinned by commit, as before), so a plugin whose Dependabot already raised it no longer has the file reported as changed here by the Starter sync. Plugins get it with scripts/sync-core.sh (GH#782).
