@@ -173,6 +173,7 @@ Deleting the plugin removes its settings (on multisite, every site's and the net
 
 ### Unreleased
 
+- Developers: `STANDARDS.md` → Structure says every plugin has an icon and ships `admin/images/icon.svg` whatever its update channel, and that any updater (the shared GitHub updater, or a plugin's own, such as a licensed add-on's updates from a shop) gives WordPress the installed plugin's own icon and banner, never images on another site, which shops and CDNs often refuse, leaving a broken image on the Updates screen. `scripts/preflight-release.sh` warns about a missing `.wordpress-org/icon.svg` or `admin/images/icon.svg` for every plugin. Plugins get it with `scripts/sync-core.sh` (GH#787).
 - Developers: `.github/workflows/sonarcloud.yml` uses `SonarSource/sonarqube-scan-action` v8.5.0 (pinned by commit, as before), so a plugin whose Dependabot already raised it no longer has the file reported as changed here by the Starter sync. Plugins get it with `scripts/sync-core.sh` (GH#782).
 
 ### 1.0.68

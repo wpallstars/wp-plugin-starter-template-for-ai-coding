@@ -127,6 +127,18 @@ How changes are made and checked: `DEVELOPMENT.md`. Releases: `RELEASING.md`.
   only. `scripts/preflight-release.sh` checks their sizes, that the icon,
   View details banner and screenshot copies ship, and that each
   `screenshot-N` has a caption.
+- Every plugin has an icon (`.wordpress-org/icon.svg`) and ships its copy,
+  `admin/images/icon.svg`, whatever its update channel: WordPress shows
+  it beside the plugin's update on Dashboard → Updates, and without one
+  its grey plug. Any updater a plugin has, the shared GitHub updater or
+  its own (such as a licensed add-on's updates from a shop), gives
+  WordPress the installed plugin's own icon and banner
+  (`admin/images/icon.svg`, `banner-details.svg`), as addresses in the
+  plugin's folder without a scheme (`//host/...`), never images on
+  another site. The site's browser loads them, and shops and CDNs often
+  refuse images linked from other sites (hotlink protection): the Updates
+  screen then shows a broken image. Check a new update channel's icon on
+  the Updates screen of a site on another domain.
 - A wpallstars-branded banner keeps the starter's two words layouts, so
   every plugin's banners match. `banner.svg` holds the same four lines on
   the left twice, at sizes 27 (WPALLSTARS), 104 (the name), 72 (the gold
