@@ -472,12 +472,15 @@ check_wporg_assets() {
 	done
 	if grep -qxF "icon.svg" <<<"$files"; then
 		ok "icon.svg"
-		# The shipped copy the GitHub updater shows on the Updates screen.
-		if git cat-file -e "$sha:admin/images/icon.svg" 2>/dev/null; then
-			ok "admin/images/icon.svg (Updates screen icon)"
-		else
-			warn "no admin/images/icon.svg; the Updates screen shows WordPress's plug for GitHub updates (scripts/build-banner.sh builds it from .wordpress-org/icon.svg)"
-		fi
+	else
+		warn "no icon.svg; every plugin has an icon, which scripts/build-banner.sh turns into the listing PNGs and admin/images/icon.svg (STANDARDS.md → Structure)"
+	fi
+	# The shipped copy every updater (the GitHub updater, or a plugin's own)
+	# shows on the Updates screen, whatever the update channel.
+	if git cat-file -e "$sha:admin/images/icon.svg" 2>/dev/null; then
+		ok "admin/images/icon.svg (Updates screen icon)"
+	else
+		warn "no admin/images/icon.svg; the Updates screen shows WordPress's plug for this plugin's updates (scripts/build-banner.sh builds it from .wordpress-org/icon.svg)"
 	fi
 	# The View details banner (words clear of WordPress's name box), when
 	# banner.svg has that layout.
