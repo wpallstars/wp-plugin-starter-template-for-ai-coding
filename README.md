@@ -10,7 +10,7 @@
 [![CodeFactor](https://www.codefactor.io/repository/github/wpallstars/wp-plugin-starter-template-for-ai-coding/badge)](https://www.codefactor.io/repository/github/wpallstars/wp-plugin-starter-template-for-ai-coding)
 [![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/wpallstars/wp-plugin-starter-template-for-ai-coding/badge)](https://scorecard.dev/viewer/?uri=github.com/wpallstars/wp-plugin-starter-template-for-ai-coding)
 [![License: GPL v3 or later](https://img.shields.io/badge/License-GPL%20v3%20or%20later-blue.svg)](LICENSE)
-[![Latest release](https://img.shields.io/badge/release-v1.0.67-blue.svg)](https://github.com/wpallstars/wp-plugin-starter-template-for-ai-coding/releases)
+[![Latest release](https://img.shields.io/badge/release-v1.0.68-blue.svg)](https://github.com/wpallstars/wp-plugin-starter-template-for-ai-coding/releases)
 
 [![Requires WordPress](https://img.shields.io/badge/WordPress-6.2%2B-21759B.svg?logo=wordpress)](readme.txt)
 [![Tested up to](https://img.shields.io/badge/tested%20up%20to-7.1-21759B.svg?logo=wordpress)](readme.txt)
@@ -27,7 +27,7 @@ WP Plugin Starter is what wpallstars plugins are made from. It has no features o
 
 If this saves you time, headaches and costs, feel free to [buy me a coffee](https://buymeacoffee.com/marcusquinn), or whatever you like, to invest in making more things open-source.
 
-Version: 1.0.67
+Version: 1.0.68
 
 <!-- github-only:start -->
 ## Screenshots
@@ -171,7 +171,7 @@ Deleting the plugin removes its settings (on multisite, every site's and the net
 
 ## Changelog
 
-### Unreleased
+### 1.0.68
 
 - Developers: `scripts/deploy-sites.sh --apply` keeps a cron event's kill (137) when its retry finds the killed one-off no longer listed, so the hook goes to the end-of-run recheck instead of counting as run; a retry that prints a PHP fatal error or a database error with that note fails the install, where it showed as a bare kill. Plugins get it with `scripts/sync-core.sh` (GH#780).
 - Developers: `scripts/check-hooks.js` reads the `{PREFIX}_VERSION` define only from PHP code, not from a quoted example such as `"define ('FAKE_VERSION', '0.0.0');"`, and the shell version reader in `scripts/lib/plugin.sh` skips heredoc and nowdoc bodies. On a single site, the end-of-run recheck of `scripts/deploy-sites.sh` shows the recheck's home code and cache headers on the install line. Plugins get it with `scripts/sync-core.sh` (GH#778).
