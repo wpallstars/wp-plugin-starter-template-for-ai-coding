@@ -171,6 +171,10 @@ Deleting the plugin removes its settings (on multisite, every site's and the net
 
 ## Changelog
 
+### Unreleased
+
+- Developers: `.github/workflows/sonarcloud.yml` uses `SonarSource/sonarqube-scan-action` v8.5.0 (pinned by commit, as before), so a plugin whose Dependabot already raised it no longer has the file reported as changed here by the Starter sync. Plugins get it with `scripts/sync-core.sh` (GH#782).
+
 ### 1.0.68
 
 - Developers: `scripts/deploy-sites.sh --apply` keeps a cron event's kill (137) when its retry finds the killed one-off no longer listed, so the hook goes to the end-of-run recheck instead of counting as run; a retry that prints a PHP fatal error or a database error with that note fails the install, where it showed as a bare kill. Plugins get it with `scripts/sync-core.sh` (GH#780).
