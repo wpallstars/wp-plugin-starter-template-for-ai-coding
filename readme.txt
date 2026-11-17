@@ -5,7 +5,7 @@ Tags: starter, boilerplate, settings, developer, template
 Requires at least: 6.2
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 1.0.68
+Stable tag: 1.0.69
 License: GPLv3 or later
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 
@@ -63,9 +63,9 @@ GitHub releases are the stable beta channel: each version comes out there first.
 
 == Changelog ==
 
-= 1.0.68 =
-* Developers: deploy-sites --apply keeps a cron kill (137) for the end-of-run recheck when the retried one-off is no longer listed, and fails a retry that printed a fatal or database error.
-* Developers: check-hooks and the shell version reader skip quoted and heredoc examples of the version define; a single site's recheck shows its own home code.
+= 1.0.69 =
+* Developers: every plugin ships its icon (admin/images/icon.svg), and any updater, the GitHub one or a plugin's own, shows the installed icon and banner, never images on another site; release preflight checks the icon for every plugin.
+* Developers: SonarCloud workflow uses sonarqube-scan-action 8.5.0.
 
 Every change: changelog.txt.
 
