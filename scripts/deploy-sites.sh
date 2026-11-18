@@ -753,8 +753,10 @@ main() {
 	cd "$root"
 	plugin_identity HEAD || die "cannot tell which plugin this is"
 	SLUG="$PLUGIN_SLUG"
-	REPO="$PLUGIN_REPO"
-	[[ "$REPO" =~ ^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$ ]] || die "the main file has no GitHub Plugin URI header (owner/repo)"
+	# A licensed add-on has no GitHub Plugin URI; its releases are still
+	# built and signed in its own repository (the origin remote).
+	REPO="$PLUGIN_GITHUB"
+	[[ "$REPO" =~ ^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$ ]] || die "the main file has no GitHub Plugin URI header (owner/repo) and origin is not on github.com"
 
 	trap cleanup EXIT
 	TMP_DIR="$(mktemp -d "${TMPDIR:-/tmp}/$SLUG-deploy.XXXXXX")"

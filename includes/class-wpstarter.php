@@ -72,6 +72,13 @@ final class WPStarter {
             add_filter('wpallstars_report_products', array(__CLASS__, 'report_product'));
         }
 
+        // Shared licensed updates: registers this copy; the newest copy on
+        // the site loads on after_setup_theme and serves every plugin and
+        // theme with an Update URI on wpallstars.com and a Licence Item.
+        if (is_readable(WPSTARTER_DIR . 'includes/wpallstars-licence/load.php')) {
+            require_once WPSTARTER_DIR . 'includes/wpallstars-licence/load.php';
+        }
+
         WPStarter_Settings::init();
         WPStarter_Setup::init();
         // Priority 0, added after WPStarter_Settings::maybe_migrate() so features
