@@ -88,7 +88,7 @@ final class WPAllStars_Licence {
     /**
      * Products, once read.
      *
-     * @var array<int,array{type:string,file:string,slug:string,name:string,version:string,dir:string,requires:string,requires_php:string}>|null
+     * @var array<int,array{type:string,shop:bool,file:string,slug:string,name:string,version:string,dir:string,requires:string,requires_php:string}>|null
      */
     private static $products = null;
 
@@ -123,9 +123,12 @@ final class WPAllStars_Licence {
     // Products.
 
     /**
-     * Installed products sold through the shop: item ID => details.
+     * Installed products sold through the shop: item ID => details. Every
+     * plugin or theme with a Licence Item header is listed, so its licence
+     * can be activated before it moves to the shop; 'shop' is whether its
+     * Update URI is the shop's, which it needs for updates and View details.
      *
-     * @return array<int,array{type:string,file:string,slug:string,name:string,version:string,dir:string,requires:string,requires_php:string}>
+     * @return array<int,array{type:string,shop:bool,file:string,slug:string,name:string,version:string,dir:string,requires:string,requires_php:string}>
      */
     public static function products() {
         if (null !== self::$products) {
@@ -136,10 +139,11 @@ final class WPAllStars_Licence {
             require_once ABSPATH . 'wp-admin/includes/plugin.php';
         }
         foreach (get_plugins() as $file => $data) {
-            $item = self::is_store_uri(isset($data['UpdateURI']) ? (string) $data['UpdateURI'] : '') ? self::item_of(WP_PLUGIN_DIR . '/' . $file) : 0;
+            $item = self::item_of(WP_PLUGIN_DIR . '/' . $file);
             if ($item > 0 && !isset(self::$products[$item])) {
                 self::$products[$item] = array(
                     'type'         => 'plugin',
+                    'shop'         => self::is_store_uri(isset($data['UpdateURI']) ? (string) $data['UpdateURI'] : ''),
                     'file'         => (string) $file,
                     'slug'         => dirname((string) $file),
                     'name'         => isset($data['Name']) ? (string) $data['Name'] : (string) $file,
@@ -151,10 +155,11 @@ final class WPAllStars_Licence {
             }
         }
         foreach (wp_get_themes() as $stylesheet => $theme) {
-            $item = self::is_store_uri((string) $theme->get('UpdateURI')) ? self::item_of($theme->get_stylesheet_directory() . '/style.css') : 0;
+            $item = self::item_of($theme->get_stylesheet_directory() . '/style.css');
             if ($item > 0 && !isset(self::$products[$item])) {
                 self::$products[$item] = array(
                     'type'         => 'theme',
+                    'shop'         => self::is_store_uri((string) $theme->get('UpdateURI')),
                     'file'         => (string) $stylesheet,
                     'slug'         => (string) $stylesheet,
                     'name'         => (string) $theme->get('Name'),
@@ -194,7 +199,8 @@ final class WPAllStars_Licence {
     }
 
     /**
-     * The item ID of an installed plugin or theme, or 0.
+     * The item ID of an installed plugin or theme updated from the shop
+     * (its Update URI is the shop's), or 0.
      *
      * @param string $type plugin or theme.
      * @param string $file Plugin basename or theme stylesheet.
@@ -202,7 +208,7 @@ final class WPAllStars_Licence {
      */
     private static function item_for($type, $file) {
         foreach (self::products() as $item => $product) {
-            if ($product['type'] === $type && $product['file'] === $file) {
+            if ($product['shop'] && $product['type'] === $type && $product['file'] === $file) {
                 return $item;
             }
         }
@@ -604,7 +610,7 @@ final class WPAllStars_Licence {
             return $result;
         }
         foreach (self::products() as $item => $product) {
-            if ('plugin' !== $product['type'] || $product['slug'] !== $args->slug) {
+            if (!$product['shop'] || 'plugin' !== $product['type'] || $product['slug'] !== $args->slug) {
                 continue;
             }
             $info = self::version_info($item);
@@ -636,7 +642,7 @@ final class WPAllStars_Licence {
      * other sites. Scheme-less, so a check run by WP-CLI or cron (where
      * is_ssl() is false) does not store http addresses for an https admin.
      *
-     * @param array<string,string> $product Product.
+     * @param array{dir:string,file:string} $product Product.
      * @param string               $key     icons or banners.
      * @param array<string,string> $shop    The shop's addresses, by size.
      * @return array<string,string>
@@ -902,7 +908,12 @@ final class WPAllStars_Licence {
                 <?php foreach (self::products() as $item => $product) : ?>
                     <?php $stored = self::stored($item); ?>
                     <tr>
-                        <td><strong><?php echo esc_html($product['name']); ?></strong><br><?php echo esc_html($product['version']); ?></td>
+                        <td>
+                            <strong><?php echo esc_html($product['name']); ?></strong><br><?php echo esc_html($product['version']); ?>
+                            <?php if (!$product['shop']) : ?>
+                                <br><?php esc_html_e('This version still updates from elsewhere; a later release moves it to wpallstars.com.', 'wp-plugin-starter-template'); ?>
+                            <?php endif; ?>
+                        </td>
                         <td>
                             <?php echo esc_html(self::describe($item)); ?>
                             <?php if ('' !== $stored['error'] && !self::valid($item)) : ?>
