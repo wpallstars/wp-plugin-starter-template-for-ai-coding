@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # Rewrite README.md's badges block in the starter's three rows (STANDARDS.md
 # → Structure): status, then requirements and size, then the languages
-# chart. The repository comes from the main file's GitHub Plugin URI header,
-# the requirements from readme.txt's header. The block keeps the services it
+# chart. The repository comes from the main file's GitHub Plugin URI header
+# (a licensed add-on's from the origin remote), the requirements from readme.txt's header. The block keeps the services it
 # already shows (SonarCloud, Codacy, CodeFactor, OpenSSF Scorecard); add one
 # only once that service has the repository (DEVELOPMENT.md → Services
 # setup). Running it again changes nothing.
@@ -79,7 +79,7 @@ main() {
 	root="$(git rev-parse --show-toplevel)" || die "run this inside a checkout of the plugin"
 	cd "$root"
 	plugin_identity HEAD || die "cannot tell which plugin this is"
-	[[ -n "$PLUGIN_REPO" ]] || die "$PLUGIN_MAIN_FILE has no GitHub Plugin URI header (owner/repo)"
+	[[ -n "$PLUGIN_GITHUB" ]] || die "$PLUGIN_MAIN_FILE has no GitHub Plugin URI header (owner/repo) and origin is not on github.com"
 	[[ -f README.md ]] || die "no README.md"
 	[[ -f readme.txt ]] || die "no readme.txt (the requirements come from its header)"
 	if ! plugin_badges_valid <README.md; then
@@ -89,7 +89,7 @@ main() {
 	local current block
 	current="$(plugin_badges_current <README.md)"
 	[[ -n "$codacy" ]] || codacy="$(plugin_badge_codacy "$current")"
-	block="$(plugin_badges "$PLUGIN_REPO" "$(<readme.txt)" "$(plugin_badge_services "$current")$extra" "$codacy")"
+	block="$(plugin_badges "$PLUGIN_GITHUB" "$(<readme.txt)" "$(plugin_badge_services "$current")$extra" "$codacy")"
 	if [[ "$block" = "$current" ]]; then
 		printf 'readme-badges: README.md badges block is up to date\n'
 		return 0

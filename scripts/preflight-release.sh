@@ -683,6 +683,21 @@ wporg_text_left() {
 	return 0
 }
 
+# A licensed add-on's one zip: no GitHub updater, no WordPress.org build.
+check_addon_build() {
+	local zip="$1"
+	UNPACKED=""
+	check_zip "$zip" "addon"
+	if grep -Eq "^[[:space:]*]*Update URI:" "$UNPACKED/$MAIN_FILE"; then ok "addon: has its Update URI header"; else err "addon: no Update URI header in $MAIN_FILE"; fi
+	# Sold through the wpallstars.com shop: the shared licence library must
+	# ship, and the main file must name the shop's product.
+	if grep -Eiq "^[[:space:]*]*Update URI:[[:space:]]*https://www\.wpallstars\.com/?[[:space:]]*$" "$UNPACKED/$MAIN_FILE"; then
+		if grep -Eq "^[[:space:]*]*Licence Item:[[:space:]]*[0-9]+[[:space:]]*$" "$UNPACKED/$MAIN_FILE"; then ok "addon: has its Licence Item header"; else err "addon: Update URI on wpallstars.com but no Licence Item: <product ID> header in $MAIN_FILE"; fi
+		if [[ -f "$UNPACKED/includes/wpallstars-licence/load.php" ]]; then ok "addon: ships includes/wpallstars-licence/"; else err "addon: Update URI on wpallstars.com but includes/wpallstars-licence/ is not in the zip, so it can never update"; fi
+	fi
+	return 0
+}
+
 check_builds() {
 	local github_zip="$1"
 	local wporg_zip="$2"
@@ -695,10 +710,7 @@ check_builds() {
 		err "GitHub asset is $(basename "$github_zip"), expected $SLUG-$version.zip"
 	fi
 	if [[ "$PLUGIN_SELF_UPDATING" -eq 1 ]]; then
-		# Licensed add-on: one zip, no GitHub updater, no WordPress.org build.
-		UNPACKED=""
-		check_zip "$github_zip" "addon"
-		if grep -Eq "^[[:space:]*]*Update URI:" "$UNPACKED/$MAIN_FILE"; then ok "addon: has its Update URI header"; else err "addon: no Update URI header in $MAIN_FILE"; fi
+		check_addon_build "$github_zip"
 		return 0
 	fi
 	case "$(basename "$wporg_zip")" in

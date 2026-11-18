@@ -5,4 +5,6 @@
 # scripts/build-release.sh also removes the Git Updater header lines
 # (GitHub Plugin URI, Primary Branch, Release Asset) from wp-plugin-starter-template.php.
 /includes/github-updater/
+# Licensed updates from the wpallstars.com shop: also updates from elsewhere.
+/includes/wpallstars-licence/
 # Keep README.md: the admin Read Me tab shows it (admin/data/readme.php).

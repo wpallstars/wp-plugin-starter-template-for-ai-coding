@@ -20,6 +20,11 @@ includes/github-updater/
 # a site runs, for every wpallstars plugin and theme.
 includes/wpallstars-reports/
 
+# Shared licensed updates from the wpallstars.com shop (Settings → Licences):
+# only the newest copy on a site runs, for every wpallstars plugin and theme
+# with an Update URI on wpallstars.com and a Licence Item header.
+includes/wpallstars-licence/
+
 # Admin screen, its network screen, Read Me tab and the Plugins screen notes
 # for replaced plugins.
 admin/settings.php
@@ -58,6 +63,7 @@ scripts/lib/deploy-remote-logs.sh
 scripts/lib/deploy-remote-results.sh
 scripts/lib/docker-wordpress.sh
 scripts/lib/plugin.sh
+scripts/lib/shop-release-remote.php
 scripts/lint.sh
 scripts/phpstan-bootstrap.php
 scripts/plugin-check.sh
@@ -69,6 +75,7 @@ scripts/readme-badges.sh
 scripts/release-bump.sh
 scripts/rename-plugin.sh
 scripts/replaced-plugins.php
+scripts/shop-release.sh
 scripts/smoke-queries.php
 scripts/smoke-test.sh
 scripts/sync-core.sh

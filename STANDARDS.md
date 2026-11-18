@@ -622,6 +622,45 @@ administrator's approval:
   about it: the release zip leaves out `AGENTS.md` and `docs/`, so the
   Read Me is what an assistant looking at an installed product finds.
 
+## Licensed updates
+
+A plugin or theme sold through the wpallstars.com shop (FluentCart Pro
+licensing) gets its updates from the shop with a licence key, not from
+GitHub: sites get the built zip and never the repository. The shared
+licence library in `includes/wpallstars-licence/` does it:
+
+- Every plugin made from the starter, and every theme made from the child
+  theme starter, carries a copy. Each copy registers its version from
+  `load.php`; on `after_setup_theme` only the newest copy loads, once, and
+  serves every installed plugin or theme whose header has
+  `Update URI: https://www.wpallstars.com/` and `Licence Item: <id>` (the
+  shop's product ID). Such a plugin has no `GitHub Plugin URI`, so the
+  release scripts treat it as a licensed add-on: one zip, its `Update URI`
+  kept, no WordPress.org build, and `scripts/preflight-release.sh` checks
+  that the zip ships the library and names its product.
+- One key per product for the site, or for the whole network on multisite
+  (a network option; the shop's activation is for the main site's address).
+  Keys go in **Settings → Licences** (Network Admin on multisite) or
+  `wp wpallstars licence activate --item=<id>`, which reads the key from
+  `WPALLSTARS_LICENCE_KEY` or standard input, never an argument. They are
+  stored encrypted (sodium, keyed from `WPALLSTARS_LICENCE_ENCRYPTION_KEY`
+  or the site's `AUTH_KEY` and `AUTH_SALT`) and never printed: only their
+  last four characters. A copy of the site with new security keys shows
+  them as unreadable until each is activated again.
+- The licence gates updates only. Without one the product keeps working and
+  is offered nothing; nothing is asked of the shop before a key is entered,
+  visitor pages never read the licences, and each licence is checked once a
+  day from WP-Cron. Version answers are cached for 12 hours (an hour after a
+  failure).
+- `scripts/shop-release.sh` publishes a release's zip to its product (dry
+  run without `--apply`, with a backup and a read-back) and, with
+  `--check-site`, shows what a licensed site is offered.
+- It is the same in every product apart from its text domain and
+  `@package`. Change it in the starter, raise the version in its
+  `load.php`, and copy it to each plugin and theme. Products never call its
+  class: another product's copy may be the one that runs. The WordPress.org
+  build leaves the folder out (`.distignore-wporg`).
+
 ## Releases
 
 Two release channels, at the owner's decision:

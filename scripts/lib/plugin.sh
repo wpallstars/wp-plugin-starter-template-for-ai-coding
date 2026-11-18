@@ -27,6 +27,9 @@
 #   PLUGIN_SELF_UPDATING  1 for a licensed add-on: an Update URI header and no
 #                     GitHub Plugin URI, so its updates come from its own
 #                     shop and the release scripts never touch that header
+#   PLUGIN_GITHUB     the repository its GitHub releases are in, owner/repo:
+#                     the GitHub Plugin URI header, else the origin remote
+#                     (a licensed add-on has no such header; may be empty)
 #
 # Files come from the Git ref, never the working tree, like the release build.
 #
@@ -46,6 +49,20 @@ PLUGIN_REPO=""
 PLUGIN_UPDATE_URI=""
 PLUGIN_REQUIRES=""
 PLUGIN_SELF_UPDATING=0
+PLUGIN_GITHUB=""
+
+# owner/repo of the origin remote on github.com, or nothing.
+plugin_origin_repo() {
+	local url
+	local pattern='^(https?://|ssh://)?([A-Za-z0-9_.-]+@)?github\.com(:[0-9]+)?[:/]([A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+)$'
+	url="$(git remote get-url origin 2>/dev/null || true)"
+	url="${url%/}"
+	url="${url%.git}"
+	if [[ "$url" =~ $pattern ]]; then
+		printf '%s' "${BASH_REMATCH[4]}"
+	fi
+	return 0
+}
 
 # Value of a "Key: value" header line in the text, case-insensitive.
 plugin_header_field() {
@@ -223,6 +240,8 @@ plugin_identity() {
 	PLUGIN_REQUIRES="$(plugin_header_field "${text:0:8192}" "Requires Plugins")"
 	PLUGIN_SELF_UPDATING=0
 	if [[ -n "$PLUGIN_UPDATE_URI" ]] && [[ -z "$PLUGIN_REPO" ]]; then PLUGIN_SELF_UPDATING=1; fi
+	PLUGIN_GITHUB="$PLUGIN_REPO"
+	if [[ -z "$PLUGIN_GITHUB" ]]; then PLUGIN_GITHUB="$(plugin_origin_repo)"; fi
 	PLUGIN_CSS="$(git show "$ref:admin/includes/class-admin-manager.php" 2>/dev/null | sed -nE 's/.*class="wrap ([a-z0-9]+)-wrap.*/\1/p' | head -n 1 || true)"
 	if [[ -z "$PLUGIN_CSS" ]]; then
 		text="$(git show "$ref:scripts/core-public-classes.txt" 2>/dev/null || true)"
