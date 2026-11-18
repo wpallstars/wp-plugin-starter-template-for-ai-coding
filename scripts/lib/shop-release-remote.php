@@ -134,17 +134,31 @@ function wpas_shop_plan(array $args) {
     }
     global $wpdb;
     $downloads = $wpdb->get_results($wpdb->prepare("SELECT * FROM {$wpdb->prefix}fct_product_downloads WHERE post_id = %d", $item), ARRAY_A);
-    if (!is_array($downloads) || 1 !== count($downloads)) {
-        wpas_shop_fail('The product must have exactly one download row; it has ' . (is_array($downloads) ? count($downloads) : 0) . '.');
-    }
-    $download = $downloads[0];
-    if ('local' !== $download['driver']) {
-        wpas_shop_fail('The download row is not stored locally (driver ' . $download['driver'] . ').');
-    }
-    $uploads = wp_upload_dir(null, false);
-    $dir     = trailingslashit($uploads['basedir']) . 'fluent-cart';
-    if (!is_file($dir . '/' . $download['file_path'])) {
-        wpas_shop_fail('The current download file is not in FluentCart\'s storage; stopping rather than guessing the folder.');
+    $count     = is_array($downloads) ? count($downloads) : 0;
+    $uploads   = wp_upload_dir(null, false);
+    $dir       = trailingslashit($uploads['basedir']) . 'fluent-cart';
+    if (0 === $count && '' === $current) {
+        // The product's first release: apply adds its one download row, for
+        // every variation, in FluentCart's storage (which must exist).
+        $variations = $wpdb->get_col($wpdb->prepare("SELECT id FROM {$wpdb->prefix}fct_product_variations WHERE post_id = %d ORDER BY id", $item));
+        if (!$variations) {
+            wpas_shop_fail('The product has no variations, so a download row would serve nobody.');
+        }
+        if (!is_dir($dir)) {
+            wpas_shop_fail('FluentCart\'s storage folder (uploads/fluent-cart) is missing; stopping rather than guessing it.');
+        }
+        $download = array('id' => 0, 'file_path' => '', 'variations' => array_map('intval', $variations));
+    } else {
+        if (1 !== $count) {
+            wpas_shop_fail("The product must have exactly one download row; it has $count.");
+        }
+        $download = $downloads[0];
+        if ('local' !== $download['driver']) {
+            wpas_shop_fail('The download row is not stored locally (driver ' . $download['driver'] . ').');
+        }
+        if (!is_file($dir . '/' . $download['file_path'])) {
+            wpas_shop_fail('The current download file is not in FluentCart\'s storage; stopping rather than guessing the folder.');
+        }
     }
     $file = basename($zip) . '__fluent-cart__.' . substr($sha, 0, 32) . '.zip';
     if (is_file($dir . '/' . $file)) {
@@ -201,7 +215,7 @@ function wpas_shop_backup(array $plan) {
  * changelog and product time.
  *
  * @param array<string,mixed> $plan The release's facts.
- * @return bool Whether every update worked.
+ * @return int The download row's ID, or 0 when an update failed.
  */
 function wpas_shop_write(array $plan) {
     global $wpdb;
@@ -211,15 +225,31 @@ function wpas_shop_write(array $plan) {
     $settings['version'] = $plan['version'];
     $log                 = $plan['log_row'] ? (string) $plan['log_row']['meta_value'] : '';
     $log                 = false === strpos($log, '<h4>' . $plan['version'] . '</h4>') ? $plan['changelog'] . $log : $log;
+    $file                = array(
+        'title'      => $plan['title'] . ' ' . $plan['version'],
+        'file_name'  => $plan['file'],
+        'file_path'  => $plan['file'],
+        'file_url'   => $plan['file'],
+        'file_size'  => (string) $plan['size'],
+        'updated_at' => $now,
+    );
+    $id                  = (int) $plan['download']['id'];
+    if (0 === $id) {
+        // First release: the row FluentCart's product editor would add.
+        $added = $wpdb->insert($wpdb->prefix . 'fct_product_downloads', $file + array(
+            'post_id'              => $plan['item'],
+            'product_variation_id' => wp_json_encode($plan['download']['variations']),
+            'download_identifier'  => wp_generate_uuid4(),
+            'type'                 => 'zip',
+            'driver'               => 'local',
+            'settings'             => wp_json_encode(array('download_limit' => '', 'download_expiry' => '', 'bucket' => '')),
+            'serial'               => 1,
+            'created_at'           => $now,
+        ));
+        $id    = $added ? (int) $wpdb->insert_id : 0;
+    }
     $results             = array(
-        $wpdb->update($wpdb->prefix . 'fct_product_downloads', array(
-            'title'      => $plan['title'] . ' ' . $plan['version'],
-            'file_name'  => $plan['file'],
-            'file_path'  => $plan['file'],
-            'file_url'   => $plan['file'],
-            'file_size'  => (string) $plan['size'],
-            'updated_at' => $now,
-        ), array('id' => (int) $plan['download']['id'])),
+        $id > 0 && false !== $wpdb->update($wpdb->prefix . 'fct_product_downloads', $file, array('id' => $id)),
         $wpdb->update($meta, array('meta_value' => wp_json_encode($settings, JSON_UNESCAPED_SLASHES), 'updated_at' => $now), array('id' => (int) $plan['settings_row']['id'])), // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_value -- FluentCart's own table, by primary key.
         $plan['log_row']
             ? $wpdb->update($meta, array('meta_value' => $log, 'updated_at' => $now), array('id' => (int) $plan['log_row']['id'])) // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_value -- as above.
@@ -227,7 +257,7 @@ function wpas_shop_write(array $plan) {
         $wpdb->update($wpdb->posts, array('post_modified' => $now, 'post_modified_gmt' => current_time('mysql', true)), array('ID' => $plan['item'])),
     );
     clean_post_cache($plan['item']);
-    return !in_array(false, $results, true);
+    return in_array(false, $results, true) ? 0 : $id;
 }
 
 /**
@@ -241,10 +271,11 @@ function wpas_shop_apply(array $plan) {
     if (!copy($plan['zip'], $plan['dir'] . '/' . $plan['file'])) {
         wpas_shop_fail('Cannot copy the zip into FluentCart\'s storage; nothing else changed. Backup: ' . $backup);
     }
-    if (!wpas_shop_write($plan)) {
+    $id = wpas_shop_write($plan);
+    if (0 === $id) {
         wpas_shop_fail('A database update failed: ' . $wpdb->last_error . '. Restore from the backup: ' . $backup);
     }
-    $row      = $wpdb->get_row($wpdb->prepare("SELECT * FROM {$wpdb->prefix}fct_product_downloads WHERE id = %d", (int) $plan['download']['id']), ARRAY_A);
+    $row      = $wpdb->get_row($wpdb->prepare("SELECT * FROM {$wpdb->prefix}fct_product_downloads WHERE id = %d", $id), ARRAY_A);
     $settings = wpas_shop_settings($plan['item']);
     $log      = wpas_shop_meta_row($plan['item'], '_fluent_sl_changelog');
     $target   = $plan['dir'] . '/' . $plan['file'];
