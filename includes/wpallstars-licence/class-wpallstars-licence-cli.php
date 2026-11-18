@@ -60,6 +60,7 @@ final class WPAllStars_Licence_CLI {
                 'type'    => $product['type'],
                 'slug'    => $product['slug'],
                 'version' => $product['version'],
+                'updates' => $product['shop'] ? 'shop' : 'elsewhere',
                 'status'  => '' === $stored['secret'] ? 'none' : $stored['status'],
                 'valid'   => WPAllStars_Licence::valid($item) ? 'yes' : 'no',
                 'key'     => '' === $stored['hint'] ? '' : '…' . $stored['hint'],
@@ -68,7 +69,7 @@ final class WPAllStars_Licence_CLI {
                 'error'   => $stored['error'],
             );
         }
-        WP_CLI\Utils\format_items(isset($assoc_args['format']) ? $assoc_args['format'] : 'table', $rows, array('item', 'type', 'slug', 'version', 'status', 'valid', 'key', 'expires', 'checked', 'error'));
+        WP_CLI\Utils\format_items(isset($assoc_args['format']) ? $assoc_args['format'] : 'table', $rows, array('item', 'type', 'slug', 'version', 'updates', 'status', 'valid', 'key', 'expires', 'checked', 'error'));
     }
 
     /**

@@ -37,7 +37,7 @@ if (!isset($GLOBALS['wpallstars_licence']) || !is_array($GLOBALS['wpallstars_lic
     $GLOBALS['wpallstars_licence'] = array(); // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals -- Shared across wpallstars products; see STANDARDS.md, Licensed updates.
 }
 // Version of this copy => its class file.
-$GLOBALS['wpallstars_licence']['1.0.0'] = __DIR__ . '/class-wpallstars-licence.php'; // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals -- Shared across wpallstars products; see STANDARDS.md, Licensed updates.
+$GLOBALS['wpallstars_licence']['1.1.0'] = __DIR__ . '/class-wpallstars-licence.php'; // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals -- Shared across wpallstars products; see STANDARDS.md, Licensed updates.
 
 if (!function_exists('wpallstars_licence_load')) {
     /**
