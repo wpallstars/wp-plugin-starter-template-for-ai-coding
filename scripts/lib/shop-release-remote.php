@@ -165,8 +165,19 @@ function wpas_shop_plan(array $args) {
         }
     }
     $file = basename($zip) . '__fluent-cart__.' . substr($sha, 0, 32) . '.zip';
+    $reuse = false;
     if (is_file($dir . '/' . $file)) {
-        wpas_shop_fail("$file is already in FluentCart's storage; stopping rather than overwriting it.");
+        // A failed apply can leave its copied ZIP behind. The same bytes that
+        // no download row references are that leftover: reuse it. Anything
+        // else (other bytes, or a file a row serves) is never touched.
+        $refs = $wpdb->get_var($wpdb->prepare("SELECT COUNT(*) FROM {$wpdb->prefix}fct_product_downloads WHERE file_path = %s", $file));
+        if ('' !== $wpdb->last_error || null === $refs) {
+            wpas_shop_fail('Cannot check whether ' . $file . ' is in use: ' . $wpdb->last_error);
+        }
+        if (0 !== (int) $refs || hash_file('sha256', $dir . '/' . $file) !== $sha) {
+            wpas_shop_fail("$file is already in FluentCart's storage and is not an unreferenced copy of this ZIP; stopping rather than overwriting it.");
+        }
+        $reuse = true;
     }
     return array(
         'item'         => $item,
@@ -179,6 +190,7 @@ function wpas_shop_plan(array $args) {
         'dir'          => $dir,
         'old_file'     => (string) $download['file_path'],
         'file'         => $file,
+        'reuse'        => $reuse,
         'download'     => $download,
         'settings_row' => wpas_shop_meta_row($item, 'license_settings'),
         'settings'     => $settings,
@@ -272,7 +284,7 @@ function wpas_shop_write(array $plan) {
 function wpas_shop_apply(array $plan) {
     global $wpdb;
     $backup = wpas_shop_backup($plan);
-    if (!copy($plan['zip'], $plan['dir'] . '/' . $plan['file'])) {
+    if (empty($plan['reuse']) && !copy($plan['zip'], $plan['dir'] . '/' . $plan['file'])) {
         wpas_shop_fail('Cannot copy the zip into FluentCart\'s storage; nothing else changed. Backup: ' . $backup);
     }
     $id = wpas_shop_write($plan);
