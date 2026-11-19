@@ -726,12 +726,18 @@ final class WPAllStars_Licence {
 
     /**
      * The shop's latest version of a product, cached: null without a stored
-     * key (nothing is asked) or while the shop cannot be reached.
+     * key (nothing is asked), while the licence is not valid, or while the
+     * shop cannot be reached.
      *
      * @param int $item Item ID.
      * @return array{version:string,homepage:string,package:string,updated:string,sections:array<string,string>,icons:array<string,string>,banners:array<string,string>}|null
      */
     private static function version_info($item) {
+        // No offer, cached or fetched, once the licence is no longer valid
+        // (expired past GRACE, or not valid): matches describe().
+        if (!self::valid($item)) {
+            return null;
+        }
         $secret = self::secret($item);
         if (null === $secret) {
             return null;
