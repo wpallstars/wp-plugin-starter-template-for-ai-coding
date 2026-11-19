@@ -239,12 +239,14 @@ jobs:
         run: bash scripts/ci-docker-login.sh logout
 
       - name: Keep the zips and reports for testing
-        if: always()
+        # Only pull requests and failures need the zip (releases attach
+        # their own). One day keeps the organisation's artifact storage free.
+        if: github.event_name == 'pull_request' || failure()
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: ${{ github.event.repository.name }}-build-${{ github.sha }}
           path: dist/
-          retention-days: 7
+          retention-days: 1
           if-no-files-found: ignore
 
   smoke:
@@ -313,5 +315,5 @@ jobs:
         with:
           name: debug-log-wp${{ matrix.wp }}-php${{ matrix.php }}${{ matrix.multisite && '-multisite' || '' }}
           path: debug.log
-          retention-days: 7
+          retention-days: 3
           if-no-files-found: ignore
