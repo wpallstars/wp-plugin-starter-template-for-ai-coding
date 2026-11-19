@@ -10,7 +10,7 @@
   <rect x="450" y="10" width="24" height="14" fill="#563d7c"/>
   <rect x="474" y="10" width="26" height="14" fill="#f1e05a"/>
   <rect x="20" y="34" width="10" height="10" rx="2" fill="#89e051"/>
-  <text x="34" y="44" font-family="Verdana,Geneva,DejaVu Sans,sans-serif" font-size="11" class="lbl">Shell <tspan class="pct">38.9%</tspan></text>
+  <text x="34" y="44" font-family="Verdana,Geneva,DejaVu Sans,sans-serif" font-size="11" class="lbl">Shell <tspan class="pct">38.8%</tspan></text>
   <rect x="270" y="34" width="10" height="10" rx="2" fill="#4F5D95"/>
   <text x="284" y="44" font-family="Verdana,Geneva,DejaVu Sans,sans-serif" font-size="11" class="lbl">PHP <tspan class="pct">29.4%</tspan></text>
   <rect x="20" y="50" width="10" height="10" rx="2" fill="#083fa1"/>
