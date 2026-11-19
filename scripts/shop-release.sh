@@ -169,10 +169,14 @@ identify() {
 }
 
 # Make a private folder on the host for this run, and remember it for cleanup.
+# The host allocates it exclusively (mktemp -d), so two runs, even by the same
+# user, never share a folder; cleanup removes only the one returned here.
 remote_dir() {
 	local dir
-	dir="$REMOTE_BASE/run-$(date -u +%Y%m%dT%H%M%SZ)-$$"
-	remote "umask 077 && mkdir -p $REMOTE_BASE/backups $dir && chmod 700 $REMOTE_BASE $REMOTE_BASE/backups $dir" || die "cannot make a private folder on the host"
+	dir="$(remote "umask 077 && mkdir -p $REMOTE_BASE/backups && chmod 700 $REMOTE_BASE $REMOTE_BASE/backups && mktemp -d $REMOTE_BASE/run-XXXXXXXXXX")" || dir=""
+	if [[ ! "$dir" =~ ^/[A-Za-z0-9._/-]+$ ]]; then
+		die "cannot make a private folder on the host"
+	fi
 	REMOTE_DIR="$dir"
 	return 0
 }
