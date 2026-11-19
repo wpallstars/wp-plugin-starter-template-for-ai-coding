@@ -269,14 +269,29 @@ final class WPAllStars_Licence {
      * Store one product's licence, or forget it (null).
      *
      * @param int                      $item  Item ID.
-     * @param array<string,mixed>|null $state State.
+     * @param array<string,mixed>|null $state  State.
+     * @param string|null              $expect The stored secret this save was
+     *                                         worked out from. When the stored
+     *                                         secret differs inside the lock (a
+     *                                         key was activated, changed or
+     *                                         removed meanwhile) nothing is saved.
+     * @return bool Whether the state was saved.
      */
-    private static function save($item, $state) {
+    private static function save($item, $state, $expect = null) {
         $locked = self::lock();
         // Re-read inside the lock, past any cached copy, so a save from a
         // concurrent request for another product is kept, not overwritten.
         self::forget_cache();
         $all = self::all();
+        if (null !== $expect) {
+            $now = isset($all[(int) $item]['secret']) ? (string) $all[(int) $item]['secret'] : '';
+            if ($now !== $expect) {
+                if ($locked) {
+                    delete_site_option(self::OPTION . '_lock');
+                }
+                return false;
+            }
+        }
         if (null === $state) {
             unset($all[(int) $item]);
         } else {
@@ -287,6 +302,7 @@ final class WPAllStars_Licence {
             delete_site_option(self::OPTION . '_lock');
         }
         delete_site_transient(self::UPDATE_CACHE . (int) $item);
+        return true;
     }
 
     /**
@@ -399,19 +415,21 @@ final class WPAllStars_Licence {
         $secret = self::secret($item);
         if (null === $secret) {
             $error = new WP_Error('wpallstars_licence_unreadable', __('This site cannot read the stored licence key: its security keys changed, or it was copied from another site. Activate the key again.', 'wp-plugin-starter-template'));
-            self::save($item, array('status' => self::UNREADABLE, 'checked' => time(), 'error' => $error->get_error_message()) + $stored);
+            self::save($item, array('status' => self::UNREADABLE, 'checked' => time(), 'error' => $error->get_error_message()) + $stored, $stored['secret']);
             return $error;
         }
         $answer = self::ask($item, 'check_license', array('license_key' => $secret['key'], 'activation_hash' => $secret['hash']));
         if (is_wp_error($answer)) {
-            self::save($item, array('error' => $answer->get_error_message()) + $stored);
+            // Discarded when the licence changed while the shop was asked.
+            self::save($item, array('error' => $answer->get_error_message()) + $stored, $stored['secret']);
             return $answer;
         }
         $state = self::from_answer($answer);
         if ('valid' !== $state['status']) {
             $state['error'] = self::refused($answer)->get_error_message();
         }
-        self::save($item, $state + $stored);
+        // Discarded when the licence changed while the shop was asked.
+        self::save($item, $state + $stored, $stored['secret']);
         return true;
     }
 
