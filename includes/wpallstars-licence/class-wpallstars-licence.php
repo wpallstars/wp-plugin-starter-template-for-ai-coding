@@ -272,6 +272,10 @@ final class WPAllStars_Licence {
      * @param array<string,mixed>|null $state State.
      */
     private static function save($item, $state) {
+        $locked = self::lock();
+        // Re-read inside the lock, past any cached copy, so a save from a
+        // concurrent request for another product is kept, not overwritten.
+        self::forget_cache();
         $all = self::all();
         if (null === $state) {
             unset($all[(int) $item]);
@@ -279,7 +283,45 @@ final class WPAllStars_Licence {
             $all[(int) $item] = self::normalise($state);
         }
         update_site_option(self::OPTION, $all);
+        if ($locked) {
+            delete_site_option(self::OPTION . '_lock');
+        }
         delete_site_transient(self::UPDATE_CACHE . (int) $item);
+    }
+
+    /**
+     * Take the save lock (an atomic add; a stale lock is taken over after
+     * 15 seconds). Waits up to about 5 seconds.
+     *
+     * @return bool Whether the lock is held.
+     */
+    private static function lock() {
+        $name = self::OPTION . '_lock';
+        for ($try = 0; $try < 50; $try++) {
+            if (add_site_option($name, (string) time())) {
+                return true;
+            }
+            self::forget_cache();
+            if ((int) get_site_option($name, 0) < time() - 15) {
+                delete_site_option($name);
+                continue;
+            }
+            usleep(100000);
+        }
+        return false;
+    }
+
+    /**
+     * Drop the cached copies of the licence option and its lock, so the next
+     * read comes from the database.
+     */
+    private static function forget_cache() {
+        foreach (array(self::OPTION, self::OPTION . '_lock') as $name) {
+            wp_cache_delete($name, 'options');
+            wp_cache_delete(get_current_network_id() . ':' . $name, 'site-options');
+        }
+        wp_cache_delete('alloptions', 'options');
+        wp_cache_delete('notoptions', 'options');
     }
 
     /**
