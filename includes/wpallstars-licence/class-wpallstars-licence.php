@@ -526,7 +526,9 @@ final class WPAllStars_Licence {
             return new WP_Error('wpallstars_licence_http', sprintf(__('wpallstars.com could not be reached: %s', 'wp-plugin-starter-template'), $response->get_error_message()));
         }
         $answer = json_decode((string) wp_remote_retrieve_body($response), true);
-        if (!is_array($answer)) {
+        $code   = (int) wp_remote_retrieve_response_code($response);
+        // A service failure (outage, rate limit) or an answer with neither a licence status nor a refusal type is not a licence answer: keep the stored state.
+        if (!is_array($answer) || $code >= 500 || 429 === $code || (!isset($answer['status']) && !isset($answer['error_type']) && !isset($answer['new_version']))) {
             /* translators: %d: HTTP status */
             return new WP_Error('wpallstars_licence_http', sprintf(__('wpallstars.com gave an answer that is not the licensing API\'s (HTTP %d). Try again later.', 'wp-plugin-starter-template'), (int) wp_remote_retrieve_response_code($response)));
         }
