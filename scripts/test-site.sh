@@ -42,7 +42,7 @@ usage() {
 wp_cli() {
 	local mounts=()
 	[[ -z "$FILES" ]] || mounts=(-v "$FILES:/files:ro")
-	docker run --rm ${DOCKER_LABELS[@]+"${DOCKER_LABELS[@]}"} --network "$NAME" \
+	docker run --rm -i ${DOCKER_LABELS[@]+"${DOCKER_LABELS[@]}"} --network "$NAME" \
 		-v "$NAME-wp:/var/www/html" -v "$TMP_DIR/zips:/zips:ro" \
 		${mounts[@]+"${mounts[@]}"} --user 33:33 "wordpress:cli-php$PHP_VERSION" \
 		php -d memory_limit=1G /usr/local/bin/wp "$@" || return 1
@@ -225,10 +225,10 @@ install_parents() {
 	while IFS= read -r parent; do
 		[[ -n "$parent" ]] || continue
 		[[ "$parent" =~ ^[a-z0-9-]+$ ]] || die "invalid parent plugin slug in Requires Plugins: $parent"
-		if ! wp_cli plugin is-installed "$parent" >/dev/null 2>&1; then
-			wp_cli plugin install "$parent" || die "could not install parent plugin $parent (Requires Plugins); check the output above. If it is not on WordPress.org, install it first, for example with: scripts/test-site.sh wp --files DIR plugin install /files/$parent.zip"
+		if ! wp_cli plugin is-installed "$parent" </dev/null >/dev/null 2>&1; then
+			wp_cli plugin install "$parent" </dev/null || die "could not install parent plugin $parent (Requires Plugins); check the output above. If it is not on WordPress.org, install it first, for example with: scripts/test-site.sh wp --files DIR plugin install /files/$parent.zip"
 		fi
-		wp_cli plugin activate "$parent" ${network[@]+"${network[@]}"} || die "could not activate parent plugin $parent (Requires Plugins)"
+		wp_cli plugin activate "$parent" ${network[@]+"${network[@]}"} </dev/null || die "could not activate parent plugin $parent (Requires Plugins)"
 	done < <(printf '%s' "$PLUGIN_REQUIRES" | tr ',' '\n' | tr -d '[:blank:]')
 	return 0
 }
