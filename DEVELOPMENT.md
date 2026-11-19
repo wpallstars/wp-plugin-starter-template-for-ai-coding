@@ -778,7 +778,9 @@ money and most code-review services are paid. Until then, work moves fast:
   request runs and failed runs only (artifact `<repository>-build-…`), for
   testing a branch on a site. Pushes to main that pass keep none: the
   release attaches its own zip, and every kept artifact counts against the
-  organisation's artifact storage.
+  organisation's artifact storage. When that storage quota is used up, the
+  upload steps fail without failing the run: the zip or `debug.log` is
+  missing, but the CI result still reports the code.
 - Review apps that are already installed (CodeRabbit, qlty, Socket) give
   advice only. A rate-limited or missing review never holds up a merge.
 

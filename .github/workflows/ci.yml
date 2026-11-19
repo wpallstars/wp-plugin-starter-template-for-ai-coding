@@ -241,7 +241,10 @@ jobs:
       - name: Keep the zips and reports for testing
         # Only pull requests and failures need the zip (releases attach
         # their own). One day keeps the organisation's artifact storage free.
+        # The zip is a convenience copy: when the organisation's Actions
+        # storage quota is used up, the upload fails but the build stands.
         if: github.event_name == 'pull_request' || failure()
+        continue-on-error: true
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: ${{ github.event.repository.name }}-build-${{ github.sha }}
@@ -311,6 +314,8 @@ jobs:
 
       - name: Keep debug.log
         if: failure()
+        # The job already failed; a full storage quota must not hide why.
+        continue-on-error: true
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: debug-log-wp${{ matrix.wp }}-php${{ matrix.php }}${{ matrix.multisite && '-multisite' || '' }}
