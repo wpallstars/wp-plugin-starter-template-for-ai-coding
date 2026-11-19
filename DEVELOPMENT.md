@@ -774,8 +774,11 @@ money and most code-review services are paid. Until then, work moves fast:
   push cancels an earlier run of the same kind only. A draft run never
   cancels a ready one, and a ready run does not cancel a draft run still
   going, which finishes as well.
-- The build zips and Plugin Check reports are kept for seven days on each
-  run (artifact `<repository>-build-…`) for testing a branch on a site.
+- The build zips and Plugin Check reports are kept for one day, on pull
+  request runs and failed runs only (artifact `<repository>-build-…`), for
+  testing a branch on a site. Pushes to main that pass keep none: the
+  release attaches its own zip, and every kept artifact counts against the
+  organisation's artifact storage.
 - Review apps that are already installed (CodeRabbit, qlty, Socket) give
   advice only. A rate-limited or missing review never holds up a merge.
 
