@@ -322,3 +322,40 @@ jobs:
           path: debug.log
           retention-days: 3
           if-no-files-found: ignore
+
+  # The release job runs beside the smoke job, so its failure() cannot see a
+  # smoke failure: on a push where only a smoke job failed, the run would have
+  # no zip to test. This job runs after both and keeps a rebuilt zip then.
+  # Pull requests and release-job failures already keep theirs in release.
+  keep-build:
+    name: Keep the zips when a smoke test fails
+    needs: [lint, release, smoke]
+    if: >-
+      always() && github.event_name != 'pull_request'
+      && needs.release.result == 'success'
+      && needs.smoke.result == 'failure'
+    runs-on: ${{ vars.CI_RUNNER || 'ubuntu-latest' }}
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 22
+
+      - name: Build both zips
+        run: scripts/build-release.sh --out dist
+
+      - name: Keep the zips for testing
+        # Same name and one-day retention as the release job; a full storage
+        # quota must not hide the smoke failure.
+        continue-on-error: true
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: ${{ github.event.repository.name }}-build-${{ github.sha }}
+          path: dist/
+          retention-days: 1
+          if-no-files-found: ignore
