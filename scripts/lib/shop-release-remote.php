@@ -134,7 +134,11 @@ function wpas_shop_plan(array $args) {
     }
     global $wpdb;
     $downloads = $wpdb->get_results($wpdb->prepare("SELECT * FROM {$wpdb->prefix}fct_product_downloads WHERE post_id = %d", $item), ARRAY_A);
-    $count     = is_array($downloads) ? count($downloads) : 0;
+    if (!is_array($downloads) || '' !== $wpdb->last_error) {
+        // A failed lookup is not "no rows": never treat it as a first release.
+        wpas_shop_fail('Cannot read the product\'s download rows: ' . $wpdb->last_error);
+    }
+    $count     = count($downloads);
     $uploads   = wp_upload_dir(null, false);
     $dir       = trailingslashit($uploads['basedir']) . 'fluent-cart';
     if (0 === $count && '' === $current) {
