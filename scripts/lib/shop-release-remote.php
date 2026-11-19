@@ -11,7 +11,9 @@
  * apply need product ITEM titled TITLE with licence settings on and exactly
  * one locally stored download row, and a zip named SLUG-X.Y.Z.zip whose
  * X.Y.Z is newer than the product's licence version. apply writes a JSON
- * backup (mode 600) of the download row and the two meta rows it changes,
+ * backup (mode 600) of the download row and the two meta rows it changes (on a
+ * first release it records which were absent and, after writing, the IDs of
+ * the rows it inserted: roll back by deleting those and restoring the rest),
  * copies the zip into FluentCart's storage beside the old one (kept for a
  * rollback), points the download row at it, sets the licence version and
  * the update changelog (the version's section of CHANGELOG, a changelog.txt
@@ -205,6 +207,14 @@ function wpas_shop_backup(array $plan) {
         'download'         => $plan['download'],
         'license_settings' => $plan['settings_row'],
         'changelog'        => $plan['log_row'],
+        // A first release has no row to restore: apply inserts them. Rollback:
+        // delete the rows named in "inserted" (filled in after apply writes),
+        // and restore by ID only the rows that were not absent.
+        'absent'           => array(
+            'download'  => 0 === (int) $plan['download']['id'],
+            'changelog' => !$plan['log_row'],
+        ),
+        'inserted'         => array('download_id' => null, 'changelog_row_id' => null),
     ), JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES));
     umask($old);
     if (false === $saved) {
@@ -215,17 +225,36 @@ function wpas_shop_backup(array $plan) {
 }
 
 /**
+ * Record in the backup the IDs of the rows apply inserted, so a rollback can
+ * delete them.
+ *
+ * @param string             $backup   The backup's path.
+ * @param array<string,?int> $inserted download_id and changelog_row_id.
+ */
+function wpas_shop_backup_inserted($backup, array $inserted) {
+    $data = json_decode((string) file_get_contents($backup), true); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- the private backup just written.
+    if (!is_array($data)) {
+        wpas_shop_fail('Cannot read the backup back to record the inserted rows: ' . $backup);
+    }
+    $data['inserted'] = $inserted;
+    if (false === file_put_contents($backup, wp_json_encode($data, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES))) { // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents -- as above.
+        wpas_shop_fail('Cannot record the inserted rows in the backup: ' . $backup);
+    }
+}
+
+/**
  * Point the download row at the new file and set the licence version,
  * changelog and product time.
  *
  * Every completed write is undone when a later one fails, so the licence
  * version and changelog never advance without the download.
  *
- * @param array<string,mixed> $plan  The release's facts.
- * @param string              $error Set to the first failure's description.
+ * @param array<string,mixed> $plan     The release's facts.
+ * @param string              $error    Set to the first failure's description.
+ * @param array<string,?int>  $inserted Set to the IDs of the rows inserted.
  * @return int The download row's ID, or 0 when a write failed (all undone).
  */
-function wpas_shop_write(array $plan, &$error = '') {
+function wpas_shop_write(array $plan, &$error = '', array &$inserted = array()) {
     global $wpdb;
     $now                 = current_time('mysql');
     $meta                = $wpdb->prefix . 'fct_product_meta';
@@ -268,8 +297,9 @@ function wpas_shop_write(array $plan, &$error = '') {
         if (!$added) {
             return $fail('The download row could not be added');
         }
-        $id     = (int) $wpdb->insert_id;
-        $undo[] = static function () use ($wpdb, $downloads, $id) {
+        $id                      = (int) $wpdb->insert_id;
+        $inserted['download_id'] = $id;
+        $undo[]                  = static function () use ($wpdb, $downloads, $id) {
             $wpdb->delete($downloads, array('id' => $id));
         };
     } else {
@@ -300,8 +330,9 @@ function wpas_shop_write(array $plan, &$error = '') {
     } elseif (!$wpdb->insert($meta, array('object_id' => $plan['item'], 'object_type' => $plan['settings_row']['object_type'], 'meta_key' => '_fluent_sl_changelog', 'meta_value' => $log, 'created_at' => $now, 'updated_at' => $now))) { // phpcs:ignore WordPress.DB.SlowDBQuery -- as above.
         return $fail('The changelog could not be added');
     } else {
-        $log_id = (int) $wpdb->insert_id;
-        $undo[] = static function () use ($wpdb, $meta, $log_id) {
+        $log_id                       = (int) $wpdb->insert_id;
+        $inserted['changelog_row_id'] = $log_id;
+        $undo[]                       = static function () use ($wpdb, $meta, $log_id) {
             $wpdb->delete($meta, array('id' => $log_id));
         };
     }
@@ -323,10 +354,16 @@ function wpas_shop_apply(array $plan) {
     if (!copy($plan['zip'], $plan['dir'] . '/' . $plan['file'])) {
         wpas_shop_fail('Cannot copy the zip into FluentCart\'s storage; nothing else changed. Backup: ' . $backup);
     }
-    $error = '';
-    $id    = wpas_shop_write($plan, $error);
+    $error    = '';
+    $inserted = array('download_id' => null, 'changelog_row_id' => null);
+    $id       = wpas_shop_write($plan, $error, $inserted);
     if (0 === $id) {
         wpas_shop_fail('A database update failed (completed writes were undone): ' . $error . '. Backup: ' . $backup);
+    }
+    // Writes succeeded: name the rows they inserted in the backup, for a rollback.
+    if (null !== $inserted['download_id'] || null !== $inserted['changelog_row_id']) {
+        wpas_shop_backup_inserted($backup, $inserted);
+        WP_CLI::log('Rows inserted (delete on rollback): download ' . (int) $inserted['download_id'] . ', changelog ' . (int) $inserted['changelog_row_id'] . '.');
     }
     $row      = $wpdb->get_row($wpdb->prepare("SELECT * FROM {$wpdb->prefix}fct_product_downloads WHERE id = %d", $id), ARRAY_A);
     $settings = wpas_shop_settings($plan['item']);
