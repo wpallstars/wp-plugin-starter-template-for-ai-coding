@@ -218,10 +218,14 @@ function wpas_shop_backup(array $plan) {
  * Point the download row at the new file and set the licence version,
  * changelog and product time.
  *
- * @param array<string,mixed> $plan The release's facts.
- * @return int The download row's ID, or 0 when an update failed.
+ * Every completed write is undone when a later one fails, so the licence
+ * version and changelog never advance without the download.
+ *
+ * @param array<string,mixed> $plan  The release's facts.
+ * @param string              $error Set to the first failure's description.
+ * @return int The download row's ID, or 0 when a write failed (all undone).
  */
-function wpas_shop_write(array $plan) {
+function wpas_shop_write(array $plan, &$error = '') {
     global $wpdb;
     $now                 = current_time('mysql');
     $meta                = $wpdb->prefix . 'fct_product_meta';
@@ -238,9 +242,20 @@ function wpas_shop_write(array $plan) {
         'updated_at' => $now,
     );
     $id                  = (int) $plan['download']['id'];
+    $downloads           = $wpdb->prefix . 'fct_product_downloads';
+    $undo                = array();
+    $fail                = static function ($what) use (&$error, &$undo, $wpdb, $plan) {
+        // Keep the first database error: the undo queries replace last_error.
+        $error = $what . ('' !== $wpdb->last_error ? ': ' . $wpdb->last_error : '');
+        foreach (array_reverse($undo) as $restore) {
+            $restore();
+        }
+        clean_post_cache($plan['item']);
+        return 0;
+    };
     if (0 === $id) {
         // First release: the row FluentCart's product editor would add.
-        $added = $wpdb->insert($wpdb->prefix . 'fct_product_downloads', $file + array(
+        $added = $wpdb->insert($downloads, $file + array(
             'post_id'              => $plan['item'],
             'product_variation_id' => wp_json_encode($plan['download']['variations']),
             'download_identifier'  => wp_generate_uuid4(),
@@ -250,18 +265,51 @@ function wpas_shop_write(array $plan) {
             'serial'               => 1,
             'created_at'           => $now,
         ));
-        $id    = $added ? (int) $wpdb->insert_id : 0;
+        if (!$added) {
+            return $fail('The download row could not be added');
+        }
+        $id     = (int) $wpdb->insert_id;
+        $undo[] = static function () use ($wpdb, $downloads, $id) {
+            $wpdb->delete($downloads, array('id' => $id));
+        };
+    } else {
+        $old = array_intersect_key($plan['download'], $file);
+        if (false === $wpdb->update($downloads, $file, array('id' => $id))) {
+            return $fail('The download row could not be updated');
+        }
+        $undo[] = static function () use ($wpdb, $downloads, $id, $old) {
+            $wpdb->update($downloads, $old, array('id' => $id));
+        };
     }
-    $results             = array(
-        $id > 0 && false !== $wpdb->update($wpdb->prefix . 'fct_product_downloads', $file, array('id' => $id)),
-        $wpdb->update($meta, array('meta_value' => wp_json_encode($settings, JSON_UNESCAPED_SLASHES), 'updated_at' => $now), array('id' => (int) $plan['settings_row']['id'])), // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_value -- FluentCart's own table, by primary key.
-        $plan['log_row']
-            ? $wpdb->update($meta, array('meta_value' => $log, 'updated_at' => $now), array('id' => (int) $plan['log_row']['id'])) // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_value -- as above.
-            : $wpdb->insert($meta, array('object_id' => $plan['item'], 'object_type' => $plan['settings_row']['object_type'], 'meta_key' => '_fluent_sl_changelog', 'meta_value' => $log, 'created_at' => $now, 'updated_at' => $now)), // phpcs:ignore WordPress.DB.SlowDBQuery -- as above.
-        $wpdb->update($wpdb->posts, array('post_modified' => $now, 'post_modified_gmt' => current_time('mysql', true)), array('ID' => $plan['item'])),
-    );
+    // The licence version and changelog advance only after the download row did.
+    $old_settings = $plan['settings_row'];
+    if (false === $wpdb->update($meta, array('meta_value' => wp_json_encode($settings, JSON_UNESCAPED_SLASHES), 'updated_at' => $now), array('id' => (int) $old_settings['id']))) { // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_value -- FluentCart's own table, by primary key.
+        return $fail('The licence settings could not be updated');
+    }
+    $undo[] = static function () use ($wpdb, $meta, $old_settings) {
+        $wpdb->update($meta, array('meta_value' => $old_settings['meta_value'], 'updated_at' => isset($old_settings['updated_at']) ? $old_settings['updated_at'] : current_time('mysql')), array('id' => (int) $old_settings['id'])); // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_value -- as above.
+    };
+    if ($plan['log_row']) {
+        $old_log = $plan['log_row'];
+        if (false === $wpdb->update($meta, array('meta_value' => $log, 'updated_at' => $now), array('id' => (int) $old_log['id']))) { // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_value -- as above.
+            return $fail('The changelog could not be updated');
+        }
+        $undo[] = static function () use ($wpdb, $meta, $old_log) {
+            $wpdb->update($meta, array('meta_value' => $old_log['meta_value'], 'updated_at' => isset($old_log['updated_at']) ? $old_log['updated_at'] : current_time('mysql')), array('id' => (int) $old_log['id'])); // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_value -- as above.
+        };
+    } elseif (!$wpdb->insert($meta, array('object_id' => $plan['item'], 'object_type' => $plan['settings_row']['object_type'], 'meta_key' => '_fluent_sl_changelog', 'meta_value' => $log, 'created_at' => $now, 'updated_at' => $now))) { // phpcs:ignore WordPress.DB.SlowDBQuery -- as above.
+        return $fail('The changelog could not be added');
+    } else {
+        $log_id = (int) $wpdb->insert_id;
+        $undo[] = static function () use ($wpdb, $meta, $log_id) {
+            $wpdb->delete($meta, array('id' => $log_id));
+        };
+    }
+    if (false === $wpdb->update($wpdb->posts, array('post_modified' => $now, 'post_modified_gmt' => current_time('mysql', true)), array('ID' => $plan['item']))) {
+        return $fail('The product time could not be updated');
+    }
     clean_post_cache($plan['item']);
-    return in_array(false, $results, true) ? 0 : $id;
+    return $id;
 }
 
 /**
@@ -275,9 +323,10 @@ function wpas_shop_apply(array $plan) {
     if (!copy($plan['zip'], $plan['dir'] . '/' . $plan['file'])) {
         wpas_shop_fail('Cannot copy the zip into FluentCart\'s storage; nothing else changed. Backup: ' . $backup);
     }
-    $id = wpas_shop_write($plan);
+    $error = '';
+    $id    = wpas_shop_write($plan, $error);
     if (0 === $id) {
-        wpas_shop_fail('A database update failed: ' . $wpdb->last_error . '. Restore from the backup: ' . $backup);
+        wpas_shop_fail('A database update failed (completed writes were undone): ' . $error . '. Backup: ' . $backup);
     }
     $row      = $wpdb->get_row($wpdb->prepare("SELECT * FROM {$wpdb->prefix}fct_product_downloads WHERE id = %d", $id), ARRAY_A);
     $settings = wpas_shop_settings($plan['item']);
