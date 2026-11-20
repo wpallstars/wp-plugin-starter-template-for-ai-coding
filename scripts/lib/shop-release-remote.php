@@ -276,7 +276,7 @@ function wpas_shop_backup_inserted($backup, array $inserted) {
     $temp = $backup . '.tmp';
     if (false === file_put_contents($temp, wp_json_encode($data, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES)) || !chmod($temp, 0600) || !rename($temp, $backup)) { // phpcs:ignore WordPress.WP.AlternativeFunctions -- as above.
         if (file_exists($temp)) {
-            unlink($temp); // phpcs:ignore WordPress.WP.AlternativeFunctions.unlink_unlink -- the temp copy.
+            wp_delete_file($temp);
         }
         wpas_shop_fail('Cannot record the inserted rows in the backup (the original is unchanged): ' . $backup);
     }
