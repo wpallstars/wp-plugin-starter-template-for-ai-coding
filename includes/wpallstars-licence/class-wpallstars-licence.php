@@ -275,10 +275,15 @@ final class WPAllStars_Licence {
      *                                         secret differs inside the lock (a
      *                                         key was activated, changed or
      *                                         removed meanwhile) nothing is saved.
-     * @return bool Whether the state was saved.
+     * @return bool|WP_Error True when saved, false when discarded on purpose
+     *                       (secret mismatch), WP_Error when the lock was not held.
      */
     private static function save($item, $state, $expect = null) {
-        $locked = self::lock();
+        $token = self::lock();
+        if ('' === $token) {
+            // Never read-modify-write the map without the lock: fail explicitly.
+            return new WP_Error('wpallstars_licence_locked', __('The licence could not be saved because another request holds the save lock. Try again.', 'wp-plugin-starter-template'));
+        }
         // Re-read inside the lock, past any cached copy, so a save from a
         // concurrent request for another product is kept, not overwritten.
         self::forget_cache();
@@ -286,9 +291,7 @@ final class WPAllStars_Licence {
         if (null !== $expect) {
             $now = isset($all[(int) $item]['secret']) ? (string) $all[(int) $item]['secret'] : '';
             if ($now !== $expect) {
-                if ($locked) {
-                    delete_site_option(self::OPTION . '_lock');
-                }
+                self::unlock($token);
                 return false;
             }
         }
@@ -298,33 +301,77 @@ final class WPAllStars_Licence {
             $all[(int) $item] = self::normalise($state);
         }
         update_site_option(self::OPTION, $all);
-        if ($locked) {
-            delete_site_option(self::OPTION . '_lock');
-        }
+        self::unlock($token);
         delete_site_transient(self::UPDATE_CACHE . (int) $item);
         return true;
     }
 
     /**
-     * Take the save lock (an atomic add; a stale lock is taken over after
-     * 15 seconds). Waits up to about 5 seconds.
+     * Run a lock query against the main site's options table, whose
+     * option_name is unique (multisite sitemeta has no such constraint, so
+     * add_site_option() is not atomic there). One lock row serves the whole
+     * network.
      *
-     * @return bool Whether the lock is held.
+     * @param callable $fn Receives $wpdb and the options table name.
+     * @return mixed
+     */
+    private static function lock_query($fn) {
+        global $wpdb;
+        $switched = is_multisite() && function_exists('get_main_site_id') && get_current_blog_id() !== (int) get_main_site_id();
+        if ($switched) {
+            switch_to_blog((int) get_main_site_id());
+        }
+        $result = call_user_func($fn, $wpdb, $wpdb->options);
+        if ($switched) {
+            restore_current_blog();
+        }
+        return $result;
+    }
+
+    /**
+     * Take the save lock (an atomic insert on a unique key; a stale lock is
+     * taken over after 15 seconds by compare-and-delete on the observed
+     * value). Waits up to about 5 seconds.
+     *
+     * @return string The owner token, or '' when the lock is not held.
      */
     private static function lock() {
-        $name = self::OPTION . '_lock';
+        $name  = self::OPTION . '_lock';
         for ($try = 0; $try < 50; $try++) {
-            if (add_site_option($name, (string) time())) {
-                return true;
+            // A fresh timestamp per attempt, so the 15 second stale window
+            // counts from when the lock was taken, not from when we started.
+            $token = time() . ':' . wp_generate_password(12, false);
+            $got = self::lock_query(function ($db, $table) use ($name, $token) {
+                return 1 === (int) $db->query($db->prepare("INSERT IGNORE INTO %i (option_name, option_value, autoload) VALUES (%s, %s, 'no')", $table, $name, $token));
+            });
+            if ($got) {
+                return $token;
             }
-            self::forget_cache();
-            if ((int) get_site_option($name, 0) < time() - 15) {
-                delete_site_option($name);
+            $seen = self::lock_query(function ($db, $table) use ($name) {
+                return $db->get_var($db->prepare("SELECT option_value FROM %i WHERE option_name = %s", $table, $name));
+            });
+            if (is_string($seen) && (int) $seen < time() - 15) {
+                // Delete only the stale row observed, never a waiter's fresh one.
+                self::lock_query(function ($db, $table) use ($name, $seen) {
+                    return $db->query($db->prepare("DELETE FROM %i WHERE option_name = %s AND option_value = %s", $table, $name, $seen));
+                });
                 continue;
             }
             usleep(100000);
         }
-        return false;
+        return '';
+    }
+
+    /**
+     * Release the save lock, only when this request still owns it.
+     *
+     * @param string $token Token lock() returned.
+     */
+    private static function unlock($token) {
+        $name = self::OPTION . '_lock';
+        self::lock_query(function ($db, $table) use ($name, $token) {
+            return $db->query($db->prepare("DELETE FROM %i WHERE option_name = %s AND option_value = %s", $table, $name, $token));
+        });
     }
 
     /**
@@ -332,10 +379,12 @@ final class WPAllStars_Licence {
      * read comes from the database.
      */
     private static function forget_cache() {
+        $network = get_current_network_id();
         foreach (array(self::OPTION, self::OPTION . '_lock') as $name) {
             wp_cache_delete($name, 'options');
-            wp_cache_delete(get_current_network_id() . ':' . $name, 'site-options');
+            wp_cache_delete($network . ':' . $name, 'site-options');
         }
+        wp_cache_delete($network . ':notoptions', 'site-options');
         wp_cache_delete('alloptions', 'options');
         wp_cache_delete('notoptions', 'options');
     }
@@ -394,7 +443,10 @@ final class WPAllStars_Licence {
         if (is_wp_error($secret)) {
             return $secret;
         }
-        self::save($item, array('secret' => $secret, 'hint' => substr($key, -4)) + self::from_answer($answer));
+        $saved = self::save($item, array('secret' => $secret, 'hint' => substr($key, -4)) + self::from_answer($answer));
+        if (is_wp_error($saved)) {
+            return $saved;
+        }
         self::schedule();
         return true;
     }
@@ -415,22 +467,22 @@ final class WPAllStars_Licence {
         $secret = self::secret($item);
         if (null === $secret) {
             $error = new WP_Error('wpallstars_licence_unreadable', __('This site cannot read the stored licence key: its security keys changed, or it was copied from another site. Activate the key again.', 'wp-plugin-starter-template'));
-            self::save($item, array('status' => self::UNREADABLE, 'checked' => time(), 'error' => $error->get_error_message()) + $stored, $stored['secret']);
-            return $error;
+            $saved = self::save($item, array('status' => self::UNREADABLE, 'checked' => time(), 'error' => $error->get_error_message()) + $stored, $stored['secret']);
+            return is_wp_error($saved) ? $saved : $error;
         }
         $answer = self::ask($item, 'check_license', array('license_key' => $secret['key'], 'activation_hash' => $secret['hash']));
         if (is_wp_error($answer)) {
             // Discarded when the licence changed while the shop was asked.
-            self::save($item, array('error' => $answer->get_error_message()) + $stored, $stored['secret']);
-            return $answer;
+            $saved = self::save($item, array('error' => $answer->get_error_message()) + $stored, $stored['secret']);
+            return is_wp_error($saved) ? $saved : $answer;
         }
         $state = self::from_answer($answer);
         if ('valid' !== $state['status']) {
             $state['error'] = self::refused($answer)->get_error_message();
         }
         // Discarded when the licence changed while the shop was asked.
-        self::save($item, $state + $stored, $stored['secret']);
-        return true;
+        $saved = self::save($item, $state + $stored, $stored['secret']);
+        return is_wp_error($saved) ? $saved : true;
     }
 
     /**
@@ -455,8 +507,8 @@ final class WPAllStars_Licence {
                 return self::refused($answer);
             }
         }
-        self::save($item, null);
-        return true;
+        $saved = self::save($item, null);
+        return is_wp_error($saved) ? $saved : true;
     }
 
     /** The daily WP-Cron check of every stored licence. */
