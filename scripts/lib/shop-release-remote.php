@@ -19,6 +19,9 @@
  * the update changelog (the version's section of CHANGELOG, a changelog.txt
  * or readme.txt, without its "Developers:" lines), touches the product, then
  * reads it all back and fails, naming the backup, when anything differs.
+ * apply holds a product-scoped lock from before it reads the licence version
+ * to after the read-back, so overlapping applies for a product serialise and
+ * the older one is rejected as not newer.
  *
  * check runs on a site with a valid licence for ITEM (the shared licence
  * library, includes/wpallstars-licence/): it asks the shop again, downloads
@@ -375,6 +378,36 @@ function wpas_shop_write(array $plan, &$error = '', array &$inserted = array()) 
 }
 
 /**
+ * Take the product's release lock (a MySQL named lock, scoped to this
+ * database and product), waiting up to 60 seconds for another apply. Held
+ * from before the plan reads the licence version until after the read-back,
+ * so an overlapping apply waits, then plans from what the first published and
+ * is rejected when its version is no longer newer. MySQL frees the lock if
+ * this process dies.
+ *
+ * @param int $item Product ID.
+ * @return string The lock's name, for wpas_shop_unlock().
+ */
+function wpas_shop_lock($item) {
+    global $wpdb;
+    $name = 'wpas_shop_release_' . substr(hash('sha256', $wpdb->prefix . ':' . (int) $item), 0, 32);
+    if ('1' !== (string) $wpdb->get_var($wpdb->prepare('SELECT GET_LOCK(%s, 60)', $name))) {
+        wpas_shop_fail("Another release of product $item is still running; nothing changed. Try again when it finishes.");
+    }
+    return $name;
+}
+
+/**
+ * Release the lock taken by wpas_shop_lock().
+ *
+ * @param string $name The lock's name.
+ */
+function wpas_shop_unlock($name) {
+    global $wpdb;
+    $wpdb->get_var($wpdb->prepare('SELECT RELEASE_LOCK(%s)', $name));
+}
+
+/**
  * Publish the release, then read it back.
  *
  * @param array<string,mixed> $plan The release's facts.
@@ -501,12 +534,15 @@ $wpas_shop_mode = $wpas_shop_args ? (string) array_shift($wpas_shop_args) : '';
 if ('check' === $wpas_shop_mode) {
     wpas_shop_check($wpas_shop_args);
 } elseif ('plan' === $wpas_shop_mode || 'apply' === $wpas_shop_mode) {
+    // apply: lock first, so the plan is built from the state seen under the lock.
+    $wpas_shop_lock = 'apply' === $wpas_shop_mode && isset($wpas_shop_args[0]) ? wpas_shop_lock((int) $wpas_shop_args[0]) : '';
     $wpas_shop_plan = wpas_shop_plan($wpas_shop_args);
     WP_CLI::log(sprintf('Product %d "%s": licence version %s -> %s', $wpas_shop_plan['item'], $wpas_shop_plan['title'], '' !== $wpas_shop_plan['current'] ? $wpas_shop_plan['current'] : '(none)', $wpas_shop_plan['version']));
     WP_CLI::log(sprintf('Download row %d: %s -> %s (%d bytes, SHA-256 %s)', $wpas_shop_plan['download']['id'], $wpas_shop_plan['old_file'], $wpas_shop_plan['file'], $wpas_shop_plan['size'], $wpas_shop_plan['sha']));
     WP_CLI::log('Update changelog adds: ' . wp_strip_all_tags(str_replace(array('</li>', '</h4>'), array(' | ', ': '), $wpas_shop_plan['changelog'])));
     if ('apply' === $wpas_shop_mode) {
         wpas_shop_apply($wpas_shop_plan);
+        wpas_shop_unlock($wpas_shop_lock);
     } else {
         WP_CLI::log('Dry run: nothing changed. Add --apply to publish.');
     }
