@@ -480,7 +480,14 @@ function wpas_shop_check(array $args) {
         }
     }
     WP_CLI::log(sprintf('Installed: %s', $product['version']));
-    WP_CLI::log(sprintf('Offered:   %s (%s)', '' !== $offered ? $offered : '?', $offer['pending'] ? 'update available' : 'up to date'));
+    if ($offer['pending']) {
+        $status = 'update available';
+    } elseif ('' !== $offered && version_compare($offered, (string) $product['version'], '<')) {
+        $status = 'older than installed';
+    } else {
+        $status = 'up to date';
+    }
+    WP_CLI::log(sprintf('Offered:   %s (%s)', '' !== $offered ? $offered : '?', $status));
     WP_CLI::log(sprintf('Package:   %d bytes, SHA-256 %s, %d entries, main file Version: %s', (int) filesize($file), hash_file('sha256', $file), $entries, '' !== $version ? $version : '?'));
     wp_delete_file($file);
     if ('' === $version || $version !== $offered) {
