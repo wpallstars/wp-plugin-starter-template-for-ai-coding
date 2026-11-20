@@ -101,6 +101,25 @@ function wpas_shop_changelog_html($file, $version) {
 }
 
 /**
+ * Put the release's section into the stored update changelog: a stored
+ * section for the same version (a draft) is replaced, other versions stay.
+ *
+ * @param string $stored  The stored changelog HTML.
+ * @param string $version X.Y.Z.
+ * @param string $section The release's `<h4>X.Y.Z</h4><ul>...</ul>` HTML.
+ * @return string
+ */
+function wpas_shop_changelog_merge($stored, $version, $section) {
+    $head    = '<h4>' . $version . '</h4>';
+    $pattern = '#' . preg_quote($head, '#') . '(?:\s*<ul>.*?</ul>)?#s';
+    if (false === strpos($stored, $head)) {
+        return $section . $stored;
+    }
+    $merged = preg_replace($pattern, str_replace(array('\\', '$'), array('\\\\', '\\$'), $section), $stored, 1);
+    return null === $merged ? $section . $stored : $merged;
+}
+
+/**
  * The release's facts, checked: product, download row, versions, file names.
  *
  * @param array<int,string> $args The command's arguments after the mode.
@@ -273,7 +292,7 @@ function wpas_shop_write(array $plan, &$error = '', array &$inserted = array()) 
     $settings            = $plan['settings'];
     $settings['version'] = $plan['version'];
     $log                 = $plan['log_row'] ? (string) $plan['log_row']['meta_value'] : '';
-    $log                 = false === strpos($log, '<h4>' . $plan['version'] . '</h4>') ? $plan['changelog'] . $log : $log;
+    $log                 = wpas_shop_changelog_merge($log, $plan['version'], $plan['changelog']);
     $file                = array(
         'title'      => $plan['title'] . ' ' . $plan['version'],
         'file_name'  => $plan['file'],
@@ -385,7 +404,7 @@ function wpas_shop_apply(array $plan) {
         'the download row does not point at the new file'      => is_array($row) && $row['file_path'] === $plan['file'],
         'the licence version is not ' . $plan['version']       => $settings && isset($settings['version']) && $settings['version'] === $plan['version'],
         'the stored file\'s SHA-256 is not the build\'s'       => is_file($target) && hash_file('sha256', $target) === $plan['sha'],
-        'the update changelog has no ' . $plan['version'] . ' section' => $log && false !== strpos((string) $log['meta_value'], '<h4>' . $plan['version'] . '</h4>'),
+        'the update changelog has no ' . $plan['version'] . ' section' => $log && false !== strpos((string) $log['meta_value'], $plan['changelog']),
     );
     $problems = array_keys(array_filter($checks, static function ($ok) {
         return !$ok;
