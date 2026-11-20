@@ -81,6 +81,12 @@ list_one() {
 	printf '%s\t%s\t%s\t%s' "$name" "${version:-?}" "${kind:-unknown}" "$root"
 	[[ -z "$note" ]] || printf '\t%s' "$note"
 	printf '\n'
+	if [[ -n "$WEB_ERROR_LOG" && "$WEB_ERROR_LOG" != "syslog" ]]; then
+		# The web PHP log files --apply would watch for this install.
+		web_error_log_paths "$root" 2>/dev/null | while IFS= read -r note; do
+			printf '    web PHP log %s\n' "$note"
+		done || true
+	fi
 	if [[ "$CDN_PURGE" -eq 1 ]]; then
 		# deploy-sites.sh lists the zones these sites would purge.
 		site_urls "$root" "$kind" 2>/dev/null | cdn_lines || true
