@@ -435,12 +435,35 @@ function wpas_shop_lock_held(array $plan) {
 }
 
 /**
+ * Read the published release back and list what does not match the plan.
+ *
+ * @param array<string,mixed> $plan The release's facts.
+ * @param int                 $id   The download row's ID.
+ * @return array<int,string> Descriptions of the mismatches; empty when all match.
+ */
+function wpas_shop_read_back(array $plan, $id) {
+    global $wpdb;
+    $row      = $wpdb->get_row($wpdb->prepare("SELECT * FROM {$wpdb->prefix}fct_product_downloads WHERE id = %d", $id), ARRAY_A);
+    $settings = wpas_shop_settings($plan['item']);
+    $log      = wpas_shop_meta_row($plan['item'], '_fluent_sl_changelog');
+    $target   = $plan['dir'] . '/' . $plan['file'];
+    $checks   = array(
+        'the download row does not point at the new file'      => is_array($row) && $row['file_path'] === $plan['file'],
+        'the licence version is not ' . $plan['version']       => $settings && isset($settings['version']) && $settings['version'] === $plan['version'],
+        'the stored file\'s SHA-256 is not the build\'s'       => is_file($target) && hash_file('sha256', $target) === $plan['sha'],
+        'the update changelog has no ' . $plan['version'] . ' section' => $log && false !== strpos((string) $log['meta_value'], $plan['changelog']),
+    );
+    return array_keys(array_filter($checks, static function ($ok) {
+        return !$ok;
+    }));
+}
+
+/**
  * Publish the release, then read it back.
  *
  * @param array<string,mixed> $plan The release's facts.
  */
 function wpas_shop_apply(array $plan) {
-    global $wpdb;
     $backup = wpas_shop_backup($plan);
     if (empty($plan['reuse']) && !copy($plan['zip'], $plan['dir'] . '/' . $plan['file'])) {
         wpas_shop_fail('Cannot copy the zip into FluentCart\'s storage; nothing else changed. Backup: ' . $backup);
@@ -465,19 +488,7 @@ function wpas_shop_apply(array $plan) {
     if (!wpas_shop_lock_held($plan)) {
         wpas_shop_fail('The release lock was lost while publishing (the database connection changed); check the rows against the backup: ' . $backup);
     }
-    $row      = $wpdb->get_row($wpdb->prepare("SELECT * FROM {$wpdb->prefix}fct_product_downloads WHERE id = %d", $id), ARRAY_A);
-    $settings = wpas_shop_settings($plan['item']);
-    $log      = wpas_shop_meta_row($plan['item'], '_fluent_sl_changelog');
-    $target   = $plan['dir'] . '/' . $plan['file'];
-    $checks   = array(
-        'the download row does not point at the new file'      => is_array($row) && $row['file_path'] === $plan['file'],
-        'the licence version is not ' . $plan['version']       => $settings && isset($settings['version']) && $settings['version'] === $plan['version'],
-        'the stored file\'s SHA-256 is not the build\'s'       => is_file($target) && hash_file('sha256', $target) === $plan['sha'],
-        'the update changelog has no ' . $plan['version'] . ' section' => $log && false !== strpos((string) $log['meta_value'], $plan['changelog']),
-    );
-    $problems = array_keys(array_filter($checks, static function ($ok) {
-        return !$ok;
-    }));
+    $problems = wpas_shop_read_back($plan, $id);
     if ($problems) {
         wpas_shop_fail('Read back failed: ' . implode('; ', $problems) . '. Restore from the backup: ' . $backup);
     }
