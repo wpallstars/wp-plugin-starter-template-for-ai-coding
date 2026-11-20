@@ -201,20 +201,29 @@ check_site() {
 }
 
 release() {
-	local root sha zip version changelog="changelog.txt"
+	local root sha zip version changelog=""
 	root="$(git rev-parse --show-toplevel)" || die "run this inside a checkout of the plugin"
 	cd "$root"
 	sha="$(git rev-parse --verify --quiet "$REF^{commit}")" || die "not a commit: $REF"
 	identify "$sha"
-	git cat-file -e "$sha:$changelog" 2>/dev/null || changelog="readme.txt"
 	TMP_DIR="$(mktemp -d "${TMPDIR:-/tmp}/$PLUGIN_SLUG-shop.XXXXXX")"
 	zip="$("$SCRIPT_DIR/build-release.sh" --ref "$sha" --out "$TMP_DIR" --quiet)" || die "the build failed"
 	[[ "$zip" != *$'\n'* ]] || die "the build made more than one zip; a licensed plugin gets one"
 	version="$(basename "$zip" .zip)"
 	version="${version#"$PLUGIN_SLUG"-}"
 	[[ "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] || die "the build is not named $PLUGIN_SLUG-X.Y.Z.zip: $zip"
+	local section="^= $version( [^=]*)? ="
+	changelog=""
+	local candidate text
+	for candidate in changelog.txt readme.txt; do
+		text="$(git show "$sha:$candidate" 2>/dev/null)" || continue
+		if grep -Eq "$section" <<<"$text"; then
+			changelog="$candidate"
+			break
+		fi
+	done
+	[[ -n "$changelog" ]] || die "neither changelog.txt nor readme.txt at $REF has a = $version = section"
 	git show "$sha:$changelog" >"$TMP_DIR/changelog.txt" || die "no $changelog at $REF"
-	grep -Eq "^= $version( [^=]*)? =" "$TMP_DIR/changelog.txt" || die "$changelog at $REF has no = $version = section"
 	local digest
 	digest="$(sha256_of "$zip")"
 	printf '%s %s from %s (%s), product %s, SHA-256 %s\n' "$PLUGIN_NAME" "$version" "$REF" "${sha:0:12}" "$ITEM" "$digest"
