@@ -456,13 +456,14 @@ function wpas_shop_apply(array $plan) {
     if (0 === $id) {
         wpas_shop_fail('A database update failed (' . ($undone ? 'completed writes were undone' : 'UNDO FAILED, the database may be half-updated') . '): ' . $error . '. Backup: ' . $backup);
     }
-    if (!wpas_shop_lock_held($plan)) {
-        wpas_shop_fail('The release lock was lost while publishing (the database connection changed); check the rows against the backup: ' . $backup);
-    }
-    // Writes succeeded: name the rows they inserted in the backup, for a rollback.
+    // Writes succeeded: name the rows they inserted in the backup, for a rollback
+    // (before the lock check, so a lost lock still leaves the IDs recorded).
     if (null !== $inserted['download_id'] || null !== $inserted['changelog_row_id']) {
         wpas_shop_backup_inserted($backup, $inserted);
         WP_CLI::log('Rows inserted (delete on rollback): download ' . (int) $inserted['download_id'] . ', changelog ' . (int) $inserted['changelog_row_id'] . '.');
+    }
+    if (!wpas_shop_lock_held($plan)) {
+        wpas_shop_fail('The release lock was lost while publishing (the database connection changed); check the rows against the backup: ' . $backup);
     }
     $row      = $wpdb->get_row($wpdb->prepare("SELECT * FROM {$wpdb->prefix}fct_product_downloads WHERE id = %d", $id), ARRAY_A);
     $settings = wpas_shop_settings($plan['item']);
@@ -501,7 +502,7 @@ function wpas_shop_keep_transients(array $names) {
         // With a persistent object cache the timeout is not in the options
         // table, so a missing timeout is unknown, not "never expires": a null
         // ttl restores nothing (the transient is dropped and refetched).
-        $unknown     = 0 === $timeout && wp_using_ext_object_cache();
+        $unknown     = wp_using_ext_object_cache();
         $kept[$name] = array('had' => true, 'value' => $value, 'ttl' => $unknown ? null : ($timeout > time() ? $timeout - time() : 0));
     }
     register_shutdown_function(static function () use ($kept) {

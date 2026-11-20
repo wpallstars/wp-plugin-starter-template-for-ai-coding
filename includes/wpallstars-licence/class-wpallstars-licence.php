@@ -275,13 +275,14 @@ final class WPAllStars_Licence {
      *                                         secret differs inside the lock (a
      *                                         key was activated, changed or
      *                                         removed meanwhile) nothing is saved.
-     * @return bool Whether the state was saved.
+     * @return bool|WP_Error True when saved, false when discarded on purpose
+     *                       (secret mismatch), WP_Error when the lock was not held.
      */
     private static function save($item, $state, $expect = null) {
         $token = self::lock();
         if ('' === $token) {
             // Never read-modify-write the map without the lock: fail explicitly.
-            return false;
+            return new WP_Error('wpallstars_licence_locked', __('The licence could not be saved because another request holds the save lock. Try again.', 'wp-plugin-starter-template'));
         }
         // Re-read inside the lock, past any cached copy, so a save from a
         // concurrent request for another product is kept, not overwritten.
@@ -440,7 +441,10 @@ final class WPAllStars_Licence {
         if (is_wp_error($secret)) {
             return $secret;
         }
-        self::save($item, array('secret' => $secret, 'hint' => substr($key, -4)) + self::from_answer($answer));
+        $saved = self::save($item, array('secret' => $secret, 'hint' => substr($key, -4)) + self::from_answer($answer));
+        if (is_wp_error($saved)) {
+            return $saved;
+        }
         self::schedule();
         return true;
     }
@@ -461,22 +465,22 @@ final class WPAllStars_Licence {
         $secret = self::secret($item);
         if (null === $secret) {
             $error = new WP_Error('wpallstars_licence_unreadable', __('This site cannot read the stored licence key: its security keys changed, or it was copied from another site. Activate the key again.', 'wp-plugin-starter-template'));
-            self::save($item, array('status' => self::UNREADABLE, 'checked' => time(), 'error' => $error->get_error_message()) + $stored, $stored['secret']);
-            return $error;
+            $saved = self::save($item, array('status' => self::UNREADABLE, 'checked' => time(), 'error' => $error->get_error_message()) + $stored, $stored['secret']);
+            return is_wp_error($saved) ? $saved : $error;
         }
         $answer = self::ask($item, 'check_license', array('license_key' => $secret['key'], 'activation_hash' => $secret['hash']));
         if (is_wp_error($answer)) {
             // Discarded when the licence changed while the shop was asked.
-            self::save($item, array('error' => $answer->get_error_message()) + $stored, $stored['secret']);
-            return $answer;
+            $saved = self::save($item, array('error' => $answer->get_error_message()) + $stored, $stored['secret']);
+            return is_wp_error($saved) ? $saved : $answer;
         }
         $state = self::from_answer($answer);
         if ('valid' !== $state['status']) {
             $state['error'] = self::refused($answer)->get_error_message();
         }
         // Discarded when the licence changed while the shop was asked.
-        self::save($item, $state + $stored, $stored['secret']);
-        return true;
+        $saved = self::save($item, $state + $stored, $stored['secret']);
+        return is_wp_error($saved) ? $saved : true;
     }
 
     /**
@@ -501,8 +505,8 @@ final class WPAllStars_Licence {
                 return self::refused($answer);
             }
         }
-        self::save($item, null);
-        return true;
+        $saved = self::save($item, null);
+        return is_wp_error($saved) ? $saved : true;
     }
 
     /** The daily WP-Cron check of every stored licence. */
