@@ -278,7 +278,11 @@ final class WPAllStars_Licence {
      * @return bool Whether the state was saved.
      */
     private static function save($item, $state, $expect = null) {
-        $locked = self::lock();
+        $token = self::lock();
+        if ('' === $token) {
+            // Never read-modify-write the map without the lock: fail explicitly.
+            return false;
+        }
         // Re-read inside the lock, past any cached copy, so a save from a
         // concurrent request for another product is kept, not overwritten.
         self::forget_cache();
@@ -286,9 +290,7 @@ final class WPAllStars_Licence {
         if (null !== $expect) {
             $now = isset($all[(int) $item]['secret']) ? (string) $all[(int) $item]['secret'] : '';
             if ($now !== $expect) {
-                if ($locked) {
-                    delete_site_option(self::OPTION . '_lock');
-                }
+                self::unlock($token);
                 return false;
             }
         }
@@ -298,33 +300,75 @@ final class WPAllStars_Licence {
             $all[(int) $item] = self::normalise($state);
         }
         update_site_option(self::OPTION, $all);
-        if ($locked) {
-            delete_site_option(self::OPTION . '_lock');
-        }
+        self::unlock($token);
         delete_site_transient(self::UPDATE_CACHE . (int) $item);
         return true;
     }
 
     /**
-     * Take the save lock (an atomic add; a stale lock is taken over after
-     * 15 seconds). Waits up to about 5 seconds.
+     * Run a lock query against the main site's options table, whose
+     * option_name is unique (multisite sitemeta has no such constraint, so
+     * add_site_option() is not atomic there). One lock row serves the whole
+     * network.
      *
-     * @return bool Whether the lock is held.
+     * @param callable $fn Receives $wpdb and the options table name.
+     * @return mixed
+     */
+    private static function lock_query($fn) {
+        global $wpdb;
+        $switched = is_multisite() && function_exists('get_main_site_id') && get_current_blog_id() !== (int) get_main_site_id();
+        if ($switched) {
+            switch_to_blog((int) get_main_site_id());
+        }
+        $result = call_user_func($fn, $wpdb, $wpdb->options);
+        if ($switched) {
+            restore_current_blog();
+        }
+        return $result;
+    }
+
+    /**
+     * Take the save lock (an atomic insert on a unique key; a stale lock is
+     * taken over after 15 seconds by compare-and-delete on the observed
+     * value). Waits up to about 5 seconds.
+     *
+     * @return string The owner token, or '' when the lock is not held.
      */
     private static function lock() {
-        $name = self::OPTION . '_lock';
+        $name  = self::OPTION . '_lock';
+        $token = time() . ':' . wp_generate_password(12, false);
         for ($try = 0; $try < 50; $try++) {
-            if (add_site_option($name, (string) time())) {
-                return true;
+            $got = self::lock_query(function ($db, $table) use ($name, $token) {
+                return 1 === (int) $db->query($db->prepare("INSERT IGNORE INTO `{$table}` (option_name, option_value, autoload) VALUES (%s, %s, 'no')", $name, $token)); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+            });
+            if ($got) {
+                return $token;
             }
-            self::forget_cache();
-            if ((int) get_site_option($name, 0) < time() - 15) {
-                delete_site_option($name);
+            $seen = self::lock_query(function ($db, $table) use ($name) {
+                return $db->get_var($db->prepare("SELECT option_value FROM `{$table}` WHERE option_name = %s", $name)); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+            });
+            if (is_string($seen) && (int) $seen < time() - 15) {
+                // Delete only the stale row observed, never a waiter's fresh one.
+                self::lock_query(function ($db, $table) use ($name, $seen) {
+                    return $db->query($db->prepare("DELETE FROM `{$table}` WHERE option_name = %s AND option_value = %s", $name, $seen)); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+                });
                 continue;
             }
             usleep(100000);
         }
-        return false;
+        return '';
+    }
+
+    /**
+     * Release the save lock, only when this request still owns it.
+     *
+     * @param string $token Token lock() returned.
+     */
+    private static function unlock($token) {
+        $name = self::OPTION . '_lock';
+        self::lock_query(function ($db, $table) use ($name, $token) {
+            return $db->query($db->prepare("DELETE FROM `{$table}` WHERE option_name = %s AND option_value = %s", $name, $token)); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+        });
     }
 
     /**
@@ -332,10 +376,12 @@ final class WPAllStars_Licence {
      * read comes from the database.
      */
     private static function forget_cache() {
+        $network = get_current_network_id();
         foreach (array(self::OPTION, self::OPTION . '_lock') as $name) {
             wp_cache_delete($name, 'options');
-            wp_cache_delete(get_current_network_id() . ':' . $name, 'site-options');
+            wp_cache_delete($network . ':' . $name, 'site-options');
         }
+        wp_cache_delete($network . ':notoptions', 'site-options');
         wp_cache_delete('alloptions', 'options');
         wp_cache_delete('notoptions', 'options');
     }
