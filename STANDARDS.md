@@ -641,9 +641,12 @@ licence library in `includes/wpallstars-licence/` does it:
 - A product moving from GitHub to the shop adds `Licence Item` first, in a
   normal GitHub release. The library lists it (`wp wpallstars licence
   status` shows `updates: elsewhere`), so its licence can be activated on
-  every site while the GitHub updater still serves it. A later release
-  switches its `Update URI` to the shop. Updates and View details come from
-  the shop only when the Update URI is the shop's.
+  every site while the GitHub updater still serves it. Keep `GitHub Plugin
+  URI` in that first release. A later release switches its `Update URI` to
+  the shop and removes the `GitHub Plugin URI` header in the same release:
+  while it stays, the release scripts keep `PLUGIN_SELF_UPDATING=0` and
+  `scripts/preflight-release.sh` rejects the shop `Update URI`. Updates and
+  View details come from the shop only when the Update URI is the shop's.
 - One key per product for the site, or for the whole network on multisite
   (a network option; the shop's activation is for the main site's address).
   Keys go in **Settings → Licences** (Network Admin on multisite) or
