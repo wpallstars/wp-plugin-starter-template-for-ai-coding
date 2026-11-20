@@ -371,7 +371,7 @@ function wpas_shop_write(array $plan, &$error = '', array &$inserted = array()) 
  */
 function wpas_shop_lock($item) {
     global $wpdb;
-    $name = 'wpas_shop_release_' . md5($wpdb->prefix . ':' . (int) $item);
+    $name = 'wpas_shop_release_' . substr(hash('sha256', $wpdb->prefix . ':' . (int) $item), 0, 32);
     if ('1' !== (string) $wpdb->get_var($wpdb->prepare('SELECT GET_LOCK(%s, 60)', $name))) {
         wpas_shop_fail("Another release of product $item is still running; nothing changed. Try again when it finishes.");
     }
