@@ -10,17 +10,11 @@
 # Provenance: wpas-e4502af0f07e8a92. Copies, even of part, keep these lines.
 # shellcheck disable=SC2034,SC2153 # globals are shared across deploy-remote*.sh, which shellcheck reads one file at a time
 
-# The web PHP log of one install, from WEB_ERROR_LOG: {name} becomes the
-# install's name (install_name) and {name_} the same with each . as _, so
-# hosts with one log per site (~/.logs/error_log_example_com) need one run. A
-# leading ~/ is the home folder; another relative path is from the install.
-web_error_log_path() {
+# PATH as an absolute path: ~/ is the home folder, another relative path is
+# from the install.
+web_log_absolute() {
 	local root="$1"
-	local path="$WEB_ERROR_LOG"
-	local name
-	name="$(install_name "$root")"
-	path="$(replace_text "$path" '{name_}' "${name//./_}")"
-	path="$(replace_text "$path" '{name}' "$name")"
+	local path="$2"
 	if [[ "$path" == \~/* ]]; then
 		path="$HOME/${path#\~/}"
 	elif [[ "$path" != /* ]]; then
@@ -30,30 +24,71 @@ web_error_log_path() {
 	return 0
 }
 
+# The web PHP log paths of one install, one per line, from WEB_ERROR_LOG:
+# {name} becomes the install's name (install_name) and {name_} the same with
+# each . as _, so hosts with one log per site (~/.logs/error_log_example_com)
+# need one run. {host} is the host of each site of the install (every site of
+# a network, as site_urls lists them) without a leading www., and {host_} the
+# same with each . as _: one path per site, for hosts that name the log after
+# the site's domain, which need not be the install's folder (GH#838).
+web_error_log_paths() {
+	local root="$1"
+	local path="$WEB_ERROR_LOG"
+	local name kind urls url host one seen=" "
+	name="$(install_name "$root")"
+	path="$(replace_text "$path" '{name_}' "${name//./_}")"
+	path="$(replace_text "$path" '{name}' "$name")"
+	if [[ "$path" != *"{host"* ]]; then
+		printf '%s\n' "$(web_log_absolute "$root" "$path")"
+		return 0
+	fi
+	kind="$(wp_bare "$root" eval 'echo is_multisite() ? "multisite" : "single";')" || return 1
+	urls="$(site_urls "$root" "$kind")" || return 1
+	while IFS= read -r url; do
+		host="${url#*://}"
+		host="${host%%[/?#]*}"
+		host="${host%%:*}"
+		host="${host#www.}"
+		[[ -n "$host" ]] || continue
+		one="$(replace_text "$path" '{host_}' "${host//./_}")"
+		one="$(web_log_absolute "$root" "$(replace_text "$one" '{host}' "$host")")"
+		[[ "$seen" != *" $one "* ]] || continue
+		seen+="$one "
+		printf '%s\n' "$one"
+	done <<<"$urls"
+	[[ "$seen" != " " ]] || return 1
+	return 0
+}
+
 # The web PHP log's own checks (its folder exists; the file, if there, is a
-# readable regular file), without WP-CLI: cheap enough to run before the
-# account-load wait, so a wrong path fails at once.
+# readable regular file): cheap enough to run before the account-load wait,
+# so a wrong path fails at once. Only {host} needs WP-CLI, for the sites.
 web_log_usable() {
 	local root="$1"
-	local path folder
+	local path folder paths
 	[[ -n "$WEB_ERROR_LOG" ]] || return 0
-	path="$(web_error_log_path "$root")"
-	folder="$(dirname "$path")"
-	if [[ ! -d "$folder" ]]; then
-		say "deploy-remote: the web PHP log's folder does not exist: $folder"
+	paths="$(web_error_log_paths "$root")" || {
+		say "deploy-remote: cannot work out the web PHP log paths from the install's sites"
 		return 1
-	fi
-	if [[ -e "$path" && ( ! -f "$path" || ! -r "$path" ) ]]; then
-		say "deploy-remote: web PHP log is not a readable regular file: $path"
-		return 1
-	fi
+	}
+	while IFS= read -r path; do
+		folder="$(dirname "$path")"
+		if [[ ! -d "$folder" ]]; then
+			say "deploy-remote: the web PHP log's folder does not exist: $folder"
+			return 1
+		fi
+		if [[ -e "$path" && ( ! -f "$path" || ! -r "$path" ) ]]; then
+			say "deploy-remote: web PHP log is not a readable regular file: $path"
+			return 1
+		fi
+	done <<<"$paths"
 	return 0
 }
 
 # Discover log files before installation, then print the lines each one gained.
 log_files() {
 	local root="$1"
-	local wp_debug php_error path candidate existing duplicate
+	local wp_debug php_error path candidate existing duplicate web_paths
 	local candidates=()
 	local unique=()
 	wp_debug="$(wp_bare "$root" eval 'echo defined("WP_DEBUG_LOG") && is_string(WP_DEBUG_LOG) && !in_array(strtolower(WP_DEBUG_LOG), array("1", "true"), true) ? WP_DEBUG_LOG : (defined("WP_DEBUG_LOG") && WP_DEBUG_LOG ? WP_CONTENT_DIR . "/debug.log" : "");')" || return 1
@@ -63,11 +98,13 @@ log_files() {
 	candidates+=("$root/error_log" "$root/wp-content/debug.log")
 	if [[ -n "$WEB_ERROR_LOG" ]]; then
 		web_log_usable "$root" || return 1
-		path="$(web_error_log_path "$root")"
-		if [[ ! -e "$path" ]]; then
-			say "web PHP log $path: not there yet (counted if the install creates it)"
-		fi
-		candidates+=("$path")
+		web_paths="$(web_error_log_paths "$root")" || return 1
+		while IFS= read -r path; do
+			if [[ ! -e "$path" ]]; then
+				say "web PHP log $path: not there yet (counted if the install creates it)"
+			fi
+			candidates+=("$path")
+		done <<<"$web_paths"
 	fi
 	if [[ -n "$wp_debug" ]]; then
 		if [[ "$wp_debug" == /* ]]; then
