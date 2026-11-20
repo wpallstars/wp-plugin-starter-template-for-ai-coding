@@ -19,6 +19,9 @@
 #                      product's version, download the offered package and
 #                      print its version, size, SHA-256, entry count and
 #                      main-file Version:, never the signed package address.
+#                      The refresh rewrites the site's update transients, so
+#                      they are kept first and put back when it ends, even
+#                      after a failure.
 #   --wp-cli COMMAND   WP-CLI on the host (default: wp).
 #
 # Only for a licensed plugin: the main file has `Update URI:

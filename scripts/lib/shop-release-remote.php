@@ -449,6 +449,34 @@ function wpas_shop_apply(array $plan) {
 }
 
 /**
+ * Remember site transients and restore them when the run ends (success,
+ * failure or WP_CLI::error), whatever the refresh left behind.
+ *
+ * @param array<int,string> $names Site transient names.
+ */
+function wpas_shop_keep_transients(array $names) {
+    $kept = array();
+    foreach ($names as $name) {
+        $value = get_site_transient($name);
+        if (false === $value) {
+            $kept[$name] = array('had' => false, 'value' => null, 'ttl' => 0);
+            continue;
+        }
+        $timeout     = (int) get_site_option('_site_transient_timeout_' . $name, 0);
+        $kept[$name] = array('had' => true, 'value' => $value, 'ttl' => $timeout > time() ? $timeout - time() : 0);
+    }
+    register_shutdown_function(static function () use ($kept) {
+        foreach ($kept as $name => $old) {
+            if ($old['had']) {
+                set_site_transient($name, $old['value'], $old['ttl']);
+            } else {
+                delete_site_transient($name);
+            }
+        }
+    });
+}
+
+/**
  * On a licensed site: what the shop offers now, downloaded and checked.
  *
  * @param array<int,string> $args ITEM SLUG.
@@ -473,9 +501,13 @@ function wpas_shop_check(array $args) {
     require_once ABSPATH . 'wp-admin/includes/plugin.php';
     require_once ABSPATH . 'wp-admin/includes/file.php';
     require_once ABSPATH . 'wp-includes/update.php';
-    delete_site_transient(WPAllStars_Licence::UPDATE_CACHE . $item);
     $theme     = 'theme' === $product['type'];
     $transient = $theme ? 'update_themes' : 'update_plugins';
+    // The refresh below rewrites shared update state (other plugins' offers
+    // live in it). Keep what is there and put it back on every exit, so the
+    // check changes nothing and a failed refresh loses no offers.
+    wpas_shop_keep_transients(array(WPAllStars_Licence::UPDATE_CACHE . $item, $transient));
+    delete_site_transient(WPAllStars_Licence::UPDATE_CACHE . $item);
     delete_site_transient($transient);
     if ($theme) {
         wp_update_themes();
