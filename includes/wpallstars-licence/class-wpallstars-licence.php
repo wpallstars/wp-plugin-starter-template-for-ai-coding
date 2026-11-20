@@ -339,18 +339,18 @@ final class WPAllStars_Licence {
         $token = time() . ':' . wp_generate_password(12, false);
         for ($try = 0; $try < 50; $try++) {
             $got = self::lock_query(function ($db, $table) use ($name, $token) {
-                return 1 === (int) $db->query($db->prepare("INSERT IGNORE INTO `{$table}` (option_name, option_value, autoload) VALUES (%s, %s, 'no')", $name, $token)); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+                return 1 === (int) $db->query($db->prepare("INSERT IGNORE INTO %i (option_name, option_value, autoload) VALUES (%s, %s, 'no')", $table, $name, $token));
             });
             if ($got) {
                 return $token;
             }
             $seen = self::lock_query(function ($db, $table) use ($name) {
-                return $db->get_var($db->prepare("SELECT option_value FROM `{$table}` WHERE option_name = %s", $name)); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+                return $db->get_var($db->prepare("SELECT option_value FROM %i WHERE option_name = %s", $table, $name));
             });
             if (is_string($seen) && (int) $seen < time() - 15) {
                 // Delete only the stale row observed, never a waiter's fresh one.
                 self::lock_query(function ($db, $table) use ($name, $seen) {
-                    return $db->query($db->prepare("DELETE FROM `{$table}` WHERE option_name = %s AND option_value = %s", $name, $seen)); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+                    return $db->query($db->prepare("DELETE FROM %i WHERE option_name = %s AND option_value = %s", $table, $name, $seen));
                 });
                 continue;
             }
@@ -367,7 +367,7 @@ final class WPAllStars_Licence {
     private static function unlock($token) {
         $name = self::OPTION . '_lock';
         self::lock_query(function ($db, $table) use ($name, $token) {
-            return $db->query($db->prepare("DELETE FROM `{$table}` WHERE option_name = %s AND option_value = %s", $name, $token)); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+            return $db->query($db->prepare("DELETE FROM %i WHERE option_name = %s AND option_value = %s", $table, $name, $token));
         });
     }
 
