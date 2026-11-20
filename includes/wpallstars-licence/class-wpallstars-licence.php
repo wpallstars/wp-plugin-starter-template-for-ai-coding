@@ -337,8 +337,10 @@ final class WPAllStars_Licence {
      */
     private static function lock() {
         $name  = self::OPTION . '_lock';
-        $token = time() . ':' . wp_generate_password(12, false);
         for ($try = 0; $try < 50; $try++) {
+            // A fresh timestamp per attempt, so the 15 second stale window
+            // counts from when the lock was taken, not from when we started.
+            $token = time() . ':' . wp_generate_password(12, false);
             $got = self::lock_query(function ($db, $table) use ($name, $token) {
                 return 1 === (int) $db->query($db->prepare("INSERT IGNORE INTO %i (option_name, option_value, autoload) VALUES (%s, %s, 'no')", $table, $name, $token));
             });
