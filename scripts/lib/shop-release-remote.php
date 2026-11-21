@@ -513,7 +513,10 @@ function wpas_shop_keep_transients(array $names) {
         // With a persistent object cache the timeout is not in the options
         // table, so a missing timeout is unknown, not "never expires": a null
         // ttl restores nothing (the transient is dropped and refetched).
-        $unknown     = wp_using_ext_object_cache();
+        // Core writes update_plugins and update_themes without an expiry, so
+        // those two are restored with ttl 0 even under an object cache.
+        $no_expiry   = in_array($name, array('update_plugins', 'update_themes'), true);
+        $unknown     = wp_using_ext_object_cache() && !$no_expiry;
         $kept[$name] = array('had' => true, 'value' => $value, 'ttl' => $unknown ? null : ($timeout > time() ? $timeout - time() : 0));
     }
     register_shutdown_function(static function () use ($kept) {
