@@ -142,13 +142,16 @@ cron_output_failed() {
 # Stops, keeping the kill, once the event is no longer listed (exit 0 and
 # CRON_NOT_LISTED printed), unless that retry's output also shows a PHP fatal
 # error or a database error: then the retry's output is kept, and fails.
+# A killed attempt whose own output already shows such an error is not run
+# again (the loop ends first), so a successful retry cannot hide that error:
+# run_site_cron reports it as failed (exit 137).
 cron_retry_killed() {
 	local root="$1"
 	local hook="$2"
 	local stamp="$3"
 	shift 3
 	local retry_out retry_status
-	while [[ "$status" -eq 137 && "$tries" -lt 3 && -n "$stamp" ]]; do
+	while [[ "$status" -eq 137 && "$tries" -lt 3 && -n "$stamp" ]] && ! cron_output_failed "$out"; do
 		sleep "$LOAD_RETRY_DELAY"
 		retry_status=0
 		retry_out="$(DEPLOY_CRON_HOOK="$hook" DEPLOY_CRON_TIME="$stamp" DEPLOY_CRON_NOT_LISTED="$CRON_NOT_LISTED" \
