@@ -173,6 +173,7 @@ Deleting the plugin removes its settings (on multisite, every site's and the net
 
 ### Unreleased
 
+- Developers: `scripts/deploy-sites.sh` no longer runs a killed (137) plugin cron event again when it already printed a PHP fatal error or a database error: a successful retry hid that error. The install now fails as `cron HOOK failed (exit 137: ...)`; a bare kill is retried as before. Plugins get it with `scripts/sync-core.sh` (GH#842).
 - Developers: `STANDARDS.md` → Structure adds that installs made before a plugin used its own icon still show the images its update server names (such as a shop product's icon and banner), so those must load from other sites too (a folder hotlink protection allows, such as `hotlink-ok`), checked by the release script with another site's `Referer`. Plugins get it with `scripts/sync-core.sh` (GH#790).
 
 ### 1.0.69

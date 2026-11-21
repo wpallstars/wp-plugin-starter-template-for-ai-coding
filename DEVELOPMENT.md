@@ -419,7 +419,9 @@ untouched and the deploy falls back to `wp plugin install --force`.
 A host at its process or memory limit (CloudLinux LVE) kills WP-CLI with
 exit 137. The post-install load check is run again once, and a killed cron
 event up to 3 tries in all, `DEPLOY_LOAD_RETRY_DELAY` seconds apart (default
-30), whatever the killed process printed; every other exit code fails at once.
+30); a killed cron event that already printed a PHP fatal error or a database
+error is not run again and fails as `cron HOOK failed (exit 137: ...)`; every
+other exit code fails at once.
 Only a hook's lone one-off event is retried, and each retry runs that event
 itself (`wp eval`, bound to its hook and time), not `wp cron event run HOOK`,
 which takes the hook's next event. The retry checks, in the same process as
