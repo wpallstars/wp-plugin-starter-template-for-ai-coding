@@ -62,7 +62,12 @@ function wpas_shop_fail($message) {
  */
 function wpas_shop_meta_row($item, $key) {
     global $wpdb;
-    $row = $wpdb->get_row($wpdb->prepare("SELECT * FROM {$wpdb->prefix}fct_product_meta WHERE object_id = %d AND meta_key = %s ORDER BY id LIMIT 1", $item, $key), ARRAY_A);
+    $wpdb->last_error = '';
+    $row              = $wpdb->get_row($wpdb->prepare("SELECT * FROM {$wpdb->prefix}fct_product_meta WHERE object_id = %d AND meta_key = %s ORDER BY id LIMIT 1", $item, $key), ARRAY_A);
+    // A failed query is not a missing row: apply would insert a second one.
+    if ('' !== $wpdb->last_error) {
+        wpas_shop_fail("Cannot read the $key row of product $item: " . $wpdb->last_error);
+    }
     return is_array($row) ? $row : null;
 }
 
@@ -235,8 +240,7 @@ function wpas_shop_backup(array $plan) {
         wpas_shop_fail('Cannot create the backup folder.');
     }
     $backup = trailingslashit($plan['backup_dir']) . 'shop-release-' . $plan['item'] . '-' . $plan['current'] . '-to-' . $plan['version'] . '-' . gmdate('Ymd\THis\Z') . '.json';
-    $old    = umask(077);
-    $saved  = file_put_contents($backup, wp_json_encode(array( // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents -- a private backup on the shop's host.
+    $json   = wp_json_encode(array(
         'product_id'       => $plan['item'],
         'download'         => $plan['download'],
         'license_settings' => $plan['settings_row'],
@@ -249,10 +253,19 @@ function wpas_shop_backup(array $plan) {
             'changelog' => !$plan['log_row'],
         ),
         'inserted'         => array('download_id' => null, 'changelog_row_id' => null),
-    ), JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES));
+    ), JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
+    if (!is_string($json)) {
+        wpas_shop_fail('Cannot encode the backup; nothing changed.');
+    }
+    $old = umask(077);
+    // A short write (a full disk) is a failed write: the backup is the only way back.
+    $saved = file_put_contents($backup, $json); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents -- a private backup on the shop's host.
     umask($old);
-    if (false === $saved) {
-        wpas_shop_fail('Cannot write the backup; nothing changed.');
+    if (strlen($json) !== $saved) {
+        if (file_exists($backup)) {
+            wp_delete_file($backup);
+        }
+        wpas_shop_fail('Cannot write the whole backup; nothing changed.');
     }
     WP_CLI::log('Backup: ' . $backup);
     return $backup;
@@ -272,9 +285,11 @@ function wpas_shop_backup_inserted($backup, array $inserted) {
     }
     $data['inserted'] = $inserted;
     // Write a temp file and rename it over the backup, so the only copy is
-    // never left half-written.
+    // never left half-written: encode first, rename only when every byte
+    // was written.
+    $json = wp_json_encode($data, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
     $temp = $backup . '.tmp';
-    if (false === file_put_contents($temp, wp_json_encode($data, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES)) || !chmod($temp, 0600) || !rename($temp, $backup)) { // phpcs:ignore WordPress.WP.AlternativeFunctions -- as above.
+    if (!is_string($json) || strlen($json) !== file_put_contents($temp, $json) || !chmod($temp, 0600) || !rename($temp, $backup)) { // phpcs:ignore WordPress.WP.AlternativeFunctions -- as above.
         if (file_exists($temp)) {
             wp_delete_file($temp);
         }
@@ -354,6 +369,12 @@ function wpas_shop_write(array $plan, &$error = '', array &$inserted = array(), 
         $undo[] = static function () use ($wpdb, $downloads, $id, $old) {
             return false !== $wpdb->update($downloads, $old, array('id' => $id));
         };
+    }
+    // A lost connection drops the named lock: stop (and undo) rather than
+    // write on without it. MySQL tells only when asked, so this checks between
+    // the writes; a loss inside one statement is caught by the check after.
+    if (!wpas_shop_lock_held($plan)) {
+        return $fail('The release lock was lost (the database connection changed)');
     }
     // The licence version and changelog advance only after the download row did.
     $old_settings = $plan['settings_row'];
@@ -465,8 +486,17 @@ function wpas_shop_read_back(array $plan, $id) {
  */
 function wpas_shop_apply(array $plan) {
     $backup = wpas_shop_backup($plan);
-    if (empty($plan['reuse']) && !copy($plan['zip'], $plan['dir'] . '/' . $plan['file'])) {
-        wpas_shop_fail('Cannot copy the zip into FluentCart\'s storage; nothing else changed. Backup: ' . $backup);
+    if (empty($plan['reuse'])) {
+        // Copy beside the final name, check the digest, then rename: a partial
+        // copy never holds the final name, where it would block the next run.
+        $target = $plan['dir'] . '/' . $plan['file'];
+        $temp   = $target . '.part';
+        if (!copy($plan['zip'], $temp) || hash_file('sha256', $temp) !== $plan['sha'] || !rename($temp, $target)) {
+            if (file_exists($temp)) {
+                wp_delete_file($temp);
+            }
+            wpas_shop_fail('Cannot copy the zip into FluentCart\'s storage (or its SHA-256 differs after the copy); nothing else changed. Backup: ' . $backup);
+        }
     }
     // The named lock belongs to one connection: stop when it was lost.
     if (!wpas_shop_lock_held($plan)) {
@@ -477,6 +507,13 @@ function wpas_shop_apply(array $plan) {
     $undone   = true;
     $id       = wpas_shop_write($plan, $error, $inserted, $undone);
     if (0 === $id) {
+        if (!$undone) {
+            // The undo of an inserted row failed: name the rows for a manual cleanup.
+            WP_CLI::warning('Rows inserted and possibly still there (delete on rollback): download ' . (int) $inserted['download_id'] . ', changelog ' . (int) $inserted['changelog_row_id'] . '.');
+            if (null !== $inserted['download_id'] || null !== $inserted['changelog_row_id']) {
+                wpas_shop_backup_inserted($backup, $inserted);
+            }
+        }
         wpas_shop_fail('A database update failed (' . ($undone ? 'completed writes were undone' : 'UNDO FAILED, the database may be half-updated') . '): ' . $error . '. Backup: ' . $backup);
     }
     // Writes succeeded: name the rows they inserted in the backup, for a rollback
@@ -557,32 +594,33 @@ function wpas_shop_check(array $args) {
     require_once ABSPATH . 'wp-admin/includes/plugin.php';
     require_once ABSPATH . 'wp-admin/includes/file.php';
     require_once ABSPATH . 'wp-includes/update.php';
-    $theme     = 'theme' === $product['type'];
-    $transient = $theme ? 'update_themes' : 'update_plugins';
-    // The refresh below rewrites shared update state (other plugins' offers
-    // live in it). Keep what is there and put it back on every exit, so the
-    // check changes nothing and a failed refresh loses no offers.
-    wpas_shop_keep_transients(array(WPAllStars_Licence::UPDATE_CACHE . $item, $transient));
-    delete_site_transient(WPAllStars_Licence::UPDATE_CACHE . $item);
-    delete_site_transient($transient);
-    if ($theme) {
-        wp_update_themes();
-    } else {
-        wp_update_plugins();
+    // A product still updated from GitHub is not offered by the shop: a pass
+    // here would say nothing about what the shop gives a site.
+    if (empty($product['shop'])) {
+        wpas_shop_fail("Product $item on this site is not updated from the shop (its Update URI is not the shop's); the check needs the shop channel.");
     }
-    $state = get_site_transient($transient);
+    $theme = 'theme' === $product['type'];
+    // Ask the licence library for the offer directly (the same function
+    // WordPress's update_{plugins,themes}_{hostname} filter calls) instead of
+    // refreshing update_plugins / update_themes: that rewrites shared update
+    // state, which another request may be refreshing too. Only the library's
+    // own version cache for this product is dropped, and put back on exit.
+    wpas_shop_keep_transients(array(WPAllStars_Licence::UPDATE_CACHE . $item));
+    delete_site_transient(WPAllStars_Licence::UPDATE_CACHE . $item);
+    if ($theme) {
+        $entry = WPAllStars_Licence::update_theme(false, array(), $product['file']);
+    } else {
+        $data  = get_plugins();
+        $entry = WPAllStars_Licence::update_plugin(false, isset($data[$product['file']]) ? $data[$product['file']] : array(), $product['file']);
+    }
     $offer = null;
-    foreach (array('response' => true, 'no_update' => false) as $list => $pending) {
-        $items = is_object($state) && isset($state->$list) ? (array) $state->$list : array();
-        if (isset($items[$product['file']]) && !empty(((array) $items[$product['file']])['package'])) {
-            $offer = array('entry' => (array) $items[$product['file']], 'pending' => $pending);
-            break;
-        }
+    if (is_array($entry) && !empty($entry['package']) && isset($entry['version'])) {
+        $offer = array('entry' => $entry, 'pending' => version_compare((string) $entry['version'], (string) $product['version'], '>'));
     }
     if (null === $offer) {
         wpas_shop_fail('The shop offered no package (no answer, or no licence for updates).');
     }
-    $offered = isset($offer['entry']['new_version']) ? (string) $offer['entry']['new_version'] : '';
+    $offered = (string) $offer['entry']['version'];
     $file    = download_url((string) $offer['entry']['package'], 300);
     if (is_wp_error($file)) {
         wpas_shop_fail('The offered package did not download: ' . $file->get_error_message());

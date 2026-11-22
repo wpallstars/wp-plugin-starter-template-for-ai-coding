@@ -37,7 +37,7 @@ if (!isset($GLOBALS['wpallstars_licence']) || !is_array($GLOBALS['wpallstars_lic
     $GLOBALS['wpallstars_licence'] = array(); // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals -- Shared across wpallstars products; see STANDARDS.md, Licensed updates.
 }
 // Version of this copy => its class file.
-$GLOBALS['wpallstars_licence']['1.1.0'] = __DIR__ . '/class-wpallstars-licence.php'; // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals -- Shared across wpallstars products; see STANDARDS.md, Licensed updates.
+$GLOBALS['wpallstars_licence']['1.1.1'] = __DIR__ . '/class-wpallstars-licence.php'; // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals -- Shared across wpallstars products; see STANDARDS.md, Licensed updates.
 
 if (!function_exists('wpallstars_licence_load')) {
     /**
@@ -49,10 +49,14 @@ if (!function_exists('wpallstars_licence_load')) {
         }
         $copies = (array) $GLOBALS['wpallstars_licence'];
         uksort($copies, 'version_compare');
-        $file = (string) end($copies);
-        if (is_readable($file)) {
-            require_once $file;
-            WPAllStars_Licence::load();
+        // Newest first: a copy whose class file is missing or unreadable is
+        // skipped, so an older readable copy still serves the products.
+        foreach (array_reverse($copies, true) as $file) {
+            if (is_readable((string) $file)) {
+                require_once (string) $file;
+                WPAllStars_Licence::load();
+                return;
+            }
         }
     }
     // Every plugin's main file and the theme's functions.php have run by

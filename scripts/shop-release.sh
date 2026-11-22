@@ -19,9 +19,12 @@
 #                      product's version, download the offered package and
 #                      print its version, size, SHA-256, entry count and
 #                      main-file Version:, never the signed package address.
-#                      The refresh rewrites the site's update transients, so
-#                      they are kept first and put back when it ends, even
-#                      after a failure.
+#                      The product must be updated from the shop (its Update
+#                      URI). The offer is asked of the licence library
+#                      directly: the site's update_plugins / update_themes
+#                      are not rewritten; only the library's own cached
+#                      answer for the product is dropped, and put back when
+#                      it ends, even after a failure.
 #   --wp-cli COMMAND   WP-CLI on the host (default: wp).
 #
 # Only for a licensed plugin: the main file has `Update URI:
@@ -40,7 +43,10 @@
 # afterwards.
 #
 # Rollback: put the backup's download row and meta rows back (by ID) with
-# wp eval-file; the old zip is still in uploads/fluent-cart/.
+# wp eval-file; the old zip is still in uploads/fluent-cart/. A first release
+# has no row to restore: delete the rows the backup's "inserted" names
+# (download_id in fct_product_downloads, changelog_row_id in
+# fct_product_meta) and restore only the rows "absent" does not mark absent.
 #
 # Host names, folders and backups stay out of the repository: only arguments.
 # Needs git, ssh and scp here, and WP-CLI on the host.
