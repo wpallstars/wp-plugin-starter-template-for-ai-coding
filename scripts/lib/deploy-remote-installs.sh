@@ -83,9 +83,16 @@ list_one() {
 	printf '\n'
 	if [[ -n "$WEB_ERROR_LOG" && "$WEB_ERROR_LOG" != "syslog" ]]; then
 		# The web PHP log files --apply would watch for this install.
-		web_error_log_paths "$root" 2>/dev/null | while IFS= read -r note; do
-			printf '    web PHP log %s\n' "$note"
-		done || true
+		# A failure (for example a failed multisite site list) is reported,
+		# not hidden: --apply would fail the same way.
+		local log_paths
+		log_paths="$(web_error_log_paths "$root")" || {
+			printf '    FAIL: could not work out the web PHP log files for %s (its own error is above)\n' "$name" >&2
+			return 1
+		}
+		while IFS= read -r note; do
+			[[ -z "$note" ]] || printf '    web PHP log %s\n' "$note"
+		done <<<"$log_paths"
 	fi
 	if [[ "$CDN_PURGE" -eq 1 ]]; then
 		# deploy-sites.sh lists the zones these sites would purge.

@@ -113,10 +113,8 @@ final class WPAllStars_Licence_CLI {
         unset($args);
         if (!isset($assoc_args['item'])) {
             $failed = 0;
-            foreach (array_keys(WPAllStars_Licence::products()) as $item) {
-                if ('' === WPAllStars_Licence::stored($item)['secret']) {
-                    continue;
-                }
+            // Every stored licence, also one whose product is no longer installed.
+            foreach (WPAllStars_Licence::stored_items() as $item) {
                 $result = WPAllStars_Licence::check($item);
                 if (is_wp_error($result) || !WPAllStars_Licence::valid($item)) {
                     ++$failed;
@@ -164,7 +162,11 @@ final class WPAllStars_Licence_CLI {
      * @return int
      */
     private static function item(array $assoc_args) {
-        $item = isset($assoc_args['item']) ? absint($assoc_args['item']) : 0;
+        $raw = isset($assoc_args['item']) ? (string) $assoc_args['item'] : '';
+        if (!ctype_digit($raw) || (int) $raw <= 0) {
+            WP_CLI::error('--item must be a positive whole number (the Licence Item header).');
+        }
+        $item = (int) $raw;
         if (!isset(WPAllStars_Licence::products()[$item])) {
             WP_CLI::error(sprintf('No installed plugin or theme has "Licence Item: %d" and an Update URI on wpallstars.com.', $item));
         }

@@ -300,10 +300,40 @@ final class WPAllStars_Licence {
         } else {
             $all[(int) $item] = self::normalise($state);
         }
-        update_site_option(self::OPTION, $all);
+        if (!update_site_option(self::OPTION, $all)) {
+            // False also means "unchanged": read the stored value back to tell that from a failed write.
+            self::forget_cache();
+            if (self::all() != $all) { // phpcs:ignore WordPress.PHP.StrictComparisons.LooseComparison -- same keys and scalar values; only key order may differ.
+                self::unlock($token);
+                return new WP_Error('wpallstars_licence_not_stored', __('The licence could not be written to the database. Try again.', 'wp-plugin-starter-template'));
+            }
+        }
         self::unlock($token);
         delete_site_transient(self::UPDATE_CACHE . (int) $item);
+        if (!self::valid($item)) {
+            self::drop_offer((int) $item);
+        }
         return true;
+    }
+
+    /**
+     * Remove one product's shop offer from WordPress's stored update lists,
+     * so a licence that is gone cannot still install it. Other products'
+     * offers are left as they are.
+     *
+     * @param int $item Item ID.
+     */
+    private static function drop_offer($item) {
+        $products = self::products();
+        if (!isset($products[$item]) || !$products[$item]['shop']) {
+            return;
+        }
+        $name = 'plugin' === $products[$item]['type'] ? 'update_plugins' : 'update_themes';
+        $list = get_site_transient($name);
+        if (is_object($list) && isset($list->response) && is_array($list->response) && isset($list->response[$products[$item]['file']])) {
+            unset($list->response[$products[$item]['file']]);
+            set_site_transient($name, $list);
+        }
     }
 
     /**
@@ -447,7 +477,7 @@ final class WPAllStars_Licence {
         if (is_wp_error($saved)) {
             return $saved;
         }
-        self::schedule();
+        self::schedule(true);
         return true;
     }
 
@@ -476,13 +506,18 @@ final class WPAllStars_Licence {
             $saved = self::save($item, array('error' => $answer->get_error_message()) + $stored, $stored['secret']);
             return is_wp_error($saved) ? $saved : $answer;
         }
-        $state = self::from_answer($answer);
-        if ('valid' !== $state['status']) {
-            $state['error'] = self::refused($answer)->get_error_message();
+        $state   = self::from_answer($answer);
+        $refusal = 'valid' !== $state['status'] ? self::refused($answer) : null;
+        if ($refusal) {
+            $state['error'] = $refusal->get_error_message();
         }
         // Discarded when the licence changed while the shop was asked.
         $saved = self::save($item, $state + $stored, $stored['secret']);
-        return is_wp_error($saved) ? $saved : true;
+        if (is_wp_error($saved)) {
+            return $saved;
+        }
+        // The refusal is stored, and also returned: it is not a success.
+        return $refusal ? $refusal : true;
     }
 
     /**
@@ -495,6 +530,7 @@ final class WPAllStars_Licence {
      * @return true|WP_Error
      */
     public static function deactivate($item) {
+        $before = self::stored($item)['secret'];
         $secret = self::secret($item);
         if (null !== $secret) {
             $answer = self::ask($item, 'deactivate_license', array('license_key' => $secret['key']));
@@ -507,20 +543,46 @@ final class WPAllStars_Licence {
                 return self::refused($answer);
             }
         }
-        $saved = self::save($item, null);
+        // Forget only the licence this deactivation freed: a key activated
+        // meanwhile (while the shop was asked) is not deleted.
+        $saved = self::save($item, null, $before);
+        if (false === $saved) {
+            return new WP_Error('wpallstars_licence_changed', __('The key was freed in the shop, but another key was activated meanwhile and was kept.', 'wp-plugin-starter-template'));
+        }
         return is_wp_error($saved) ? $saved : true;
+    }
+
+    /**
+     * The item IDs of every stored licence, also of a product no longer
+     * installed.
+     *
+     * @return array<int,int>
+     */
+    public static function stored_items() {
+        return array_keys(self::all());
     }
 
     /** The daily WP-Cron check of every stored licence. */
     public static function scheduled_check() {
-        foreach (array_keys(self::all()) as $item) {
+        foreach (self::stored_items() as $item) {
             self::check($item);
         }
     }
 
-    /** Put the daily check in WP-Cron while a licence is stored (main site only). */
-    public static function schedule() {
+    /**
+     * Put the daily check in WP-Cron while a licence is stored. The event
+     * belongs to the main site: from another site's context (WP-CLI with a
+     * subsite --url) $switch schedules it there and restores the context.
+     *
+     * @param bool $switch Switch to the main site when on another one.
+     */
+    public static function schedule($switch = false) {
         if (is_multisite() && !is_main_site()) {
+            if ($switch === true && function_exists('get_main_site_id')) {
+                switch_to_blog((int) get_main_site_id());
+                self::schedule();
+                restore_current_blog();
+            }
             return;
         }
         $any = (bool) self::all();
@@ -854,15 +916,18 @@ final class WPAllStars_Licence {
         if (null === $secret) {
             return null;
         }
+        // The cache is keyed to this activation: an answer fetched for a key
+        // that was replaced while the shop was asked is never read back.
+        $for    = substr(hash('sha256', self::stored($item)['secret']), 0, 16);
         $cached = get_site_transient(self::UPDATE_CACHE . (int) $item);
-        if (is_array($cached)) {
+        if (is_array($cached) && isset($cached['for']) && $cached['for'] === $for) {
             return isset($cached['answer']) && is_array($cached['answer']) ? self::version_from_answer($cached['answer']) : null;
         }
         $answer = self::ask($item, 'get_license_version', array('activation_hash' => $secret['hash'], 'license_key' => '' === $secret['hash'] ? $secret['key'] : ''));
         $info   = is_array($answer) ? self::version_from_answer($answer) : null;
         set_site_transient(
             self::UPDATE_CACHE . (int) $item,
-            null === $info || !is_array($answer) ? array('failed' => time()) : array('answer' => $answer),
+            null === $info || !is_array($answer) ? array('failed' => time(), 'for' => $for) : array('answer' => $answer, 'for' => $for),
             null === $info ? self::UPDATE_RETRY : self::UPDATE_TTL
         );
         return $info;

@@ -693,7 +693,7 @@ check_addon_build() {
 	# ship, and the main file must name the shop's product.
 	if grep -Eiq "^[[:space:]*]*Update URI:[[:space:]]*https://www\.wpallstars\.com/?[[:space:]]*$" "$UNPACKED/$MAIN_FILE"; then
 		if grep -Eq "^[[:space:]*]*Licence Item:[[:space:]]*[0-9]+[[:space:]]*$" "$UNPACKED/$MAIN_FILE"; then ok "addon: has its Licence Item header"; else err "addon: Update URI on wpallstars.com but no Licence Item: <product ID> header in $MAIN_FILE"; fi
-		if [[ -f "$UNPACKED/includes/wpallstars-licence/load.php" ]]; then ok "addon: ships includes/wpallstars-licence/"; else err "addon: Update URI on wpallstars.com but includes/wpallstars-licence/ is not in the zip, so it can never update"; fi
+		if [[ -f "$UNPACKED/includes/wpallstars-licence/load.php" && -f "$UNPACKED/includes/wpallstars-licence/class-wpallstars-licence.php" ]]; then ok "addon: ships includes/wpallstars-licence/"; else err "addon: Update URI on wpallstars.com but includes/wpallstars-licence/ is not in the zip, so it can never update"; fi
 	fi
 	return 0
 }
