@@ -416,6 +416,15 @@ very unlikely to find it gone. The tar backup and restore line are unchanged. If
 swap cannot start (no `unzip`, unexpected zip layout), the live folder is
 untouched and the deploy falls back to `wp plugin install --force`.
 
+`--zip FILE` replaces `--tag vX.Y.Z` for a plugin not released on GitHub (a
+licensed plugin sold through the shop). The script refuses a zip without one
+`{slug}/` folder, its main file or a numeric `X.Y.Z` `Version:` header before
+copying anything, prints the version and SHA-256, and checks no provenance.
+From there the install is the same code path as `--tag` (the run folder is
+named `v<version>-<time>`, and the downgrade refusal compares against the
+zip's version). It installs on every listed install whether or not its licence
+is valid: use it only on your own sites.
+
 A host at its process or memory limit (CloudLinux LVE) kills WP-CLI with
 exit 137. The post-install load check is run again once, and a killed cron
 event up to 3 tries in all, `DEPLOY_LOAD_RETRY_DELAY` seconds apart (default
