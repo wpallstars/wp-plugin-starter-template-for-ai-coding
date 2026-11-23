@@ -167,9 +167,20 @@ on that commit.
    scripts/deploy-sites.sh --host <ssh-host> --tag vX.Y.Z            # lists the installs; changes nothing
    scripts/deploy-sites.sh --host <ssh-host> --tag vX.Y.Z --web-error-log <path> --apply    # installs, then one line per install
    scripts/deploy-sites.sh --host <ssh-host> --tag vX.Y.Z --web-error-log '~/.logs/error_log_{name_}' --apply    # one PHP log per site (Hostinger)
-   ```
+    ```
 
-   Only installs that already have the plugin are touched. Each install line gives
+    A licensed plugin sold only through the shop has no GitHub release. After
+    `shop-release.sh --apply`, build its zip with
+    `scripts/build-addon.sh --ref <release commit>` (or use the zip
+    `shop-release.sh` built) and replace `--tag vX.Y.Z` with
+    `--zip FILE`. It reads the version from the zip's main-file `Version:`
+    header, prints the zip's SHA-256, checks no provenance (the zip is your own
+    build), and then behaves as `--tag` does (backups, swap, per-install checks,
+    lock, exit codes, restore commands). It installs the files on every listed
+    install whether or not its licence is valid, so use it only on your own
+    sites.
+
+    Only installs that already have the plugin are touched. Each install line gives
    the old and new version, the status (`active-network` on a network
    activation), `purged=N/SITES` (the sites whose page cache was purged),
    `cron=N/M` (below), the main home page's HTTP code, `cache=` (the final response's

@@ -6,11 +6,20 @@
 # Additional terms (GPL-3.0 section 7(b)): ATTRIBUTION.txt
 # Provenance: wpas-e4502af0f07e8a92. Copies, even of part, keep these lines.
 #
-# Usage: scripts/deploy-sites.sh --host SSH_HOST --tag vX.Y.Z
+# Usage: scripts/deploy-sites.sh --host SSH_HOST (--tag vX.Y.Z | --zip FILE)
 #                                [--parent PATTERN] [--skip NAME]...
 #                                [--wp-cli COMMAND] [--apply | --dry-run]
 #   --host SSH_HOST    The host as ssh knows it (an alias in ~/.ssh/config).
 #   --tag vX.Y.Z       The GitHub release to install.
+#   --zip FILE         Instead of --tag: a built zip to install (one {slug}/
+#                      folder, as scripts/build-release.sh or build-addon.sh
+#                      makes it), for a plugin not released on GitHub, such as
+#                      a licensed one sold through the shop. The version is
+#                      the main file's Version: header; the zip's SHA-256 is
+#                      printed and no provenance is checked (it is your own
+#                      build). Everything else is as for --tag. It installs the
+#                      files on every listed install whether or not its licence
+#                      is valid: use it only on your own sites.
 #   --parent PATTERN   The WordPress folders on the host, quoted so the local
 #                      shell leaves it alone (default: '~/domains/*/public_html').
 #   --skip NAME        Leave out an install, by its name (the folder above a
@@ -136,6 +145,7 @@ SLUG=""
 REPO=""
 HOST=""
 TAG=""
+ZIP_FILE=""
 VERSION=""
 # shellcheck disable=SC2088 # The host expands the ~, not this shell.
 PARENT='~/domains/*/public_html'
@@ -244,12 +254,13 @@ parse_args() {
 		local arg="$1"
 		local value="${2:-}"
 		case "$arg" in
-		--host | --tag | --parent | --skip | --wp-cli | --web-error-log | --cloudflare-token-env | --cloudflare-purge | --keep-releases | --ignore-log-line)
+		--host | --tag | --zip | --parent | --skip | --wp-cli | --web-error-log | --cloudflare-token-env | --cloudflare-purge | --keep-releases | --ignore-log-line)
 			[[ $# -ge 2 ]] || die "$arg needs a value"
 			[[ "$value" != -* ]] || die "$arg needs a value, not an option: $value"
 			case "$arg" in
 			--host) HOST="$value" ;;
 			--tag) TAG="$value" ;;
+			--zip) ZIP_FILE="$value" ;;
 			--parent) PARENT="$value" ;;
 			--skip) SKIPS+=("$value") ;;
 			--wp-cli) WP_CLI="$value" ;;
@@ -282,8 +293,14 @@ parse_args() {
 	done
 	[[ -n "$HOST" ]] || die "--host is required"
 	[[ "$HOST" != -* ]] || die "--host cannot start with -"
-	[[ "$TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]] || die "--tag must be vX.Y.Z, not '$TAG'"
-	VERSION="${TAG#v}"
+	[[ -z "$TAG" || -z "$ZIP_FILE" ]] || die "--tag and --zip cannot be used together"
+	[[ -n "$TAG" || -n "$ZIP_FILE" ]] || die "one of --tag vX.Y.Z or --zip FILE is required"
+	if [[ -n "$TAG" ]]; then
+		[[ "$TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]] || die "--tag must be vX.Y.Z, not '$TAG'"
+		VERSION="${TAG#v}"
+	else
+		[[ -f "$ZIP_FILE" ]] || die "--zip: no such file: $ZIP_FILE"
+	fi
 	[[ -n "$PARENT" ]] || die "--parent cannot be empty"
 	[[ "$KEEP_RELEASES" =~ ^[0-9]+$ ]] || die "--keep-releases takes a whole number, not '$KEEP_RELEASES'"
 	[[ "$CF_PURGE" == "$CF_MODE_HOSTS" || "$CF_PURGE" == "zone" ]] || die "--cloudflare-purge takes hosts or zone, not '$CF_PURGE'"
@@ -371,6 +388,34 @@ download_zip() {
 		checked=1
 	fi
 	[[ "$checked" -eq 1 ]] || die "$name has neither a GitHub digest nor a provenance bundle to check it against"
+	return 0
+}
+
+# --zip: checks the zip before anything is copied, takes the version from the
+# main file's Version: header and copies the zip to TMP_DIR under the name the
+# release path uses. TAG becomes v<version>, so the run folder, the lock and
+# the pruning treat it like a tag's.
+use_local_zip() {
+	local entries top header
+	command -v unzip >/dev/null 2>&1 || die "--zip needs unzip"
+	entries="$(unzip -Z1 "$ZIP_FILE" 2>/dev/null)" || die "$ZIP_FILE is not a readable zip"
+	[[ -n "$entries" ]] || die "$ZIP_FILE is empty"
+	if grep -Eq '^/|(^|/)\.\.(/|$)|[\]' <<<"$entries"; then
+		die "$ZIP_FILE has an entry with an absolute path, .. or a backslash"
+	fi
+	top="$(cut -d/ -f1 <<<"$entries" | sort -u)"
+	[[ "$top" == "$SLUG" ]] || die "$ZIP_FILE must hold only one folder, $SLUG/ (found: ${top//$'\n'/ })"
+	grep -qxF "$SLUG/$SLUG.php" <<<"$entries" || die "$ZIP_FILE has no $SLUG/$SLUG.php"
+	header="$(unzip -p "$ZIP_FILE" "$SLUG/$SLUG.php" | head -c 8192 | tr -d '\r' |
+		sed -nE 's/^[[:space:]/*#@]*Version:[[:space:]]*([^[:space:]]*)[[:space:]]*$/\1/p' | head -n 1)"
+	[[ "$header" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] || die "$SLUG/$SLUG.php in $ZIP_FILE has no numeric X.Y.Z Version: header (found '$header')"
+	VERSION="$header"
+	TAG="v$VERSION"
+	ZIP="$TMP_DIR/$SLUG-$VERSION.zip"
+	cp "$ZIP_FILE" "$ZIP" || die "cannot copy $ZIP_FILE"
+	SHA="$(sha256_of "$ZIP")"
+	printf 'Zip %s of %s\n  version %s\n  SHA-256 %s\n' "$ZIP_FILE" "$SLUG" "$VERSION" "$SHA"
+	printf '  note no provenance is checked: the zip is taken as your own build\n'
 	return 0
 }
 
@@ -750,7 +795,7 @@ apply() {
 
 main() {
 	parse_args "$@"
-	command -v gh >/dev/null 2>&1 || die "needs gh (GitHub CLI)"
+	[[ -n "$ZIP_FILE" ]] || command -v gh >/dev/null 2>&1 || die "needs gh (GitHub CLI)"
 	command -v ssh >/dev/null 2>&1 || die "needs ssh"
 	command -v sha256sum >/dev/null 2>&1 || command -v shasum >/dev/null 2>&1 || die "needs sha256sum or shasum"
 	local root
@@ -761,11 +806,15 @@ main() {
 	# A licensed add-on has no GitHub Plugin URI; its releases are still
 	# built and signed in its own repository (the origin remote).
 	REPO="$PLUGIN_GITHUB"
-	[[ "$REPO" =~ ^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$ ]] || die "the main file has no GitHub Plugin URI header (owner/repo) and origin is not on github.com"
+	[[ -n "$ZIP_FILE" || "$REPO" =~ ^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$ ]] || die "the main file has no GitHub Plugin URI header (owner/repo) and origin is not on github.com"
 
 	trap cleanup EXIT
 	TMP_DIR="$(mktemp -d "${TMPDIR:-/tmp}/$SLUG-deploy.XXXXXX")"
-	download_zip
+	if [[ -n "$ZIP_FILE" ]]; then
+		use_local_zip
+	else
+		download_zip
+	fi
 	if [[ "$APPLY" -eq 1 ]]; then
 		local status=0
 		apply || status=$?
