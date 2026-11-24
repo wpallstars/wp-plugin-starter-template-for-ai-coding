@@ -12,7 +12,7 @@
 #   --host SSH_HOST    The host as ssh knows it (an alias in ~/.ssh/config).
 #   --tag vX.Y.Z       The GitHub release to install.
 #   --zip FILE         Instead of --tag: a built zip to install (one {slug}/
-#                      folder, as scripts/build-release.sh or build-addon.sh
+#                      folder, as scripts/build-release.sh
 #                      makes it), for a plugin not released on GitHub, such as
 #                      a licensed one sold through the shop. The version is
 #                      the main file's Version: header; the zip's SHA-256 is

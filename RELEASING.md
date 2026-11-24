@@ -171,7 +171,7 @@ on that commit.
 
    A licensed plugin sold only through the shop has no GitHub release. After
    `shop-release.sh --apply`, build its zip with
-   `scripts/build-addon.sh --ref <release commit>` (or use the zip
+   `scripts/build-release.sh --ref <release commit>` (or use the zip
    `shop-release.sh` built) and replace `--tag vX.Y.Z` with
    `--zip FILE`. It reads the version from the zip's main-file `Version:`
    header, prints the zip's SHA-256, checks no provenance (the zip is your own
