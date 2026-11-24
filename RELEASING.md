@@ -167,48 +167,48 @@ on that commit.
    scripts/deploy-sites.sh --host <ssh-host> --tag vX.Y.Z            # lists the installs; changes nothing
    scripts/deploy-sites.sh --host <ssh-host> --tag vX.Y.Z --web-error-log <path> --apply    # installs, then one line per install
    scripts/deploy-sites.sh --host <ssh-host> --tag vX.Y.Z --web-error-log '~/.logs/error_log_{name_}' --apply    # one PHP log per site (Hostinger)
-    ```
+   ```
 
-    A licensed plugin sold only through the shop has no GitHub release. After
-    `shop-release.sh --apply`, build its zip with
-    `scripts/build-addon.sh --ref <release commit>` (or use the zip
-    `shop-release.sh` built) and replace `--tag vX.Y.Z` with
-    `--zip FILE`. It reads the version from the zip's main-file `Version:`
-    header, prints the zip's SHA-256, checks no provenance (the zip is your own
-    build), and then behaves as `--tag` does (backups, swap, per-install checks,
-    lock, exit codes, restore commands). It installs the files on every listed
-    install whether or not its licence is valid, so use it only on your own
-    sites.
+   A licensed plugin sold only through the shop has no GitHub release. After
+   `shop-release.sh --apply`, build its zip with
+   `scripts/build-addon.sh --ref <release commit>` (or use the zip
+   `shop-release.sh` built) and replace `--tag vX.Y.Z` with
+   `--zip FILE`. It reads the version from the zip's main-file `Version:`
+   header, prints the zip's SHA-256, checks no provenance (the zip is your own
+   build), and then behaves as `--tag` does (backups, swap, per-install checks,
+   lock, exit codes, restore commands). It installs the files on every listed
+   install whether or not its licence is valid, so use it only on your own
+   sites.
 
-    Only installs that already have the plugin are touched. Each install line gives
+   Only installs that already have the plugin are touched. Each install line gives
    the old and new version, the status (`active-network` on a network
    activation), `purged=N/SITES` (the sites whose page cache was purged),
    `cron=N/M` (below), the main home page's HTTP code, `cache=` (the final response's
-    `x-litespeed-cache`, `x-cache` and `cf-cache-status` headers, `none`, or
-    `redirected:HOST` when a redirect dropped the unique query string) and the
-    log lines gained. Networks add `sites=PASSED/TOTAL` and one indented
+   `x-litespeed-cache`, `x-cache` and `cf-cache-status` headers, `none`, or
+   `redirected:HOST` when a redirect dropped the unique query string) and the
+   log lines gained. Networks add `sites=PASSED/TOTAL` and one indented
    `site` line per site, with its status, `purged=yes`, `no` or `failed`, home
    code, cache headers and result.
-    Cloudflare: a Cache Rule that caches HTML keeps the pre-deploy pages for up
-    to the edge TTL (2 hours by default), while the home fetch's unique query
-    string never sees them. Add `--cloudflare-token-env NAME`, naming an
-    environment variable that holds an API token limited to Zone → Zone Read
-    (to find the zone) and Zone → Cache Purge, and the script purges the host names of each updated install's sites from
-    your computer (the token never reaches the host and is never printed): it
-    finds the zone from each site's host name, trying its parent domains, and
-    after the install sends one `{"hosts":[...]}` purge per zone (30 hosts per
-    request), so other sites sharing the zone keep their cached pages. The
-    install line shows `cdn=purged(N hosts)`, `cdn=failed MESSAGE` (a failed
-    purge does not fail the install) or `cdn=-` without the option, and the
-    summary counts the requests. `--cloudflare-purge zone` instead sends
-    `purge_everything` for each zone once per install, for pages on hosts the
-    script does not see. The dry run with the option names the hosts it would
-    purge for each zone and purges nothing. Without the option the script fetches each site's plain home
-    address once after the install and warns `WARN Cloudflare keeps pages from
-    before the deploy (age=N s); purge the zone or pass --cloudflare-token-env`
-    when Cloudflare answers `cf-cache-status: HIT` with an `age` older than the
-    install.
-    After each site's full load, the plugin's own WP-Cron events (hooks in the
+   Cloudflare: a Cache Rule that caches HTML keeps the pre-deploy pages for up
+   to the edge TTL (2 hours by default), while the home fetch's unique query
+   string never sees them. Add `--cloudflare-token-env NAME`, naming an
+   environment variable that holds an API token limited to Zone → Zone Read
+   (to find the zone) and Zone → Cache Purge, and the script purges the host names of each updated install's sites from
+   your computer (the token never reaches the host and is never printed): it
+   finds the zone from each site's host name, trying its parent domains, and
+   after the install sends one `{"hosts":[...]}` purge per zone (30 hosts per
+   request), so other sites sharing the zone keep their cached pages. The
+   install line shows `cdn=purged(N hosts)`, `cdn=failed MESSAGE` (a failed
+   purge does not fail the install) or `cdn=-` without the option, and the
+   summary counts the requests. `--cloudflare-purge zone` instead sends
+   `purge_everything` for each zone once per install, for pages on hosts the
+   script does not see. The dry run with the option names the hosts it would
+   purge for each zone and purges nothing. Without the option the script fetches each site's plain home
+   address once after the install and warns `WARN Cloudflare keeps pages from
+   before the deploy (age=N s); purge the zone or pass --cloudflare-token-env`
+   when Cloudflare answers `cf-cache-status: HIT` with an `age` older than the
+   install.
+   After each site's full load, the plugin's own WP-Cron events (hooks in the
    site's cron schedule with a callback in the plugin's folder) run once on
    that site, each in its own `wp cron event run` process, shown as `cron=N/M`
    on the install line. A fatal error that only a cron callback reaches does
@@ -260,10 +260,10 @@ on that commit.
    network-activated); other page caches are not purged, so purge them by
    hand. `wp cache flush` is not enough: it empties the object cache, not the
    pages. `WARN purge failed` means the purge command failed, so visitors may
-    still get the old files. `WARN cached` means a cache answered anyway (it
-    ignores query strings), so PHP did not run for that fetch. A redirect that
-    drops the unique query reports `cache=redirected:HOST` instead, because any
-    final cache response belongs to another address. Both warn
+   still get the old files. `WARN cached` means a cache answered anyway (it
+   ignores query strings), so PHP did not run for that fetch. A redirect that
+   drops the unique query reports `cache=redirected:HOST` instead, because any
+   final cache response belongs to another address. Both warn
    rather than fail.
    A failed load, status read or home (5xx or no answer) fails the install;
    4xx is reported only. A busy host can answer one fetch with 5xx while the
