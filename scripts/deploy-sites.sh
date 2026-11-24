@@ -300,6 +300,8 @@ parse_args() {
 		VERSION="${TAG#v}"
 	else
 		[[ -f "$ZIP_FILE" ]] || die "--zip: no such file: $ZIP_FILE"
+		# Absolute now: main() changes to the repository root later.
+		ZIP_FILE="$(cd "$(dirname "$ZIP_FILE")" && pwd)/$(basename "$ZIP_FILE")"
 	fi
 	[[ -n "$PARENT" ]] || die "--parent cannot be empty"
 	[[ "$KEEP_RELEASES" =~ ^[0-9]+$ ]] || die "--keep-releases takes a whole number, not '$KEEP_RELEASES'"
@@ -396,9 +398,12 @@ download_zip() {
 # release path uses. TAG becomes v<version>, so the run folder, the lock and
 # the pruning treat it like a tag's.
 use_local_zip() {
-	local entries top header
+	local entries top header copy="$TMP_DIR/local-source.zip" xdir="$TMP_DIR/header"
 	command -v unzip >/dev/null 2>&1 || die "--zip needs unzip"
-	entries="$(unzip -Z1 "$ZIP_FILE" 2>/dev/null)" || die "$ZIP_FILE is not a readable zip"
+	# Every check, the version and the SHA use one private copy, so the zip
+	# cannot change between them.
+	cp "$ZIP_FILE" "$copy" || die "cannot copy $ZIP_FILE"
+	entries="$(unzip -Z1 "$copy" 2>/dev/null)" || die "$ZIP_FILE is not a readable zip"
 	[[ -n "$entries" ]] || die "$ZIP_FILE is empty"
 	if grep -Eq '^/|(^|/)\.\.(/|$)|[\]' <<<"$entries"; then
 		die "$ZIP_FILE has an entry with an absolute path, .. or a backslash"
@@ -406,13 +411,18 @@ use_local_zip() {
 	top="$(cut -d/ -f1 <<<"$entries" | sort -u)"
 	[[ "$top" == "$SLUG" ]] || die "$ZIP_FILE must hold only one folder, $SLUG/ (found: ${top//$'\n'/ })"
 	grep -qxF "$SLUG/$SLUG.php" <<<"$entries" || die "$ZIP_FILE has no $SLUG/$SLUG.php"
-	header="$(unzip -p "$ZIP_FILE" "$SLUG/$SLUG.php" | head -c 8192 | tr -d '\r' |
+	# Extract to a file: a pipe into head can SIGPIPE unzip under pipefail.
+	mkdir -p "$xdir" || die "cannot create $xdir"
+	unzip -qq -o "$copy" "$SLUG/$SLUG.php" -d "$xdir" || die "cannot extract $SLUG/$SLUG.php from $ZIP_FILE"
+	[[ -f "$xdir/$SLUG/$SLUG.php" ]] || die "cannot extract $SLUG/$SLUG.php from $ZIP_FILE"
+	header="$(head -c 8192 "$xdir/$SLUG/$SLUG.php" | tr -d '\r' |
 		sed -nE 's/^[[:space:]/*#@]*Version:[[:space:]]*([^[:space:]]*)[[:space:]]*$/\1/p' | head -n 1)"
 	[[ "$header" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] || die "$SLUG/$SLUG.php in $ZIP_FILE has no numeric X.Y.Z Version: header (found '$header')"
 	VERSION="$header"
 	TAG="v$VERSION"
 	ZIP="$TMP_DIR/$SLUG-$VERSION.zip"
-	cp "$ZIP_FILE" "$ZIP" || die "cannot copy $ZIP_FILE"
+	mv "$copy" "$ZIP" || die "cannot move $copy"
+	rm -rf "$xdir"
 	SHA="$(sha256_of "$ZIP")"
 	printf 'Zip %s of %s\n  version %s\n  SHA-256 %s\n' "$ZIP_FILE" "$SLUG" "$VERSION" "$SHA"
 	printf '  note no provenance is checked: the zip is taken as your own build\n'
