@@ -86,6 +86,29 @@ jobs:
           # no label (repositories that do not use aidevops).
           DISPATCH_LABEL: ${{ vars.STARTER_SYNC_DISPATCH_LABEL || 'auto-dispatch' }}
         run: |
+          # Retry gh up to 3 times with backoff, so one transient GitHub API
+          # error ("GraphQL: Something went wrong") does not fail the run.
+          # "issue create" is never retried: a call that failed after the
+          # issue was made would leave a duplicate.
+          gh() {
+            local attempt=1 delay=5 rc=0
+            if [[ "$1 $2" == "issue create" ]]; then
+              command gh "$@"
+              return $?
+            fi
+            while true; do
+              command gh "$@" && return 0
+              rc=$?
+              if [[ "$attempt" -ge 3 ]]; then
+                return "$rc"
+              fi
+              echo "::warning::gh $1 $2 failed (exit $rc); retry $attempt of 2 in ${delay}s" >&2
+              sleep "$delay"
+              attempt=$((attempt + 1))
+              delay=$((delay * 3))
+            done
+          }
+
           set +e
           report="$(../starter/scripts/sync-core.sh --check --from ../starter 2>&1)"
           status=$?
