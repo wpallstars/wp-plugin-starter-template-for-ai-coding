@@ -134,7 +134,7 @@
 
 set -euo pipefail
 
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+SCRIPT_DIR="$(CDPATH='' cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 readonly SCRIPT_DIR
 # shellcheck source=scripts/lib/plugin.sh disable=SC1091 # followed only with -x
 . "$SCRIPT_DIR/lib/plugin.sh"
@@ -301,7 +301,7 @@ parse_args() {
 	else
 		[[ -f "$ZIP_FILE" ]] || die "--zip: no such file: $ZIP_FILE"
 		# Absolute now: main() changes to the repository root later.
-		ZIP_FILE="$(cd "$(dirname "$ZIP_FILE")" && pwd)/$(basename "$ZIP_FILE")"
+		ZIP_FILE="$(CDPATH='' cd "$(dirname "$ZIP_FILE")" && pwd)/$(basename "$ZIP_FILE")"
 	fi
 	[[ -n "$PARENT" ]] || die "--parent cannot be empty"
 	[[ "$KEEP_RELEASES" =~ ^[0-9]+$ ]] || die "--keep-releases takes a whole number, not '$KEEP_RELEASES'"
