@@ -771,10 +771,11 @@ workflows. Do not add third-party actions that only save a few lines of
 shell.
 
 A dependency or workflow-only pull request says in "How it was tested"
-which checks apply: `scripts/lint.sh` runs the workflow check (actionlint)
-when a workflow changes, and the WordPress-site, WordPress 6.2 and styling
-items are n/a because no plugin code or front-end style changed. If it
-replaces a Dependabot pull request, it says so and links that pull request.
+which checks apply: `scripts/lint.sh workflows` runs actionlint when
+actionlint is installed (CI installs it), and the WordPress-site,
+WordPress 6.2 and styling items are n/a because no plugin code or
+front-end style changed. If it replaces a Dependabot pull request, it says
+so and links that pull request.
 
 ## While private: checks are advisory
 
