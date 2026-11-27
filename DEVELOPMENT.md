@@ -12,9 +12,11 @@ its values). Rules for features, code and testing: `STANDARDS.md`; styling:
 2. Work on a branch in its own worktree, never on `main`. Branch names:
    `feature/…`, `bugfix/…`, `chore/…`.
 3. Commit small, working steps. Run `scripts/lint.sh` before pushing.
-4. Push and open a pull request (`Resolves #N`). Open it as a draft while
-   the work is in progress: CI lints every push, and the longer release and
-   smoke-test jobs start when the pull request is marked ready for review.
+4. Push and open a pull request (`Resolves #N`), filling in
+   `.github/pull_request_template.md`: its headings, and each checklist item
+   done or n/a. Open it as a draft while the work is in progress: CI lints
+   every push, and the longer release and smoke-test jobs start when the
+   pull request is marked ready for review.
 5. Check the change on the shared preview site (Preview site below,
    `STANDARDS.md` → Testing), in light and dark mode for front-end styles.
 6. Merge once CI passes. Releases are separate: `RELEASING.md`.
