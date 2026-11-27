@@ -32,9 +32,9 @@ place: say what the feature does on its own and what problem it solves.
 
 CI runs the checks on every pull request. Fill in the pull request template
 (`.github/pull_request_template.md`): keep its "What and why" and "How it was
-tested" headings and its checklists, and mark each item done or n/a. Under
-them, say what the change does and the problem it solves, and the steps you
-took to test it and what you saw.
+tested" headings and its checklists, and mark each item done or n/a, saying
+why when it is n/a. Under them, say what the change does and the problem it
+solves, and the steps you took to test it and what you saw.
 
 ## Licence
 

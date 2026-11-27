@@ -14,9 +14,9 @@ its values). Rules for features, code and testing: `STANDARDS.md`; styling:
 3. Commit small, working steps. Run `scripts/lint.sh` before pushing.
 4. Push and open a pull request (`Resolves #N`), filling in
    `.github/pull_request_template.md`: its headings, and each checklist item
-   done or n/a. Open it as a draft while the work is in progress: CI lints
-   every push, and the longer release and smoke-test jobs start when the
-   pull request is marked ready for review.
+   done or n/a with the reason for any n/a. Open it as a draft while the work
+   is in progress: CI lints every push, and the longer release and smoke-test
+   jobs start when the pull request is marked ready for review.
 5. Check the change on the shared preview site (Preview site below,
    `STANDARDS.md` → Testing), in light and dark mode for front-end styles.
 6. Merge once CI passes. Releases are separate: `RELEASING.md`.
@@ -769,6 +769,12 @@ the GitHub Actions and one for the Composer tools. Actions are pinned to
 commit SHAs with the version in a comment; keep it that way when editing
 workflows. Do not add third-party actions that only save a few lines of
 shell.
+
+A dependency or workflow-only pull request says in "How it was tested"
+which checks apply: `scripts/lint.sh` runs the workflow check (actionlint)
+when a workflow changes, and the WordPress-site, WordPress 6.2 and styling
+items are n/a because no plugin code or front-end style changed. If it
+replaces a Dependabot pull request, it says so and links that pull request.
 
 ## While private: checks are advisory
 
