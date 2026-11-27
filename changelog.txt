@@ -3,6 +3,7 @@
 Every change to WP Plugin Starter. readme.txt lists the latest version in short.
 
 = Unreleased =
+* Developers: CONTRIBUTING.md → Pull requests and DEVELOPMENT.md → Workflow step 4 say to give the reason for each checklist item marked n/a, and DEVELOPMENT.md → Dependencies says a dependency or workflow-only pull request states which checks apply and names the Dependabot pull request it replaces. Plugins get it with scripts/sync-core.sh (GH#867).
 * Developers: CONTRIBUTING.md → Pull requests and DEVELOPMENT.md → Workflow step 4 say to fill in .github/pull_request_template.md when opening a pull request: its "What and why" and "How it was tested" headings, and each checklist item marked done or n/a. Plugins get it with scripts/sync-core.sh (GH#865).
 * Developers: the Starter sync workflow retries a gh call up to 3 times with backoff on a transient GitHub API error (not issue create, to avoid duplicates). Plugins get it with scripts/sync-core.sh (GH#861).
 * Developers: RELEASING.md's deployment step (scripts/deploy-sites.sh, with --zip FILE) uses the list's 3-space indent throughout; whitespace only. Plugins get it with scripts/sync-core.sh (GH#854).
